@@ -40,11 +40,35 @@ dotnet ef database update --project <Infrastructure project>
 - Thay đổi phá vỡ dữ liệu (drop/đổi kiểu) cần kế hoạch backfill rõ ràng.
 - Không sửa migration đã áp dụng ở môi trường chia sẻ; tạo migration mới.
 
-## Áp dụng tự động
+## Tự chạy migration khi khởi động
 
-- Dev/local: có thể `dotnet ef database update` thủ công hoặc chạy lúc khởi động
-  service (`Database.Migrate()`), tùy service.
-- Production: áp dụng có kiểm soát (bước deploy riêng), không auto-migrate ngầm.
+Mỗi service MUST tự áp dụng migration **của chính nó** lúc khởi động, để local,
+Docker và CI luôn khớp schema mà không cần bước thủ công.
+
+- Chạy sau khi build `IServiceProvider` và **trước** khi phục vụ request.
+- Chỉ áp migration của database service đó; không đụng DB service khác.
+- Idempotent: `MigrateAsync()` tự bỏ qua migration đã áp dụng.
+- Log kết quả; migration lỗi là lỗi khởi động — **fail fast**, không chạy tiếp.
+
+```csharp
+// Program.cs — chạy migration trước khi app phục vụ request
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+app.Run();
+```
+
+Lưu ý:
+
+- Nhiều instance khởi động cùng lúc có thể tranh nhau chạy migration. Với > 1
+  instance, dùng khóa (Postgres advisory lock / leader election) hoặc chạy
+  migration ở bước deploy trước khi scale.
+- Mặc định **bật** auto-migrate khi start cho dev/docker. Production có thể tắt
+  qua cờ cấu hình (ví dụ `Database:AutoMigrate=false`) và chạy ở bước deploy
+  riêng có kiểm soát.
 
 ## Seeding
 

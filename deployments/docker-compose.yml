@@ -1,0 +1,90 @@
+name: longevia
+
+# Local == production: the same images and this same file are used in both.
+# Copy ../.env.example to ../.env before running.
+#
+#   docker compose -f deployments/docker-compose.yml up -d
+#
+# Backend services are added below once their Dockerfiles exist.
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-longevia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-change-me}
+      IDENTITY_DB: ${IDENTITY_DB:-identity_db}
+      DIET_DB: ${DIET_DB:-diet_db}
+      PROGRESS_DB: ${PROGRESS_DB:-progress_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-longevia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    # Backend services are added to the compose network below; Nginx resolves
+    # them through Docker's embedded DNS at request time (see nginx.conf).
+
+  # Combined Swagger UI for the client-facing services, served at /swagger.
+  # Each spec is fetched through the gateway; enable Swagger in Development only.
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    environment:
+      URLS: >-
+        [{"url":"/api/identity/swagger/v1/swagger.json","name":"Identity"},
+         {"url":"/api/diet/swagger/v1/swagger.json","name":"Diet"},
+         {"url":"/api/progress/swagger/v1/swagger.json","name":"Progress"}]
+
+  # -------------------------------------------------------------------------
+  # .NET services - uncomment as each Dockerfile is added.
+  #
+  # identity:
+  #   build:
+  #     context: ..
+  #     dockerfile: src/Services/Identity/Dockerfile
+  #   environment:
+  #     ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+  #     RABBITMQ_HOST: rabbitmq
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #
+  # diet:      ... (also calls recommendation over gRPC)
+  # progress:  ...
+  # recommendation:  ... (internal, gRPC-only, stateless, no database)
+  # worker:          ... (consumes RabbitMQ, sends email via Brevo)
+  # -------------------------------------------------------------------------
+
+volumes:
+  postgres-data:
+  rabbitmq-data:

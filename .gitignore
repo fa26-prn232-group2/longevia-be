@@ -1,0 +1,46 @@
+# .NET build output
+bin/
+obj/
+artifacts/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# Test / coverage
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+*.coverage
+*.trx
+
+# Rider / VS Code
+.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+# MSBuild
+*.binlog
+msbuild.log
+
+# Environment & secrets (keep the examples)
+.env
+.env.*
+!.env.example
+
+# Docker / local data volumes
+deployments/**/data/
+*.pid
+
+# OS noise
+.DS_Store
+Thumbs.db

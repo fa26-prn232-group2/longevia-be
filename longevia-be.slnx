@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Identity/">
+    <Project Path="src/Services/Identity/Identity.Api/Identity.Api.csproj" />
+    <Project Path="src/Services/Identity/Identity.Application/Identity.Application.csproj" />
+    <Project Path="src/Services/Identity/Identity.Domain/Identity.Domain.csproj" />
+    <Project Path="src/Services/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Identity/tests/">
+    <Project Path="src/Services/Identity/tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj" />
+    <Project Path="src/Services/Identity/tests/Identity.UnitTests/Identity.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Longevia.Shared.csproj" />
+  </Folder>
+</Solution>

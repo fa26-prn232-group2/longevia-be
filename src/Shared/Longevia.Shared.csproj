@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Longevia.Shared</RootNamespace>
+  </PropertyGroup>
+
+</Project>

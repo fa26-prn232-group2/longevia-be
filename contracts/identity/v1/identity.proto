@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package longevia.identity.v1;
+
+option csharp_namespace = "Longevia.Identity.Contracts.V1";
+
+// Contract skeleton for the Identity service.
+// Methods are added as other services need synchronous access to identity data.
+service IdentityService
+{
+}

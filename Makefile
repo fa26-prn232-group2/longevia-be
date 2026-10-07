@@ -13,7 +13,7 @@ SLN_OR_DIR := $(if $(SLN),$(SLN),.)
 PROJECTS ?=
 TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 
-.PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update clean
+.PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean
 
 help:
 	@echo Targets:
@@ -29,6 +29,7 @@ help:
 	@echo   check            format-check + build-release + test-all + vuln   [close-out gate]
 	@echo   ef-add           NAME=migration PROJECT=path
 	@echo   ef-update        PROJECT=path
+	@echo   jwt-keys         print a local ES256 JWT keypair, scope with KID=...
 	@echo   clean            remove build output
 
 restore:
@@ -64,6 +65,13 @@ ef-add:
 
 ef-update:
 	$(DOTNET) ef database update --project $(PROJECT)
+
+# Dev convenience only - prints the keypair to stdout and writes nothing to disk.
+# Not part of any gate: CI never needs to sign a token.
+KID ?= longevia-dev-01
+
+jwt-keys:
+	$(DOTNET) run --file scripts/jwt-keys.cs -- --kid "$(KID)"
 
 clean:
 	$(DOTNET) clean $(SLN_OR_DIR)

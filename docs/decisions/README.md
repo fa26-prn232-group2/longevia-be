@@ -7,7 +7,7 @@ Mỗi file ghi một quyết định kiến trúc/vận hành đã chốt, kèm 
 
 | # | Ngày | Tiêu đề | Trạng thái |
 | --- | --- | --- | --- |
-| — | — | (chưa có ADR) | — |
+| [001](001-authn-authz-architecture.md) | 2026-10-07 | AuthN/AuthZ Architecture | Accepted |
 
 ## Quy ước
 

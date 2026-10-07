@@ -16,8 +16,10 @@
 ## Xác thực
 
 - JWT bearer ở header `Authorization: Bearer <token>`.
-- Service client-facing validate token (cùng issuer/audience/signing key); không
-  gọi Identity mỗi request.
+- Token ký bằng **ES256**; chỉ Identity giữ private key, Diet/Progress chỉ giữ public
+  key. Xem [ADR 001](../decisions/001-authn-authz-architecture.md).
+- Service client-facing validate token tại chỗ bằng public key lấy từ biến môi
+  trường (`kid` tra key trong tập key được cấu hình); không gọi Identity mỗi request.
 - Endpoint công khai (đăng ký/đăng nhập) nằm ngoài yêu cầu auth.
 
 ## Định dạng lỗi

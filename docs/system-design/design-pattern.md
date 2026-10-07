@@ -537,8 +537,13 @@ outbox** để không mất event.
 
 ## XVI. Auth & Authorization Pattern
 
-- Authentication: JWT Bearer (`AddAuthentication().AddJwtBearer(...)`), cùng
-  issuer/audience/signing key giữa các service client-facing.
+- Authentication: JWT Bearer (`AddAuthentication().AddJwtBearer(...)`) với
+  **ES256** — xem [ADR 001](../decisions/001-authn-authz-architecture.md):
+    - Chỉ Identity giữ **private key**; Diet/Progress chỉ giữ **public key**.
+    - Token có header **`kid`**; service chấp nhận **nhiều public key**, tra theo
+      `kid` (để xoay vòng key không cần deploy đồng thời).
+    - Public key lấy từ biến môi trường dạng **base64(PEM) một dòng**; **không**
+      có JWKS endpoint, service **không** phụ thuộc runtime vào Identity.
 - Đọc user hiện tại qua abstraction, không đọc `HttpContext` trong Application:
 
 ```csharp
@@ -552,7 +557,11 @@ public interface ICurrentUser
 
 - Authorization theo policy/role: `.RequireAuthorization("Admin")`.
 - Endpoint công khai (đăng ký/đăng nhập) `.AllowAnonymous()`.
-- Service **không** gọi Identity mỗi request để validate; tin JWT đã ký.
+- Service **không** gọi Identity mỗi request để validate; tin JWT đã ký, vì public
+  key đã có sẵn qua biến môi trường.
+- **Chưa chốt** (xem [ADR 001](../decisions/001-authn-authz-architecture.md) §5):
+  TTL / refresh / revoke / logout; mô hình authorization (RBAC vs permission,
+  ownership); thuật toán băm mật khẩu.
 
 ---
 
@@ -636,3 +645,4 @@ builder.Services.AddRateLimiter(o =>
 - [`event-driven-design.md`](event-driven-design.md) — event, outbox, topology.
 - [`../development/coding-conventions.md`](../development/coding-conventions.md) — quy ước C#.
 - [`../development/api-testing.md`](../development/api-testing.md) — test API bằng Swagger.
+- [`../decisions/001-authn-authz-architecture.md`](../decisions/001-authn-authz-architecture.md) — quyết định AuthN/AuthZ.

@@ -15,7 +15,7 @@ docs/
   requirements/   # Yêu cầu nghiệp vụ (BRD) và yêu cầu sản phẩm chi tiết (PRD)
   system-design/  # Kiến trúc, design pattern, event-driven, ranh giới service
   development/    # Quy trình, convention, setup, test, migration
-  api/            # Quy chuẩn thiết kế API
+  api/            # Quy chuẩn thiết kế API và đặc tả API chi tiết
   decisions/      # Architecture Decision Records (ADR)
 ```
 
@@ -38,6 +38,10 @@ docs/
 - [system-design/contract-purity-pattern.md](system-design/contract-purity-pattern.md) — ranh giới contract.
 - [system-design/microservices/](system-design/microservices/README.md) — chi tiết từng khía cạnh service.
 
+### API & Contracts
+- [api/api-spec.md](api/api-spec.md) — Đặc tả API chi tiết cho từng service (REST & gRPC).
+- [api/README.md](api/README.md) — Quy chuẩn thiết kế API.
+
 ### Phát triển
 - [development/agent-workflow.md](development/agent-workflow.md) — quy trình Spec-kit.
 - [development/coding-conventions.md](development/coding-conventions.md) — convention C#/.NET.
@@ -49,5 +53,4 @@ docs/
 - [development/api-testing.md](development/api-testing.md) — test API bằng Swagger.
 
 ### Khác
-- [api/README.md](api/README.md) — quy chuẩn API.
 - [decisions/README.md](decisions/README.md) — danh mục ADR.

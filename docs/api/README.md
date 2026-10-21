@@ -1,5 +1,7 @@
 # Quy chuẩn API
 
+> **Đặc tả API chi tiết cho từng service**: Xem tại [api-spec.md](api-spec.md).
+
 ## Gateway & route
 
 - Client chỉ gọi qua **Nginx**: `http://<host>:8080/api/<service>/**`.
@@ -53,7 +55,7 @@ Dùng Problem Details (`application/problem+json`):
 
 ## Phân trang & lọc (khi có danh sách)
 
-- Query: `page`, `pageSize` (có giới hạn max); trả kèm `total`.
+- Query: `pageNumber`, `pageSize` (có giới hạn max); trả kèm `totalCount`, `totalPages`.
 - Lọc/sắp xếp qua query param tường minh.
 
 ## Swagger / OpenAPI

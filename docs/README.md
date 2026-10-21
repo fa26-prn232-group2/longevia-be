@@ -12,6 +12,7 @@
 ```
 docs/
   overview/       # Tầm nhìn, roadmap, phạm vi MVP, changelog
+  requirements/   # Yêu cầu nghiệp vụ (BRD) và yêu cầu sản phẩm chi tiết (PRD)
   system-design/  # Kiến trúc, design pattern, event-driven, ranh giới service
   development/    # Quy trình, convention, setup, test, migration
   api/            # Quy chuẩn thiết kế API
@@ -19,6 +20,10 @@ docs/
 ```
 
 ## Mục lục
+
+### Yêu cầu & Nghiệp vụ
+- [requirements/brd.md](requirements/brd.md) — Business Requirement Document (BRD).
+- [requirements/prd.md](requirements/prd.md) — Product Requirement Document (PRD) chi tiết từng service.
 
 ### Tổng quan
 - [overview/vision.md](overview/vision.md) — tầm nhìn và mục tiêu.

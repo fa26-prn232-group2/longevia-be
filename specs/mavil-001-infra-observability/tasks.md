@@ -32,9 +32,9 @@
 
 **Tiêu chí kiểm thử độc lập**: Chạy `make infra-up` và kiểm tra phản hồi HTTP 200 từ `http://localhost:8080/healthz` và cấu trúc lỗi JSON tiếng Việt UTF-8 khi truy cập route không tồn tại.
 
-- [ ] T007 [P] [US1] Nâng cấp cấu hình Nginx Gateway hỗ trợ UTF-8 charset, custom 404 ProblemDetails, `location /healthz` do Nginx tự trả `ok` 200 (không proxy), timeout và header SSE/WebSockets trong `deployments/nginx/nginx.conf` (giữ nguyên route `/swagger/` gộp đang có)
-- [ ] T008 [P] [US1] Cập nhật `deployments/docker-compose.yml` chuyển image `postgres` sang `pgvector/pgvector:pg17`, thêm container `redis` (In-Memory) và container `mailpit`; mở rộng `deployments/postgres/init/01-databases.sh` bật `CREATE EXTENSION IF NOT EXISTS vector` cho từng DB; khai báo đủ 3 mạng `edge`/`internal_net`/`data_net` và gắn mạng đúng `plan.md` §7
-- [ ] T009 [US1] Bổ sung các make targets `infra-up`, `infra-down`, `docker-up`, `docker-down`, `docker-stop`, `docker-logs` vào `Makefile`
+- [x] T007 [P] [US1] Nâng cấp cấu hình Nginx Gateway hỗ trợ UTF-8 charset, custom 404 ProblemDetails, `location /healthz` do Nginx tự trả `ok` 200 (không proxy), timeout và header SSE/WebSockets trong `deployments/nginx/nginx.conf` (giữ nguyên route `/swagger/` gộp đang có)
+- [x] T008 [P] [US1] Cập nhật `deployments/docker-compose.yml` chuyển image `postgres` sang `pgvector/pgvector:pg17`, thêm container `redis` (In-Memory) và container `mailpit`; mở rộng `deployments/postgres/init/01-databases.sh` bật `CREATE EXTENSION IF NOT EXISTS vector` cho từng DB; khai báo đủ 3 mạng `edge`/`internal_net`/`data_net` và gắn mạng đúng `plan.md` §7
+- [x] T009 [US1] Bổ sung các make targets `infra-up`, `infra-down`, `docker-up`, `docker-down`, `docker-stop`, `docker-logs` vào `Makefile`
 
 **Điểm kiểm soát**: Hạ tầng phụ trợ khởi động hoàn chỉnh, Nginx Gateway phản hồi đúng chuẩn RFC 7807 tiếng Việt.
 

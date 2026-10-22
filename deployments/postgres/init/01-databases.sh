@@ -18,6 +18,7 @@ create_service_db() {
 EOSQL
 
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$db" <<-EOSQL
+        CREATE EXTENSION IF NOT EXISTS vector;
         GRANT ALL ON SCHEMA public TO "$role";
         ALTER SCHEMA public OWNER TO "$role";
 EOSQL

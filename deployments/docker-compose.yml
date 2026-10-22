@@ -14,13 +14,14 @@ name: longevia
 #   internal_net recommendation + the client-facing services that call it over
 #               gRPC. Nginx is deliberately NOT on this network, so neither the
 #               gateway nor `swagger-ui` can reach `recommendation:50051`.
-#   data_net    postgres + rabbitmq, joined only by the services that use them.
+#   data_net    postgres + redis + rabbitmq + mailpit, joined only by the
+#               services that use them.
 #
 # A container reaches another container only through a shared network.
 
 services:
   postgres:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-longevia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
@@ -58,6 +59,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+
+  # Ephemeral in-memory cache (Q2: NO volume, wiped on every recreate).
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Local fake mail server. Web UI on MAILPIT_WEB_PORT, SMTP catcher on
+  # MAILPIT_SMTP_PORT. No volume: mail is throwaway in dev.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    networks:
+      - data_net
 
   nginx:
     image: nginx:1.27-alpine

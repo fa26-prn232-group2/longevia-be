@@ -10,7 +10,7 @@
 
 **Mục đích**: Chuẩn bị các gói phụ thuộc NuGet, biến môi trường và cấu trúc giải pháp trước khi viết code.
 
-- [x] T001 [P] Khai báo tập trung các gói NuGet `MailKit` (4.11.0), `StackExchange.Redis` (2.8.24) và bộ `OpenTelemetry` (1.11.x) trong `Directory.Packages.props`
+- [x] T001 [P] Khai báo tập trung các gói NuGet `MailKit` (4.11.0), `StackExchange.Redis` (2.8.24) và bộ `OpenTelemetry` (1.20.x — nâng từ 1.11.x vì core 1.11–1.12 dính advisory GHSA-g94r-2vxg-569j, xem quyết định trong báo cáo orchestrate) trong `Directory.Packages.props`
 - [x] T002 [P] Cập nhật các biến môi trường mẫu cho Mailpit, Brevo SMTP Relay, Redis, Prometheus, Grafana trong `.env.example` (100% comment tiếng Anh theo Hiến pháp; `SMTP__HOST` ghi rõ 3 profile: `mailpit` trong compose / `localhost` chạy tay / `smtp-relay.brevo.com` Prod)
 - [x] T003 Đăng ký project `src/Services/Worker/Worker.csproj` vào giải pháp trong `longevia-be.slnx`
 
@@ -20,9 +20,9 @@
 
 **Mục đích**: Xây dựng các thành phần nền tảng mà các service và worker đều phụ thuộc vào.
 
-- [ ] T004 [P] Định nghĩa 2 Event Contract bất biến có `SchemaVersion = 1` (`UserRegisteredEvent` trong `src/Shared/Events/UserRegisteredEvent.cs`, `PasswordResetRequestedEvent` trong `src/Shared/Events/PasswordResetRequestedEvent.cs`) kèm chỉ mục version tại `contracts/events/v1/README.md`; serializer bỏ qua field lạ
-- [ ] T005 [P] Thêm PackageReferences cho OpenTelemetry vào `src/Shared/Longevia.Shared.csproj`
-- [ ] T006 Xây dựng extension `AddObservability()` và `MapPrometheusScrapingEndpoint()` trong `src/Shared/Observability/OpenTelemetryExtensions.cs`
+- [x] T004 [P] Định nghĩa 2 Event Contract bất biến có `SchemaVersion = 1` (`UserRegisteredEvent` trong `src/Shared/Events/UserRegisteredEvent.cs`, `PasswordResetRequestedEvent` trong `src/Shared/Events/PasswordResetRequestedEvent.cs`) kèm chỉ mục version tại `contracts/events/v1/README.md`; serializer bỏ qua field lạ
+- [x] T005 [P] Thêm PackageReferences cho OpenTelemetry vào `src/Shared/Longevia.Shared.csproj`
+- [x] T006 Xây dựng extension `AddObservability()` và `MapPrometheusScrapingEndpoint()` trong `src/Shared/Observability/OpenTelemetryExtensions.cs`
 
 ---
 

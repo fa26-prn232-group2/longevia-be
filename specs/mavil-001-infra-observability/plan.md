@@ -24,7 +24,7 @@ Thiết lập toàn bộ hạ tầng phát triển cục bộ và môi trường
 - `MassTransit` & `MassTransit.RabbitMQ` (v9.2.3)
 - `MailKit` (v4.11.0)
 - `StackExchange.Redis` (v2.8.24)
-- `OpenTelemetry.Exporter.Prometheus.AspNetCore` & `OpenTelemetry.Instrumentation.*` (v1.11.x)
+- `OpenTelemetry.Exporter.Prometheus.AspNetCore` & `OpenTelemetry.Instrumentation.*` (v1.20.x — nâng từ 1.11.x: core 1.11–1.12 dính advisory GHSA-g94r-2vxg-569j, restore sạch ở 1.20.1)
 - `Npgsql.EntityFrameworkCore.PostgreSQL` (v10.0.3)  
 
 **Storage**: PostgreSQL 17 tích hợp extension `pgvector` (`pgvector/pgvector:pg17`), Redis 7 (`redis:7-alpine`)  

@@ -27,9 +27,17 @@ services:
       RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
       RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
       RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
+      # Eval calls the real service over gRPC (it never calls the provider
+      # directly). Both containers share `longevia_data_net`.
+      RECOMMENDATION_GRPC_URL: ${RECOMMENDATION_GRPC_URL:-http://recommendation:50051}
+      BOOK_KB_PROTO: /contracts/recommendation.proto
+      BOOK_KB_GOLDEN_SET: /app/eval/golden-set.json
     volumes:
       - ../../artifacts/book-kb:/work
       - ../../docs/reference/che-do-an-truong-tho:/corpus:ro
+      # Single source of truth for the contract: mounted read-only, stubs are
+      # generated at eval time (never committed).
+      - ../../contracts/recommendation/v1:/contracts:ro
     working_dir: /app
     stop_grace_period: 30s
 

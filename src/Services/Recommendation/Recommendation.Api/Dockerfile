@@ -4,12 +4,23 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Chỉ copy những gì cần để restore: props chung, thư viện shared và project của service.
+# Chỉ copy những gì cần để restore: props chung và các file csproj. Nhờ vậy
+# lớp restore không bị invalidate mỗi khi source code thay đổi.
 COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Shared/Longevia.Shared.csproj ./src/Shared/
+COPY src/Services/Recommendation/Recommendation.Domain/Recommendation.Domain.csproj ./src/Services/Recommendation/Recommendation.Domain/
+COPY src/Services/Recommendation/Recommendation.Application/Recommendation.Application.csproj ./src/Services/Recommendation/Recommendation.Application/
+COPY src/Services/Recommendation/Recommendation.Infrastructure/Recommendation.Infrastructure.csproj ./src/Services/Recommendation/Recommendation.Infrastructure/
+COPY src/Services/Recommendation/Recommendation.Api/Recommendation.Api.csproj ./src/Services/Recommendation/Recommendation.Api/
+
+RUN dotnet restore src/Services/Recommendation/Recommendation.Api/Recommendation.Api.csproj
+
+# Recommendation.Api.csproj trỏ tới ../../../../contracts/recommendation/v1/recommendation.proto,
+# nên build context phải chứa cả thư mục contracts/ thì codegen gRPC mới chạy được.
+COPY contracts/ ./contracts/
 COPY src/Shared/ ./src/Shared/
 COPY src/Services/Recommendation/ ./src/Services/Recommendation/
 
-RUN dotnet restore src/Services/Recommendation/Recommendation.Api/Recommendation.Api.csproj
 RUN dotnet publish src/Services/Recommendation/Recommendation.Api/Recommendation.Api.csproj \
         --configuration Release \
         --output /app \

@@ -6,15 +6,15 @@ using Recommendation.Api.Observability;
 namespace Recommendation.Api.Middlewares;
 
 /// <summary>
-/// Giới hạn thời gian xử lý phía server cho mỗi lời gọi gRPC (5.0s theo PRD §3.1).
+/// Giới hạn thời gian xử lý phía server cho mỗi lời gọi gRPC.
+/// Ngân sách đọc từ <c>RECOMMENDATION__DEADLINE_SECONDS</c> (mặc định 30s) và phải
+/// lớn hơn độ trễ sinh văn bản thực tế của provider.
 /// Token hết hạn được truyền xuống use case qua <c>HttpContext.RequestAborted</c>.
 /// </summary>
 public sealed class ServerDeadlineInterceptor(
     ILogger<ServerDeadlineInterceptor> logger,
     TimeSpan deadline) : Interceptor
 {
-    public static readonly TimeSpan DefaultDeadline = TimeSpan.FromSeconds(5.0);
-
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request,
         ServerCallContext context,
@@ -26,7 +26,7 @@ public sealed class ServerDeadlineInterceptor(
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(clientToken, deadlineCts.Token);
 
         // Handler gRPC lấy CancellationToken từ call context; thay bằng token
-        // liên kết để use case nhận được đúng ngân sách 5.0s của server.
+        // liên kết để use case nhận được đúng ngân sách deadline của server.
         context.GetHttpContext().RequestAborted = linkedCts.Token;
 
         var stopwatch = Stopwatch.StartNew();

@@ -267,25 +267,25 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 **Purpose**: Việc cắt ngang nhiều story — eval, tài liệu, gate đóng.
 
-- [ ] T108 [P] Tạo bộ câu hỏi vàng `scripts/book-kb/eval/golden-set.json` — ~50 câu hỏi theo 13 chương, mỗi câu có **đáp án kỳ vọng** + **trang sách kỳ vọng** + cờ "câu ngoài sách"
-- [ ] T109 Tạo `scripts/book-kb/src/eval.py` — gọi service thật qua gRPC, kiểm tra: có citation, `book_page` trong ±3 trang kỳ vọng, `quote` khớp chunk nguồn, câu ngoài sách → `abstained = true`; xuất báo cáo groundedness ra `artifacts/book-kb/eval-report.json`
-- [ ] T110 Chạy `make kb-eval` và lưu kết quả (tỉ lệ groundedness, số câu abstain đúng) vào `specs/duck-001-recommendation-rag/checklists/requirements.md`; **CI phải skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY`** (không được báo pass giả)
-- [ ] T111 Tạo test tích hợp đo budget độ trễ trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Performance/LatencyBudgetTests.cs` — với corpus thật đã nạp: **assert** p95 của bước truy xuất (vector + keyword + RRF) `< 150ms` (độc lập provider nên ổn định); đo p95 end-to-end của lời gọi gRPC và ghi vào `artifacts/book-kb/latency-report.json` để đối chiếu SC-005 (3s) — **không** assert cứng end-to-end vì phụ thuộc provider; skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY` (FR-021, SC-005)
-- [ ] T112 Tạo test tích hợp khẳng định kho tri thức không chứa dữ liệu người dùng trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/NoUserDataInKnowledgeStoreTests.cs` — kiểm tra mọi cột của mọi bảng `kb.*` không mang dữ liệu hồ sơ/nhật ký (SC-009)
-- [ ] T113 Tạo test tích hợp xác nhận `content_tsv` luôn khớp `content` sau khi update trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/TsVectorTriggerTests.cs` — trigger hoạt động, index GIN được dùng (`EXPLAIN` → `Bitmap Index Scan`)
-- [ ] T114 Tạo test tích hợp xác nhận truy xuất lai **không** trả cột `embedding` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/ProjectionExcludesEmbeddingTests.cs` (D-14)
-- [ ] T115 [P] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4/§4 cho khớp hợp đồng và hành vi thực tế đã triển khai
-- [ ] T116 [P] Cập nhật `docs/overview/changelog.md` (mục Added/Changed cho Recommendation RAG) và `docs/system-design/architecture.md` nếu phát sinh khác biệt so với Phase 0
-- [ ] T117 [P] Cập nhật `meta.json` của feature (`services: ["recommendation"]`, `status`) và chạy `pwsh scripts/speckit/team-feature.ps1 check`
-- [ ] T118 Chạy toàn bộ kịch bản trong `specs/duck-001-recommendation-rag/quickstart.md` và đánh dấu kết quả từng mục
+- [x] T108 [P] Tạo bộ câu hỏi vàng `scripts/book-kb/eval/golden-set.json` — ~50 câu hỏi theo 13 chương, mỗi câu có **đáp án kỳ vọng** + **trang sách kỳ vọng** + cờ "câu ngoài sách"
+- [x] T109 Tạo `scripts/book-kb/src/eval.py` — gọi service thật qua gRPC, kiểm tra: có citation, `book_page` trong ±3 trang kỳ vọng, `quote` khớp chunk nguồn, câu ngoài sách → `abstained = true`; xuất báo cáo groundedness ra `artifacts/book-kb/eval-report.json`
+- [x] T110 Chạy `make kb-eval` và lưu kết quả (tỉ lệ groundedness, số câu abstain đúng) vào `specs/duck-001-recommendation-rag/checklists/requirements.md`; **CI phải skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY`** (không được báo pass giả)
+- [x] T111 Tạo test tích hợp đo budget độ trễ trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Performance/LatencyBudgetTests.cs` — với corpus thật đã nạp: **assert** p95 của bước truy xuất (vector + keyword + RRF) `< 150ms` (độc lập provider nên ổn định); đo p95 end-to-end của lời gọi gRPC và ghi vào `artifacts/book-kb/latency-report.json` để đối chiếu SC-005 (3s) — **không** assert cứng end-to-end vì phụ thuộc provider; skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY` (FR-021, SC-005)
+- [x] T112 Tạo test tích hợp khẳng định kho tri thức không chứa dữ liệu người dùng trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/NoUserDataInKnowledgeStoreTests.cs` — kiểm tra mọi cột của mọi bảng `kb.*` không mang dữ liệu hồ sơ/nhật ký (SC-009)
+- [x] T113 Tạo test tích hợp xác nhận `content_tsv` luôn khớp `content` sau khi update trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/TsVectorTriggerTests.cs` — trigger hoạt động, index GIN được dùng (`EXPLAIN` → `Bitmap Index Scan`)
+- [x] T114 Tạo test tích hợp xác nhận truy xuất lai **không** trả cột `embedding` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/ProjectionExcludesEmbeddingTests.cs` (D-14)
+- [x] T115 [P] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4/§4 cho khớp hợp đồng và hành vi thực tế đã triển khai
+- [x] T116 [P] Cập nhật `docs/overview/changelog.md` (mục Added/Changed cho Recommendation RAG) và `docs/system-design/architecture.md` nếu phát sinh khác biệt so với Phase 0
+- [x] T117 [P] Cập nhật `meta.json` của feature (`services: ["recommendation"]`, `status`) và chạy `pwsh scripts/speckit/team-feature.ps1 check`
+- [x] T118 Chạy toàn bộ kịch bản trong `specs/duck-001-recommendation-rag/quickstart.md` và đánh dấu kết quả từng mục
 
 ### Frontend handoff decision *(bắt buộc)*
 
-- [ ] T119 **Không đổi client surface**: xác nhận feature này **không** thêm/sửa/xoá HTTP endpoint, event payload hay DTO client-facing — Recommendation là service nội bộ gRPC-only, mọi thay đổi nằm trong `contracts/recommendation/v1/recommendation.proto` và `kb.*`; **không** tạo `frontend-guide.md`. Ghi kết luận này vào `tasks.md` (mục này) và vào `specs/duck-001-recommendation-rag/deferred.md` (phần tích hợp Diet → feature `duck/002`, nơi DTO client-facing của `GET /api/diet/meals/ai-recommendations` mới thực sự đổi)
+- [x] T119 **Không đổi client surface**: xác nhận feature này **không** thêm/sửa/xoá HTTP endpoint, event payload hay DTO client-facing — Recommendation là service nội bộ gRPC-only, mọi thay đổi nằm trong `contracts/recommendation/v1/recommendation.proto` và `kb.*`; **không** tạo `frontend-guide.md`. Ghi kết luận này vào `tasks.md` (mục này) và vào `specs/duck-001-recommendation-rag/deferred.md` (phần tích hợp Diet → feature `duck/002`, nơi DTO client-facing của `GET /api/diet/meals/ai-recommendations` mới thực sự đổi)
 
 ### Phát hiện ngoài phạm vi *(bắt buộc khi có)*
 
-- [ ] T120 Chuyển các finding thật sự ngoài phạm vi vào `specs/duck-001-recommendation-rag/deferred.md` theo `.specify/templates/deferred-template.md` — tối thiểu: (a) tích hợp phía service dinh dưỡng → feature `duck/002/diet-recommendation-integration`; (b) fuzzy search bằng `pg_trgm`; (c) rerank bằng LLM; (d) hỗ trợ nhiều corpus/multi-book; (e) `Pgvector.EntityFrameworkCore` chưa có bản release khai báo EF Core 10 — theo dõi upstream
+- [x] T120 Chuyển các finding thật sự ngoài phạm vi vào `specs/duck-001-recommendation-rag/deferred.md` theo `.specify/templates/deferred-template.md` — tối thiểu: (a) tích hợp phía service dinh dưỡng → feature `duck/002/diet-recommendation-integration`; (b) fuzzy search bằng `pg_trgm`; (c) rerank bằng LLM; (d) hỗ trợ nhiều corpus/multi-book; (e) `Pgvector.EntityFrameworkCore` chưa có bản release khai báo EF Core 10 — theo dõi upstream
 
 ---
 

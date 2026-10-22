@@ -728,6 +728,10 @@ message SearchKnowledgeResponse {
 - `estimated_calories` và macro của mỗi món lấy **nguyên giá trị từ `candidate_foods`** đã chọn; mô hình chỉ chọn món, viết `rationale` và trả `citations`.
 - `quote` trong `Citation` phải khớp chuỗi với chunk nguồn; không khớp thì bỏ citation, mất hết citation thì response chuyển sang `abstained`.
 - Mọi response có `disclaimer`; `abstained = true` khi corpus không đủ căn cứ.
+- **Từ chối vì lý do y tế** (thuốc, liều, chẩn đoán, thay thế điều trị): `answer` là thông điệp hướng người dùng tới bác sĩ, `citations` **rỗng**, `abstained = false`. Client phân biệt "từ chối" với "có câu trả lời" bằng **không có citation**; contract chưa có trường `refused` (xem `specs/duck-001-recommendation-rag/deferred.md`).
+- **Hỏi về chế độ ăn cho người mắc bệnh** vẫn được trả lời ở mức lối sống, kèm `disclaimer`.
+- **Deadline phía server**: cấu hình qua `RECOMMENDATION__DEADLINE_SECONDS` (mặc định **30s**, hợp lệ 5–120). Deadline phải **lớn hơn** latency sinh văn bản thực tế của provider.
+- `DailyNutrientSummary.micronutrients`: caller gửi vi chất nào thì service tính gap cho vi chất đó; **không gửi** một vi chất nghĩa là *chưa có dữ liệu*, **không** phải đã nạp 0. Đơn vị không quy đổi được (ví dụ `IU`) bị bỏ qua thay vì đoán.
 - Knowledge store: `recommendation_db` (schema `kb`, pgvector) — chỉ chứa corpus tri thức đã nhúng, **không** chứa dữ liệu người dùng. Xem [ADR 002](../decisions/002-recommendation-knowledge-base.md).
 
 ---

@@ -19,6 +19,7 @@ from .embed import (
     create_client,
     embed_texts,
 )
+from .eval import run_eval as run_golden_set_eval
 from .loader import connect, load_build, verify_database
 from .review import flag_summary, load_page_flags
 
@@ -206,12 +207,7 @@ def run_verify(args: argparse.Namespace) -> int:
 
 
 def run_eval(args: argparse.Namespace) -> int:
-    del args
-    print(
-        "LỖI: lệnh 'eval' chưa triển khai (thuộc Phase 9 — golden set 50 câu).",
-        file=sys.stderr,
-    )
-    return 2
+    return run_golden_set_eval(args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -255,7 +251,7 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate = subparsers.add_parser(
         "eval",
         parents=[common],
-        help="Chạy golden set (chưa triển khai).",
+        help="Chạy golden set và ghi báo cáo groundedness.",
     )
     evaluate.set_defaults(handler=run_eval)
     return parser

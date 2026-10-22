@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip uv \
 
 COPY src ./src
 COPY tests ./tests
+COPY eval ./eval
 
 RUN mkdir -p /work
 

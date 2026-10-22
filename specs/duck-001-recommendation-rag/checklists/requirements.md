@@ -60,3 +60,21 @@ Chạy `make kb-build` → `make kb-load` → `make kb-verify` trên corpus th�
 **Ghi chú**: tỉ lệ `needs_review` theo **chunk** (30,9%) cao hơn theo **trang**
 (14,7%) vì một chunk phủ nhiều trang; con số 16,5% nêu trong bản plan đầu tiên là
 ước lượng sai và đã được sửa trong `data-model.md` §4.
+
+## Ghi nhận chạy quickstart & close-out (2026-10-22)
+
+| Mục quickstart | Kết quả |
+| --- | --- |
+| §1 Hạ tầng (pgvector + `vector`/`unaccent`) | ✅ image `pgvector/pgvector:pg17`, extension `vector 0.8.7`, `unaccent 1.1` |
+| §2 Nạp corpus + idempotency | ✅ 13 chương / 188 chunk; nạp lại không tăng dòng; `kb-verify ok` |
+| §3 Gợi ý bữa ăn (dị ứng, 105%, ≤5 món) | ✅ qua integration test (Kestrel thật + Postgres thật, provider double) |
+| §4 Hỏi sách + abstain + từ chối y tế | ✅ qua integration test; ✅ eval 50 câu với provider **thật** (xem D-10) |
+| §5 Tra cứu đoạn | ✅ qua integration test |
+| §6 Gap vi chất + điểm thói quen | ✅ qua integration test; tính toán deterministic |
+| §7 Eval groundedness | ⚠️ **44/50 = 88,0%** (44/49 = 89,8% trên số câu đánh giá được) — **dưới SC-003**, đã ghi D-10/D-11 |
+| §8 Gate | ✅ `make lint` xanh theo từng phase; ✅ `make check` xanh ở close-out (128 unit + 18 integration, 0 lỗ hổng gói) |
+| §9 Ma trận yêu cầu → kiểm chứng | ✅ FR-001..FR-033 đều có task đã tick + test tương ứng |
+
+**Chưa kiểm chứng bằng provider thật**: luồng gợi ý bữa ăn, gap vi chất và điểm thói quen chỉ
+chạy với provider double trong test (đúng thiết kế để test tất định). Riêng luồng hỏi sách
+đã chạy provider thật qua bộ eval.

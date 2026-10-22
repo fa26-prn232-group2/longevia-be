@@ -1,4 +1,4 @@
-# Product Requirement Document (PRD) — Longevia Backend
+﻿# Product Requirement Document (PRD) — Longevia Backend
 
 ---
 
@@ -511,7 +511,7 @@ message SearchKnowledgeResponse {
 - LLM chỉ đóng vai trò diễn giải và chọn lựa trong dữ liệu đã được ràng buộc.
 
 **D.4. Timeout & Resilience**
-- Mỗi lời gọi gRPC áp dụng deadline tối đa **5000ms**. Sử dụng `Polly` để retry **2 lần** với Exponential Backoff khi gặp lỗi mạng với Google AI.
+- Deadline phía server **cấu hình được** qua `RECOMMENDATION__DEADLINE_SECONDS` (mặc định **30s**, hợp lệ 5–120) vì phải lớn hơn latency sinh văn bản thực tế của provider. Sử dụng `Polly` để retry **2 lần** với Exponential Backoff khi gặp lỗi mạng với Google AI.
 - Provider lỗi, hết deadline hoặc parse lỗi → trả kết quả rỗng kèm `safety_note`/`abstain_reason`; **không** trả nội dung bịa, **không** làm sập caller.
 
 **D.5. Structured Prompting**
@@ -550,7 +550,8 @@ Xử lý các tác vụ nền bất đồng bộ, lắng nghe các sự kiện t
 - Thời gian phản hồi API đọc (Read API p95): `< 150ms`.
 - Thời gian phản hồi API ghi (Write API p95): `< 250ms`.
 - Thời gian phản hồi gRPC nội bộ từ `Recommendation Service`: `< 3500ms` (bao gồm thời gian sinh văn bản của Google AI).
-- **Truy xuất tri thức (RAG)**: bước retrieval (vector + BM25 + RRF) p95 `< 150ms`; bước sinh câu trả lời `< 2500ms`; tổng vẫn nằm trong budget `< 3500ms`.
+- **Truy xuất tri thức (RAG)**: bước retrieval (vector + BM25 + RRF) p95 `< 150ms` (đã kiểm chứng bằng test tích hợp); bước sinh câu trả lời `< 2500ms`.
+- **Thực đo (2026-10-22)**: với `gemini-3.5-flash-lite`, một lời gọi sinh văn bản mất **4,8–16,1s**, nên mục tiêu `gRPC < 3500ms` **chưa đạt**. Ghi nhận ở `specs/duck-001-recommendation-rag/deferred.md`; hướng gỡ: streaming, model nhanh hơn, hoặc cache theo ngữ cảnh.
 - **Chi phí & cache**: kết quả sinh được cache theo hash (context + prompt + hồ sơ đã chuẩn hoá) để tránh gọi lại Google AI cho câu hỏi lặp lại; embedding corpus chỉ tạo một lần theo phiên bản corpus.
 - Xử lý đồng thời (Concurrency): Chịu tải tối thiểu 100 RPS trên mỗi service container đơn lẻ.
 

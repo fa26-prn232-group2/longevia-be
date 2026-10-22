@@ -147,3 +147,26 @@ test dùng chung, không phải là việc chưa xong của feature này — ghi
   đã tồn tại và được dùng bởi `Recommendation`), nhưng **rủi ro xung đột khi merge
   phải được xử lý như một task riêng của feature Identity**.
 
+
+### D-09 — Deadline server và timeout provider đang bằng nhau (30s)
+
+- **Vấn đề**: `RECOMMENDATION__DEADLINE_SECONDS` = 30 và `GOOGLE_AI__TIMEOUT_MS` = 30000. Khi provider chậm, timeout của provider và deadline của gRPC tranh nhau, nên client nhận `DEADLINE_EXCEEDED` thay vì nhánh abstain êm (kết quả rỗng + cảnh báo).
+- **Vì sao ngoài phạm vi**: không làm sai kết quả, chỉ ảnh hưởng cách suy giảm; đo được 1/50 câu bị timeout tạm thời khi eval.
+- **Gỡ chặn bằng cách nào**: đặt `GOOGLE_AI__TIMEOUT_MS` **nhỏ hơn** deadline (ví dụ 20s) để adapter kịp trả kết quả rỗng có kiểm soát; hoặc thêm retry có ngân sách thời gian.
+- **Ảnh hưởng tới task đã tick**: T111, T110 — không làm sai số liệu; chỉ là chất lượng suy giảm.
+
+### D-10 — Hai tiêu chí đo lường chưa đạt trong môi trường hiện tại
+
+- **Vấn đề**:
+  - **SC-003**: cần ≥ 90% câu hỏi trong sách có trang trích dẫn trong ±3 trang. Đo được **44/50 = 88,0%** (44/49 = 89,8% trên số câu đánh giá được) → **dưới ngưỡng**.
+  - **SC-005**: người dùng nhận câu trả lời trong 3 giây (p95). Đo được provider mất **4,8–16,1s** → **không đạt**; PRD §3.1 đã ghi rõ phần "Thực đo".
+- **Vì sao ngoài phạm vi**: đây là ngưỡng chất lượng phụ thuộc **chất lượng truy xuất** và **độ trễ provider**, không phải lỗi chức năng. Nâng chất lượng cần tinh chỉnh chunking/rerank và/hoặc đổi model — thay đổi thiết kế, không phải sửa bug.
+- **Gỡ chặn bằng cách nào**: (a) rerank top-20 (D-03) để tăng tỉ lệ trúng trang; (b) xem lại 5 câu fail (`g02`, `g14`, `g15`, `g37`, `g39`) — 3 abstain oan và 2 trả sai trang; (c) với latency: streaming, model nhanh hơn, hoặc cache ngữ nghĩa.
+- **Ảnh hưởng tới task đã tick**: T108–T110 (đo đúng, không pass giả) và T111 (assert riêng cho retrieval `< 150ms` đạt; phần end-to-end chỉ **ghi nhận**, không assert).
+
+### D-11 — Chất lượng trả lời trên 5 câu vàng cần điều tra thêm
+
+- **Vấn đề**: `g02`, `g14`, `g37` abstain dù corpus **có** nội dung (đã đối chiếu `artifacts/book-kb/chunks.jsonl`); `g15`, `g39` trả về đúng chương nhưng sai trang (ch4/p102 thay vì p79; ch4/p102 thay vì ch12/p234).
+- **Vì sao ngoài phạm vi**: nguyên nhân nằm ở xếp hạng truy xuất (top-8 chọn nhầm chunk) chứ không phải lỗi contract hay luồng nghiệp vụ; sửa cần rerank hoặc điều chỉnh chunking (D-03, D-10).
+- **Gỡ chặn bằng cách nào**: bật rerank top-20, hoặc tăng `RAG__TOP_K`, hoặc kiểm tra lại ranh giới chunk ở các chương 0/4/11/12 rồi đo lại bằng `make kb-eval`.
+- **Ảnh hưởng tới task đã tick**: T108 (golden set đúng, không sửa để "cho pass") — không suy yếu; T110 ghi trung thực.

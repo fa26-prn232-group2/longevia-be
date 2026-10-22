@@ -93,6 +93,16 @@ public static class RecommendationStartup
             .Validate(o => o.EmbeddingDim is > 0 and <= 3072, "RAG__EMBEDDING_DIM không hợp lệ.")
             .ValidateOnStart();
 
+        // Deadline của server phải lớn hơn độ trễ sinh văn bản thực tế của
+        // provider (Gemini chat đo được tới ~16s), nếu không response dài sẽ
+        // rơi vào DEADLINE_EXCEEDED. Kiểm tra ngay lúc khởi động (fail fast).
+        builder.Services.AddOptions<RecommendationOptions>()
+            .BindEnvSection(builder.Configuration, RecommendationOptions.SectionName)
+            .Validate(
+                o => o.DeadlineSeconds is >= 5 and <= 120,
+                "RECOMMENDATION__DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
+            .ValidateOnStart();
+
         builder.Services.AddOptions<KnowledgeDbOptions>()
             .BindEnvSection(builder.Configuration, KnowledgeDbOptions.SectionName)
             .Configure(o =>
@@ -157,7 +167,7 @@ public static class RecommendationStartup
         builder.Services.AddScoped<GrpcExceptionInterceptor>();
         builder.Services.AddScoped(sp => new ServerDeadlineInterceptor(
             sp.GetRequiredService<ILogger<ServerDeadlineInterceptor>>(),
-            ServerDeadlineInterceptor.DefaultDeadline));
+            TimeSpan.FromSeconds(sp.GetRequiredService<IOptions<RecommendationOptions>>().Value.DeadlineSeconds)));
 
         // gRPC service được resolve qua DI để tôn trọng constructor injection.
         builder.Services.AddScoped<RecommendationGrpcService>();

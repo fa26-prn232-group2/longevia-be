@@ -14,6 +14,9 @@
   <Folder Name="/src/Services/Worker/">
     <Project Path="src/Services/Worker/Worker.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Worker/tests/">
+    <Project Path="src/Services/Worker/tests/Worker.UnitTests/Worker.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Longevia.Shared.csproj" />
   </Folder>

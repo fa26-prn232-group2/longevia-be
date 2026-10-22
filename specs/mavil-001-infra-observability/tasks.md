@@ -60,12 +60,12 @@
 
 **Tiêu chí kiểm thử độc lập**: Kích hoạt sự kiện gửi email từ Worker và xác minh email HTML xuất hiện trên Web UI của Mailpit tại `http://localhost:8025`.
 
-- [ ] T013 [P] [US3] Khởi tạo dự án Worker Service .NET 10 tham chiếu MassTransit, MailKit, Shared trong `src/Services/Worker/Worker.csproj`
-- [ ] T014 [P] [US3] Định nghĩa interface `IEmailSender` và DTO `EmailMessage` trong `src/Services/Worker/Adapters/Email/IEmailSender.cs`
-- [ ] T015 [US3] Cài đặt `SmtpEmailSender` sử dụng MailKit hỗ trợ cả No-Auth (Mailpit) và TLS StartTLS (Brevo SMTP Relay `smtp-relay.brevo.com:587`) trong `src/Services/Worker/Adapters/Email/SmtpEmailSender.cs` (KHÔNG log token/password)
-- [ ] T016 [P] [US3] Xây dựng 4 mẫu email HTML responsive (Verification, Reset Password, Welcome, Weekly Digest) trong `src/Services/Worker/Templates/EmailTemplates.cs` — Worker CHỈ render từ payload đủ, mọi số liệu tổng hợp do producer chuẩn bị; kèm unit test render (assert subject/link/token xuất hiện)
-- [ ] T017 [US3] Cài đặt `UserRegisteredConsumer` và `PasswordResetRequestedConsumer` tiêu thụ event từ RabbitMQ trong `src/Services/Worker/Consumers/` kèm retry exponential backoff (2s, 5s, 10s) + DLX/DLQ theo `data-model.md` §1.3, idempotency qua Redis dedup (trùng event → ack bỏ qua), kèm test trùng event + field lạ + assert log không chứa token (redaction)
-- [ ] T018 [US3] Cấu hình DI, nạp biến môi trường `SMTP__*`, `RABBITMQ_HOST`, khai báo tường minh topology MassTransit (exchange `longevia.events`, queue `worker.email`, DLX) + tích hợp `AddObservability("Worker")` và `MapPrometheusScrapingEndpoint()` trong `src/Services/Worker/Program.cs`
+- [x] T013 [P] [US3] Khởi tạo dự án Worker Service .NET 10 tham chiếu MassTransit, MailKit, Shared trong `src/Services/Worker/Worker.csproj`
+- [x] T014 [P] [US3] Định nghĩa interface `IEmailSender` và DTO `EmailMessage` trong `src/Services/Worker/Adapters/Email/IEmailSender.cs`
+- [x] T015 [US3] Cài đặt `SmtpEmailSender` sử dụng MailKit hỗ trợ cả No-Auth (Mailpit) và TLS StartTLS (Brevo SMTP Relay `smtp-relay.brevo.com:587`) trong `src/Services/Worker/Adapters/Email/SmtpEmailSender.cs` (KHÔNG log token/password)
+- [x] T016 [P] [US3] Xây dựng 4 mẫu email HTML responsive (Verification, Reset Password, Welcome, Weekly Digest) trong `src/Services/Worker/Templates/EmailTemplates.cs` — Worker CHỈ render từ payload đủ, mọi số liệu tổng hợp do producer chuẩn bị; kèm unit test render (assert subject/link/token xuất hiện)
+- [x] T017 [US3] Cài đặt `UserRegisteredConsumer` và `PasswordResetRequestedConsumer` tiêu thụ event từ RabbitMQ trong `src/Services/Worker/Consumers/` kèm retry exponential backoff (2s, 5s, 10s) + DLX/DLQ theo `data-model.md` §1.3, idempotency qua Redis dedup (trùng event → ack bỏ qua), kèm test trùng event + field lạ + assert log không chứa token (redaction)
+- [x] T018 [US3] Cấu hình DI, nạp biến môi trường `SMTP__*`, `RABBITMQ_HOST`, khai báo tường minh topology MassTransit (exchange `longevia.events`, queue `worker.email`, DLX) + tích hợp `AddObservability("Worker")` và `MapPrometheusScrapingEndpoint()` trong `src/Services/Worker/Program.cs`
 
 **Điểm kiểm soát**: Worker tiêu thụ thông điệp từ RabbitMQ và gửi email thành công tới Mailpit / Brevo SMTP Relay.
 

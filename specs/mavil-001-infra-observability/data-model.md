@@ -88,6 +88,7 @@ Bảng đối chiếu các biến môi trường được quản lý tại `.env
 | `MAILPIT_WEB_PORT` | `int` | `8025` | Cổng giao diện Web Mailpit |
 | `MAILPIT_SMTP_PORT`| `int` | `1025` | Cổng nhận thư SMTP Mailpit |
 | `POSTGRES_PORT` | `int` | `5432` | Cổng máy chủ PostgreSQL (pgvector) |
+| `REDIS_HOST` | `string` | `redis` (trong compose) / `localhost` (chạy tay) | Redis host cho Worker dedup (compose truyền `REDIS__HOST`, code fallback `REDIS_HOST` rồi `localhost`) |
 | `REDIS_PORT` | `int` | `6379` | Cổng máy chủ Redis 7 |
 | `RABBITMQ_PORT` | `int` | `5672` | Cổng kết nối AMQP RabbitMQ |
 | `SMTP__HOST` | `string` | `mailpit` (trong compose network) / `localhost` (chạy tay ngoài Docker) / `smtp-relay.brevo.com` (Prod) | Địa chỉ máy chủ SMTP |

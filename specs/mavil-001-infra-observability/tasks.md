@@ -77,11 +77,11 @@
 
 **Tiêu chí kiểm thử độc lập**: Truy cập `http://localhost:3001`, xác nhận Grafana mở được ngay (Anonymous Admin), Prometheus Datasource đã kết nối và Dashboard ASP.NET Core hiển thị biểu đồ.
 
-- [ ] T019 [P] [US4] Viết cấu hình scrape Prometheus cào dữ liệu từ các service mỗi 10 giây trong `deployments/prometheus/prometheus.yml` (targets: `identity`, `worker`, `prometheus` self; RabbitMQ qua plugin `rabbitmq_prometheus` bật trong compose, nếu plugin không khả dụng thì bỏ target này và ghi lý do)
-- [ ] T020 [P] [US4] Cấu hình tự động kết nối Datasource Prometheus trong `deployments/grafana/provisioning/datasources/prometheus.yml`
-- [ ] T021 [P] [US4] Cấu hình tự động nạp Dashboard provider trong `deployments/grafana/provisioning/dashboards/dashboards.yml`
-- [ ] T022 [P] [US4] Tạo tệp định nghĩa Dashboard giám sát ASP.NET Core (.NET Runtime, Memory, Throughput, Latency p95, HTTP Status Codes) trong `deployments/grafana/provisioning/dashboards/aspnetcore-overview.json`
-- [ ] T023 [US4] Thêm container `prometheus` (port 9090) và `grafana` (port 3001:3000, anonymous role `Viewer`) vào `deployments/docker-compose.yml`, gắn mạng `edge`; Grafana provision datasource + dashboard, zero manual setup
+- [x] T019 [P] [US4] Viết cấu hình scrape Prometheus cào dữ liệu từ các service mỗi 10 giây trong `deployments/prometheus/prometheus.yml` (targets: `identity`, `worker`, `prometheus` self; RabbitMQ qua plugin `rabbitmq_prometheus` bật trong compose, nếu plugin không khả dụng thì bỏ target này và ghi lý do)
+- [x] T020 [P] [US4] Cấu hình tự động kết nối Datasource Prometheus trong `deployments/grafana/provisioning/datasources/prometheus.yml`
+- [x] T021 [P] [US4] Cấu hình tự động nạp Dashboard provider trong `deployments/grafana/provisioning/dashboards/dashboards.yml`
+- [x] T022 [P] [US4] Tạo tệp định nghĩa Dashboard giám sát ASP.NET Core (.NET Runtime, Memory, Throughput, Latency p95, HTTP Status Codes) trong `deployments/grafana/provisioning/dashboards/aspnetcore-overview.json`
+- [x] T023 [US4] Thêm container `prometheus` (port 9090) và `grafana` (port 3001:3000, anonymous role `Viewer`) vào `deployments/docker-compose.yml`, gắn mạng `edge`; Grafana provision datasource + dashboard, zero manual setup
 
 **Điểm kiểm soát**: Prometheus thu thập metrics thành công và Grafana hiển thị trực quan biểu đồ hiệu năng tại cổng 3001.
 

@@ -60,6 +60,16 @@ Quyết định kiến trúc nền: [ADR 002](../../docs/decisions/002-recommend
 - Embedding `gemini-embedding-001`, 768 chiều → 3.1 KB/chunk
 - Phạm vi: **chỉ Recommendation**. Tích hợp phía service dinh dưỡng (gửi `candidate_foods`, hiển thị citation ra REST) → feature riêng `duck/002/diet-recommendation-integration`
 
+**Rủi ro kỹ thuật đã biết** (Loop A của `speckit-analyze`, lần 1):
+
+| Rủi ro | Ảnh hưởng | Xử lý |
+| --- | --- | --- |
+| `Google.GenAI` 1.26.1 là package 1.x, có thể phát sinh cảnh báo analyzer; repo bật `TreatWarningsAsErrors` + `EnforceCodeStyleInBuild` | `make lint` đỏ ở Phase 1/2 | Chỉ dùng API ổn định; nếu còn cảnh báo từ package ngoài, khai báo `<NoWarn>` **có chú thích lý do** trong csproj của Recommendation — không nới `TreatWarningsAsErrors` toàn cục |
+| `make check` chạy `vuln` (NuGet audit) — package mới `Pgvector`, `Pgvector.EntityFrameworkCore`, `Google.GenAI`, `Polly` có thể bị audit chặn | close-out gate đỏ | Nâng phiên bản lên bản đã vá nếu có; không bỏ qua bước audit |
+| `Pgvector.EntityFrameworkCore` 0.3.0 mới chỉ có asset `net8.0` và chưa có bản publish khai báo EF Core 10 | xem `research.md` D-11 | Ghim phiên bản; đường dự phòng raw SQL `$1::vector` đã được kiểm chứng |
+| Lời gọi provider cần `GOOGLE_AI__API_KEY`; test/eval không có key thì **skip** | bằng chứng SC-003/SC-005 thiếu | Mọi task phụ thuộc provider phải skip **kèm log rõ lý do**, không được báo pass giả |
+| `make check` chạy toàn bộ test suite của solution | có thể đỏ vì test của feature khác | Chạy và báo cáo trung thực; phần đỏ ngoài phạm vi feature phải ghi vào `deferred.md` kèm lý do |
+
 ---
 
 ## Constitution Check
@@ -125,8 +135,8 @@ src/Services/Recommendation/
 │   │   ├── Knowledge/               # PgKnowledgeStore (vector + keyword + RRF)
 │   │   └── Grpc/                    # RecommendationGrpcService (server)
 │   └── Options/                    # GoogleAiOptions, RagOptions, KnowledgeDbOptions
-├── Recommendation.Api/             # host gRPC :50051, composition root, middleware, health
-├── Dockerfile
+├── Recommendation.Api/             # host gRPC :50051 (h2c, nội bộ) + /health :8080, composition root, middleware
+├── Dockerfile                     # nằm trong Recommendation.Api/ (theo tasks.md T006)
 └── tests/
     ├── Recommendation.UnitTests/
     └── Recommendation.IntegrationTests/   # Testcontainers pgvector + gRPC server
@@ -166,6 +176,8 @@ Theo `docs/development/team-workflow.md` §V, các path dưới đây **không t
 | `Makefile` | 🟡 | `kb-build`, `kb-load`, `kb-verify`, `kb-eval` | Khai báo |
 | `contracts/recommendation/v1/recommendation.proto` | 🟢 thấp | **File mới**, chưa feature nào tạo | Tạo mới; đây là contract authoritative của feature |
 | `docs/api/api-spec.md`, `docs/requirements/prd.md` | 🟢 | Đã cập nhật ở Phase 0 (commit `475acf3`, `b8e5bc3`); chỉ chỉnh nếu contract đổi | Kiểm tra lại ở checkpoint |
+| `docs/system-design/design-pattern.md` | 🔴 cao | §3.2 và §IV.2 dùng cú pháp `with { Code = ... }` trên `AppException` — **không compile** (C# cấm `record` kế thừa `Exception`) | Đã sửa sang `WithCode(...)` / `WithErrors(...)`; **phải** thống nhất với feature Identity trước khi merge `src/Shared` |
+| `docs/development/local-setup.md`, `README.md` | 🟡 | Lệnh compose phải có `--env-file .env` (compose ở `deployments/` không tự đọc `.env` ở gốc) | Đã sửa; xem D-07 trong `deferred.md` |
 | `src/Services/Diet/**` | 🔴 **không được sửa** | — | Tích hợp Diet tách sang feature `duck/002` |
 
 **Không tạo migration cho service khác**: feature này chỉ tạo migration trong `Recommendation.Infrastructure` (database `recommendation_db`) — không xung đột với feature khác theo `team-workflow.md` §VI.

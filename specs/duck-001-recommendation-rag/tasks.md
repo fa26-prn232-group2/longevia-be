@@ -1,4 +1,4 @@
----
+﻿---
 
 description: "Task list for feature duck/001/recommendation-rag"
 
@@ -27,23 +27,23 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 **Purpose**: Khởi tạo service, hạ tầng chạy được, cấu hình môi trường.
 
-- [ ] T001 Tạo 4 project `Recommendation.Domain`, `Recommendation.Application`, `Recommendation.Infrastructure`, `Recommendation.Api` (classlib, `net10.0`) và 2 project test `Recommendation.UnitTests`, `Recommendation.IntegrationTests` (xunit) trong `src/Services/Recommendation/`
-- [ ] T002 [P] Thiết lập reference: `Recommendation.Api` → `Recommendation.Infrastructure` → `Recommendation.Application` → `Recommendation.Domain`; `Recommendation.Infrastructure` → `Recommendation.Domain`; test project → `Recommendation.Api`/`Recommendation.Application`
-- [ ] T003 [P] Thêm 6 project mới vào `longevia-be.slnx`
-- [ ] T004 [P] Thêm package version vào `Directory.Packages.props`: `Pgvector` 0.3.2, `Pgvector.EntityFrameworkCore` 0.3.0, `Google.GenAI` 1.26.1, `Polly` (bản 8.x), `Testcontainers.PostgreSql` (đã có — chỉ dùng)
-- [ ] T005 [P] Tạo `src/Shared/Errors/AppException.cs` và `src/Shared/Errors/FieldError.cs` theo `docs/system-design/design-pattern.md` §III (mã lỗi ổn định dạng `recommendation.*`, `Status`, `Title`, `Code`, `Errors`) — **xung đột với feature Identity, merge sớm**
-- [ ] T006 [P] Tạo `src/Services/Recommendation/Recommendation.Api/Dockerfile` (multi-stage, `net10.0` runtime, chạy `Recommendation.Api`)
-- [ ] T007 [P] Đổi image `postgres:17` → `pgvector/pgvector:pg17` và thêm service `recommendation` (chỉ `internal_net` + `data_net`, **không** `edge`) trong `deployments/docker-compose.yml`
-- [ ] T008 [P] Tạo `recommendation_db` + role `recommendation_user` (cần quyền `CREATE EXTENSION`) trong `deployments/postgres/init/01-databases.sh`
-- [ ] T009 [P] Thêm biến môi trường vào `.env.example`: `KNOWLEDGE_DB`, `ConnectionStrings__Recommendation`, `RAG__TOP_K=8`, `RAG__MAX_CANDIDATES=50`, `RAG__EMBEDDING_MODEL=gemini-embedding-001`, `RAG__EMBEDDING_DIM=768`, `RAG__REQUIRE_VERIFIED=false`, `RAG__CHUNK_TOKENS=1000`, `RAG__CHUNK_OVERLAP=150` (comment tiếng Anh)
-- [ ] T010 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/GoogleAiOptions.cs` (ApiKey, ChatModel, EmbeddingModel, OutputDimensionality=768, TimeoutMs) — validate khi khởi động
-- [ ] T011 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/RagOptions.cs` (TopK=8, MaxCandidates=50, RequireVerified=false, ChunkTokens=1000, ChunkOverlap=150, MinCitationSimilarity)
-- [ ] T012 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/KnowledgeDbOptions.cs` (ConnectionString, CorpusKey, Schema)
-- [ ] T013 Viết `src/Services/Recommendation/Recommendation.Api/Program.cs`: composition root duy nhất — `AddGrpc`, `AddNpgsql(..., o => o.UseVector())`, đăng ký `Client` Google AI singleton (`new Client(apiKey:)`), đăng ký use case + adapter theo interface, `MapGrpcService`, health check `/health` + gRPC health service, chạy `MigrateAsync()` **trước** khi phục vụ request, `app.Run()`
-- [ ] T014 Tạo `src/Services/Recommendation/Recommendation.Api/Middlewares/GrpcExceptionInterceptor.cs` — map `AppException` sang gRPC `Status` (`InvalidArgument`/`NotFound`/`FailedPrecondition`/`Unavailable`/`Internal`) + `ErrorDetails` chứa `Code` ổn định
-- [ ] T015 [P] Thiết lập structured logging + OpenTelemetry metrics cho Recommendation trong `src/Services/Recommendation/Recommendation.Api/Extensions/TelemetryExtensions.cs` (không log dữ liệu sức khỏe, token, API key)
-- [ ] T016 [P] Thêm target `kb-build`, `kb-load`, `kb-verify`, `kb-eval` vào `Makefile` (gọi `docker compose -f scripts/book-kb/compose.yml`)
-- [ ] T017 [P] Tạo khung `scripts/book-kb/` với `Dockerfile`, `compose.yml`, `requirements.txt` (`google-genai>=1,<2`, `psycopg[binary]`) và thêm `artifacts/book-kb/` vào `.gitignore`
+- [x] T001 Tạo 4 project `Recommendation.Domain`, `Recommendation.Application`, `Recommendation.Infrastructure`, `Recommendation.Api` (classlib, `net10.0`) và 2 project test `Recommendation.UnitTests`, `Recommendation.IntegrationTests` (xunit) trong `src/Services/Recommendation/`
+- [x] T002 [P] Thiết lập reference: `Recommendation.Api` → `Recommendation.Infrastructure` → `Recommendation.Application` → `Recommendation.Domain`; `Recommendation.Infrastructure` → `Recommendation.Domain`; `Recommendation.Application` → `Longevia.Shared` (cần cho `AppException` ở T005); test project → `Recommendation.Api`/`Recommendation.Application`
+- [x] T003 [P] Thêm 6 project mới vào `longevia-be.slnx`
+- [x] T004 [P] Thêm package version vào `Directory.Packages.props`: `Pgvector` 0.3.2, `Pgvector.EntityFrameworkCore` 0.3.0, `Google.GenAI` 1.26.1, `Polly` (bản 8.x), `Grpc.AspNetCore.HealthChecks` 2.84.0 (cần cho gRPC health service), `Testcontainers.PostgreSql` (đã có — chỉ dùng)
+- [x] T005 [P] Tạo `src/Shared/Errors/AppException.cs` và `src/Shared/Errors/FieldError.cs` theo `docs/system-design/design-pattern.md` §III (mã lỗi ổn định dạng `recommendation.*`, `Status`, `Title`, `Code`, `Errors`) — **xung đột với feature Identity, merge sớm**
+- [x] T006 [P] Tạo `src/Services/Recommendation/Recommendation.Api/Dockerfile` (multi-stage, `net10.0` runtime, chạy `Recommendation.Api`)
+- [x] T007 [P] Đổi image `postgres:17` → `pgvector/pgvector:pg17` và thêm service `recommendation` (chỉ `internal_net` + `data_net`, **không** `edge`) trong `deployments/docker-compose.yml`
+- [x] T008 [P] Tạo `recommendation_db` + role `recommendation_user` (cần quyền `CREATE EXTENSION`) trong `deployments/postgres/init/01-databases.sh`
+- [x] T009 [P] Thêm biến môi trường vào `.env.example`: `KNOWLEDGE_DB`, `ConnectionStrings__Recommendation`, `RAG__TOP_K=8`, `RAG__MAX_CANDIDATES=50`, `RAG__EMBEDDING_MODEL=gemini-embedding-001`, `RAG__EMBEDDING_DIM=768`, `RAG__REQUIRE_VERIFIED=false`, `RAG__MIN_CITATION_SIMILARITY=0.75`, `RAG__CHUNK_TOKENS=1000`, `RAG__CHUNK_OVERLAP=150`, `RECOMMENDATION__GRPC_PORT=50051`, `RECOMMENDATION__HTTP_PORT=8080` (comment tiếng Anh)
+- [x] T010 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/GoogleAiOptions.cs` (ApiKey, ChatModel, TimeoutMs; **không** có EmbeddingModel/OutputDimensionality — nguồn duy nhất là `RagOptions`) — validate khi khởi động
+- [x] T011 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/RagOptions.cs` (TopK=8, MaxCandidates=50, RequireVerified=false, ChunkTokens=1000, ChunkOverlap=150, MinCitationSimilarity=0.75, **EmbeddingModel=gemini-embedding-001**, **EmbeddingDim=768**)
+- [x] T012 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Options/KnowledgeDbOptions.cs` (ConnectionString, CorpusKey, Schema)
+- [x] T013 Viết `src/Services/Recommendation/Recommendation.Api/Program.cs`: composition root duy nhất — `AddGrpc`, `AddNpgsql(..., o => o.UseVector())`, đăng ký `Client` Google AI singleton (`new Client(apiKey:)`), đăng ký use case + adapter theo interface, `MapGrpcService`, health check `/health` + gRPC health service, chạy `MigrateAsync()` **trước** khi phục vụ request, **timeout phía server 5.0s cho mỗi lời gọi** (`ServerCallContext` deadline + `CancellationToken` truyền xuống use case, theo PRD §3.1), **cổng lấy từ biến môi trường** `RECOMMENDATION__GRPC_PORT` (mặc định 50051, chỉ Http2/h2c) và `RECOMMENDATION__HTTP_PORT` (mặc định 8080, chỉ Http1) — không hard-code cổng, `app.Run()`
+- [x] T014 Tạo `src/Services/Recommendation/Recommendation.Api/Middlewares/GrpcExceptionInterceptor.cs` — map `AppException` sang gRPC `Status` (`InvalidArgument`/`NotFound`/`FailedPrecondition`/`Unavailable`/`Internal`) + `ErrorDetails` chứa `Code` ổn định
+- [x] T015 [P] Thiết lập structured logging + OpenTelemetry metrics cho Recommendation trong `src/Services/Recommendation/Recommendation.Api/Extensions/TelemetryExtensions.cs` (không log dữ liệu sức khỏe, token, API key)
+- [x] T016 [P] Thêm target `kb-build`, `kb-load`, `kb-verify`, `kb-eval` vào `Makefile` (gọi `docker compose -f scripts/book-kb/compose.yml`)
+- [x] T017 [P] Tạo khung `scripts/book-kb/` với `Dockerfile`, `compose.yml`, `requirements.txt` (`google-genai>=1,<2`, `psycopg[binary]`) và thêm `artifacts/book-kb/` vào `.gitignore`
 
 **Checkpoint**: `make lint` xanh, `docker compose up -d postgres` chạy được với `pgvector/pgvector:pg17` và `recommendation_db` đã tạo.
 
@@ -71,7 +71,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T026 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChapterConfiguration.cs`
 - [ ] T027 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChunkConfiguration.cs` — cột `Embedding` kiểu `Pgvector.Vector` với `HasColumnType("vector(768)")`, `ContentTsv` kiểu `NpgsqlTsVector`, index `GIN(ContentTsv)`, index HNSW `.HasMethod("hnsw").HasOperators("vector_cosine_ops").HasStorageParameter("m", 16).HasStorageParameter("ef_construction", 64)`, index `(CorpusId, ChapterNumber)` và `(BookPageFrom, BookPageTo)`
 - [ ] T028 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/PageFlagConfiguration.cs`
-- [ ] T029 Tạo migration `InitialKnowledgeStore` bằng `make ef-add NAME=InitialKnowledgeStore PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`; **review file sinh ra** trước khi áp dụng
+- [ ] T029 Tạo migration `InitialKnowledgeStore` bằng `make ef-add NAME=InitialKnowledgeStore PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`; **review file sinh ra** trước khi áp dụng; trước khi chạy lệnh phải `git fetch origin && git merge origin/main` để timestamp migration không thấp hơn migration mới nhất (theo `docs/development/migration.md`)
 - [ ] T030 Bổ sung vào migration `InitialKnowledgeStore`: `CREATE EXTENSION IF NOT EXISTS unaccent;` và trigger duy trì `content_tsv` (`BEFORE INSERT OR UPDATE OF content` → `NEW.content_tsv := to_tsvector('simple', unaccent(NEW.content))`) bằng `migrationBuilder.Sql(...)` — `vector` extension do `HasPostgresExtension("vector")` sinh ra
 - [ ] T031 Áp dụng migration trên container thật (`make ef-update PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`) và xác nhận có 4 bảng trong schema `kb` + index HNSW + trigger `tsvector`
 
@@ -85,7 +85,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Adapter Google AI
 
-- [ ] T037 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiEmbeddingProvider.cs` — dùng `Google.GenAI.Client.Models.EmbedContentAsync(model, List<Content>, EmbedContentConfig { OutputDimensionality = 768, TaskType = "RETRIEVAL_DOCUMENT" })`; đọc `EmbedContentResponse.Embeddings[i].Values` (`List<double>`); **L2-normalize** vector trước khi trả về (research.md D-13); retry + backoff khi lỗi quota
+- [ ] T037 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiEmbeddingProvider.cs` — dùng `Google.GenAI.Client.Models.EmbedContentAsync(model, List<Content>, EmbedContentConfig { OutputDimensionality = 768, TaskType = "RETRIEVAL_DOCUMENT" })`; **model và số chiều đọc từ `RagOptions.EmbeddingModel` / `RagOptions.EmbeddingDim`** (nguồn duy nhất, phải khớp cột `vector(n)` của `kb.chunk`); đọc `EmbedContentResponse.Embeddings[i].Values` (`List<double>`); **L2-normalize** vector trước khi trả về (research.md D-13); retry + backoff khi lỗi quota
 - [ ] T038 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiChatModel.cs` — `GenerateContentAsync` với `GenerateContentConfig { ResponseMimeType = "application/json", ResponseJsonSchema = JsonNode.Parse(schema), SystemInstruction = new Content { Parts = [new Part { Text = ... }] }, Temperature = 0.1 }`; parse JSON trả về; retry 2 lần exponential backoff; lỗi parse → trả `abstain`
 - [ ] T039 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/SchemaFactory.cs` — sinh JSON schema cho từng loại response dưới dạng `JsonNode` (thứ tự property cố định)
 
@@ -117,7 +117,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T047 [P] [US1] Unit test `AllergenGuard` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/AllergenGuardTests.cs` — loại 100% món khớp dị ứng (khớp chính xác, khớp chứa, khớp không phân biệt hoa thường, khớp tiếng Việt có dấu/không dấu); **viết trước và phải thấy đỏ**
 - [ ] T048 [P] [US1] Unit test `CalorieCapRule` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/CalorieCapRuleTests.cs` — calo đã ăn ≥ 105% mục tiêu → chặn bữa ăn chính; < 105% → cho phép; biên đúng 105%
 - [ ] T049 [P] [US1] Unit test `DietaryPreferenceFilter` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/DietaryPreferenceFilterTests.cs` — Vegan loại thực phẩm thịt/trứng/sữa; Keto loại carbs vượt ngưỡng
-- [ ] T050 [P] [US1] Unit test `GetMealRecommendationsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/GetMealRecommendationsUseCaseTests.cs` — không vượt 5 món; dinh dưỡng lấy từ `CandidateFood` chứ không tự tính; mọi món có `food_id` trong danh mục; response luôn có `disclaimer`
+- [ ] T050 [P] [US1] Unit test `GetMealRecommendationsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/GetMealRecommendationsUseCaseTests.cs` — không vượt 5 món; dinh dưỡng lấy từ `CandidateFood` chứ không tự tính; mọi món có `food_id` trong danh mục; response luôn có `disclaimer`; ánh xạ đủ 4 bữa `BREASTFAST`/`LUNCH`/`DINNER`/`SNACK` sang nhóm gợi ý tương ứng (FR-007)
 - [ ] T051 [US1] Integration test gRPC trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Meals/GetMealRecommendationsGrpcTests.cs` — gọi server thật qua `Grpc.Net.Client` với danh mục chứa món dị ứng, assert không món nào chứa thành phần dị ứng và `calorie_cap_reached = true` khi vượt trần
 
 ### Implementation cho User Story 1
@@ -270,21 +270,22 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T108 [P] Tạo bộ câu hỏi vàng `scripts/book-kb/eval/golden-set.json` — ~50 câu hỏi theo 13 chương, mỗi câu có **đáp án kỳ vọng** + **trang sách kỳ vọng** + cờ "câu ngoài sách"
 - [ ] T109 Tạo `scripts/book-kb/src/eval.py` — gọi service thật qua gRPC, kiểm tra: có citation, `book_page` trong ±3 trang kỳ vọng, `quote` khớp chunk nguồn, câu ngoài sách → `abstained = true`; xuất báo cáo groundedness ra `artifacts/book-kb/eval-report.json`
 - [ ] T110 Chạy `make kb-eval` và lưu kết quả (tỉ lệ groundedness, số câu abstain đúng) vào `specs/duck-001-recommendation-rag/checklists/requirements.md`; **CI phải skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY`** (không được báo pass giả)
-- [ ] T111 Tạo test tích hợp khẳng định kho tri thức không chứa dữ liệu người dùng trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/NoUserDataInKnowledgeStoreTests.cs` — kiểm tra mọi cột của mọi bảng `kb.*` không mang dữ liệu hồ sơ/nhật ký (SC-009)
-- [ ] T112 Tạo test tích hợp xác nhận `content_tsv` luôn khớp `content` sau khi update trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/TsVectorTriggerTests.cs` — trigger hoạt động, index GIN được dùng (`EXPLAIN` → `Bitmap Index Scan`)
-- [ ] T113 Tạo test tích hợp xác nhận truy xuất lai **không** trả cột `embedding` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/ProjectionExcludesEmbeddingTests.cs` (D-14)
-- [ ] T114 [P] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4/§4 cho khớp hợp đồng và hành vi thực tế đã triển khai
-- [ ] T115 [P] Cập nhật `docs/overview/changelog.md` (mục Added/Changed cho Recommendation RAG) và `docs/system-design/architecture.md` nếu phát sinh khác biệt so với Phase 0
-- [ ] T116 [P] Cập nhật `meta.json` của feature (`services: ["recommendation"]`, `status`) và chạy `pwsh scripts/speckit/team-feature.ps1 check`
-- [ ] T117 Chạy toàn bộ kịch bản trong `specs/duck-001-recommendation-rag/quickstart.md` và đánh dấu kết quả từng mục
+- [ ] T111 Tạo test tích hợp đo budget độ trễ trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Performance/LatencyBudgetTests.cs` — với corpus thật đã nạp: **assert** p95 của bước truy xuất (vector + keyword + RRF) `< 150ms` (độc lập provider nên ổn định); đo p95 end-to-end của lời gọi gRPC và ghi vào `artifacts/book-kb/latency-report.json` để đối chiếu SC-005 (3s) — **không** assert cứng end-to-end vì phụ thuộc provider; skip với log rõ lý do khi thiếu `GOOGLE_AI__API_KEY` (FR-021, SC-005)
+- [ ] T112 Tạo test tích hợp khẳng định kho tri thức không chứa dữ liệu người dùng trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/NoUserDataInKnowledgeStoreTests.cs` — kiểm tra mọi cột của mọi bảng `kb.*` không mang dữ liệu hồ sơ/nhật ký (SC-009)
+- [ ] T113 Tạo test tích hợp xác nhận `content_tsv` luôn khớp `content` sau khi update trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/TsVectorTriggerTests.cs` — trigger hoạt động, index GIN được dùng (`EXPLAIN` → `Bitmap Index Scan`)
+- [ ] T114 Tạo test tích hợp xác nhận truy xuất lai **không** trả cột `embedding` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/ProjectionExcludesEmbeddingTests.cs` (D-14)
+- [ ] T115 [P] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4/§4 cho khớp hợp đồng và hành vi thực tế đã triển khai
+- [ ] T116 [P] Cập nhật `docs/overview/changelog.md` (mục Added/Changed cho Recommendation RAG) và `docs/system-design/architecture.md` nếu phát sinh khác biệt so với Phase 0
+- [ ] T117 [P] Cập nhật `meta.json` của feature (`services: ["recommendation"]`, `status`) và chạy `pwsh scripts/speckit/team-feature.ps1 check`
+- [ ] T118 Chạy toàn bộ kịch bản trong `specs/duck-001-recommendation-rag/quickstart.md` và đánh dấu kết quả từng mục
 
 ### Frontend handoff decision *(bắt buộc)*
 
-- [ ] T118 **Không đổi client surface**: xác nhận feature này **không** thêm/sửa/xoá HTTP endpoint, event payload hay DTO client-facing — Recommendation là service nội bộ gRPC-only, mọi thay đổi nằm trong `contracts/recommendation/v1/recommendation.proto` và `kb.*`; **không** tạo `frontend-guide.md`. Ghi kết luận này vào `tasks.md` (mục này) và vào `specs/duck-001-recommendation-rag/deferred.md` (phần tích hợp Diet → feature `duck/002`, nơi DTO client-facing của `GET /api/diet/meals/ai-recommendations` mới thực sự đổi)
+- [ ] T119 **Không đổi client surface**: xác nhận feature này **không** thêm/sửa/xoá HTTP endpoint, event payload hay DTO client-facing — Recommendation là service nội bộ gRPC-only, mọi thay đổi nằm trong `contracts/recommendation/v1/recommendation.proto` và `kb.*`; **không** tạo `frontend-guide.md`. Ghi kết luận này vào `tasks.md` (mục này) và vào `specs/duck-001-recommendation-rag/deferred.md` (phần tích hợp Diet → feature `duck/002`, nơi DTO client-facing của `GET /api/diet/meals/ai-recommendations` mới thực sự đổi)
 
 ### Phát hiện ngoài phạm vi *(bắt buộc khi có)*
 
-- [ ] T119 Chuyển các finding thật sự ngoài phạm vi vào `specs/duck-001-recommendation-rag/deferred.md` theo `.specify/templates/deferred-template.md` — tối thiểu: (a) tích hợp phía service dinh dưỡng → feature `duck/002/diet-recommendation-integration`; (b) fuzzy search bằng `pg_trgm`; (c) rerank bằng LLM; (d) hỗ trợ nhiều corpus/multi-book; (e) `Pgvector.EntityFrameworkCore` chưa có bản release khai báo EF Core 10 — theo dõi upstream
+- [ ] T120 Chuyển các finding thật sự ngoài phạm vi vào `specs/duck-001-recommendation-rag/deferred.md` theo `.specify/templates/deferred-template.md` — tối thiểu: (a) tích hợp phía service dinh dưỡng → feature `duck/002/diet-recommendation-integration`; (b) fuzzy search bằng `pg_trgm`; (c) rerank bằng LLM; (d) hỗ trợ nhiều corpus/multi-book; (e) `Pgvector.EntityFrameworkCore` chưa có bản release khai báo EF Core 10 — theo dõi upstream
 
 ---
 

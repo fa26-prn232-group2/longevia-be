@@ -1,4 +1,4 @@
-# Deferred — Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
+﻿# Deferred — Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
 
 Công việc phát hiện trong lúc build `duck/001/recommendation-rag` nhưng **không thuộc
 phạm vi của feature này**. Không mục nào ở đây chặn việc đóng feature; không mục nào
@@ -107,5 +107,43 @@ test dùng chung, không phải là việc chưa xong của feature này — ghi
 - **Gỡ chặn bằng cách nào**: feature `duck/002` (D-01) **phải** tạo
   `frontend-guide.md` của riêng nó và chạy đếm đồng bộ route/field/enum/status
   trước khi đặt `READY_FOR_FRONTEND`.
-- **Ảnh hưởng tới task đã tick**: T118 ghi kết luận này — không có bằng chứng nào
+- **Ảnh hưởng tới task đã tick**: T119 ghi kết luận này — không có bằng chứng nào
   bị suy yếu.
+
+### D-07 — Vị trí file `.env` không khớp với thư mục project của Compose
+
+- **Vấn đề**: `deployments/docker-compose.yml` nằm trong `deployments/`, nên Compose
+  mặc định chỉ đọc `deployments/.env`; còn repo đặt file môi trường ở
+  `.env` ở **thư mục gốc**. Lệnh `docker compose -f deployments/docker-compose.yml up -d`
+  (đã ghi trong `README.md` và `deployments/docker-compose.yml` trước đây) vì vậy
+  **không nạp** các biến trong `.env` → `POSTGRES_PASSWORD`, `GOOGLE_AI__API_KEY`
+  … rỗng. Lệnh đúng phải là
+  `docker compose --env-file .env -f deployments/docker-compose.yml up -d`.
+- **Vì sao ngoài phạm vi**: lỗi này có sẵn từ trước feature này và ảnh hưởng **mọi**
+  service của repo, không chỉ Recommendation. Sửa ở đây sẽ xung đột với feature
+  của các owner khác đang chạm `deployments/docker-compose.yml`.
+- **Gỡ chặn bằng cách nào**: team chốt một trong hai hướng rồi áp dụng cho toàn repo:
+  (a) chuyển `.env` sang `deployments/.env` (Compose tự đọc), hoặc (b) chuẩn hoá mọi
+  lệnh compose trong tài liệu + Makefile thành `--env-file .env`. Feature này đã
+  dùng hướng (b) và sửa `README.md` + `docs/development/local-setup.md` cho đúng
+  với nó.
+- **Ảnh hưởng tới task đã tick**: T009, T016 — không làm suy yếu bằng chứng nào;
+  các biến của feature đều được đặt tường minh trong `environment:` của service.
+
+### D-08 — API của `AppException` dùng chung với feature Identity
+
+- **Vấn đề**: `src/Shared/Errors/AppException.cs` + `FieldError.cs` do feature này tạo
+  (theo `docs/system-design/design-pattern.md` §III) nhưng feature **Identity** cũng
+  cần loại lỗi dùng chung này. Hai feature có thể tạo hai bản khác nhau trong
+  `src/Shared/Errors/`, gây xung đột khi merge.
+- **Vì sao ngoài phạm vi**: `src/Shared/**` là vùng xung đột đã khai trong
+  `plan.md`; feature Identity chưa có trong registry nên chưa thể thống nhất ngay.
+  Việc thống nhất API cần owner của feature Identity.
+- **Gỡ chặn bằng cách nào**: owner của feature Identity dùng lại đúng `AppException`
+  này (đã có `WithCode`/`WithErrors` + factory theo §III) thay vì tạo bản mới; nếu
+  feature Identity đã tạo file cùng đường dẫn, hợp nhất khi merge `main` — tuyệt đối
+  không sửa tay snapshot hay API lệch nhau giữa hai nhánh.
+- **Ảnh hưởng tới task đã tick**: T005 — bằng chứng của task vẫn đúng (lỗi dùng chung
+  đã tồn tại và được dùng bởi `Recommendation`), nhưng **rủi ro xung đột khi merge
+  phải được xử lý như một task riêng của feature Identity**.
+

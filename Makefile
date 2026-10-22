@@ -16,7 +16,8 @@ TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
-	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean
+	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
+	kb-build kb-load kb-verify kb-eval
 
 # Book OCR toolchain (scripts/book-ocr). Docker-only, writes to artifacts/book-ocr.
 # Never part of the .NET gate.
@@ -28,6 +29,11 @@ WORKERS ?=
 BATCH ?=
 BOOK_OCR_VISION_ARGS := $(if $(WORKERS),--workers $(WORKERS),) $(if $(BATCH),--batch $(BATCH),)
 BOOK_OCR_CONTAINER := book-ocr-night
+
+# Book knowledge-base pipeline (scripts/book-kb). Docker-only, writes to
+# artifacts/book-kb and loads the corpus into recommendation_db.
+# Never part of the .NET gate.
+BOOK_KB := $(DOCKER) compose -f scripts/book-kb/compose.yml
 
 help:
 	@echo Targets:
@@ -60,6 +66,11 @@ help:
 	@echo   book-ocr-logs    follow the detached pipeline log
 	@echo   book-ocr-status  print status.json
 	@echo   book-ocr-clean   remove container, image and artifacts/book-ocr
+	@echo.
+	@echo   kb-build         build the book knowledge-base image
+	@echo   kb-load          load the corpus into recommendation_db
+	@echo   kb-verify        verify chapters, chunks and page ranges
+	@echo   kb-eval          run the golden-set evaluation
 
 restore:
 	$(DOTNET) restore $(SLN_OR_DIR)
@@ -153,3 +164,15 @@ book-ocr-clean:
 	-$(DOCKER) rm -f $(BOOK_OCR_CONTAINER)
 	$(BOOK_OCR) down --rmi local -v
 	powershell -NoProfile -Command "if (Test-Path 'artifacts/book-ocr') { Remove-Item -Recurse -Force 'artifacts/book-ocr' }"
+
+kb-build:
+	$(BOOK_KB) build
+
+kb-load:
+	$(BOOK_KB) run --rm book-kb load
+
+kb-verify:
+	$(BOOK_KB) run --rm book-kb verify
+
+kb-eval:
+	$(BOOK_KB) run --rm book-kb eval

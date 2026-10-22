@@ -108,7 +108,8 @@ không kèm version.
 Copy-Item .env.example .env
 
 # 2. Bật hạ tầng (PostgreSQL, RabbitMQ, Nginx, Swagger UI)
-docker compose -f deployments/docker-compose.yml up -d
+# --env-file là bắt buộc: compose nằm ở deployments/ nên không tự đọc .env ở gốc
+docker compose --env-file .env -f deployments/docker-compose.yml up -d
 
 # 3. Build và test
 make lint

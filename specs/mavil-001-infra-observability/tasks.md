@@ -46,9 +46,9 @@
 
 **Tiêu chí kiểm thử độc lập**: Chạy lệnh build docker cho Identity và Worker, xác minh image build thành công với user `app` (UID 1654).
 
-- [ ] T010 [P] [US2] Viết multi-stage Dockerfile cho Identity Service sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Identity/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
-- [ ] T011 [P] [US2] Viết multi-stage Dockerfile cho Background Worker sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Worker/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
-- [ ] T012 [US2] Cấu hình và kích hoạt container `identity` và `worker` trong `deployments/docker-compose.yml` tuân thủ phân tách 3 mạng `edge`/`internal_net`/`data_net` theo `plan.md` §7 (identity, worker: `edge` + `data_net`)
+- [x] T010 [P] [US2] Viết multi-stage Dockerfile cho Identity Service sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Identity/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
+- [x] T011 [P] [US2] Viết multi-stage Dockerfile cho Background Worker sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Worker/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
+- [x] T012 [US2] Cấu hình và kích hoạt container `identity` và `worker` trong `deployments/docker-compose.yml` tuân thủ phân tách 3 mạng `edge`/`internal_net`/`data_net` theo `plan.md` §7 (identity, worker: `edge` + `data_net`)
 
 **Điểm kiểm soát**: Hai container được build và khởi chạy thành công trong mạng Docker của dự án.
 

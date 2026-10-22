@@ -107,23 +107,27 @@ services:
       - edge
 
   # -------------------------------------------------------------------------
-  # .NET services - uncomment as each Dockerfile is added.
+  # .NET services (Phase 4: identity + worker live; diet/progress/
+  # recommendation uncomment as each Dockerfile lands).
   #
-  # identity:
-  #   build:
-  #     context: ..
-  #     dockerfile: src/Services/Identity/Dockerfile
-  #   environment:
-  #     ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
-  #     RABBITMQ_HOST: rabbitmq
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - edge
-  #     - data_net
+  identity:
+    build:
+      context: ..
+      dockerfile: src/Services/Identity/Dockerfile
+    environment:
+      ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      RABBITMQ_HOST: rabbitmq
+      JWT__KEY_ID: ${JWT__KEY_ID:-longevia-dev-01}
+      JWT__SIGNING_PRIVATE_KEY: ${JWT__SIGNING_PRIVATE_KEY:-}
+      JWT__SIGNING_PUBLIC_KEY: ${JWT__SIGNING_PUBLIC_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
   #
   # diet:      ... (also calls recommendation over gRPC)
   #   networks: edge + internal_net + data_net
@@ -132,13 +136,34 @@ services:
   # recommendation:  ... (internal, gRPC-only, stateless, no database)
   #   networks: internal_net ONLY - must not be reachable from nginx/swagger-ui
   #
-  # worker:          ... (consumes RabbitMQ, sends email via Brevo)
-  #   networks: data_net only
+  worker:
+    build:
+      context: ..
+      dockerfile: src/Services/Worker/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      SMTP__HOST: ${SMTP__HOST:-mailpit}
+      SMTP__PORT: ${SMTP__PORT:-1025}
+      SMTP__USE_SSL: ${SMTP__USE_SSL:-false}
+      SMTP__USER: ${SMTP__USER:-}
+      SMTP__PASSWORD: ${SMTP__PASSWORD:-}
+      SMTP__SENDER_EMAIL: ${SMTP__SENDER_EMAIL:-no-reply@longevia.local}
+      REDIS__HOST: redis
+      REDIS__PORT: ${REDIS_PORT:-6379}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
   #
   # JWT env (see .env.example and ADR 001):
   #   identity:  JWT__SIGNING_PRIVATE_KEY + JWT__SIGNING_PUBLIC_KEY + JWT__KEY_ID
   #   diet:      JWT__SIGNING_PUBLIC_KEY  + JWT__KEY_ID   (never the private key)
   #   progress:  JWT__SIGNING_PUBLIC_KEY  + JWT__KEY_ID   (never the private key)
+  #   worker:    no JWT vars (never the private key)
   # -------------------------------------------------------------------------
 
 networks:

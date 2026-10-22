@@ -3,6 +3,9 @@
 ## Nguyên tắc tổ chức
 
 - `docs/` chỉ chứa tài liệu viết tay. Sinh tự động (Swagger, report) để nơi khác.
+- Ngoại lệ: `docs/reference/` chứa tài liệu tham chiếu được số hoá tự động từ sách
+  (không viết tay). Mọi file trong đó mang `reviewed: false` cho tới khi được đối
+  chiếu thủ công.
 - Tài liệu viết bằng tiếng Việt; thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
 - Thứ tự thẩm quyền khi mâu thuẫn: **Constitution > system-design > development > khác**.
 - Đường dẫn tham chiếu trong tài liệu dùng dạng tương đối.
@@ -17,6 +20,7 @@ docs/
   development/    # Quy trình, convention, setup, test, migration
   api/            # Quy chuẩn thiết kế API và đặc tả API chi tiết
   decisions/      # Architecture Decision Records (ADR)
+  reference/      # Tài liệu tham chiếu số hoá tự động (sách) — reviewed: false
 ```
 
 ## Mục lục
@@ -54,3 +58,4 @@ docs/
 
 ### Khác
 - [decisions/README.md](decisions/README.md) — danh mục ADR.
+- [reference/che-do-an-truong-tho/00-index.md](reference/che-do-an-truong-tho/00-index.md) — số hoá tự động sách *Chế độ ăn trường thọ* (Markdown theo chương).

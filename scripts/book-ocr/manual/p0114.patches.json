@@ -1,0 +1,9 @@
+{
+  "patches": [
+    {
+      "find": "![Hình trang 114](images/p0114-fig-01.webp)",
+      "replace": "![Hình trang 114](images/p0114-fig-01.webp)\n\n*Biểu đồ 6.4. Chất béo và các thể ketone trong máu của bệnh nhân nhịn ăn. Sau một thời gian, cơ thể con người sử dụng chất béo thay vì glucose để tạo ra năng lượng.*",
+      "note": "Thiếu chú thích 'Biểu đồ 6.4' của biểu đồ trên trang sách 121"
+    }
+  ]
+}

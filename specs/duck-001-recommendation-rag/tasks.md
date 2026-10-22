@@ -177,17 +177,17 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 3
 
-- [ ] T078 [P] [US3] Unit test `CitationResolver` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/CitationResolverTests.cs` — quote khớp chunk → giữ; quote không khớp → loại; mất hết citation → `abstained = true`; quote có/không dấu đều khớp
-- [ ] T079 [P] [US3] Unit test `PromptBuilder` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/PromptBuilderTests.cs` — assert có 3 tầng ràng buộc (grounding + abstain, unverified guard, corpus-as-data)
-- [ ] T080 [US3] Unit test `AskLongevityQuestionUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/AskLongevityQuestionUseCaseTests.cs` — khi không có chunk nào khớp → `abstained = true` + `abstain_reason`; khi provider lỗi → trả kết quả rỗng + cảnh báo, **không** trả nội dung bịa
-- [ ] T081 [US3] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Ask/AskLongevityQuestionGrpcTests.cs` — nạp corpus thật (subset chương), hỏi câu có lời giải đích, assert `book_page` trong ±3 trang kỳ vọng và `quote` khớp nội dung chunk
+- [x] T078 [P] [US3] Unit test `CitationResolver` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/CitationResolverTests.cs` — quote khớp chunk → giữ; quote không khớp → loại; mất hết citation → `abstained = true`; quote có/không dấu đều khớp
+- [x] T079 [P] [US3] Unit test `PromptBuilder` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/PromptBuilderTests.cs` — assert có 3 tầng ràng buộc (grounding + abstain, unverified guard, corpus-as-data)
+- [x] T080 [US3] Unit test `AskLongevityQuestionUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Ask/AskLongevityQuestionUseCaseTests.cs` — khi không có chunk nào khớp → `abstained = true` + `abstain_reason`; khi provider lỗi → trả kết quả rỗng + cảnh báo, **không** trả nội dung bịa
+- [x] T081 [US3] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Ask/AskLongevityQuestionGrpcTests.cs` — nạp corpus thật (subset chương), hỏi câu có lời giải đích, assert `book_page` trong ±3 trang kỳ vọng và `quote` khớp nội dung chunk
 
 ### Implementation cho User Story 3
 
-- [ ] T082 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/AskLongevityQuestionUseCase.cs` — truy xuất → dựng prompt 3 tầng → gọi `IChatModel` → `CitationResolver` → `AskLongevityQuestionResponse`; luôn kèm `disclaimer`
-- [ ] T083 [US3] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/AskLongevityQuestionMapper.cs` — map nội bộ ↔ message `AskLongevityQuestionRequest/Response`
-- [ ] T084 [US3] Bổ sung `AskLongevityQuestion` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` — map lỗi sang `Status` đúng; deadline 5s
-- [ ] T085 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/SafetyGuard.cs` — câu hỏi về thuốc/liều/chẩn đoán/thay thế điều trị → từ chối và hướng về bác sĩ; nội dung bệnh nền vẫn trả ở mức lối sống kèm disclaimer + cờ chưa đối chiếu
+- [x] T082 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/AskLongevityQuestionUseCase.cs` — truy xuất → dựng prompt 3 tầng → gọi `IChatModel` → `CitationResolver` → `AskLongevityQuestionResponse`; luôn kèm `disclaimer`
+- [x] T083 [US3] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/AskLongevityQuestionMapper.cs` — map nội bộ ↔ message `AskLongevityQuestionRequest/Response`
+- [x] T084 [US3] Bổ sung `AskLongevityQuestion` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` — map lỗi sang `Status` đúng; deadline 5s
+- [x] T085 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/SafetyGuard.cs` — câu hỏi về thuốc/liều/chẩn đoán/thay thế điều trị → từ chối và hướng về bác sĩ; nội dung bệnh nền vẫn trả ở mức lối sống kèm disclaimer + cờ chưa đối chiếu
 
 **Checkpoint**: User Story 3 chạy độc lập — hỏi sách có trích dẫn, câu ngoài sách abstain.
 

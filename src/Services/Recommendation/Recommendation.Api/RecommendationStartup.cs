@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Recommendation.Api.Endpoints;
 using Recommendation.Api.Extensions;
 using Recommendation.Api.Middlewares;
+using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
@@ -124,6 +125,11 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<MealSelectionParser>();
         builder.Services.AddScoped<MealSelector>();
         builder.Services.AddScoped<GetMealRecommendationsUseCase>();
+
+        // Hỏi tri thức trong sách (US3): guard deterministic + use case phụ thuộc
+        // IKnowledgeStore (scoped) nên use case phải scoped.
+        builder.Services.AddSingleton<SafetyGuard>();
+        builder.Services.AddScoped<AskLongevityQuestionUseCase>();
 
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."));

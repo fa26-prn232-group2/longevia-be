@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Recommendation.Api;
 using Recommendation.Application.Abstractions;
 using Recommendation.Domain.Models;
+using Recommendation.IntegrationTests.Features.Shared;
 using Testcontainers.PostgreSql;
 
 namespace Recommendation.IntegrationTests.Features.Meals;
@@ -32,6 +33,10 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
     public RecommendationService.RecommendationServiceClient Client { get; private set; } = null!;
 
     public IReadOnlyList<StructuredPrompt> CapturedPrompts => _chatModel.Prompts;
+
+    /// <summary>Cây DI của host thật, dùng để nạp corpus cho test cần dữ liệu sách.</summary>
+    public IServiceProvider Services =>
+        _app?.Services ?? throw new InvalidOperationException("Fixture chưa khởi động.");
 
     public async Task InitializeAsync()
     {
@@ -106,8 +111,9 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Chọn 5 ứng viên đầu tiên của danh sách ĐÃ ĐƯỢC LỌC (chỉ số trong prompt),
-    /// không sinh món mới và không sinh số liệu dinh dưỡng.
+    /// Double tất định theo loại phản hồi: chọn món lấy 5 ứng viên đầu tiên của
+    /// danh sách ĐÃ LỌC (không sinh món/số liệu mới); hỏi sách do
+    /// <see cref="GroundedAnswerDouble"/> trả lời từ chính CONTEXT đã truy xuất.
     /// </summary>
     private sealed class DeterministicChatModel : IChatModel
     {
@@ -119,6 +125,15 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
         {
             Prompts.Add(prompt);
 
+            var completion = prompt.ResponseKind == StructuredResponseKind.GroundedAnswer
+                ? GroundedAnswerDouble.Complete(prompt)
+                : MealSelection();
+
+            return Task.FromResult(completion);
+        }
+
+        private static ChatCompletion MealSelection()
+        {
             var selections = new JsonArray();
             for (var index = 0; index < SelectionCount; index++)
             {
@@ -130,10 +145,10 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
                 });
             }
 
-            return Task.FromResult(new ChatCompletion
+            return new ChatCompletion
             {
                 Payload = new JsonObject { ["selections"] = selections },
-            });
+            };
         }
     }
 

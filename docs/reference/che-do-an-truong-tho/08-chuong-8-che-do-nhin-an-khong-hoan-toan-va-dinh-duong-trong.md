@@ -1,12 +1,13 @@
 ---
 title: "CHƯƠNG 8 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIỂU ĐƯỜNG"
 source: CheDoAnTruongTho (reduced).pdf
+book_pages: "158-179"
 pdf_pages: "151-172"
 engine: gemini-3.5-flash
-generated_at: 2026-10-21T18:02:58+00:00
+generated_at: 2026-10-22T06:08:15+00:00
 reviewed: false
 ---
-<!-- p.151 -->
+<!-- sách 158 · PDF 151 -->
 # CHƯƠNG 8
 
 ## CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIỂU ĐƯỜNGⁱ
@@ -21,7 +22,7 @@ Bệnh tiểu đường type 2, cho đến nay là loại phổ biến nhất tr
 
 i. Nội dung của chương này không được sử dụng để tự chẩn đoán hoặc tự quản lý các biện pháp điều trị. Thông tin này dành cho các chuyên gia y tế đang theo dõi bệnh của bạn.
 
-<!-- p.152 -->
+<!-- sách 159 · PDF 152 -->
 125 mg/dL – biện pháp thứ hai này được gọi là “đường huyết lúc đói”. Các triệu chứng điển hình bao gồm khát nước nhiều, thường xuyên đi tiểu, mờ mắt, dễ cáu gắt, tê tay hoặc chân, và mệt mỏi.
 
 Trong bệnh tiểu đường type 2, tuyến tụy sản xuất insulin, nhưng tế bào cơ, gan và mỡ lại sử dụng không đúng cách. Khi các tế bào trở nên kháng insulin, glucose sẽ bắt đầu tích tụ trong máu. Bạn có thể coi insulin như chiếc chìa khóa cần thiết để mở cánh cổng cho phép glucose đi vào tế bào, nhưng cũng đồng thời là chiếc chìa khóa đóng cánh cửa cho phép glucose giải phóng ra từ gan. Ở bệnh nhân tiểu đường type 2, chiếc chìa khóa hoạt động không tốt, cánh cổng không mở ra hoàn toàn dẫn đến glucose không thể đi vào tế bào với tốc độ bình thường.
@@ -32,7 +33,7 @@ Nếu hai người phụ nữ ở cùng chiều cao 1,65 m nhưng lại có sự
 
 Một nghiên cứu khác chỉ ra cách tốt nhất để đánh giá nguy cơ mắc bệnh tiểu đường là đo lượng mỡ bụng thông qua vòng eo. Nam giới với số đo vòng eo trên 101,6 cm và nữ giới có vòng eo trên 86,4 cm có nguy cơ mắc bệnh cao nhất.²
 
-<!-- p.153 -->
+<!-- sách 160 · PDF 153 -->
 ![Hình trang 153](images/p0153-fig-01.webp)
 
 **Biểu đồ 8.1.** Nguy cơ khởi phát tiểu đường tăng lên khi BMI tăng.
@@ -43,7 +44,7 @@ Duy trì cân nặng lý tưởng sẽ giảm thiểu xác suất mắc bệnh t
 
 Tuy nhiên, đại đa số mọi người không thể duy trì chế độ ăn hạn chế 30% calo và không muốn từ bỏ hầu hết những món ăn
 
-<!-- p.154 -->
+<!-- sách 161 · PDF 154 -->
 khoái khẩu; họ cũng không muốn mất phần lớn khối lượng cơ hoặc trở nên quá gầy, điều không thể tránh khỏi khi tình trạng hạn chế calo kéo dài. Ngoài ra, một số nghiên cứu cho thấy rằng không như những người có cân nặng bình thường, việc hạn chế calo không làm giảm đường huyết lúc đói ở người béo phì.⁴ Do đó, để ngăn ngừa bệnh tiểu đường, điều quan trọng là phải xác định các chiến lược phù hợp với đại đa số mọi người.
 
 Trong phần tiếp theo, tôi sẽ trình bày cả những thay đổi trong chế độ ăn uống hằng ngày và chế độ nhịn ăn không hoàn toàn định kỳ có thể áp dụng để ngăn ngừa và đẩy lùi bệnh tiểu đường.
@@ -56,7 +57,7 @@ Trong phần tiếp theo, tôi sẽ trình bày cả những thay đổi trong c
 
 Trong chương 4, tôi đã thảo luận về nghiên cứu liên quan đến khoảng thời gian ăn uống tối ưu hằng ngày. Nếu một người phụ nữ cao 1,57 m nặng 70 kg bắt đầu bữa sáng lúc 8 giờ sáng và kết thúc bữa ăn nhẹ cuối cùng lúc 11 giờ tối, tức cô ấy đang có một khoảng thời gian ăn uống kéo dài 15 tiếng mỗi ngày. Việc đó có thể ảnh hưởng đến cân nặng và cả giấc ngủ của cô ấy.⁵ Một chiến lược đơn giản để giảm về mức cân nặng phù hợp là rút
 
-<!-- p.155 -->
+<!-- sách 162 · PDF 155 -->
 ngắn khoảng thời gian ăn uống xuống còn 11 hoặc 12 giờ mỗi ngày – đồng nghĩa với việc ăn nhẹ lần cuối vào 7 hoặc 8 giờ tối.
 
 Kỹ thuật này có thể được điều chỉnh để kiểm soát cân nặng tốt hơn nữa. Ví dụ: nếu việc giới hạn thời gian tiêu thụ thức ăn thành 11-12 giờ mỗi ngày chưa hiệu quả, có thể giảm xuống 10 hoặc thậm chí 8 giờ mỗi ngày (8 giờ sáng đến 6 giờ chiều hoặc 8 giờ sáng đến 4 giờ chiều), mặc dù giới hạn ít hơn 11-12 giờ có thể gây ra một số tác dụng phụ như sỏi mật. Hơn nữa, một số nghiên cứu chỉ ra rằng bỏ bữa sáng có thể có ảnh hưởng không tốt đến sức khỏe nói chung và tăng nguy cơ các bệnh tim mạch nói riêng. Tuy nhiên, việc tiêu thụ thức ăn trong vòng 11-12 giờ mỗi ngày thường xuất hiện ở các quần thể sống trường thọ, vì vậy khung thời gian thoải mái này có lẽ là một lựa chọn an toàn cho đến khi có các nghiên cứu sâu hơn.
@@ -65,7 +66,7 @@ Kỹ thuật này có thể được điều chỉnh để kiểm soát cân n�
 
 Như đã thảo luận trong chương 4, nếu ăn 150 gram mì ống hoặc pizza với 150 gram phô mai, bạn có thể tiêu thụ 1.100 calo cho một khẩu phần tương đối nhỏ, thiếu vitamin và các khoáng chất quan trọng. Thay vào đó, nếu ăn 40 gram mì ống (khoảng 140 calo), thêm khoảng 400 gram đậu garbanzo (khoảng 330 calo), 312 gram rau hỗn hợp (khoảng 210 calo) và 14 gram dầu ô liu (khoảng 120 calo), bạn sẽ chỉ tiêu thụ 800 calo cho một khẩu phần lớn giàu protein, chất béo lành mạnh, carbohydrate phức, vitamin và khoáng chất.
 
-<!-- p.156 -->
+<!-- sách 163 · PDF 156 -->
 *Phương án A (lựa chọn sai)*
 
 150 gram mì ống (540 calo) + 150 gram phô mai (550 calo) + 57 gram nước xốt (20 calo)
@@ -87,7 +88,7 @@ Hình 8.2
 * Đòi hỏi lượng thức ăn gấp đôi phương án A, do đó sẽ làm đầy, giãn dạ dày và gửi lên não các tín hiệu về cảm giác no, đồng thời cung cấp ít hơn 30% calo.
 * Thay thế chất béo động vật bão hòa trong phô mai bằng các chất béo không bão hòa đơn có tác dụng bảo vệ trong dầu ô liu.
 
-<!-- p.157 -->
+<!-- sách 164 · PDF 157 -->
 * Đối với nhiều người, phương án B thậm chí sẽ ngon miệng hơn phương án A, vì chất béo bão hòa và đường có xu hướng che lấp hương vị tự nhiên của các thành phần khác.
 * Nhiều người cũng sẽ cảm thấy nhẹ nhõm hơn và tránh bị trào ngược axit dạ dày hoặc ợ chua, mặc dù đã ăn gấp đôi lượng thức ăn. Tất nhiên, một số người khi ăn quá nhiều trong một bữa, đặc biệt là vào buổi tối, có thể bị trào ngược axit ngay cả khi áp dụng phương án B. Trong trường hợp đó, tốt nhất bạn nên nói chuyện với bác sĩ chuyên khoa và giảm khẩu phần ăn của mình.
 
@@ -97,7 +98,7 @@ Như đã lưu ý trong Chương 4, ăn năm hoặc sáu bữa nhỏ một ngày
 
 Lưu ý rằng đối với một số người, đặc biệt là những người lớn tuổi và ốm yếu, một bữa ăn chính trong ngày có thể gây khó tiêu hoặc trào ngược axit, trong trường hợp đó, có thể cần phải chuyển bữa ăn chính lên sớm hơn hoặc quay trở lại chế độ ăn sáng cộng với hai bữa ăn phụ mỗi ngày thay vì một bữa chính. Nếu không chắc chắn nếu có thể, tốt nhất bạn nên tham khảo ý kiến của chuyên gia dinh dưỡng để quyết định chiến lược tốt nhất.
 
-<!-- p.158 -->
+<!-- sách 165 · PDF 158 -->
 4. Tối đa hóa lượng carbohydrate phức tạp (ngũ cốc nguyên cám, rau củ, đậu đỗ); giảm mì ống, gạo và bánh mì; giảm thiểu đường và chất béo xấu.
 
 Ngay cả khi đã đạt được cân nặng và vòng eo lý tưởng, bạn vẫn cần phải giảm tối đa lượng đường hoặc tinh bột (gạo, mì ống, bánh mì, nước ngọt...) cũng như chất béo bão hòa (phô mai, bơ, kẹo...). Gan sử dụng lượng đường dư thừa để tạo ra chất béo, có thể dự trữ ở đó hoặc vận chuyển đến các vị trí khác bao gồm bụng (mỡ nội tạng) và các vùng dưới da trên khắp cơ thể (lớp mỡ dưới da).
@@ -108,7 +109,7 @@ Mặc dù ăn nhiều chất béo, ít carbohydrate sẽ giúp giảm cân trong
 
 Chất béo tốt – đặc biệt là từ dầu ô liu và các loại hạt (óc chó, hạnh nhân, hạt dẻ) – luôn gắn liền với sức khỏe và tuổi thọ. Hãy ăn một nắm các loại hạt mỗi ngày, rưới thật nhiều dầu ô liu vào món salad trộn và các món ăn khác.
 
-<!-- p.159 -->
+<!-- sách 166 · PDF 159 -->
 ### 5. Áp dụng chế độ ăn ít nhưng đủ protein.
 
 Mặc dù chúng ta biết béo phì làm tăng nguy cơ mắc bệnh tiểu đường, nhưng lượng protein tiêu thụ cũng là một nguyên nhân quan trọng không kém. Một nghiên cứu theo dõi 40.000 nam giới trong 20 năm cho thấy chế độ ăn ít carbohydrate, giàu protein có khả năng làm gia tăng nguy cơ mắc bệnh tiểu đường gấp hai lần.⁷ Những kết quả đó nhất quán với nghiên cứu mà chúng tôi đã thực hiện vào năm 2014 trên 6.000 người ở Mỹ. Nghiên cứu chỉ ra rằng nguy cơ tiểu đường tăng lên ở những người có lượng protein tiêu thụ cao nhất, mặc dù cỡ mẫu nhỏ làm hạn chế độ tin cậy của kết quả.⁸
@@ -117,7 +118,7 @@ Hai bài báo chúng tôi công bố vào năm 2011 và 2015 nghiên cứu về 
 
 Sự thiếu hụt của thụ thể hormone tăng trưởng (có thể xem như có tác dụng tương tự với việc ăn ít protein)
 
-<!-- p.160 -->
+<!-- sách 167 · PDF 160 -->
 giúp loại bỏ hoặc làm giảm đáng kể quan hệ nhân quả của béo phì đối với bệnh tiểu đường. Trên thực tế, những con chuột có khiếm khuyết trong thụ thể hormone tăng trưởng cũng được bảo vệ khỏi bệnh tiểu đường – một kết quả củng cố thêm kết luận trên cơ thể người của chúng tôi. Bằng chứng mạnh nhất cho giả thuyết của chúng tôi được đưa ra vào năm 2015, khi chúng tôi đánh giá khả năng dung nạp glucose ở nhóm mắc hội chứng Laron. Không hề kháng insulin, hóa ra họ lại nhạy cảm với insulin, nghĩa là insulin của họ hoạt động tốt hơn bình thường, ngay cả ở những người thừa cân hoặc béo phì.⁹ Vì nguyên nhân chính của bệnh tiểu đường là kháng insulin, kết quả này có thể giải thích tại sao không có bệnh nhân Laron nào ở Ecuador mắc căn bệnh chuyển hóa này.
 
 Các khuyến nghị nhằm ngăn ngừa bệnh tiểu đường trên đây cũng có thể hữu ích cho việc điều trị bệnh, mặc dù, theo các khuyến nghị về ung thư, cần có các nghiên cứu sâu hơn để chứng minh tác dụng đó.
@@ -128,7 +129,7 @@ Các khuyến nghị nhằm ngăn ngừa bệnh tiểu đường trên đây cũ
 
 Hai biện pháp can thiệp ngắn hạn chủ yếu bao gồm nhịn ăn dưới một hình thức nào đó đã được chứng minh là có hiệu quả chống lại nhiều yếu tố nguy cơ gây bệnh tiểu đường (không xét đến các can thiệp hạn chế calo kéo dài từ hàng tuần đến hàng tháng). Một trong số đó là chế độ FMD định kỳ do phòng thí nghiệm của tôi phát triển. Biện pháp còn lại, được phát triển bởi bác sĩ Michelle Harvie của Đại học Manchester – và sau đó được bác
 
-<!-- p.161 -->
+<!-- sách 168 · PDF 161 -->
 sĩ, nhà báo Michael Mosley điều chỉnh và phổ biến thành chế độ ăn kiêng “5:2” – dành cho những người thừa cân, chỉ được tiêu thụ 500 đến 600 calo thực phẩm tương đối giàu protein hai ngày một tuần trong khoảng thời gian sáu tháng. Họ giảm mỡ bụng, cải thiện độ nhạy insulin và giảm huyết áp.¹⁰ Tuy nhiên, chế độ ăn này lại có tác động rất hạn chế lên nồng độ glucose ở những người thừa cân, đòi hỏi thời gian điều trị lâu hơn ở bệnh nhân tiểu đường.¹¹ Ưu điểm chế độ ăn kiêng này là chỉ cần sự giám sát y tế tối thiểu. Nhược điểm là hầu hết bệnh nhân béo phì và tiểu đường cảm thấy khó có thể duy trì chế độ này trong nhiều năm, bởi nó đặt ra một chế độ ăn uống vô cùng khắt khe hai ngày mỗi tuần. Hơn nữa, cần có các nghiên cứu để xác định những tác động sẽ xảy ra đối với bệnh nhân tiểu đường.
 
 Một vấn đề cần lưu ý là việc xen kẽ một chế độ ăn 2.000 calo và chế độ ăn 500 calo có thể kích hoạt các rối loạn trao đổi chất và giấc ngủ giống như tình trạng thay đổi múi giờ. Tuy nhiên, chế độ ăn 5:2 đã được thử nghiệm bởi hàng nghìn người, đặc biệt với mục đích giảm cân và ghi nhận những phản hồi về nhiều tác động tích cực mà phương pháp này mang lại. Các bác sĩ nên quyết định cùng với bệnh nhân liệu có thể kết hợp chế độ ăn đó với các liệu pháp phòng ngừa hoặc điều trị bệnh tiểu đường hay không, tốt nhất là nên kết hợp với chế độ chăm sóc tiêu chuẩn hoặc như một phần của thử nghiệm lâm sàng.
@@ -137,7 +138,7 @@ Một vấn đề cần lưu ý là việc xen kẽ một chế độ ăn 2.000 
 
 Các thuốc điều trị bệnh tiểu đường sẽ can thiệp hoặc kích hoạt các enzyme làm giảm đường huyết, nhưng chúng không nhắm vào những nguyên nhân gốc rễ của bệnh tiểu đường – một vài trong số đó đã được biết đến và một vài vẫn đang trong quá trình nghiên cứu.
 
-<!-- p.162 -->
+<!-- sách 169 · PDF 162 -->
 ![Hình trang 162](images/p0162-fig-01.webp)
 
 Thử nghiệm lâm sàng ngẫu nhiên trên 100 bệnh nhân do chúng tôi thực hiện có kết quả rất hứa hẹn: nó cho thấy ba chu kỳ FMD với mỗi chu kỳ kéo dài năm ngày một tháng bắt chước quá trình nhịn ăn (750 đến 1.100 calo mỗi ngày) giúp làm giảm nhiều nguy cơ chính gây bệnh tiểu đường và hội chứng chuyển hóa – một hội chứng làm tăng nguy cơ mắc bệnh tim, tiểu đường và đột quỵ.
@@ -146,7 +147,7 @@ Thử nghiệm lâm sàng ngẫu nhiên trên 100 bệnh nhân do chúng tôi th
 
 Các nhà khoa học tỏ ra thận trọng với từ “chữa khỏi” bởi nó nghe giống như một sự phóng đại. Tuy nhiên, với một số bệnh nhân tiểu đường type 2 và phần lớn bệnh nhân tiền tiểu đường, sự kết hợp của các chế độ ăn được mô tả ở trên có thể chữa khỏi bệnh. Tôi không có ý nói rằng tất cả mọi người sẽ được chữa khỏi hoặc người bệnh tiểu đường dễ dàng thực hiện kế hoạch này. Tuy nhiên, dữ liệu từ các thử nghiệm trên cá thể chuột và người chỉ ra rằng, một số và có khả năng là nhiều bệnh nhân, theo đuổi lâu dài các chế độ ăn uống được nêu trong phần đầu của chương này hoặc FMD định kỳ, và tốt nhất là cả hai, cuối cùng có thể không còn mắc tiểu đường type 2, loại phổ biến nhất. Đặc biệt nếu việc
 
-<!-- p.163 -->
+<!-- sách 170 · PDF 163 -->
 điều trị được bắt đầu ngay sau khi được chẩn đoán, khi tuyến tụy vẫn hoạt động tốt. Lưu ý rằng, như trình bày dưới đây, sẽ rất nguy hiểm khi kết hợp các thuốc tiểu đường với nhịn ăn hoặc chế độ nhịn ăn không hoàn toàn. Việc đó cần được thực hiện như một phần của thử nghiệm lâm sàng. Cũng lưu ý rằng mặc dù tất cả dữ liệu, bao gồm dữ liệu lâm sàng, đều nhấn mạnh tiềm năng rất lớn mà những chế độ ăn uống này mang lại trong quá trình điều trị bệnh tiểu đường, kết luận này vẫn cần được chứng minh trong một thử nghiệm lâm sàng ngẫu nhiên quy mô lớn và được FDA chấp thuận trước khi có thể kê đơn cho bệnh nhân để thay thế cho các loại thuốc điều trị tiêu chuẩn. Tuy nhiên, các can thiệp về chế độ ăn uống vẫn có thể hỗ trợ các liệu pháp đã được FDA chấp thuận.
 
 ![Hình trang 163](images/p0163-fig-01.webp)
@@ -154,7 +155,7 @@ Các nhà khoa học tỏ ra thận trọng với từ “chữa khỏi” bởi
 
 Tuy nhiên, nếu bạn có nguy cơ mắc bệnh tiểu đường cao hoặc đã vướng phải căn bệnh này rồi, tôi khuyến khích bạn trao đổi với bác sĩ của mình và cân nhắc việc thay đổi chế độ ăn uống hằng ngày hiện tại, nhằm phòng ngừa và điều trị bệnh. Các nghiên cứu của chúng tôi trên cả thể chuột và người chỉ ra rằng
 
-<!-- p.164 -->
+<!-- sách 171 · PDF 164 -->
 FMD có thể ngăn ngừa hoặc có khả năng đẩy lùi bệnh tiểu đường bằng cách thực hiện những hướng dẫn sau:
 
 1. **Giảm mỡ bụng và gan.** FMD chuyển cơ thể sang chế độ đốt cháy mỡ ở cường độ cao, chủ yếu mỡ bụng/nội tạng và mỡ gan, đây là yếu tố chính thức đẩy bệnh tiểu đường và các bệnh khác. Nhóm những cá thể chuột trải qua hai chu kỳ FMD một tháng nhưng vẫn tiêu thụ một tổng lượng calo tương tự như những cá thể có chế độ ăn thông thường, tiếp tục giảm cân. Kết quả này cho thấy chế độ đốt cháy mỡ vẫn được duy trì sau khi trở lại chế độ ăn bình thường (xem Biểu đồ 8.4).
@@ -163,7 +164,7 @@ FMD có thể ngăn ngừa hoặc có khả năng đẩy lùi bệnh tiểu đư
 
 3. **Đổi mới/tái tạo tế bào và tự thực bào.** Bằng cách làm cho nhiều tế bào già nua, bị hư hỏng trong các hệ thống chết hoặc ngừng hoạt động, FMD có khả năng loại bỏ tế bào xấu và thúc đẩy quá trình tái tạo bên trong tế bào (tự thực bào) cũng như sản xuất tế bào mới thông qua hoạt hóa tế bào gốc. Điều này dẫn đến sự phục hồi và trẻ hóa. Trên cá thể chuột, chúng tôi đã chứng minh quá trình này xảy ra trong nhiều cơ quan, bao gồm máu, não, cơ, gan và tuyến tụy. Ở người, dữ liệu từ các thử nghiệm lâm sàng cho thấy quá trình tái tạo tương tự đang diễn ra. Với những đối tượng khỏe mạnh có chỉ số đường huyết hoặc huyết áp thấp, tình trạng của họ thường ít
 
-<!-- p.165 -->
+<!-- sách 172 · PDF 165 -->
 hoặc không thay đổi sau chu kỳ FMD, đảm bảo các chỉ số an toàn trên ngưỡng nguy hiểm. Tuy nhiên, FMD thể hiện tác động lên nồng độ glucose, huyết áp và các yếu tố nguy cơ gây ra bệnh tiểu đường mạnh mẽ hơn ở những người có nguy cơ lão hóa và khả năng mắc bệnh tại thời điểm bắt đầu nghiên cứu. Những tác động này ở người cùng với dữ liệu từ nghiên cứu trên chuột, chỉ ra sự trẻ hóa hoặc tái tạo các tế bào bị tổn thương hoặc cả hai tác dụng trên.
 
 ![Hình trang 165](images/p0165-fig-01.webp)
@@ -175,7 +176,7 @@ Nếu các tế bào cơ đáp ứng kém với insulin được sửa chữa, t
 
 Trong một bài báo gần đây, chúng tôi đã chỉ ra rằng bên cạnh việc cải thiện chức năng của insulin, chu kỳ FMD còn thúc
 
-<!-- p.166 -->
+<!-- sách 173 · PDF 166 -->
 đẩy quá trình tái tạo các tế bào beta sản xuất insulin và đẩy lùi các triệu chứng của cả tiểu đường type 1 và type 2 ở những cá thể chuột có tuyến tụy không thể tạo ra đủ insulin, dẫn đến nồng độ đường máu rất cao.¹² Đặc biệt, FMD kích hoạt nhiều gen tuyến tụy, vốn thường xảy ra trong quá trình phát triển của phôi/bào thai, cho thấy rằng nó có thể gây ra một đáp ứng tự nhiên và phối hợp phức tạp để tạo ra các tế bào beta mới có chức năng, sản xuất lượng insulin bình thường.
 
 Một lưu ý về insulin và chế độ nhịn ăn chỉ uống nước hoặc tương tự: Mặc dù tử vong ở những người nhịn ăn kéo dài rất hiếm gặp nhưng khi trường hợp này xảy ra, đó là một số ca liên quan đến sử dụng insulin. Một số bệnh nhân tử vong do kết hợp nhịn ăn với tiêm insulin, có thể là do insulin thường hoạt động kém ở bệnh nhân tiểu đường và việc nhịn ăn sẽ phần nào làm phản tác dụng của nó. Cùng một mũi tiêm insulin có thể làm nồng độ glucose giảm xuống mức bình thường ở bệnh nhân tiểu đường nhưng lại giảm đột ngột ở bệnh nhân tiểu đường nhịn ăn – dẫn đến sốc do hạ đường huyết và trong một số trường hợp gây ra tử vong. Nguy cơ tương tự với việc sử dụng chế độ nhịn ăn không hoàn toàn.
@@ -184,14 +185,14 @@ Một lưu ý về insulin và chế độ nhịn ăn chỉ uống nước hoặ
 
 Tôi muốn chia sẻ một email nhận được từ một bệnh nhân xa lạ. Một mặt, bức thư củng cố sức mạnh của FMD định kỳ và Chế độ ăn Trường thọ hằng ngày trong ngăn ngừa và điều trị bệnh; mặt khác, nó chỉ ra mức độ nguy hiểm của việc tự điều trị. Bệnh nhân tiểu đường này đã mạo hiểm mạng sống của mình bằng cách kết hợp các loại thuốc giống insulin với phiên bản Chế độ ăn Trường thọ của riêng mình mà không hỏi qua ý kiến bác sĩ.
 
-<!-- p.167 -->
+<!-- sách 174 · PDF 167 -->
 *Thưa Tiến sĩ Longo,*
 
 *Có lẽ ông không biết điều này, nhưng chính ông đã cứu sống tôi. Vào tháng 12, tôi bắt đầu hành trình xuống địa ngục của mình do bị liệt chân trái. Tôi đã phải ở trong bệnh viện vào đêm Giáng sinh. Hàng loạt xét nghiệm máu không xác định được điều gì đáng báo động nhưng tôi bị trào ngược axit dạ dày nặng, tiêu hóa kém và nôn mửa liên tục. Các xét nghiệm nội soi dạ dày, dị ứng và không dung nạp thực phẩm không có gì bất thường. Theo các bác sĩ, tình trạng sức khỏe của tôi vẫn ổn. Tôi đã loại bỏ thịt, sữa và thực phẩm chứa lactose ra khỏi chế độ ăn của mình từ tháng 3, và đạt được một số kết quả nhất định. Nhưng chỉ mới đi bộ hơn 150 m, tôi đã phải thở hổn hển rồi. Cân nặng của tôi tăng lên 122,5 kg ngay cả khi không ăn gì nhiều, kèm theo hiện tượng sưng phù ở chân và khắp cơ thể; các xét nghiệm hình ảnh cho thấy gan tôi nhiễm mỡ nặng, đã chuyển sang xơ gan. Gan của tôi chiếm phần lớn khoang bụng, gây áp lực lên dạ dày, có thể việc đó đã dẫn đến trào ngược, viêm ở đáy màng phổi và ho không ngừng.*
 
 *Vào ngày 5 tháng 6, mọi thứ thay đổi. Tôi cầm trên tay một quyển tạp chí với trang bìa là bài viết về ông: “Chữa bệnh bằng cách ăn ít hơn”. Tôi đã sốc khi đọc bài báo. Xin nhớ rằng tôi là một người mắc bệnh tiểu đường (insulin, NovoRapid 18 đơn vị ba lần mỗi ngày, 22 đơn vị Lantus vào buổi tối – metformin và thuốc hạ áp). Tôi đã áp dụng chế độ ăn ông mô tả từ cuối tháng 6, và mọi thứ đã thay đổi. Kết quả: cân nặng của tôi giảm xuống còn 104 kg, tôi đi bộ hoặc chạy bộ trung bình 4,8 km mỗi ngày và hiện tại đang tham gia một lớp học lặn. Tôi không còn dùng thuốc (Lantus) vào buổi tối vì nó gây hạ đường huyết nghiêm trọng về đêm và giảm NovoRapid xuống 6 đơn vị vào buổi sáng, 10 đơn vị vào bữa trưa và 8 đơn vị vào bữa tối. Tôi không còn dùng metformin nữa. Tôi đã loại bỏ tất cả các loại thịt, sữa và các thực phẩm chứa lactose, bơ, bơ thực vật, đồ chiên rán, rượu, đồ ngọt và đường. Mức đường huyết trung bình của tôi không quá 145. Các bác sĩ bất ngờ với tình trạng hiện tại của tôi và muốn xin một bản sao của bài báo ấy.*
 
-<!-- p.168 -->
+<!-- sách 175 · PDF 168 -->
 May mắn thay, bệnh nhân đó không áp dụng FMD mà chỉ Chế độ ăn Trường thọ. Nhưng chỉ riêng điều đó cũng đủ để tái kích ứng các tế bào của anh ấy với insulin và gây hạ đường huyết nghiêm trọng vào ban đêm. Anh ấy đã mạo hiểm mạng sống của mình bằng cách thay đổi đột ngột mà không tham khảo ý kiến bác sĩ có kinh nghiệm về chế độ ăn và bệnh tiểu đường để được tư vấn trong quá trình chuyển đổi. Nếu kết hợp FMD với thuốc điều trị bệnh tiểu đường, có thể anh ấy đã không sống được.
 
 Kết quả nghiên cứu của tôi chứng minh được tính ích lợi cho bệnh nhân này, nhưng nếu bạn mắc tiểu đường, tôi thực sự không khuyến khích bạn học theo anh ấy. Tất nhiên, sai lầm lớn là kết hợp chế độ ăn với insulin. Chỉ cần một lần đến gặp bác sĩ trước khi áp dụng chế độ ăn đó và có thể là FMD định kỳ, anh ấy thậm chí đã có thể làm tốt hơn mà không gặp phải nguy cơ bị sốc hạ đường huyết.
@@ -200,7 +201,7 @@ Nếu bác sĩ của bạn từ chối giúp bạn điều trị hoặc ngăn ng
 
 Tôi không nói rằng các liệu pháp điều trị thông thường không mang lại hiệu quả. Nhưng tôi tin rằng các bác sĩ y khoa nên ưu tiên các liệu pháp nhằm chữa khỏi cho bệnh nhân chứ không chỉ làm chậm sự tiến triển của bệnh tật. Gần đây tôi đã triển khai một chương trình đào tạo cho các nhà sinh vật học, chuyên gia dinh dưỡng và bác sĩ y khoa về Chế độ ăn Trường thọ và FMD. Tôi hy vọng sẽ thiết lập được một mạng lưới các chuyên gia chuyên sâu ở nhiều quốc gia để giám sát bệnh nhân muốn sử dụng các chiến lược dinh dưỡng mô tả trong cuốn sách này.
 
-<!-- p.169 -->
+<!-- sách 176 · PDF 169 -->
 ### ĐIỀU TRỊ BÉO PHÌ
 
 Hầu hết công việc của tôi đều hướng đến mục đích ngăn ngừa hoặc tìm ra cách chữa trị các bệnh thông thường, chủ yếu là gây ra tác động trong quá trình lão hóa và từ đó sửa chữa, bảo vệ, tái tạo các thành phần tế bào và cơ quan. Thường thì tôi tập trung vào các nghiên cứu trên động vật và lâm sàng liên quan đến béo phì, tiểu đường, ung thư, bệnh tim hoặc Alzheimer, làm việc tại những trường đại học lớn và các bệnh viện liên kết. Nhưng mọi người viết thư cho tôi mỗi ngày, đặc biệt là khi họ đi vào bế tắc với những phương pháp y học truyền thống. Trong những trường hợp như vậy, tôi thu thập dữ liệu của từng bệnh nhân và ngoại suy từ những phát hiện khoa học hiện có để đưa ra một kế hoạch hành động, mà sau đó tôi sẽ trao đổi với bệnh nhân và bác sĩ của họ. Tôi muốn chia sẻ hai ca cực đoan trong số này, liên quan đến bệnh béo phì.
@@ -211,7 +212,7 @@ Tôi nhận được lá thư từ một người phụ nữ đã quyết địn
 
 “Chế độ ăn này không phải là thứ khiến tôi cảm thấy ‘vui thích’, tôi thích một chế độ ăn phong phú hơn là FMD. Tuy nhiên, tôi thấy khoảng thời gian ngắn (năm ngày) có thể chấp nhận được ở chỗ tôi không cảm thấy đói. Hơn nữa, sau năm
 
-<!-- p.170 -->
+<!-- sách 177 · PDF 170 -->
 ngày, tôi có thể trở lại chế độ ăn uống bình thường và vui vẻ ăn những gì tôi muốn. Để duy trì cân nặng, tôi cố gắng không say xỉn nhưng giữa các chu kỳ, tôi thỉnh thoảng có ăn hamburger, một vài cốc sữa chua đông lạnh và thậm chí một chiếc bánh ngọt, vì vậy đó không phải là một sự hy sinh khó khăn hay lớn lao.”
 
 ### TRƯỜNG HỢP 2
@@ -224,7 +225,7 @@ Chiến lược này giúp giảm 13,6 kg, lượng lớn mỡ bụng, tăng cư
 
 Rõ ràng chỉ nên cân nhắc áp dụng nhiều chu kỳ FMD (hai trở lên) khi chế độ định kỳ thất bại. Phương pháp này phải được
 
-<!-- p.171 -->
+<!-- sách 178 · PDF 171 -->
 thực hiện với sự chấp thuận và giám sát chặt chẽ của một bác sĩ, tốt nhất là một người có chuyên môn về nhịn ăn kéo dài. Bệnh nhân có thể gặp một số tác dụng phụ nếu thực hiện không đúng cách hoặc sử dụng sai loại thực phẩm. Những tác dụng phụ đó bao gồm hạ huyết áp hay đường huyết quá mức và suy dinh dưỡng (thiếu một số vitamin, khoáng chất hoặc dưỡng chất thiết yếu). FMD cũng có thể gây ra một số tác dụng phụ với thuốc, khiến việc áp dụng kéo dài nguy hiểm đối với một số người – ví dụ: những người điều trị bằng insulin. Một mối lo ngại khác liên quan đến việc kết hợp giảm cân nhanh và tăng cân nhanh. Nhiều nghiên cứu cho thấy các chu kỳ giảm cân nhanh sau đó tăng cân trở lại có thể làm tăng bệnh tim mạch ở cả những người bình thường và những người đã bị bệnh tim.
 
 Dựa vào các nghiên cứu nêu trên, việc tránh giảm cân rồi tăng trở lại đặc biệt quan trọng, do đó bệnh nhân phải cam kết tiếp tục thực hiện FMD mỗi tháng một lần sau khi trải qua nhiều chu kỳ FMD liên tiếp. Xin lưu ý rằng ProLon hoặc bất kỳ chế độ FMD nào chỉ là công cụ mà một bác sĩ có thể sử dụng để giúp kiểm soát tình trạng béo phì. Chúng tôi hiện vẫn đang nghiên cứu để hướng tới triển khai các thử nghiệm lâm sàng như một phần trong quy trình phê duyệt của FDA nhưng mọi thứ cần có thời gian. Cho đến khi đó, thông tin trong chương này cung cấp cơ sở vững chắc về chế độ ăn uống có thể bổ sung cho các biện pháp phòng ngừa và điều trị bệnh tiểu đường tiêu chuẩn.

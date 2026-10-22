@@ -11,7 +11,7 @@ Chưa có định nghĩa; bổ sung thủ công khi cần.
 
 | Thuật ngữ | Trang PDF |
 | --- | --- |
-| Axit Alphalinolenic (ALA) | 267, 268, 269, 270 |
-| Cholesterol (LDL) | 179 |
-| Docosahexaenoic (DHA) | 267, 268, 269, 270 |
-| Eicosapentaenoic (EPA) | 267, 268, 269, 270 |
+| Axit Alphalinolenic (ALA) | 223 |
+| Cholesterol (LDL) | 172 |
+| Docosahexaenoic (DHA) | 223 |
+| Eicosapentaenoic (EPA) | 223 |

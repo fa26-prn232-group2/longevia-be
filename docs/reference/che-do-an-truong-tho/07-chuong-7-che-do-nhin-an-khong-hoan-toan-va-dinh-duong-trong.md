@@ -1,12 +1,13 @@
 ---
 title: "CHƯƠNG 7 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ UNG THƯ"
 source: CheDoAnTruongTho (reduced).pdf
+book_pages: "135-158"
 pdf_pages: "128-151"
 engine: gemini-3.5-flash
-generated_at: 2026-10-21T18:02:58+00:00
+generated_at: 2026-10-22T06:08:15+00:00
 reviewed: false
 ---
-<!-- p.128 -->
+<!-- sách 135 · PDF 128 -->
 # CHƯƠNG 7
 
 ## CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ UNG THƯ¹
@@ -19,7 +20,7 @@ Quá trình đào tạo và nghiên cứu sau đại học của tôi về bện
 
 ¹ Nội dung của chương này không được sử dụng để tự chẩn đoán hoặc tự quản lý các biện pháp điều trị. Thông tin này dành cho các chuyên gia y tế đang theo dõi bệnh của bạn.
 
-<!-- p.129 -->
+<!-- sách 136 · PDF 129 -->
 nhận ra rằng cộng đồng y khoa đã có những hiểu biết khá sâu về ảnh hưởng của tổn thương DNA và tế bào đến tế bào ung thư như thế nào, nhưng hầu như chưa có kiến thức nền tảng về cách bảo vệ các tế bào bình thường, đó là trọng tâm nghiên cứu của phòng thí nghiệm của chúng tôi.
 
 Nghiên cứu đầu tiên liên quan đến ung thư mà chúng tôi tiến hành trên chuột, như đã trình bày ở chương 2, thực chất rất đơn giản – về cơ bản là xuất phát từ của các nghiên cứu trên vi sinh vật.
@@ -30,7 +31,7 @@ Quá trình đó diễn ra như sau: Khi một số gen nhất định trong t�
 
 Khi tôi bắt đầu nghiên cứu về ung thư, mọi nhà nghiên cứu đều đang tìm kiếm một giải pháp kỳ diệu có thể phát hiện và tiêu
 
-<!-- p.130 -->
+<!-- sách 137 · PDF 130 -->
 diệt chỉ riêng tế bào ung thư. Tôi không nhớ đã nảy ra ý tưởng đó khi nào nhưng tôi nhớ đã gọi cho một trong những đồng nghiệp của mình, nhà nghiên cứu nổi tiếng về lão hóa, để báo với cô ấy: "Tôi nghĩ mình đã tìm ra cách phân biệt được tất cả các tế bào ung thư với tế bào bình thường. Đó không phải là một giải pháp kỳ diệu – mà chính là một *tấm khiên ma thuật*."
 
 Tôi nghĩ cô ấy không hiểu tôi đang nói gì.
@@ -45,7 +46,7 @@ Nhưng giả sử trước khi bắn tên, cung thủ phát lệnh quỳ xuống
 
 i. Carthage là tên gọi của một trung tâm và thành phố thủ đô cổ của nền Văn minh Carthage, phía đông hồ Tunis, ngày nay là khu vực ngoại ô Tunis, thủ đô của Tunisia.
 
-<!-- p.131 -->
+<!-- sách 138 · PDF 131 -->
 Ở ví dụ trên, người La Mã là tế bào bình thường của cơ thể, người Carthage là tế bào ung thư, cung thủ là bác sĩ điều trị, và các mũi tên là hóa trị liệu. Nếu bạn bỏ đói một bệnh nhân ung thư trước khi hóa trị, các tế bào bình thường sẽ phản ứng bằng cách dựng lên một lá chắn phòng thủ. Nhưng tế bào ung thư sẽ bỏ qua mệnh lệnh ẩn nấp, do đó dễ bị tấn công – đem lại một giải pháp tiềm năng loại bỏ các tế bào ung thư mà chỉ gây tổn thương tối thiểu cho các tế bào bình thường.
 
 Ban đầu, khi tôi đề xuất cho bệnh nhân ung thư nhịn đói trước giờ hóa trị, các bác sĩ ung thư đều cho rằng đó là một ý kiến tối tệ. Vì bệnh nhân ung thư thường bị sụt cân trong quá trình hóa trị, bác sĩ ung thư hướng dẫn họ ăn nhiều hơn, chứ không phải ít hơn. Rõ ràng, chúng ta cần kết quả thuyết phục trên cá thể chuột trước khi được chấp thuận cho phép thử nghiệm lâm sàng trên người.
@@ -54,7 +55,7 @@ Tôi đã nhờ Changhan Lee, một trong những sinh viên của tôi ở phò
 
 Kết quả thật đáng kinh ngạc: hầu như tất cả những cá thể chuột nhịn ăn đều còn sống và di chuyển bình thường sau khi hóa trị liều cao. Tuy nhiên, những cá thể có chế độ ăn bình thường trước điều trị lại bị ốm và di chuyển rất ít sau khi hóa trị. Trong những tuần tiếp theo, 65% số chuột không nhịn ăn đã chết, trong khi gần như tất cả những cá thể nhịn ăn đều sống sót. Chúng tôi đã lặp lại thí nghiệm này bằng sử dụng nhiều loại thuốc hóa trị khác nhau. Như dự đoán, việc nhịn ăn tạo ra “sức
 
-<!-- p.132 -->
+<!-- sách 139 · PDF 132 -->
 đề kháng với nhiều loại stress” hay khả năng bảo vệ chống lại nhiều độc tố ở tế bào bình thường, ngoại trừ tế bào ung thư. Bây giờ chúng tôi đã biết cách tiếp cận này có tiềm năng lâm sàng lớn nhưng thật không dễ dàng để cộng đồng y khoa chấp nhận và trao cho nó một cơ hội.
 
 ### LỜI NHẮN ĐẾN CÁC NHÀ HOẠT ĐỘNG VÌ QUYỀN ĐỘNG VẬT
@@ -69,7 +70,7 @@ Về việc ép nhịn ăn được cho là tàn nhẫn, cần lưu ý rằng gi
 
 Các nghiên cứu trên động vật được chúng tôi hạn chế đến mức tối thiểu cho đến khi có thể thử nghiệm lâm sàng trên người. Trong hầu hết mọi trường hợp, các nghiên cứu này nhắm tới các
 
-<!-- p.133 -->
+<!-- sách 140 · PDF 133 -->
 bệnh ở giai đoạn muộn, gây tử vong hoặc tàn phá sức khỏe các bệnh nhân.
 
 Vài năm trước, tôi đã trả lời lá thư của một nhà hoạt động vì quyền động vật bằng câu hỏi sau: "Nếu con cái, chị gái hoặc bố của bạn sắp chết, và phương pháp điều trị duy nhất có thể cứu sống họ cần được thử nghiệm trước trên chuột, bạn có chấp nhận việc đó không? Hay bạn sẽ chọn cách nhìn người thân của mình ra đi?"
@@ -82,14 +83,14 @@ Tôi tin rằng các thí nghiệm trên động vật chỉ nên được thự
 
 Đây là một tình huống quân sự khác, tương tự với cuộc chiến chống lại ung thư: Năm 1812, Napoleon chỉ huy hơn 450.000 quân tới xâm lược nước Nga. Khi quân đội Pháp tiến về Moscow, các lực lượng Nga không chiến đấu. Họ rút lui, đốt cháy chính làng mạc và thị trấn của mình trước khi quân thù kịp tấn công.
 
-<!-- p.134 -->
+<!-- sách 141 · PDF 134 -->
 Napoleon vừa ngạc nhiên lại vừa bối rối. Cuộc xâm lược bắt đầu từ tháng 6, nhưng người Nga từ chối giao đấu cho đến tháng 12. Đây là chiến lược rút lui nhằm làm suy yếu quân đội Pháp. Đến mùa đông, quân đội của Napoleon sụp đổ sau nhiều tháng đói khát, lạnh giá và trước cuộc phản công cuối cùng của quân đội Nga. Khi chiến tranh kết thúc, 400.000 lính Pháp đã bỏ mạng.
 
 Các tế bào ung thư hoạt động giống như quân đội của Napoleon, tiến lên ngay cả khi dừng lại mới là chiến lược khôn ngoan. Để sống sót, chúng cần nhiều dinh dưỡng. Các bác sĩ thường khuyến cáo bệnh nhân ung thư "thực hiện chế độ ăn uống tốt" và đôi khi "ăn nhiều hơn bình thường". Khuyến cáo đó khá dễ hiểu, như việc quân đội Nga nên lập tức giao chiến với quân đội của Napoleon ngay khi họ vừa đặt chân đến, và còn được ăn uống đầy đủ vào mùa hè năm 1812. Nhưng vì người Nga đã đợi đến khi lính Pháp suy yếu nhất, sự kết hợp của giá lạnh, đói khát và các cuộc tấn công có chủ đích của Nga đã đánh bại họ vĩnh viễn. Theo cách tương tự, các tế bào ung thư bị bỏ đói sẽ dễ bị tổn thương nhất bởi hóa trị.
 
 Khi hình thành ý tưởng về tấm khiên ma thuật tạo nên nhờ vào quá trình nhịn ăn, tôi nhớ lại một bài học cơ bản từ sinh học tiến hóa: phần lớn các đột biến di truyền (trình tự DNA bị đảo lộn) đều có hại, nhưng chúng chỉ gây ra hậu quả tiêu cực trong một số điều kiện nhất định. Nhiều đột biến trong chuỗi DNA của tế bào ung thư có thể làm tăng khả năng phát triển của chúng, nhưng chính những đột biến đó sẽ cản trở đáng kể khả năng tồn tại của tế bào ung thư trong các môi trường thử thách, chẳng hạn dưới sự tấn công kép của việc nhịn ăn và hóa trị.
 
-<!-- p.135 -->
+<!-- sách 142 · PDF 135 -->
 ![Hình trang 135](images/p0135-fig-01.webp)
 
 *Biểu đồ 7.1. Phần trăm tuyên giảm ung thư phổi ở chuột áp dụng FMD kết hợp với hóa trị và không hóa trị.*
@@ -100,14 +101,14 @@ Khi hình thành ý tưởng về tấm khiên ma thuật tạo nên nhờ vào 
 
 Kịch bản lý thuyết này liệu thực sự có hiệu quả? Các nghiên cứu trên động vật của chúng tôi và các nhà nghiên cứu khác cho thấy, ngoài việc bảo vệ các tế bào bình thường, nhịn ăn còn khiến hóa trị độc hơn nhiều với ung thư tế bào hắc tố,
 
-<!-- p.136 -->
+<!-- sách 143 · PDF 136 -->
 ung thư vú, ung thư tuyến tiền liệt, ung thư phổi, ung thư đại trực tràng, u nguyên bào thần kinh và nhiều loại ung thư khác. Trong nhiều trường hợp, các chu kỳ nhịn ăn (hoặc nhịn ăn không hoàn toàn) mang lại hiệu quả như hóa trị trong việc chống lại ung thư. Tuy nhiên, không chiến lược nào là tối ưu. Hiệu quả điều trị lâu dài chỉ đạt được bằng cách kết hợp cả nhịn ăn và hóa trị. Trong những nghiên cứu trên chuột, chúng tôi thấy rõ việc nhịn ăn kết hợp với hóa trị chữa được ung thư ngay cả ở giai đoạn cuối của bệnh, sau khi nó đã di căn. Không phải tất cả các cá thể chuột đều khỏi bệnh nhưng trong các thí nghiệm mà chúng tôi (cũng như những nhà nghiên cứu khác) đã thực hiện, tỷ lệ chữa khỏi đối với nhiều loại ung thư khác nhau thường đạt 20-60%.
 
 ### FMD VÀ SỰ TIÊU DIỆT TẾ BÀO UNG THƯ BẰNG LIỆU PHÁP MIỄN DỊCH
 
 Trong các liệu pháp mới để điều trị và thậm chí chữa khỏi một số bệnh ung thư, có lẽ việc dựa vào hệ thống miễn dịch để tiêu diệt tế bào ung thư là liệu pháp hứa hẹn nhất. Trong một nghiên cứu vô cùng tiềm năng khác tại Đại học Nam California, chúng tôi đã chỉ ra rằng FMD có thể gây ra các tác động tương tự như liệu pháp miễn dịch.² Nghiên cứu trên tế bào ung thư vú và ung thư da phát hiện ra rằng FMD có hai chức năng chủ yếu: (1) làm suy yếu tế bào ung thư và loại bỏ tấm khiên bảo vệ chúng trước các tế bào miễn dịch; (2) đổi mới và tăng tốc hệ thống miễn dịch, khiến khả năng chống chọi ung thư trở nên quyết liệt hơn.³
 
-<!-- p.137 -->
+<!-- sách 144 · PDF 137 -->
 ### FMD và các steroidⁱ liên quan đến hóa trị liệu
 
 Các corticosteroidⁱⁱ "như prednisolone, methylprednisoloneⁱⁱⁱ và dexamethasone thường được sử dụng kết hợp với hóa trị liệu trong điều trị ung thư. Trong một ấn phẩm gần đây, chúng tôi nhận thấy corticosteroid dexamethasone làm tăng độc tính của thuốc hóa trị doxorubicin đối với chuột bằng cách tăng nồng độ glucose trong máu.⁴ Trong các chương trước, tôi đã mô tả cách glucose làm tăng tốc độ lão hóa của tế bào và khiến chúng yếu hơn khi tiếp xúc với độc tố. Do đó, bằng cách tăng glucose máu, corticosteroid làm cho tế bào bình thường ở chuột yếu hơn, trong khi có thể làm cho tế bào ung thư mạnh lên. Hiệu ứng này được đảo ngược khi kết hợp thêm chế độ nhịn ăn không hoàn toàn với dexamethasone và điều trị hóa chất. Như vậy, kết quả của chúng tôi chỉ ra rằng không bao giờ nên kết hợp corticosteroid với hóa trị liệu trừ khi không có giải pháp thay thế khả thi. Trên thực tế, bệnh nhân có nồng độ glucose cao khi kết hợp với hóa trị có nguy cơ mắc các bệnh nhiễm trùng và tỷ lệ tử vong cao hơn so với những bệnh nhân có đường huyết bình thường. Như vậy, cả dữ liệu trên chuột và dữ liệu lâm sàng sơ bộ của chúng tôi đều cho thấy các hormone steroid làm tăng đường huyết có thể có hại khi kết hợp với hóa trị.
@@ -116,7 +117,7 @@ i. Steroid là chất hóa học, thường là nội tiết tố, được cơ 
 ii. Corticosteroid là là nhóm thuốc được chỉ định trong nhiều bệnh lý khác nhau do có tác dụng chống viêm, chống dị ứng, ức chế miễn dịch.
 iii. Methylprednisolone thuộc nhóm thuốc glucocorticoid (corticosteroid), có khả năng thay đổi phản ứng miễn dịch của người dùng, từ đó giúp giảm viêm ở một số tình trạng nhất định.
 
-<!-- p.138 -->
+<!-- sách 145 · PDF 138 -->
 ### CHẾ ĐỘ NHỊN ĂN VÀ NHỊN ĂN KHÔNG HOÀN TOÀN TRONG ĐIỀU TRỊ UNG THƯ Ở NGƯỜI
 
 Sau khi nghiên cứu đầu tiên của chúng tôi về tác dụng bảo vệ mạnh mẽ của việc nhịn ăn đối với những cá thể chuột đang điều trị hóa chất được công bố năm 2008, giới báo chí xôn xao với những câu chuyện xoay quanh việc nhịn ăn đã tạo nên “tấm khiên ma thuật” như thế nào và khả năng bảo vệ bệnh nhân ung thư của chúng. Một trong những bài báo trên *Los Angeles Times* (Nhật báo *Los Angeles*) đã thu hút sự chú ý của Nora Quinn, một thẩm phán địa phương gần đây được chẩn đoán mắc ung thư vú và chuẩn bị bước vào hóa trị. Ngay sau khi bài báo xuất hiện, một trong những người bạn của thẩm phán đã gọi báo với tôi khi tôi còn ở Đại học Nam California, rằng Quinn đã nhịn ăn trong tám ngày. Tôi đã rất hoảng hốt. “Thật điên rồ”, tôi nói. “Hãy bảo bạn của bà ăn trở lại ngay lập tức.”
@@ -125,7 +126,7 @@ Khi các bệnh nhân đọc được những tin tức đó, nhiều người q
 
 Một ca thử nghiệm thành công khác của phương pháp FMD là phi công Jean-Jacques Trochon. Khi được chẩn đoán mắc ung thư thận di căn và nhiều khối u trong phổi, anh đã đọc về nghiên cứu trên cá thể chuột của chúng tôi và liên hệ với tôi để xin lời khuyên về phương pháp nhịn ăn trước khi hóa trị. Trochon cùng với bác sĩ ung thư của mình đã tuân thủ mọi hướng dẫn của tôi hết sức nghiêm ngặt, kết hợp FMD với liệu
 
-<!-- p.139 -->
+<!-- sách 146 · PDF 139 -->
 pháp dựa trên thực vật được phát triển bởi một nhà khoa học khác. Hai năm sau, anh khỏi bệnh ung thư và quay trở lại với công việc.
 
 Những câu chuyện này không phải là bằng chứng cho thấy sự kết hợp của liệu pháp chống ung thư và FMD chữa được một số loại ung thư. Nhưng cùng với dữ liệu từ những thí nghiệm trên cá thể chuột và nghiên cứu lâm sàng, chúng hướng đến một chiến lược có tiềm năng cải thiện các phương pháp điều trị thông thường trong khi vẫn giảm được các tác dụng phụ.
@@ -136,7 +137,7 @@ Trong những lần tiếp xúc ban đầu với các bác sĩ ung thư lâm sà
 
 Chúng tôi gọi cho các bác sĩ chuyên khoa ung thư của từng bệnh nhân đã liên hệ với chúng tôi. Một số không trả lời cuộc gọi. Trong một số trường hợp, nhà nghiên cứu của tôi đã đích thân tới phòng khám để lấy được hồ sơ bệnh án. Cuối cùng, chúng tôi thu thập được dữ liệu của mười bệnh nhân: bảy nữ và ba nam, độ tuổi từ 44 đến 78, được chẩn đoán với các loại và giai đoạn ung thư khác nhau:
 
-<!-- p.140 -->
+<!-- sách 147 · PDF 140 -->
 ### THÔNG TIN NHÂN KHẨU VÀ LÂM SÀNG CỦA CÁC BỆNH NHÂN
 
 | | Giới tính | Tuổi | Ung thư nguyên phát | Giai đoạn chẩn đoán |
@@ -156,7 +157,7 @@ Chúng tôi gọi cho các bác sĩ chuyên khoa ung thư của từng bệnh nh
 
 Mỗi bệnh nhân tự nguyện nhịn ăn từ 48 đến 140 giờ trước và 5 đến 56 giờ sau khi hóa trị. Họ điều trị trung bình bốn chu kỳ hóa trị với các loại thuốc khác nhau, kết hợp với nhịn ăn. Không có báo cáo về các tác dụng phụ đáng kể do việc nhịn ăn gây ra, ngoại trừ đói và choáng váng. Sáu bệnh nhân đã trải qua hóa trị với chế độ nhịn ăn và không nhịn ăn cho biết tình trạng mệt mỏi, yếu và các tác dụng phụ đường tiêu hóa giảm khi nhịn ăn. Những bệnh nhân có tiến triển tốt ghi nhận chế độ nhịn ăn không cản trở việc giảm thể tích khối u hoặc chỉ số khối u do hóa trị.
 
-<!-- p.141 -->
+<!-- sách 148 · PDF 141 -->
 ![Hình trang 141](images/p0141-fig-01.webp)
 
 Biểu đồ 7.4. Tác dụng phụ bệnh nhân tự báo cáo sau hóa trị kết hợp/không kết hợp với nhịn ăn.
@@ -167,7 +168,7 @@ Kể từ đó, một số nghiên cứu lâm sàng khác được thực hiện
 
 Phối hợp với các bác sĩ ung thư tại Trung tâm Ung thư Toàn diện Norris thuộc Đại học Nam California, chúng tôi đã thực hiện một thử nghiệm lâm sàng với 18 bệnh nhân nhịn ăn, chỉ uống nước trong khoảng thời gian 24, 48 và 72 giờ trước khi tiếp nhận liệu trình hóa trị dựa trên bạch kim (platinum-based chemotherapy).⁶ Kết quả dưới đây cho thấy chế độ nhịn ăn 72 giờ có khả năng bảo vệ bệnh nhân khỏi các tác dụng phụ do hóa chất gây ra cao hơn so với chế độ nhịn ăn 24 giờ. Tuy nhiên, việc chỉ uống nước khó khăn đối với bệnh nhân đến mức phải mất hơn năm năm để hoàn thành nghiên cứu nhỏ này. Hạn chế đó dẫn đến nguồn tài trợ của Hiệp hội Ung thư Quốc gia thuộc Viện
 
-<!-- p.142 -->
+<!-- sách 149 · PDF 142 -->
 Y tế Quốc gia Hoa Kỳ nhằm phát triển chế độ FMD dành riêng cho bệnh ung thư (xem bên dưới).
 
 | Độc tính | 24 giờ | 48 giờ | 72 giờ |
@@ -198,7 +199,7 @@ Bảng 7.5. Các tác dụng bảo vệ khác nhau của việc nhịn ăn 24, 4
 
 Đại học Leiden ở Hà Lan cũng công bố một thử nghiệm lâm sàng ngẫu nhiên nhỏ, so sánh 13 bệnh nhân trải qua hai ngày nhịn ăn chỉ uống nước với nhóm đối chứng.⁷ Nghiên cứu đó cũng cho thấy tính bảo vệ của việc nhịn ăn trước tác dụng phụ của hóa trị.
 
-<!-- p.143 -->
+<!-- sách 150 · PDF 143 -->
 Cuối cùng, một nghiên cứu tại Đại học Y Charité Berlin đã thử nghiệm tác động của FMD chứa rất ít calo ở 34 phụ nữ bị ung thư vú và ung thư buồng trứng. Mỗi người đều trải qua nhiều chu kỳ hóa trị, có hoặc không kèm nhịn ăn. Các tác dụng phụ do hóa trị liệu gây ra giảm rõ rệt ở những người áp dụng FMD. Nghiên cứu đó chưa được công bố.
 
 Các thử nghiệm lâm sàng đang được tiến hành trên hơn 300 bệnh nhân nhằm đánh giá hiệu quả của chu kỳ FMD bốn ngày kết hợp với liệu pháp điều trị ung thư tiêu chuẩn. Các trung tâm tham gia thử nghiệm này bao gồm Mayo Clinic, Trung tâm Ung thư Toàn diện Norris Đại học Nam California, Trung tâm Y khoa Đại học Leiden và Bệnh viện Đại học Genova San Martino. Hơn 10 bệnh viện tại châu Âu và Mỹ cam kết tham gia các thử nghiệm tương tự khi nhận được tài trợ.
@@ -208,7 +209,7 @@ Các thử nghiệm lâm sàng đang được tiến hành trên hơn 300 bệnh
 * Thử nghiệm diện rộng trên động vật từ ít nhất sáu phòng thí nghiệm độc lập cho thấy hiệu quả của nhịn ăn hoặc FMD trong việc bảo vệ chống lại các tác dụng phụ do một loạt thuốc hóa trị gây ra.
 * Thử nghiệm diện rộng trên động vật từ ít nhất sáu phòng thí nghiệm độc lập cho thấy hiệu quả của nhịn ăn hoặc FMD làm tăng tác dụng của liệu pháp điều trị tiêu chuẩn đối với ung thư vú, ung thư tuyến tiền liệt, ung thư đại trực tràng, ung thư tuyến tụy, u nguyên bào thần kinh, u tế bào thần kinh đệm, ung thư phổi, u trung biểu mô, ung thư tế bào hắc tố và những bệnh khác.
 
-<!-- p.144 -->
+<!-- sách 151 · PDF 144 -->
 * Ba thử nghiệm lâm sàng nhỏ đã hoàn tất và một báo cáo, về những ca bệnh với 75 bệnh nhân, cung cấp bằng chứng ban đầu cho thấy nhịn ăn và FMD là phương pháp an toàn và có tiềm năng trong việc bảo vệ bệnh nhân khỏi nhiều tác dụng phụ của hóa trị.
 * Các thử nghiệm lâm sàng về Chemolieveⁱ tại các trung tâm ung thư hàng đầu, hiện đang thử nghiệm trên hơn 200 bệnh nhân, cung cấp bằng chứng bổ sung cho tính an toàn và tiềm năng của FMD bảo vệ chống lại các tác dụng phụ của hóa trị liệu.
 
@@ -219,7 +220,7 @@ Chemolieve, một sản phẩm FMD dành cho bệnh nhân ung thư, có thể đ
 ___
 i. Chemolieve® là sản phẩm thay thế bữa ăn 4 ngày đầu tiên dựa trên các biện pháp can thiệp chế độ ăn uống độc quyền để cung cấp cho cơ thể các chất dinh dưỡng quan trọng nhằm giảm tác dụng phụ bất lợi của hóa trị.
 
-<!-- p.145 -->
+<!-- sách 152 · PDF 145 -->
 chế độ này có thể thay đổi. Bệnh nhân nên tiếp tục trì hoãn chế độ ăn uống bình thường cho đến khi hóa chất trong máu xuống dưới mức độc hại (thường 24-48 giờ sau khi dùng thuốc). Nếu chu kỳ hóa trị kéo dài ba ngày, bệnh nhân có thể áp dụng FMD một ngày trước, ba ngày trong và một ngày sau hóa trị, tổng là năm ngày. Thời gian điều trị lâu hơn, dù khó kết hợp với việc nhịn ăn, có thể vẫn áp dụng được FMD với lượng calo cao hơn khi bác sĩ chuyên khoa ung thư chấp thuận.
 
 2. Chúng tôi hiếm khi gặp các tác dụng phụ do FMD gây nên, hay xảy ra khi bệnh nhân tự nhịn ăn hoặc áp dụng FMD theo cách của riêng họ; một bệnh nhân bị tăng các chất chỉ điểm độc tố của gan do tự nhịn ăn trong khi sử dụng hỗn hợp các thuốc hóa trị. Một số bệnh nhân ngất xỉu khi tắm nước nóng sau nhiều ngày nhịn ăn – có thể là do hạ huyết áp và đường huyết. Một nguy cơ khác liên quan đến FMD: việc trở lại thói quen ăn uống bình thường ngay sau khi hóa trị có thể gây tổn thương gan do sự kết hợp của các thuốc độc với gan và sự tăng sinh của tế bào gan. Do đó, điều quan trọng là phải đợi tối thiểu 24 giờ sau khi hóa trị mới được trở lại chế độ ăn uống bình thường.
@@ -228,7 +229,7 @@ chế độ này có thể thay đổi. Bệnh nhân nên tiếp tục trì hoã
 
 4. Hai mươi tư giờ sau khi hóa trị, bệnh nhân chỉ nên ăn cơm, mì ống, bánh mì hoặc một loại thực phẩm tương tự có chứa carbohydrate, rau, súp rau và một số trái
 
-<!-- p.146 -->
+<!-- sách 153 · PDF 146 -->
 cây trong 24 giờ liên tiếp. Sau đó mới có thể tiếp tục chế độ ăn uống bình thường, đặc biệt chú ý đến dinh dưỡng (vitamin, khoáng chất, protein và các chất béo thiết yếu).
 
 5. Bệnh nhân nên cố gắng lấy lại cân nặng bình thường trước khi thực hiện một chu kỳ nhịn ăn khác.
@@ -245,7 +246,7 @@ cây trong 24 giờ liên tiếp. Sau đó mới có thể tiếp tục chế đ
 
 11. Giữa các chu kỳ nhịn ăn, chúng tôi khuyên bệnh nhân ung thư duy trì chế độ ăn ít đường, chủ yếu là thực vật, ít protein nhưng giàu dinh dưỡng cho phép họ duy trì
 
-<!-- p.147 -->
+<!-- sách 154 · PDF 147 -->
 cân nặng hợp lý và chỉ số BMIⁱ bình thường. Nên xin ý kiến một chuyên gia dinh dưỡng đã đăng ký để tránh suy dinh dưỡng và giảm cân ngoài ý muốn (xem Chế độ ăn Trường thọ chương 4).
 
 ### DINH DƯỠNG VÀ FMD TRONG PHÒNG NGỪA UNG THƯ
@@ -260,7 +261,7 @@ i. Chỉ số BMI (Body Mass Index) hay còn gọi là chỉ số khối cơ th�
 
 ii. Gen BRCA (Breast Cancer gene) gồm hai loại gen là BRCA1 và BRCA2, được phát hiện có liên quan đến khả năng mắc bệnh ung thư vú ở phụ nữ được chính thức công bố bởi các nhà khoa học tại Đại học Utah (Mỹ) vào năm 1994.
 
-<!-- p.148 -->
+<!-- sách 155 · PDF 148 -->
 Các can thiệp về chế độ ăn uống cũng có khả năng làm giảm nguy cơ tái phát ở những bệnh nhân ung thư có tình trạng đã thuyên giảm. Cần nhấn mạnh rằng bệnh nhân không nên thử thay thế phương pháp cắt bỏ tuyến vú dự phòng bằng các can thiệp dinh dưỡng khi hiệu quả của chúng vẫn chưa được chứng minh hoàn toàn.
 
 Dưới đây là các khuyến nghị về chế độ ăn cho người có nguy cơ mắc ung thư cao:
@@ -277,7 +278,7 @@ Dưới đây là các khuyến nghị về chế độ ăn cho người có ngu
 
 6. Cứ 1-3 tháng một lần, tùy thuộc vào cân nặng và tình trạng sức khỏe để thực hiện FMD kéo dài trong năm ngày (3-6 tháng một lần nếu bạn là người khỏe mạnh, có cân nặng và lượng mỡ bụng lý tưởng; mỗi tháng một lần nếu bạn thừa cân hoặc béo phì và có nguy cơ bị ung thư cao). Hãy nhớ rằng trong các nghiên cứu trên cá thể chuột, FMD có hiệu quả như
 
-<!-- p.149 -->
+<!-- sách 156 · PDF 149 -->
 hóa trị chống ung thư. Thay vì làm tổn thương các mô và cơ quan bình thường, nó lại bảo vệ chúng.
 
 7. Cung cấp cho cơ thể các axit béo thiết yếu (omega-3 và omega-6), vitamin và khoáng chất từ nhiều loại rau (bông cải xanh, cà rốt, ớt xanh, cà chua, đậu garbanzo, đậu lăng, đậu Hà Lan, đậu đen...) và cá (cá hồi, cá trống). Hệ thống miễn dịch là một trong những hệ thống phòng thủ chính chống lại ung thư. Chế độ ăn uống phải được cân bằng để tiêu diệt các tế bào ung thư hoặc tiền ung thư mà không làm suy yếu hệ thống miễn dịch hay gây ra những thay đổi nội tiết tố khiến cơ thể dễ bị tổn thương. Xem các ví dụ về chế độ ăn nhiều dinh dưỡng ở cuối cuốn sách này.
@@ -288,5 +289,5 @@ hóa trị chống ung thư. Thay vì làm tổn thương các mô và cơ quan 
 
 10. Uống càng ít rượu càng tốt.
 
-<!-- p.150 -->
+<!-- sách 157 · PDF 150 -->
 Các thử nghiệm lâm sàng của chúng tôi xem xét FMD trong việc phòng ngừa và điều trị ung thư khi đã mắc, nhưng nếu kết quả ban đầu cho chúng ta một phát hiện khác, đó có thể là một vũ khí mới mạnh mẽ trong kho vũ khí để chiến đấu, và một ngày nào đó, đánh bại ung thư. Tiếp theo, hãy xem xét các nghiên cứu của chúng tôi về FMD và bệnh tiểu đường.

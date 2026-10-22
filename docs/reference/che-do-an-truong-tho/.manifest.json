@@ -3,6 +3,7 @@
     "file": "00-front-matter.md",
     "title": "Phần đầu sách",
     "number": "00",
+    "book_pages": "9-22",
     "pdf_pages": "1-14",
     "figures": 0
   },
@@ -10,6 +11,7 @@
     "file": "01-chuong-1-dai-phun-nuoc-cua-caruso.md",
     "title": "CHƯƠNG 1 - ĐÀI PHUN NƯỚC CỦA CARUSO",
     "number": "01",
+    "book_pages": "22-36",
     "pdf_pages": "14-28",
     "figures": 1
   },
@@ -17,6 +19,7 @@
     "file": "02-chuong-2-lao-hoa-tuoi-tho-duoc-lap-trinh-va-nghien-cuu-ve-tu.md",
     "title": "CHƯƠNG 2 - LÃO HÓA, TUỔI THỌ ĐƯỢC LẬP TRÌNH VÀ NGHIÊN CỨU VỀ TUỔI TRẺ",
     "number": "02",
+    "book_pages": "36-56",
     "pdf_pages": "28-48",
     "figures": 4
   },
@@ -24,6 +27,7 @@
     "file": "03-chuong-3-nam-tru-cot.md",
     "title": "CHƯƠNG 3 - NĂM TRỤ CỘT",
     "number": "03",
+    "book_pages": "56-69",
     "pdf_pages": "48-61",
     "figures": 1
   },
@@ -31,6 +35,7 @@
     "file": "04-chuong-4-che-do-an-truong-tho.md",
     "title": "CHƯƠNG 4 - CHẾ ĐỘ ĂN TRƯỜNG THỌ",
     "number": "04",
+    "book_pages": "69-105",
     "pdf_pages": "61-98",
     "figures": 8
   },
@@ -38,6 +43,7 @@
     "file": "05-chuong-5-tap-the-duc-va-song-lau-khoe-manh.md",
     "title": "CHƯƠNG 5 - TẬP THỂ DỤC VÀ SỐNG LÂU KHỎE MẠNH",
     "number": "05",
+    "book_pages": "105-113",
     "pdf_pages": "98-106",
     "figures": 0
   },
@@ -45,6 +51,7 @@
     "file": "06-chuong-6-che-do-nhin-an-khong-hoan-toan-kiem-soat-can-nang-v.md",
     "title": "CHƯƠNG 6 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN, KIỂM SOÁT CÂN NẶNG VÀ TUỔI THỌ KHỎE MẠNH",
     "number": "06",
+    "book_pages": "113-135",
     "pdf_pages": "106-128",
     "figures": 7
   },
@@ -52,6 +59,7 @@
     "file": "07-chuong-7-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
     "title": "CHƯƠNG 7 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ UNG THƯ",
     "number": "07",
+    "book_pages": "135-158",
     "pdf_pages": "128-151",
     "figures": 4
   },
@@ -59,6 +67,7 @@
     "file": "08-chuong-8-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
     "title": "CHƯƠNG 8 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIỂU ĐƯỜNG",
     "number": "08",
+    "book_pages": "158-179",
     "pdf_pages": "151-172",
     "figures": 5
   },
@@ -66,6 +75,7 @@
     "file": "09-chuong-9-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
     "title": "CHƯƠNG 9 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIM MẠCH",
     "number": "09",
+    "book_pages": "179-195",
     "pdf_pages": "172-188",
     "figures": 1
   },
@@ -73,6 +83,7 @@
     "file": "10-chuong-10-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
     "title": "CHƯƠNG 10 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA VÀ ĐIỀU TRỊ ALZHEIMER CÙNG CÁC BỆNH LÝ THOÁI HÓA THẦN KINH KHÁC",
     "number": "10",
+    "book_pages": "195-213",
     "pdf_pages": "188-206",
     "figures": 1
   },
@@ -80,6 +91,7 @@
     "file": "11-chuong-11-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
     "title": "CHƯƠNG 11 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH LÝ VIÊM CŨNG NHƯ BỆNH TỰ MIỄN",
     "number": "11",
+    "book_pages": "213-230",
     "pdf_pages": "206-223",
     "figures": 2
   },
@@ -87,6 +99,7 @@
     "file": "12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md",
     "title": "CHƯƠNG 12 - CÁCH ĐỂ GIỮ MÃI TUỔI THANH XUÂN",
     "number": "12",
+    "book_pages": "230-281",
     "pdf_pages": "223-274",
     "figures": 1
   }

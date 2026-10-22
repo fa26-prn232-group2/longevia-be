@@ -87,8 +87,13 @@ Recommendation không có REST/Swagger. Test bằng gRPC:
 ```bash
 # nếu bật gRPC reflection
 grpcurl -plaintext localhost:5001 list
-grpcurl -plaintext -d '{...}' localhost:5001 longevia.recommendation.v1.RecommendationService/Recommend
+grpcurl -plaintext -d '{...}' localhost:5001 longevia.recommendation.v1.RecommendationService/GetMealRecommendations
+grpcurl -plaintext -d '{...}' localhost:5001 longevia.recommendation.v1.RecommendationService/AskLongevityQuestion
 ```
+
+> Port `5001` trong ví dụ là port **host** dùng để test tay; trong Docker,
+> Recommendation chỉ nghe trong mạng nội bộ `internal_net` và không expose ra
+> host.
 
 ## 5. Sinh client từ OpenAPI (tùy chọn)
 

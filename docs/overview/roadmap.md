@@ -9,7 +9,7 @@ Kế hoạch phân bổ và triển khai được tổ chức thành 6 giai đo�
 | **Giai đoạn 2** | **Background Worker & Messaging**: Tích hợp MassTransit RabbitMQ, Brevo Email Adapter cho email xác thực | Kế tiếp |
 | **Giai đoạn 3** | **Diet Service**: Thư viện món ăn, tính toán TDEE/Macro, Nhật ký bữa ăn 4 buổi, gRPC Client | Kế tiếp |
 | **Giai đoạn 4** | **Progress Service**: Nhật ký chỉ số cơ thể, Fasting Timer (16:8), log nước & giấc ngủ, Dashboard Streaks | Kế tiếp |
-| **Giai đoạn 5** | **Recommendation Service & AI Integration**: Khởi tạo gRPC Server, Google AI Gemini Adapter, 3 hàm phân tích/gợi ý | Kế tiếp |
+| **Giai đoạn 5** | **Recommendation Service & AI Integration**: Khởi tạo gRPC Server, Google AI Gemini Adapter, RAG trên tri thức sách (`recommendation_db` + pipeline ingest `scripts/book-kb`), 5 hàm gợi ý / phân tích / tra cứu | Kế tiếp |
 | **Giai đoạn 6** | **Tích hợp toàn diện & Gate Close-out**: Cấu hình Nginx gateway, Swagger UI gộp, Docker Compose multi-service, E2E Smoke Tests | Kế tiếp |
 
 ## Quy tắc thực hiện

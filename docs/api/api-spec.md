@@ -489,8 +489,9 @@
 
 ## 5. Recommendation Service gRPC API (Dev 4 phụ trách)
 > **Giao thức**: gRPC Protobuf | **Cổng nội bộ**: `:50051` | **Mạng**: `internal_net` (Không expose ra Nginx)
+> **Tri thức**: RAG trên corpus *Chế độ ăn trường thọ* — mọi khuyến nghị phải có `citations[]` (chương + trang sách bản in + trích đoạn) hoặc phải `abstained`.
 
-File hợp đồng: [`contracts/recommendation/v1/recommendation.proto`](file:///d:/FPT_EDUCATION/FPTCN8/_0PRN232/longevia-be/contracts/identity/v1/identity.proto)
+File hợp đồng: [`contracts/recommendation/v1/recommendation.proto`](../../contracts/recommendation/v1/recommendation.proto)
 
 ```protobuf
 syntax = "proto3";
@@ -499,47 +500,100 @@ package longevia.recommendation.v1;
 option csharp_namespace = "Longevia.Recommendation.Contracts.V1";
 
 service RecommendationService {
-  // Gợi ý bữa ăn dựa trên macro còn thiếu và sở thích dinh dưỡng
-  rpc GetMealRecommendations (MealRecommendationRequest) returns (MealRecommendationResponse);
-  
-  // Phân tích thiếu hụt vi chất trong tuần
-  rpc AnalyzeNutrientGaps (NutrientGapRequest) returns (NutrientGapResponse);
-  
-  // Đánh giá thói quen sống và chấm điểm Longevity
-  rpc EvaluateLongevityHabits (LongevityHabitRequest) returns (LongevityHabitResponse);
+  // Gợi ý bữa ăn: chỉ chọn trong candidate_foods do caller gửi, lọc dị ứng bằng code
+  rpc GetMealRecommendations   (MealRecommendationRequest)    returns (MealRecommendationResponse);
+  // Phân tích thiếu hụt vi chất 7 ngày (gap tính deterministic theo bảng RDA)
+  rpc AnalyzeNutrientGaps      (NutrientGapRequest)           returns (NutrientGapResponse);
+  // Đánh giá thói quen sống và chấm điểm Longevity (rubric cố định)
+  rpc EvaluateLongevityHabits  (LongevityHabitRequest)       returns (LongevityHabitResponse);
+  // Hỏi tri thức trong sách, có trích dẫn; abstain khi corpus không đủ
+  rpc AskLongevityQuestion     (AskLongevityQuestionRequest)  returns (AskLongevityQuestionResponse);
+  // Tra cứu các đoạn trong sách theo truy vấn
+  rpc SearchLongevityKnowledge (SearchKnowledgeRequest)       returns (SearchKnowledgeResponse);
+}
+
+// ---- Dùng chung ----
+message UserProfile {
+  int32 age = 1;
+  BiologicalSex sex = 2;               // MALE | FEMALE
+  double height_cm = 3;
+  double weight_kg = 4;
+  string activity_level = 5;            // Sedentary | LightlyActive | ModeratelyActive | VeryActive
+  string dietary_preference = 6;        // None | Keto | Vegan | Mediterranean | LowCarb
+  repeated string allergies = 7;
+}
+
+message Citation {
+  int32 chapter_number = 1;             // 0 = phần đầu sách
+  string chapter_title = 2;
+  int32 book_page = 3;                  // trang BẢN IN - nguồn chuẩn
+  int32 pdf_page = 4;                   // trang file PDF scan - đối chiếu
+  string quote = 5;                     // trích đoạn nguyên văn, đã verify khớp chunk
+  bool verified = 6;                    // false = trang chưa đối chiếu tay
+  string source_file = 7;
+}
+
+message ScoreComponent {
+  string key = 1;                       // fasting | sleep | hydration | nutrition
+  int32 score = 2;
+  int32 weight = 3;                     // trọng số %
+  string reason = 4;
+}
+
+message Disclaimer { string text = 1; }
+
+// ---- 1. Gợi ý bữa ăn ----
+message CandidateFood {
+  string food_id = 1;                   // map về FoodItems của Diet
+  string name = 2;
+  string serving_size = 3;
+  string serving_unit = 4;
+  int32 calories = 5;
+  double protein_grams = 6;
+  double carbs_grams = 7;
+  double fat_grams = 8;
+  double fiber_grams = 9;
+  repeated string allergens = 10;       // đã chuẩn hoá lowercase
 }
 
 message MealRecommendationRequest {
   string user_id = 1;
-  int32 target_calories_remaining = 2;
-  double target_protein_remaining = 3;
-  double target_carbs_remaining = 4;
-  double target_fat_remaining = 5;
-  repeated string allergies = 6;
-  string dietary_preference = 7;
+  MealType meal_type = 2;               // BREAKFAST | LUNCH | DINNER | SNACK
+  UserGoal goal = 3;
+  UserProfile profile = 4;
+  int32 consumed_calories = 5;
+  int32 target_calories = 6;
+  double target_protein_remaining = 7;
+  double target_carbs_remaining = 8;
+  double target_fat_remaining = 9;
+  repeated CandidateFood candidate_foods = 10;
+  string locale = 11;                   // "vi-VN"
+}
+
+message RecommendedMeal {
+  string food_id = 1;
+  string name = 2;
+  string description = 3;
+  int32 estimated_calories = 4;
+  double protein_grams = 5;
+  double carbs_grams = 6;
+  double fat_grams = 7;
+  repeated string key_micronutrients = 8;
+  string rationale = 9;
+  repeated Citation citations = 10;
 }
 
 message MealRecommendationResponse {
   repeated RecommendedMeal meals = 1;
   string longevity_tip = 2;
+  repeated Citation tip_citations = 3;
+  Disclaimer disclaimer = 4;
+  bool calorie_cap_reached = 5;         // BR-03: đã chạm trần 105%
+  string safety_note = 6;
 }
 
-message RecommendedMeal {
-  string name = 1;
-  string description = 2;
-  int32 estimated_calories = 3;
-  double protein_grams = 4;
-  double carbs_grams = 5;
-  double fat_grams = 6;
-  repeated string key_micronutrients = 7;
-}
-
-message NutrientGapRequest {
-  string user_id = 1;
-  repeated DailyNutrientRecord past_7_days = 2;
-}
-
-message DailyNutrientRecord {
+// ---- 2. Thiếu hụt vi chất ----
+message DailyNutrientSummary {
   string date = 1;
   int32 calories = 2;
   double protein = 3;
@@ -548,24 +602,98 @@ message DailyNutrientRecord {
   double fiber = 6;
 }
 
-message NutrientGapResponse {
-  repeated string deficient_nutrients = 1;
-  repeated string suggested_foods = 2;
-  string analysis_summary = 3;
+message NutrientGapRequest {
+  string user_id = 1;
+  UserProfile profile = 2;
+  repeated DailyNutrientSummary past_7_days = 3;
+  int32 target_calories = 4;
+  double target_protein_grams = 5;
+  double target_carbs_grams = 6;
+  double target_fat_grams = 7;
+  double target_fiber_grams = 8;
 }
 
+message NutrientGap {
+  string nutrient = 1;
+  string unit = 2;
+  double target = 3;
+  double average_intake = 4;
+  double deficit = 5;
+  string severity = 6;                 // mild | moderate | severe
+}
+
+message NutrientGapResponse {
+  repeated NutrientGap gaps = 1;
+  repeated string deficient_nutrients = 2;
+  repeated string suggested_foods = 3;
+  string analysis_summary = 4;
+  repeated Citation citations = 5;
+  Disclaimer disclaimer = 6;
+}
+
+// ---- 3. Đánh giá thói quen trường thọ ----
 message LongevityHabitRequest {
   string user_id = 1;
   double average_fasting_hours = 2;
   double average_sleep_hours = 3;
   int32 water_target_hit_days = 4;
+  UserProfile profile = 5;
+  double nutrition_adherence_rate = 6;
 }
 
 message LongevityHabitResponse {
-  int32 longevity_score = 1; // Thang điểm 1 - 100
+  int32 longevity_score = 1;            // 0-100, deterministic
   repeated string actionable_insights = 2;
+  repeated ScoreComponent score_breakdown = 3;
+  repeated Citation citations = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 4. Hỏi tri thức sách ----
+message AskLongevityQuestionRequest {
+  string user_id = 1;
+  string question = 2;
+  UserProfile profile = 3;
+  int32 chapter_filter = 4;             // 0 = tất cả
+}
+
+message AskLongevityQuestionResponse {
+  string answer = 1;
+  repeated Citation citations = 2;
+  bool abstained = 3;
+  string abstain_reason = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 5. Tra cứu tri thức ----
+message SearchKnowledgeRequest {
+  string query = 1;
+  int32 chapter_filter = 2;
+  int32 top_k = 3;                      // mặc định 8, tối đa 20
+}
+
+message KnowledgeSnippet {
+  int32 chapter_number = 1;
+  string chapter_title = 2;
+  int32 book_page = 3;
+  int32 pdf_page = 4;
+  string text = 5;
+  double score = 6;
+  bool verified = 7;
+}
+
+message SearchKnowledgeResponse {
+  repeated KnowledgeSnippet snippets = 1;
 }
 ```
+
+**Quy tắc bắt buộc**
+
+- `candidate_foods` là **danh mục an toàn** do caller gửi; service **chỉ được chọn/pha trong danh mục này** và trả về `food_id` map ngược về `FoodItems`.
+- Lọc dị ứng 100% và rule chạm trần 105% calo thực hiện bằng **code**, không phải bằng prompt.
+- `quote` trong `Citation` phải khớp chuỗi với chunk nguồn; không khớp thì bỏ citation, mất hết citation thì response chuyển sang `abstained`.
+- Mọi response có `disclaimer`; `abstained = true` khi corpus không đủ căn cứ.
+- Knowledge store: `recommendation_db` (schema `kb`, pgvector) — chỉ chứa corpus tri thức đã nhúng, **không** chứa dữ liệu người dùng. Xem [ADR 002](../decisions/002-recommendation-knowledge-base.md).
 
 ---
 

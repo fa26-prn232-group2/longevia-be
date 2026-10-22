@@ -14,8 +14,10 @@ Client (Web / Mobile)
         │ HTTP
         ├──► Identity Service ──► identity_db
         ├──► Diet Service ──────► diet_db ──gRPC──► Recommendation Service ──► Google AI
-        └──► Progress Service ──► progress_db
-                    │
+        └──► Progress Service ──► progress_db        │
+                    │                              ▼
+                    │                    recommendation_db
+                    │                    (tri thức đã nhúng - RAG)
                     │ publish (RabbitMQ)
                     ▼
               Background Worker ──► Brevo (email)
@@ -24,7 +26,9 @@ External: Cloudinary (media), Google AI (AI provider)
 ```
 
 - **Client-facing (qua Nginx)**: Identity, Diet, Progress.
-- **Nội bộ (gRPC-only)**: Recommendation — stateless, không sở hữu database.
+- **Nội bộ (gRPC-only)**: Recommendation — không expose REST; sở hữu
+  `recommendation_db` chỉ chứa corpus tri thức đã nhúng (RAG), **không** chứa
+  dữ liệu người dùng.
 - Mỗi service sở hữu database riêng; không truy cập chéo DB.
 - Sơ đồ đầy đủ: [`docs/system-design/diagrams/png/c4-model-lv2.png`](docs/system-design/diagrams/png/c4-model-lv2.png).
 

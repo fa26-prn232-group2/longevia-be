@@ -6,6 +6,7 @@ using Recommendation.Api.Endpoints;
 using Recommendation.Api.Extensions;
 using Recommendation.Api.Middlewares;
 using Recommendation.Application.Features.Ask;
+using Recommendation.Application.Features.LongevityHabits;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Search;
@@ -132,6 +133,11 @@ public static class RecommendationStartup
         // case phụ thuộc IKnowledgeStore (scoped) nên phải scoped.
         builder.Services.AddSingleton<NutrientGapCalculator>();
         builder.Services.AddScoped<AnalyzeNutrientGapsUseCase>();
+
+        // Đánh giá thói quen trường thọ (US6): rubric thuần nên singleton; use case
+        // phụ thuộc IKnowledgeStore (scoped) nên phải scoped.
+        builder.Services.AddSingleton<LongevityRubricCalculator>();
+        builder.Services.AddScoped<EvaluateLongevityHabitsUseCase>();
 
         // Hỏi tri thức trong sách (US3): guard deterministic + use case phụ thuộc
         // IKnowledgeStore (scoped) nên use case phải scoped.

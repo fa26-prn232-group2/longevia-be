@@ -247,17 +247,17 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 6
 
-- [ ] T100 [P] [US6] Unit test `LongevityRubric` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/LongevityHabits/LongevityRubricTests.cs` — trọng số fasting 35 / sleep 30 / hydration 20 / nutrition 15; điểm tối đa khi nhịn ăn 16h, ngủ 7h, nước 7/7 ngày, dinh dưỡng 90%; cùng đầu vào → cùng điểm
-- [ ] T101 [P] [US6] Unit test `EvaluateLongevityHabitsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/LongevityHabits/EvaluateLongevityHabitsUseCaseTests.cs` — `score_breakdown` có đủ 4 nhánh; `actionable_insights` có citations khi nội dung có trong sách
-- [ ] T102 [US6] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/LongevityHabits/EvaluateLongevityHabitsGrpcTests.cs` — gọi server thật, assert điểm trong 0–100 và tổng trọng số = 100
+- [x] T100 [P] [US6] Unit test `LongevityRubric` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/LongevityHabits/LongevityRubricTests.cs` — trọng số fasting 35 / sleep 30 / hydration 20 / nutrition 15; điểm tối đa khi nhịn ăn 16h, ngủ 7h, nước 7/7 ngày, dinh dưỡng 90%; cùng đầu vào → cùng điểm
+- [x] T101 [P] [US6] Unit test `EvaluateLongevityHabitsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/LongevityHabits/EvaluateLongevityHabitsUseCaseTests.cs` — `score_breakdown` có đủ 4 nhánh; `actionable_insights` có citations khi nội dung có trong sách
+- [x] T102 [US6] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/LongevityHabits/EvaluateLongevityHabitsGrpcTests.cs` — gọi server thật, assert điểm trong 0–100 và tổng trọng số = 100
 
 ### Implementation cho User Story 6
 
-- [ ] T103 [P] [US6] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/LongevityRubric.cs` — trọng số + ngưỡng điểm tối đa từng nhánh (fasting 16h, sleep 7h, hydration 7/7 ngày, nutrition 90%)
-- [ ] T104 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/LongevityRubricCalculator.cs` — chấm từng nhánh 0–100 theo ngưỡng, tính điểm tổng theo trọng số, trả `ScoreComponent[]`
-- [ ] T105 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/EvaluateLongevityHabitsUseCase.cs` — `score_breakdown` + `actionable_insights` (có citations khi có trong sách) + `disclaimer`
-- [ ] T106 [US6] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/LongevityHabitMapper.cs`
-- [ ] T107 [US6] Bổ sung `EvaluateLongevityHabits` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
+- [x] T103 [P] [US6] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/LongevityRubric.cs` — trọng số + ngưỡng điểm tối đa từng nhánh (fasting 16h, sleep 7h, hydration 7/7 ngày, nutrition 90%)
+- [x] T104 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/LongevityRubricCalculator.cs` — chấm từng nhánh 0–100 theo ngưỡng, tính điểm tổng theo trọng số, trả `ScoreComponent[]`
+- [x] T105 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/EvaluateLongevityHabitsUseCase.cs` — `score_breakdown` + `actionable_insights` (có citations khi có trong sách) + `disclaimer`
+- [x] T106 [US6] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/LongevityHabitMapper.cs`
+- [x] T107 [US6] Bổ sung `EvaluateLongevityHabits` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
 
 **Checkpoint**: User Story 6 chạy độc lập, điểm deterministic.
 

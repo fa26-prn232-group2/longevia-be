@@ -220,3 +220,23 @@ Xem [research.md](./research.md): 14 quyết định kỹ thuật (D-01…D-14),
 | (không có) | — | — |
 
 **Ngoài hiến pháp nhưng cần ghi nhận**: dự án thêm package `Pgvector.EntityFrameworkCore` (bên thứ ba) vì Npgsql 10 chưa hỗ trợ kiểu `vector` — rủi ro được giới hạn bằng cách ghim phiên bản `0.3.0` và cô lập toàn bộ truy cập vector sau interface `IKnowledgeStore` để đổi backend không phải sửa use case. Chi tiết ở `research.md` D-11.
+
+---
+
+## Quyết định trong quá trình triển khai
+
+Ghi lại các quyết định orchestrator tự chốt khi triển khai (theo skill §9), kèm lý do — để người đọc không phải suy đoán.
+
+| # | Quyết định | Lý do |
+| --- | --- | --- |
+| I-01 | Cổng Kestrel đọc từ `RECOMMENDATION__GRPC_PORT` / `RECOMMENDATION__HTTP_PORT` (mặc định 50051 / 8080) thay vì hard-code | Constitution yêu cầu cấu hình qua biến môi trường; hard-code là vi phạm |
+| I-02 | `RAG__EMBEDDING_MODEL` + `RAG__EMBEDDING_DIM` là **nguồn duy nhất** của model/số chiều; bỏ `GOOGLE_AI__EMBEDDING_MODEL` | Hai nguồn cho cùng một giá trị sẽ lệch giữa corpus và câu hỏi → hỏng truy xuất im lặng |
+| I-03 | Không dùng `env_file: ../.env` cho service; giữ `environment:` tường minh + tài liệu hoá `docker compose --env-file .env ...` | `env_file` nạp toàn bộ `.env`, kéo cả `JWT__SIGNING_PRIVATE_KEY` của Identity vào container → vi phạm ADR 001 |
+| I-04 | `RAG__MIN_CITATION_SIMILARITY = 0.75` (không phải 0.6) | Trích dẫn là tính chất an toàn cốt lõi (BR-06); ngưỡng lỏng hơn dễ gắn trích dẫn không thuộc chunk |
+| I-05 | `TaskType` tách hai chiều: `RETRIEVAL_QUERY` cho câu hỏi, `RETRIEVAL_DOCUMENT` cho chunk | Theo research D-12; dùng sai chiều làm giảm chất lượng truy xuất |
+| I-06 | Giữ `IKnowledgeStore.UpsertAsync` | Cần để seed corpus nhỏ trong integration test; đường ghi chuẩn vẫn là pipeline offline (D-02) |
+| I-07 | Tách composition root sang `Recommendation.Api/RecommendationStartup.cs`, `Program.cs` chỉ gọi | Integration test cần dựng host Kestrel thật trong tiến trình mà không thêm `Microsoft.AspNetCore.Mvc.Testing` vào CPM |
+| I-08 | Model sinh câu trả lời: `gemini-3.5-flash-lite` (`GOOGLE_AI__CHAT_MODEL`) | Theo yêu cầu của dev: dùng bản lite thay cho `gemini-3.5-flash` |
+| I-09 | Ngưỡng lọc sở thích ăn uống (spec không định nghĩa): Keto ≤ 10 g carbs/khẩu phần, LowCarb ≤ 30 g, Mediterranean không loại trừ, Vegan so khớp từ khoá có dấu | Cần một giá trị để kiểm thử; là hằng số trong `Domain/Constants/DietaryPreferenceRules.cs`, đổi được mà không ảnh hưởng contract. **Dev nên xác nhận** |
+| I-10 | `RecommendedMeal.description` và `key_micronutrients` trả rỗng ở US1 | `CandidateFood` không có dữ liệu tương ứng; bịa là vi phạm FR-005. Enrich thuộc feature `duck/002` khi Diet gửi dữ liệu đầy đủ hơn |
+| I-11 | So khớp dị ứng bỏ dấu → có thể dương tính giả (dị ứng "cá" loại cả món có "cà") | Chọn hướng **an toàn** (loại nhầm còn hơn để lọt); ghi nhận để cân nhắc khi có dữ liệu dị ứng chuẩn hoá từ Identity |

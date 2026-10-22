@@ -114,25 +114,25 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 1
 
-- [ ] T047 [P] [US1] Unit test `AllergenGuard` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/AllergenGuardTests.cs` — loại 100% món khớp dị ứng (khớp chính xác, khớp chứa, khớp không phân biệt hoa thường, khớp tiếng Việt có dấu/không dấu); **viết trước và phải thấy đỏ**
-- [ ] T048 [P] [US1] Unit test `CalorieCapRule` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/CalorieCapRuleTests.cs` — calo đã ăn ≥ 105% mục tiêu → chặn bữa ăn chính; < 105% → cho phép; biên đúng 105%
-- [ ] T049 [P] [US1] Unit test `DietaryPreferenceFilter` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/DietaryPreferenceFilterTests.cs` — Vegan loại thực phẩm thịt/trứng/sữa; Keto loại carbs vượt ngưỡng
-- [ ] T050 [P] [US1] Unit test `GetMealRecommendationsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/GetMealRecommendationsUseCaseTests.cs` — không vượt 5 món; dinh dưỡng lấy từ `CandidateFood` chứ không tự tính; mọi món có `food_id` trong danh mục; response luôn có `disclaimer`; ánh xạ đủ 4 bữa `BREASTFAST`/`LUNCH`/`DINNER`/`SNACK` sang nhóm gợi ý tương ứng (FR-007)
-- [ ] T051 [US1] Integration test gRPC trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Meals/GetMealRecommendationsGrpcTests.cs` — gọi server thật qua `Grpc.Net.Client` với danh mục chứa món dị ứng, assert không món nào chứa thành phần dị ứng và `calorie_cap_reached = true` khi vượt trần
+- [x] T047 [P] [US1] Unit test `AllergenGuard` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/AllergenGuardTests.cs` — loại 100% món khớp dị ứng (khớp chính xác, khớp chứa, khớp không phân biệt hoa thường, khớp tiếng Việt có dấu/không dấu); **viết trước và phải thấy đỏ**
+- [x] T048 [P] [US1] Unit test `CalorieCapRule` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/CalorieCapRuleTests.cs` — calo đã ăn ≥ 105% mục tiêu → chặn bữa ăn chính; < 105% → cho phép; biên đúng 105%
+- [x] T049 [P] [US1] Unit test `DietaryPreferenceFilter` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/DietaryPreferenceFilterTests.cs` — Vegan loại thực phẩm thịt/trứng/sữa; Keto loại carbs vượt ngưỡng
+- [x] T050 [P] [US1] Unit test `GetMealRecommendationsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/GetMealRecommendationsUseCaseTests.cs` — không vượt 5 món; dinh dưỡng lấy từ `CandidateFood` chứ không tự tính; mọi món có `food_id` trong danh mục; response luôn có `disclaimer`; ánh xạ đủ 4 bữa `BREASTFAST`/`LUNCH`/`DINNER`/`SNACK` sang nhóm gợi ý tương ứng (FR-007)
+- [x] T051 [US1] Integration test gRPC trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Meals/GetMealRecommendationsGrpcTests.cs` (dựng **Kestrel thật trong tiến trình** qua `RecommendationStartup` + Testcontainers `pgvector/pgvector:pg17`; không dùng `WebApplicationFactory` vì repo không có `Microsoft.AspNetCore.Mvc.Testing`) — gọi server thật qua `Grpc.Net.Client` với danh mục chứa món dị ứng, assert không món nào chứa thành phần dị ứng và `calorie_cap_reached = true` khi vượt trần
 
 ### Implementation cho User Story 1
 
-- [ ] T052 [P] [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/AllergenAliases.cs` — ánh xạ thành phần dị ứng tiếng Việt ↔ tiếng Anh/sinh học (đậu phộng/peanut, sữa/milk/lactose, hải sản/shellfish…)
-- [ ] T053 [P] [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/DietaryPreferenceRules.cs`
-- [ ] T054 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/AllergenGuard.cs` — lọc theo `profile.allergies` × `candidate_foods.allergens` + khớp tên món; **quy tắc bằng code, không giao cho AI**
-- [ ] T055 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/CalorieCapRule.cs` — `consumed_calories >= 1.05 * target_calories` → không gợi ý bữa ăn chính, chỉ đồ uống 0 calo + mẹo thư giãn/giấc ngủ
-- [ ] T056 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/DietaryPreferenceFilter.cs`
-- [ ] T057 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/GetMealRecommendationsUseCase.cs` — thứ tự: lọc dị ứng → lọc sở thích → rule 105% → chọn tối đa 5 món bằng AI trong tập đã lọc → gắn `rationale` + `citations`; `longevity_tip` lấy từ RAG, fallback sang tip tĩnh trong `Domain/Constants`
-- [ ] T058 [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/DisclaimerText.cs` — nội dung khuyến cáo BR-04
-- [ ] T059 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` (partial) — hiện thực `GetMealRecommendations`, map DTO nội bộ ↔ message `contracts/recommendation/v1/recommendation.proto`, deadline 5s
-- [ ] T060 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/MealRecommendationMapper.cs` — map `CandidateFood` → `RecommendedMeal`, `Citation` → message `Citation`
-- [ ] T061 [US1] Viết test hồi quy prompt cho `GetMealRecommendations` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/MealPromptTests.cs` — assert prompt có lệnh "chỉ dùng nguyên liệu trong danh mục", có tầng unverified guard, không có tên món nào ngoài danh mục
-- [ ] T062 [US1] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4 nếu hợp đồng thực tế lệch với bản thiết kế `contracts/recommendation.proto`
+- [x] T052 [P] [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/AllergenAliases.cs` — ánh xạ thành phần dị ứng tiếng Việt ↔ tiếng Anh/sinh học (đậu phộng/peanut, sữa/milk/lactose, hải sản/shellfish…)
+- [x] T053 [P] [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/DietaryPreferenceRules.cs`
+- [x] T054 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/AllergenGuard.cs` — lọc theo `profile.allergies` × `candidate_foods.allergens` + khớp tên món; **quy tắc bằng code, không giao cho AI**
+- [x] T055 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/CalorieCapRule.cs` — `consumed_calories >= 1.05 * target_calories` → không gợi ý bữa ăn chính, chỉ đồ uống 0 calo + mẹo thư giãn/giấc ngủ
+- [x] T056 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/DietaryPreferenceFilter.cs`
+- [x] T057 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/GetMealRecommendationsUseCase.cs` — thứ tự: lọc dị ứng → lọc sở thích → rule 105% → chọn tối đa 5 món bằng AI trong tập đã lọc → gắn `rationale` + `citations`; `longevity_tip` lấy từ RAG, fallback sang tip tĩnh trong `Domain/Constants`
+- [x] T058 [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/DisclaimerText.cs` — nội dung khuyến cáo BR-04
+- [x] T059 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` (partial) — hiện thực `GetMealRecommendations`, map DTO nội bộ ↔ message `contracts/recommendation/v1/recommendation.proto`, deadline 5s
+- [x] T060 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/MealRecommendationMapper.cs` — map `CandidateFood` → `RecommendedMeal`, `Citation` → message `Citation`
+- [x] T061 [US1] Viết test hồi quy prompt cho `GetMealRecommendations` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/MealPromptTests.cs` — assert prompt có lệnh "chỉ dùng nguyên liệu trong danh mục", có tầng unverified guard, không có tên món nào ngoài danh mục
+- [x] T062 [US1] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4 nếu hợp đồng thực tế lệch với bản thiết kế `contracts/recommendation.proto`
 
 **Checkpoint**: User Story 1 chạy độc lập — gọi được gRPC, lọc dị ứng đúng, không vượt 5 món.
 

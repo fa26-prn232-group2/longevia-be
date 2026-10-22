@@ -228,6 +228,7 @@ Ngoài ra, service giữ **knowledge store** riêng (`recommendation_db`) chứa
   - `AC-4`: Mỗi món gợi ý kèm `rationale` (vì sao chọn) và `citations[]` trỏ về chương + trang sách trong corpus.
   - `AC-5`: Mọi response kèm `disclaimer` theo BR-04.
   - `AC-6`: Phần dinh dưỡng (`estimated_calories`, macro) lấy từ `candidate_foods` đã chọn — **không** để LLM tự bịa.
+  - `AC-7`: Hỗ trợ bữa sáng/trưa/tối/phụ và trả về **tối đa 5 món** mỗi bữa (FR-007).
 
 ##### US-REC-02: Phân tích thiếu hụt vi chất 7 ngày
 - **Mô tả**: Là người dùng, tôi muốn biết trong tuần qua tôi đang thiếu vi chất nào và nên ăn gì để bù.

@@ -23,6 +23,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Integration test host Kestrel that that (in-process) qua
+      RecommendationStartup: can FrameworkReference de dung WebApplication +
+      Testcontainers cho PostgreSQL that, khong them package moi vao CPM.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Client gRPC cho contract Recommendation (GrpcServices="Client"). -->
     <Protobuf Include="..\..\..\..\..\contracts\recommendation\v1\recommendation.proto"
               GrpcServices="Client" />

@@ -513,6 +513,28 @@ service RecommendationService {
 }
 
 // ---- Dùng chung ----
+enum MealType {
+  MEAL_TYPE_UNSPECIFIED = 0;
+  BREAKFAST = 1;
+  LUNCH = 2;
+  DINNER = 3;
+  SNACK = 4;
+}
+
+enum BiologicalSex {
+  SEX_UNSPECIFIED = 0;
+  MALE = 1;
+  FEMALE = 2;
+}
+
+enum UserGoal {
+  GOAL_UNSPECIFIED = 0;
+  LOSE_WEIGHT = 1;
+  MAINTAIN = 2;
+  BUILD_MUSCLE = 3;
+  LONGEVITY = 4;
+}
+
 message UserProfile {
   int32 age = 1;
   BiologicalSex sex = 2;               // MALE | FEMALE
@@ -691,6 +713,8 @@ message SearchKnowledgeResponse {
 
 - `candidate_foods` là **danh mục an toàn** do caller gửi; service **chỉ được chọn/pha trong danh mục này** và trả về `food_id` map ngược về `FoodItems`.
 - Lọc dị ứng 100% và rule chạm trần 105% calo thực hiện bằng **code**, không phải bằng prompt.
+- Mỗi bữa trả về **tối đa 5 món** (`meals[]`). `food_id` rỗng chỉ dùng cho gợi ý ngoài danh mục: khi `calorie_cap_reached = true` service chỉ trả đồ uống 0 calo cùng mẹo thư giãn/giấc ngủ.
+- `estimated_calories` và macro của mỗi món lấy **nguyên giá trị từ `candidate_foods`** đã chọn; mô hình chỉ chọn món, viết `rationale` và trả `citations`.
 - `quote` trong `Citation` phải khớp chuỗi với chunk nguồn; không khớp thì bỏ citation, mất hết citation thì response chuyển sang `abstained`.
 - Mọi response có `disclaimer`; `abstained = true` khi corpus không đủ căn cứ.
 - Knowledge store: `recommendation_db` (schema `kb`, pgvector) — chỉ chứa corpus tri thức đã nhúng, **không** chứa dữ liệu người dùng. Xem [ADR 002](../decisions/002-recommendation-knowledge-base.md).

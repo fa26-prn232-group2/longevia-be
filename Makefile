@@ -33,7 +33,7 @@ BOOK_OCR_CONTAINER := book-ocr-night
 # Book knowledge-base pipeline (scripts/book-kb). Docker-only, writes to
 # artifacts/book-kb and loads the corpus into recommendation_db.
 # Never part of the .NET gate.
-BOOK_KB := $(DOCKER) compose -f scripts/book-kb/compose.yml
+BOOK_KB := $(DOCKER) compose --env-file .env -f scripts/book-kb/compose.yml
 
 help:
 	@echo Targets:
@@ -167,6 +167,7 @@ book-ocr-clean:
 
 kb-build:
 	$(BOOK_KB) build
+	$(BOOK_KB) run --rm book-kb build
 
 kb-load:
 	$(BOOK_KB) run --rm book-kb load

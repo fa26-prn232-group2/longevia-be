@@ -1,4 +1,4 @@
-# Implementation Plan: Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
+﻿# Implementation Plan: Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
 
 **Branch**: `feat/recommendation-rag` | **Date**: 2026-10-22 | **Spec**: [spec.md](./spec.md)
 **Feature ID**: `duck/001/recommendation-rag` | **Owner**: `duck`
@@ -56,7 +56,7 @@ Quyết định kiến trúc nền: [ADR 002](../../docs/decisions/002-recommend
 - `sgrep`/secret: không log dữ liệu sức khỏe, token, API key
 
 **Scale/Scope**:
-- Corpus: 13 chương / 273 trang → ~900–1.300 chunk; ước lượng < 20 MB trong `kb`
+- Corpus: 13 chương / 273 trang → **188 chunk** (đo sau khi nạp thật, chunk 1000 token / overlap 150); **< 5 MB** trong `kb`
 - Embedding `gemini-embedding-001`, 768 chiều → 3.1 KB/chunk
 - Phạm vi: **chỉ Recommendation**. Tích hợp phía service dinh dưỡng (gửi `candidate_foods`, hiển thị citation ra REST) → feature riêng `duck/002/diet-recommendation-integration`
 
@@ -201,7 +201,7 @@ Xem [research.md](./research.md): 14 quyết định kỹ thuật (D-01…D-14),
 ## Điều kiện hoàn thành (Definition of Done)
 
 1. `contracts/recommendation/v1/recommendation.proto` có 5 RPC, đồng bộ `docs/api/api-spec.md` §5 và PRD §2.4/§4.
-2. `recommendation_db` chạy trong compose; `kb.chunks` có ~900–1.300 chunk từ 273 trang, mỗi chunk có `book_page`, `pdf_page`, `verified`, `needs_review`.
+2. `recommendation_db` chạy trong compose; `kb.chunk` có **188 chunk** từ 273 trang (13 chương), mỗi chunk có `book_page`, `pdf_page`, `verified`, `needs_review` (đo được: 130 `verified`, 58 `needs_review`).
 3. 3 RPC gốc trả lời có căn cứ (`citations[]`) + `disclaimer`; gap vi chất và điểm thói quen **deterministic**, có `gaps[]` / `score_breakdown[]`.
 4. 2 RPC mới: hỏi sách (có citation, `abstained` khi thiếu căn cứ) và tra cứu đoạn.
 5. Lọc dị ứng bằng code ở Recommendation; `calorie_cap_reached` đúng rule 105%; ≤ 5 món mỗi bữa.

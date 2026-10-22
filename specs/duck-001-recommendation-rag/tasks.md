@@ -146,24 +146,24 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 2
 
-- [ ] T063 [P] [US2] Unit test chunker trong `scripts/book-kb/tests/test_chunk.py` — cắt đúng ở ranh giới đoạn; **không cắt giữa bảng**; overlap 150 token; chunk không vượt 1000 token (trừ bảng nguyên vẹn)
-- [ ] T064 [P] [US2] Unit test parser marker trong `scripts/book-kb/tests/test_corpus.py` — parse `<!-- sách N · PDF M -->` đúng; file thiếu marker → **fail fast**; đọc metadata chương từ `.manifest.json` khớp `book_pages`/`pdf_pages`
-- [ ] T065 [P] [US2] Unit test `review.py` trong `scripts/book-kb/tests/test_review.py` — parse `review/qa.md` và `review/numbers.md` theo **số trang PDF**; `table_verified`/`manual_verified` ghi đè cờ nghi vấn; tính `verified`/`needs_review` cho chunk theo [data-model.md](./data-model.md) §4
-- [ ] T066 [US2] Unit test `embed.py` trong `scripts/book-kb/tests/test_embed.py` — L2-normalize vector đúng (norm ≈ 1); cache theo hash nội dung (gọi lại không tốn tiền)
-- [ ] T067 [US2] Integration test idempotency trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/KnowledgeLoadTests.cs` — nạp cùng `version` 2 lần → số dòng `kb.chunk` không đổi; `UNIQUE (CorpusId, ChapterId, ChunkIndex)` được tôn trọng
+- [x] T063 [P] [US2] Unit test chunker trong `scripts/book-kb/tests/test_chunk.py` — cắt đúng ở ranh giới đoạn; **không cắt giữa bảng**; overlap 150 token; chunk không vượt 1000 token (trừ bảng nguyên vẹn)
+- [x] T064 [P] [US2] Unit test parser marker trong `scripts/book-kb/tests/test_corpus.py` — parse `<!-- sách N · PDF M -->` đúng; file thiếu marker → **fail fast**; đọc metadata chương từ `.manifest.json` khớp `book_pages`/`pdf_pages`
+- [x] T065 [P] [US2] Unit test `review.py` trong `scripts/book-kb/tests/test_review.py` — parse `review/qa.md` và `review/numbers.md` theo **số trang PDF**; `table_verified`/`manual_verified` ghi đè cờ nghi vấn; tính `verified`/`needs_review` cho chunk theo [data-model.md](./data-model.md) §4
+- [x] T066 [US2] Unit test `embed.py` trong `scripts/book-kb/tests/test_embed.py` — L2-normalize vector đúng (norm ≈ 1); cache theo hash nội dung (gọi lại không tốn tiền)
+- [x] T067 [US2] Integration test idempotency trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Persistence/KnowledgeLoadTests.cs` — nạp cùng `version` 2 lần → số dòng `kb.chunk` không đổi; `UNIQUE (CorpusId, ChapterId, ChunkIndex)` được tôn trọng
 
 ### Implementation cho User Story 2
 
-- [ ] T068 [US2] Tạo `scripts/book-kb/src/corpus.py` — đọc `.manifest.json` + các file `NN-*.md`; trả về chương (number, title, source_file, book_pages, pdf_pages) + nội dung theo trang
-- [ ] T069 [US2] Tạo `scripts/book-kb/src/clean.py` — bỏ placeholder `[[HINH:n]]`, chuẩn hoá whitespace, giữ nguyên bảng Markdown, loại dòng chạy đầu trang
-- [ ] T070 [US2] Tạo `scripts/book-kb/src/chunk.py` — chunk 1000 token / overlap 150, cắt ở ranh giới đoạn, bảng là khối nguyên vẹn; gắn metadata `book_page_from/to`, `pdf_page_from/to`, `chapter_number`
-- [ ] T071 [US2] Tạo `scripts/book-kb/src/review.py` — parse `review/qa.md`, `review/numbers.md`, `README.md` → danh sách `page_flag` (kind, source_file, note) theo số trang PDF
-- [ ] T072 [US2] Tạo `scripts/book-kb/src/embed.py` — gọi Gemini `gemini-embedding-001` (768 chiều, `RETRIEVAL_DOCUMENT`), L2-normalize, cache theo SHA-256 nội dung, retry + backoff
-- [ ] T073 [US2] Tạo `scripts/book-kb/src/loader.py` — upsert idempotent vào `kb.corpus`/`kb.chapter`/`kb.chunk`/`kb.page_flag`; đặt `is_active = true` cho version mới, chuyển version cũ thành false; giữ tối đa 2 version
-- [ ] T074 [US2] Tạo `scripts/book-kb/src/cli.py` — lệnh `build` (chunk + embed → `artifacts/book-kb/chunks.jsonl`), `load`, `verify` (đối chiếu số chương/số chunk/page range), `eval`
-- [ ] T075 [US2] Tạo `scripts/book-kb/src/assemble.py` — sinh `kb.page_flag` và tính cờ `verified`/`needs_review` cho chunk theo quy tắc ưu tiên
-- [ ] T076 [US2] Viết `docs/development/rag-ingestion.md` — quy ước ingest: marker trang là nguồn chuẩn, các file `review/*.md` khoá theo **số trang PDF**, quy tắc ghi đè cờ, cách rebuild, cách bật `RAG__REQUIRE_VERIFIED=true`
-- [ ] T077 [US2] Chạy `make kb-build` + `make kb-load` + `make kb-verify` trên corpus thật và lưu kết quả verify (số chương 13, số chunk, tỉ lệ `needs_review` ≈ 16,5%) vào `specs/duck-001-recommendation-rag/checklists/requirements.md` phần ghi chú
+- [x] T068 [US2] Tạo `scripts/book-kb/src/corpus.py` — đọc `.manifest.json` + các file `NN-*.md`; trả về chương (number, title, source_file, book_pages, pdf_pages) + nội dung theo trang
+- [x] T069 [US2] Tạo `scripts/book-kb/src/clean.py` — bỏ placeholder `[[HINH:n]]`, chuẩn hoá whitespace, giữ nguyên bảng Markdown, loại dòng chạy đầu trang
+- [x] T070 [US2] Tạo `scripts/book-kb/src/chunk.py` — chunk 1000 token / overlap 150, cắt ở ranh giới đoạn, bảng là khối nguyên vẹn; gắn metadata `book_page_from/to`, `pdf_page_from/to`, `chapter_number`
+- [x] T071 [US2] Tạo `scripts/book-kb/src/review.py` — parse `review/qa.md`, `review/numbers.md`, `README.md` → danh sách `page_flag` (kind, source_file, note) theo số trang PDF
+- [x] T072 [US2] Tạo `scripts/book-kb/src/embed.py` — gọi Gemini `gemini-embedding-001` (768 chiều, `RETRIEVAL_DOCUMENT`), L2-normalize, cache theo SHA-256 nội dung, retry + backoff
+- [x] T073 [US2] Tạo `scripts/book-kb/src/loader.py` — upsert idempotent vào `kb.corpus`/`kb.chapter`/`kb.chunk`/`kb.page_flag`; đặt `is_active = true` cho version mới, chuyển version cũ thành false; giữ tối đa 2 version
+- [x] T074 [US2] Tạo `scripts/book-kb/src/cli.py` — lệnh `build` (chunk + embed → `artifacts/book-kb/chunks.jsonl`), `load`, `verify` (đối chiếu số chương/số chunk/page range), `eval`
+- [x] T075 [US2] Tạo `scripts/book-kb/src/assemble.py` — sinh `kb.page_flag` và tính cờ `verified`/`needs_review` cho chunk theo quy tắc ưu tiên
+- [x] T076 [US2] Viết `docs/development/rag-ingestion.md` — quy ước ingest: marker trang là nguồn chuẩn, các file `review/*.md` khoá theo **số trang PDF**, quy tắc ghi đè cờ, cách rebuild, cách bật `RAG__REQUIRE_VERIFIED=true`
+- [x] T077 [US2] Chạy `make kb-build` + `make kb-load` + `make kb-verify` trên corpus thật; kết quả đo được: **13 chương, 188 chunk, 67 page_flag, 130 chunk `verified`, 58 chunk `needs_review` (30,9% theo chunk / 40 trang ≈ 14,7% theo trang)**, `ok = true`, nạp lại lần 2 vẫn 188 dòng — ghi vào `specs/duck-001-recommendation-rag/checklists/requirements.md` phần ghi chú
 
 **Checkpoint**: Kho tri thức có đủ 13 chương; nạp lại idempotent; mọi chunk truy được về trang sách.
 

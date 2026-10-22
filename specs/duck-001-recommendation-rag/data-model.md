@@ -1,4 +1,4 @@
-# Mô hình dữ liệu — `recommendation_db` (schema `kb`)
+﻿# Mô hình dữ liệu — `recommendation_db` (schema `kb`)
 
 **Feature**: `duck/001/recommendation-rag` | **Date**: 2026-10-22 | **Plan**: [plan.md](./plan.md)
 
@@ -9,7 +9,7 @@
 ## 1. Sơ đồ quan hệ
 
 ```
-kb.corpus (1) ──┬──< kb.chapter (13) ──< kb.chunk (~900–1.300)
+kb.corpus (1) ──┬──< kb.chapter (13) ──< kb.chunk (188 đo, đo trên corpus thật)
                  │                              │
                  │                              ├─ embedding  vector(768)   (L2-normalized)
                  │                              ├─ content_tsv tsvector      (GIN, do trigger duy trì)
@@ -36,7 +36,7 @@ Một bản ghi cho **mỗi lần nạp** bộ tài liệu tham chiếu. Cho ph�
 | `title` | `text` | NOT NULL | |
 | `source_path` | `text` | NOT NULL | `docs/reference/che-do-an-truong-tho` |
 | `chapter_count` | `int` | NOT NULL | 13 |
-| `chunk_count` | `int` | NOT NULL | ~900–1.300 |
+| `chunk_count` | `int` | NOT NULL | 188 (đo trên corpus thật, chunk 1000 token) |
 | `embedding_model` | `text` | NOT NULL | `gemini-embedding-001` |
 | `embedding_dim` | `int` | NOT NULL | 768 |
 | `chunker_params` | `jsonb` | NOT NULL | `{ "tokens": 1000, "overlap": 150 }` |
@@ -187,11 +187,13 @@ chunk.needs_review = S(page)      cho ÍT NHẤT một page trong chunk
 | Nhóm | Số trang |
 | --- | --- |
 | Cờ nghi vấn (nguồn `review/qa.md`) | 47 |
-| Trong đó đã bị ghi đè bởi `table_verified` | 2 (trang 266, 269) |
-| **Còn lại cờ nghi vấn** | **45 (≈ 16,5%)** |
+| Trong đó đã bị ghi đè bởi `manual_verified`/`table_verified` | 7 (trang 135, 263, 264, 266, 267, 268, 269) |
+| **Còn lại cờ nghi vấn** | **40 (≈ 14,7% số trang)** |
 | Cờ nghi vấn đã ghi đè (`table_verified`) | 10 (trang 142, 259–261, 263–265, 267–268, 271) |
 | Đã đối chiếu thủ công khác (`manual_verified`) | 7 (trang 27, 28, 34, 103, 104, 114, 135) |
 | `verified = true` nghiêm ngặt (chỉ trang đã kiểm chứng) | **19 (≈ 7%)** → không dùng làm điều kiện lọc (D-07) |
+| Chunk `needs_review` (đo trên DB sau khi nạp) | **58/188 ≈ 30,9%** — chunk phủ nhiều trang nên tỉ lệ theo chunk cao hơn theo trang |
+| Chunk `verified` (đo trên DB) | **130/188 ≈ 69,1%** |
 
 ---
 
@@ -265,10 +267,10 @@ Bảng `kb.*` chỉ chứa dữ liệu corpus. Mọi thực thể suy ra từ h�
 
 | Thành phần | Ước lượng |
 | --- | --- |
-| Số chunk | ~900–1.300 |
-| `embedding` | 768 × 4B + 8B ≈ 3,1 KB/chunk → ~4 MB |
-| `content` + `content_tsv` | ~5 KB/chunk → ~6 MB |
-| **Tổng schema `kb`** | **< 20 MB** |
+| Số chunk | **188** (đo trên corpus thật; ~159.000 token ÷ ~850 token/chunk có overlap) |
+| `embedding` | 768 × 4B + 8B ≈ 3,1 KB/chunk → ~0,6 MB |
+| `content` + `content_tsv` | ~5 KB/chunk → ~0,9 MB |
+| **Tổng schema `kb`** | **< 5 MB** |
 
 HNSW hỗ trợ tối đa 2.000 chiều → 768 nằm thoải mái. Với ~1.300 chunk, kể cả exact search cũng dưới 50ms; index HNSW vẫn giữ để mở đường khi corpus lớn dần.
 

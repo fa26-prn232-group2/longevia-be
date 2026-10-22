@@ -35,3 +35,28 @@
 - Điểm cần chú ý khi lập kế hoạch: FR-002 và FR-017 là hai quy tắc **bằng code**, không được giao cho AI — cần task và test riêng (negative control theo Constitution V).
 - SC-009 (không dữ liệu người dùng trong kho tri thức) cần được kiểm chứng bằng test truy vấn trực tiếp kho tri thức trong tích hợp test.
 - Items marked incomplete require spec updates before `$speckit-clarify` or `$speckit-plan` — không còn mục nào chưa hoàn thành.
+
+## Kết quả kiểm chứng corpus (T077, 2026-10-22)
+
+Chạy `make kb-build` → `make kb-load` → `make kb-verify` trên corpus thật
+(`docs/reference/che-do-an-truong-tho/`, 273 trang bản in, 13 chương).
+
+| Chỉ số | Đo được |
+| --- | --- |
+| `corpus_version` | `3885fa96…b98735` (SHA-256 nội dung 273 file) |
+| Chương | **13** |
+| Chunk | **188** (chunk 1000 token / overlap 150) |
+| `page_flag` | **67** — `missing_numbers` 41, `table_verified` 12, `manual_verified` 7, `low_word_recall` 4, `longer_than_ocr` 2, `shorter_than_ocr` 1 |
+| Trang còn cờ nghi vấn | **40 / 273 ≈ 14,7%** (47 trang có cờ − 7 trang đã được đối chiếu ghi đè) |
+| Chunk `needs_review` | **58 / 188 ≈ 30,9%** |
+| Chunk `verified` | **130 / 188 ≈ 69,1%** |
+| `needs_review` theo trang | 14,7% |
+| Idempotency | nạp lại lần 2 → vẫn **188** dòng trong `kb.chunk` |
+| Embedding | `gemini-embedding-001`, 768 chiều, norm = **1.000000** (đã L2-normalize) |
+| `content_tsv` | không NULL; trigger hoạt động (truy vấn "nhịn ăn" khớp 71 chunk) |
+| `make kb-verify` | `ok = true` |
+| Test pipeline | `pytest` **22 passed** · integration .NET **4 passed** |
+
+**Ghi chú**: tỉ lệ `needs_review` theo **chunk** (30,9%) cao hơn theo **trang**
+(14,7%) vì một chunk phủ nhiều trang; con số 16,5% nêu trong bản plan đầu tiên là
+ước lượng sai và đã được sửa trong `data-model.md` §4.

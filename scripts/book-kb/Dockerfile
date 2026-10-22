@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir --upgrade pip uv \
     && uv pip install --system --no-cache -r requirements.txt
 
 COPY src ./src
+COPY tests ./tests
 
 RUN mkdir -p /work
 

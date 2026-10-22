@@ -17,13 +17,19 @@ services:
     environment:
       BOOK_KB_WORK: /work
       BOOK_KB_CORPUS: /corpus
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: "5432"
-      POSTGRES_USER: recommendation_user
-      POSTGRES_DB: ${KNOWLEDGE_DB:-recommendation_db}
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
+      # Inside the compose network PostgreSQL is `postgres:5432`, not the
+      # host-published port in `.env` (localhost:5433).
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      # Pipeline reads the key from the host environment; never commit it.
+      GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
+      RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
+      RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
+      RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
+      RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
     volumes:
       - ../../artifacts/book-kb:/work
-      - ../../../docs/reference/che-do-an-truong-tho:/corpus:ro
+      - ../../docs/reference/che-do-an-truong-tho:/corpus:ro
     working_dir: /app
     stop_grace_period: 30s
 

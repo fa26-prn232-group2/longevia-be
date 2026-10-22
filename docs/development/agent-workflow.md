@@ -26,9 +26,16 @@ graph TD
     I -- Hoàn thành --> J[Tích hợp & PR]
 ```
 
-Chạy trọn một feature đầu-cuối có thể dùng `@speckit-orchestrate`; skill này tự
+Chạy trọn một feature đầu-cuối có thể dùng `speckit-orchestrate`; skill này tự
 điều khiển analyze → implement → converge và tự quản git, gate, verification
 theo policy riêng của nó.
+
+Cú pháp gọi phụ thuộc agent: `$speckit-orchestrate` (Codex),
+`/speckit-orchestrate` (OpenCode/Claude), hoặc skill tool. Tên skill là chuẩn
+chung, không phụ thuộc cú pháp. Khi orchestrator chạy, nó giao việc cho worker
+(`speckit-worker`): worker chỉ chạy đúng một skill hoặc một phase được giao,
+không tự chọn feature, không Git, không hỏi developer trực tiếp, không spawn
+subagent và không chạy full close-out gate.
 
 ---
 
@@ -38,35 +45,35 @@ Bắt đầu một tính năng mới (ví dụ `meal-planning`) bằng cách t�
 tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 
 ### 1. Giai đoạn 1 — Đặc tả (Specification)
-- **Lệnh:** `@speckit-specify <mô tả tính năng>`
+- **Lệnh:** `speckit-specify <mô tả tính năng>`
 - **Kết quả:** `specs/[###-feature-name]/spec.md` gồm User Stories, Requirements
   và Success Criteria đo lường được.
 
 ### 2. Giai đoạn 2 — Làm rõ (Clarify)
-- **Lệnh:** `@speckit-clarify`
+- **Lệnh:** `speckit-clarify`
 - **Kết quả:** các điểm mơ hồ trong `spec.md` được hỏi và cập nhật lại.
 
 ### 3. Giai đoạn 3 — Lập kế hoạch (Plan)
-- **Lệnh:** `@speckit-plan`
+- **Lệnh:** `speckit-plan`
 - **Kết quả:** `plan.md` với Constitution Check, data model, contract (HTTP/gRPC/
   event) và thay đổi schema.
 
 ### 4. Giai đoạn 4 — Phân rã task (Tasks)
-- **Lệnh:** `@speckit-tasks`
+- **Lệnh:** `speckit-tasks`
 - **Kết quả:** `tasks.md`, task nhóm theo User Story, ghi rõ file cần sửa/tạo.
 
 ### 5. Giai đoạn 5 — Phân tích nhất quán (Analyze)
-- **Lệnh:** `@speckit-analyze`
+- **Lệnh:** `speckit-analyze`
 - **Kết quả:** đối chiếu `spec.md`, `plan.md`, `tasks.md` và constitution; báo
   cáo trùng lặp, mơ hồ, thiếu coverage. Không còn CRITICAL/HIGH mới qua bước 6.
 
 ### 6. Giai đoạn 6 — Thực thi code (Implement)
-- **Lệnh:** `@speckit-implement`
+- **Lệnh:** `speckit-implement`
 - **Kết quả:** code theo từng task; mỗi task xong tick `[x]` trong `tasks.md`.
   Gate mỗi phase theo `AGENTS.md` §2.
 
 ### 7. Giai đoạn 7 — Đối chiếu (Converge)
-- **Lệnh:** `@speckit-converge`
+- **Lệnh:** `speckit-converge`
 - **Kết quả:** phát hiện phần đã đặc tả nhưng chưa build; bổ sung task còn thiếu.
 
 ---
@@ -74,11 +81,11 @@ tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 ## III. Lệnh Bổ Trợ
 
 ### 1. Checklist chất lượng yêu cầu
-- **Lệnh:** `@speckit-checklist <domain>` (ví dụ `security`, `api`)
+- **Lệnh:** `speckit-checklist <domain>` (ví dụ `security`, `api`)
 - **Kết quả:** checklist trong `specs/[###-feature-name]/checklists/`.
 
 ### 2. Quản trị Constitution
-- **Lệnh:** `@speckit-constitution`
+- **Lệnh:** `speckit-constitution`
 - **Kết quả:** khởi tạo/cập nhật `.specify/memory/constitution.md` và đồng bộ
   template liên quan.
 
@@ -102,3 +109,15 @@ tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 7. **Ngôn ngữ tài liệu trong `specs/`**: mọi tài liệu trong `specs/` (đặc tả, kế
    hoạch, checklist, tasks, báo cáo) **phải viết bằng tiếng Việt** để dev đọc và
    đối chiếu.
+8. **Bàn giao frontend**: feature đổi HTTP endpoint, event payload hoặc DTO
+   client-facing phải có `specs/<feature>/frontend-guide.md`; chỉ đặt
+   `READY_FOR_FRONTEND` khi contract, implementation, test evidence và sync check
+   hoàn tất. Feature không đổi client surface phải ghi kết luận trong `tasks.md`.
+9. **Việc ngoài phạm vi**: ghi vào `specs/<feature>/deferred.md` với vấn đề, lý do
+   ngoài phạm vi và điều kiện gỡ; không để lại checkbox trong `tasks.md`.
+10. **Skill discovery**: canonical tại `.agents/skills/<name>/SKILL.md`. OpenCode,
+    Codex, Cursor và Gemini CLI đọc trực tiếp; `.opencode/agents/*.md` chỉ là
+    adapter cấu hình quyền, không chứa workflow thứ hai.
+11. **Nâng cấp Spec Kit**: `specify integration upgrade` sẽ bị chặn nếu một
+    skill đã được sửa tay (trạng thái `Modified managed files` trong
+    `specify integration status`). Luôn review diff rồi mới dùng `--force`.

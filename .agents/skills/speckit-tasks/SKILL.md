@@ -1,15 +1,12 @@
 ---
-description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
-handoffs:
-  - label: Analyze For Consistency
-    agent: speckit.analyze
-    prompt: Run a project analysis for consistency
-    send: true
-  - label: Implement Project
-    agent: speckit.implement
-    prompt: Start the implementation in phases
-    send: true
+name: "speckit-tasks"
+description: "Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts."
+compatibility: "Requires spec-kit project structure with .specify/ directory"
+metadata:
+  author: "github-spec-kit"
+  source: "templates/commands/tasks.md"
 ---
+
 
 ## User Input
 
@@ -18,6 +15,11 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
+
+**Worker Git guard**: When this skill is invoked by `speckit-worker`, do not
+execute an extension hook that performs any Git mutation. Report that hook to
+the orchestrator for execution under the orchestrator's Git policy. Continue
+to execute non-Git hooks normally.
 
 ## Pre-Execution Checks
 
@@ -29,6 +31,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```
@@ -70,6 +73,10 @@ You **MUST** consider the user input before proceeding (if not empty).
    - If data-model.md exists: Extract entities and map to user stories
    - If contracts/ exists: Map interface contracts to user stories
    - If research.md exists: Extract decisions for setup tasks
+   - Determine from spec, plan, and contracts whether the feature adds, changes,
+     or removes an HTTP endpoint, event payload, or client-facing DTO. Do not
+     infer "no change" from silence: add an explicit task that records the
+     decision.
    - Generate tasks organized by user story (see Task Generation Rules below)
    - Generate dependency graph showing user story completion order
    - Create parallel execution examples per user story
@@ -87,6 +94,16 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Dependencies section showing story completion order
    - Parallel execution examples per story
    - Implementation strategy section (MVP first, incremental delivery)
+   - A final frontend handoff decision:
+     - If the client surface changes, add tasks to create/update
+       `FEATURE_DIR/frontend-guide.md` from
+       `.specify/templates/frontend-guide-template.md`, maintain its lifecycle
+       status, and perform a counted source/contract sync at close-out.
+     - If it does not change, add one task to record that conclusion in
+       tasks.md and do not create frontend-guide.md.
+   - A deferred-work rule: findings outside this feature belong in
+     `FEATURE_DIR/deferred.md` using the deferred template; in-scope work must
+     remain an executable task.
 
 ## Mandatory Post-Execution Hooks
 
@@ -100,6 +117,7 @@ Check if `.specify/extensions.yml` exists in the project root.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
     ```
@@ -131,6 +149,8 @@ Output path to generated tasks.md and summary:
 - Independent test criteria for each story
 - Suggested MVP scope (typically just User Story 1)
 - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
+- Frontend handoff decision and whether a guide is required
+- Deferred-work handling included when applicable
 
 Context for task generation: $ARGUMENTS
 
@@ -200,6 +220,20 @@ Every task MUST strictly follow this format:
    - Foundational/blocking tasks → Foundational phase (Phase 2)
    - Story-specific setup → within that story's phase
 
+5. **Frontend Handoff and Deferred Work**:
+   - Treat HTTP endpoints, event payloads, and client-facing DTOs as the client
+     surface.
+   - A changed client surface requires `frontend-guide.md`; link to canonical
+     contracts instead of duplicating schemas in prose.
+   - The final sync task must count routes, fields, enums, and HTTP/error
+     statuses checked against source/contracts. `READY_FOR_FRONTEND` is invalid
+     before implementation, test evidence, and sync are complete.
+   - A feature with no client-surface change records that conclusion in a task
+     and does not create a guide.
+   - Never generate an unchecked task for work that is genuinely outside the
+     feature. Record it in `deferred.md` with why it is out of scope, what
+     unblocks it, and any completed task whose evidence it weakens.
+
 ### Phase Structure
 
 - **Phase 1**: Setup (project initialization)
@@ -214,3 +248,5 @@ Every task MUST strictly follow this format:
 - [ ] tasks.md generated with all phases, task IDs, and file paths
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with task count, story breakdown, and MVP scope
+- [ ] Frontend handoff decision is explicit and guide/sync tasks exist exactly when required
+- [ ] Out-of-scope work is routed to deferred.md rather than left as an unfinished feature task

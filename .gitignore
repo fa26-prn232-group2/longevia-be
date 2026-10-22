@@ -74,6 +74,9 @@ deployments/**/data/
 
 # ---- Node (agent tooling safety net) ----
 node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
 
 # ---- Merge / VCS leftovers ----
 *.orig

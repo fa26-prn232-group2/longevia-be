@@ -5,7 +5,7 @@
 - **Không tự ý thao tác git**: agent MUST NOT chạy `commit`, `push`, `tag`,
   `branch`, `checkout`, `merge`, `rebase`, `reset`, `amend` khi chưa có yêu cầu/cho
   phép rõ ràng của dev. Chỉ được đọc (`git status/log/diff`).
-- Ngoại lệ: gọi một skill tự khai báo git policy (ví dụ `@speckit-orchestrate`) là
+- Ngoại lệ: gọi một skill tự khai báo git policy (ví dụ `speckit-orchestrate`) là
   cho phép thường trực cho lần chạy đó.
 - Commit message: **tiếng Anh**, theo Conventional Commits.
 

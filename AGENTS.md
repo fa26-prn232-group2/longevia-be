@@ -11,11 +11,34 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
 - Chọn tài liệu theo loại task:
     - Kiến trúc: `docs/system-design/`
     - Quy trình phát triển: `docs/development/`
-- **Skills** là workflow nạp được, không phải tài liệu:
-    - Nằm ở `.opencode/skills/`, gọi bằng `@<skill-name>`.
-    - Chạy trọn một feature đầu-cuối thì dùng `@speckit-orchestrate`. Nó điều
+- **Skills là workflow nạp được, không phải tài liệu**:
+    - Skill canonical nằm ở `.agents/skills/<name>/SKILL.md`. OpenCode, Codex,
+      Cursor và Gemini CLI đọc trực tiếp; **không tạo bản copy** dưới
+      `.opencode/skills`.
+    - `.opencode/agents/*.md` chỉ là permission adapter cho OpenCode; không
+      được chứa workflow thứ hai.
+    - Chạy trọn một feature đầu-cuối thì dùng `speckit-orchestrate`. Nó điều
       khiển analyze → implement → converge và tự quản git, gate, verification.
-    - Các skill `@speckit-*` lẻ vẫn dùng được cho từng bước một.
+    - Các skill `speckit-*` lẻ vẫn dùng được cho từng bước một.
+    - Gọi bằng cú pháp của host agent: `$name` (Codex), `/name` (OpenCode/Claude),
+      hoặc skill tool. Tên skill là chuẩn chung, không phụ thuộc cú pháp.
+- Trước mỗi lần chạy Spec-kit, đọc `docs/development/agent-workflow.md`.
+- Trước khi viết hoặc sửa code, đọc tài liệu `docs/system-design/` và
+  `docs/development/` liên quan tới task. `docs/system-design/` là nguồn chuẩn
+  cho agent khi triển khai và phải được giữ chính xác.
+
+### Authoritative sources
+
+- Yêu cầu nghiệp vụ và sản phẩm: `docs/requirements/` (BRD, PRD).
+- Quyết định kiến trúc (ADR): `docs/decisions/`.
+- Contract machine-readable (REST/gRPC/event): `contracts/` và
+  `docs/api/api-spec.md`.
+- Source code và test là bằng chứng hiện thực; khi chúng mâu thuẫn với một
+  contract hoặc tài liệu đã duyệt, DỪNG và báo phạm vi bị ảnh hưởng.
+- Thứ tự ưu tiên khi mâu thuẫn:
+  Constitution > `docs/system-design/` > `docs/development/` >
+  `docs/requirements/` + `docs/decisions/` > `docs/api/` + `contracts/` >
+  `specs/` > source.
 
 ## 2. Workflow Compliance
 
@@ -26,7 +49,7 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
       nhưng vẫn **phải** theo các nguyên tắc cốt lõi ở §4.
     - **Tự đề xuất và làm bước tiếp theo** thay vì trả việc lại. Chỉ dừng ở
       các stop condition mà workflow đang chạy quy định.
-- **Chỉ chạy speckit khi được yêu cầu**: nếu dev không gọi `@speckit-*` thì
+- **Chỉ chạy speckit khi được yêu cầu**: nếu dev không gọi `speckit-*` thì
   không cần chạy workflow speckit, nhưng vẫn phải theo `docs/development/` và
   `docs/system-design/`.
 - **BẮT BUỘC** — Git:
@@ -36,7 +59,7 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
       phép rõ ràng của dev. Chỉ được đọc (`git status/log/diff`). Điều này áp
       dụng cả khi dev đã duyệt một plan có nhắc commit — mỗi thao tác git vẫn
       cần chỉ thị riêng. NGOẠI LỆ: gọi một skill tự khai báo git policy (ví dụ
-      `@speckit-orchestrate`) là sự cho phép thường trực cho lần chạy đó; policy
+      `speckit-orchestrate`) là sự cho phép thường trực cho lần chạy đó; policy
       của skill đó chi phối, gồm cả nhịp commit và danh sách phải hỏi trước.
     - Commit message tiếng Anh, theo Conventional Commits.
     - **Gate chia theo độ lớn thay đổi.** Bảng dưới là nguồn chân lý duy nhất
@@ -76,8 +99,12 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
     - Schema do EF Core **Code First** quản lý (migrations), không sửa DB bằng tay.
 - **BẮT BUỘC** — File môi trường: mọi comment trong file có tên bắt đầu bằng
   `.env` (ví dụ `.env.example`) **phải viết bằng tiếng Anh**.
-- Nếu tài liệu mâu thuẫn, thứ tự ưu tiên:
-  Constitution > system-design > development > tài liệu khác.
+- Nếu feature thay đổi HTTP endpoint, event payload hoặc DTO client-facing thì
+  phải cập nhật `specs/<feature>/frontend-guide.md`; chỉ đặt
+  `READY_FOR_FRONTEND` khi contract, implementation, test evidence và sync
+  check có số đếm đều hoàn tất. Feature không đổi client surface phải ghi kết
+  luận đó trong `tasks.md`.
+- Nếu tài liệu mâu thuẫn, dùng chuỗi ưu tiên ở §1 (Authoritative sources).
 
 ## 4. Core Principles
 

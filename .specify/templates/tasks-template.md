@@ -30,7 +30,7 @@ description: "Task list template for feature implementation"
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
 
-  The /speckit.tasks command MUST replace these with actual tasks based on:
+  The $speckit-tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
@@ -158,6 +158,29 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
+### Frontend handoff decision *(required)*
+
+Giữ đúng nhánh phù hợp và xóa nhánh còn lại khi sinh `tasks.md`:
+
+- [ ] TXXX **Không đổi client surface**: xác nhận feature không thêm, sửa hoặc
+      xóa HTTP endpoint, event payload hay DTO client-facing; không tạo
+      `frontend-guide.md`.
+- [ ] TXXX **Có đổi client surface**: tạo hoặc cập nhật
+      `specs/<feature>/frontend-guide.md` từ
+      `.specify/templates/frontend-guide-template.md`; ghi delta before → after,
+      contract canonical, auth, error, idempotency, pagination, realtime,
+      compatibility và test evidence.
+- [ ] TXXX **Đồng bộ frontend guide ở close-out**: đối chiếu contract/source,
+      điền số route, field, enum và status/error đã kiểm; chỉ đặt
+      `READY_FOR_FRONTEND` khi mọi evidence và sync checkbox hoàn tất.
+
+### Phát hiện ngoài phạm vi *(required when applicable)*
+
+- [ ] TXXX Chuyển finding thật sự ngoài feature vào
+      `specs/<feature>/deferred.md` theo deferred template, ghi vấn đề, ranh giới,
+      điều kiện gỡ và task đã tick bị ảnh hưởng. Không chuyển in-scope work sang
+      deferred và không để finding ngoài scope thành task chưa tick của feature.
+
 ---
 
 ## Dependencies & Execution Order
@@ -247,6 +270,7 @@ With multiple developers:
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
 - Verify tests fail before implementing
-- Commit after each task or logical group
+- Khi chạy `$speckit-orchestrate`, commit đúng một lần sau mỗi phase đã qua gate;
+  worker và skill chạy độc lập không tự commit
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

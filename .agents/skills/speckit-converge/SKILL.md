@@ -1,6 +1,12 @@
 ---
-description: Assess the current codebase against the feature's spec, plan, and tasks, then append any remaining unbuilt work as new tasks to tasks.md so implement can complete it.
+name: "speckit-converge"
+description: "Assess the current codebase against the feature's spec, plan, and tasks, then append any remaining unbuilt work as new tasks to tasks.md so implement can complete it."
+compatibility: "Requires spec-kit project structure with .specify/ directory"
+metadata:
+  author: "github-spec-kit"
+  source: "templates/commands/converge.md"
 ---
+
 
 ## User Input
 
@@ -9,6 +15,11 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
+
+**Worker Git guard**: When this skill is invoked by `speckit-worker`, do not
+execute an extension hook that performs any Git mutation. Report that hook to
+the orchestrator for execution under the orchestrator's Git policy. Continue
+to execute non-Git hooks normally.
 
 ## Pre-Execution Checks
 
@@ -21,6 +32,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
 
@@ -52,28 +64,41 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Goal
 
-Close the gap between what a feature's specification, plan, and tasks call for and what the
-codebase currently implements. Read `spec.md`, `plan.md`, and `tasks.md` as the **sole
-source of intent** (with the constitution as governing constraints), assess the current
-state of the code, determine which requirements, acceptance criteria, plan decisions, and
+Close the gap between approved intent and what the codebase currently implements.
+Use the source hierarchy from `AGENTS.md`: relevant requirements in
+`docs/requirements/` and architecture decisions in `docs/decisions/`,
+machine-readable contracts in repository `contracts/`, then
+feature `spec.md`, `plan.md`, and `tasks.md` as the implementation breakdown,
+with the constitution as governing constraints. If the authoritative
+requirement source is unavailable, report that limitation and do not claim full
+convergence. Determine which requirements, acceptance criteria, contract obligations, plan decisions, and
 existing tasks are unmet, incomplete, or only partially satisfied, and **append each piece
 of remaining work as a new, traceable task** at the bottom of `tasks.md` so that
-`/speckit.implement` can complete it. This command MUST run only after
-`/speckit.implement` has run on the current `tasks.md`, and after `/speckit.tasks` has produced a complete `tasks.md`.
+`$speckit-implement` can complete it. This command MUST run only after
+`$speckit-implement` has run on the current `tasks.md`, and after `$speckit-tasks` has produced a complete `tasks.md`.
 
 This is **not** a diff tool and does **not** track changes. It assesses the present state
 of the code relative to the feature's artifacts — no git, no branch comparison, no history.
 
 ## Operating Constraints
 
-**APPEND-ONLY, NEVER REWRITE**: The command's **only** write is appending a new
-`## Phase N: Convergence` section to `tasks.md`. It MUST NOT:
+**BOUNDED WRITES**: The command may only:
+
+- append a new `## Phase N: Convergence` section to `tasks.md` for unfinished
+  work that belongs to this feature;
+- create or append `deferred.md` for a finding that is genuinely outside the
+  feature; and
+- synchronize an existing required `frontend-guide.md` against canonical
+  contracts/source during close-out.
+
+It MUST NOT:
 
 - modify `spec.md` or `plan.md` in any way;
 - rewrite, renumber, reorder, or delete any existing task (including tasks from a prior
   Convergence phase);
 - modify, create, or delete any application code — completing the appended tasks is the
-  job of `/speckit.implement`.
+  job of `$speckit-implement`.
+- move in-scope work to deferred.md merely to reach a clean result.
 
 When the codebase already satisfies everything, the command MUST leave `tasks.md`
 **byte-for-byte unchanged** (no empty Convergence header) and report a clean result.
@@ -93,9 +118,13 @@ Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireSpec -Req
 - PLAN = FEATURE_DIR/plan.md
 - TASKS = FEATURE_DIR/tasks.md
 - CONSTITUTION = `.specify/memory/constitution.md` (if present)
+Resolve and read the requirement/workflow/ADR links named by the feature
+artifacts and the relevant canonical files under repository `contracts/`. A
+conflict between feature artifacts and an authoritative source is not a code
+gap: stop and report the artifact conflict for correction.
 If `spec.md`, `plan.md`, or `tasks.md` is missing, STOP with a clear, actionable message naming the
-prerequisite command to run (`/speckit.specify` for a missing spec, `/speckit.plan` for a missing plan,
-`/speckit.tasks` for missing tasks). Do not produce partial output.
+prerequisite command to run (`$speckit-specify` for a missing spec, `$speckit-plan` for a missing plan,
+`$speckit-tasks` for missing tasks). Do not produce partial output.
 For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
 
 ### 2. Load Artifacts (Progressive Disclosure)
@@ -126,6 +155,12 @@ Load only the minimal necessary context from each artifact:
 
 - Principle names and MUST/SHOULD normative statements
 
+**From authoritative requirements and contracts:**
+
+- Approved business rules, workflow states, acceptance obligations, API/event/
+  gRPC schemas, compatibility requirements, and unresolved decisions explicitly
+  marked by those sources
+
 ### 3. Build the Intent Inventory
 
 Create an internal model (do not echo raw artifacts):
@@ -137,6 +172,9 @@ Create an internal model (do not echo raw artifacts):
   search for the concepts each requirement describes, derive the set of source files and
   components in scope for assessment. Bound the assessment to these — do **not** infer
   scope beyond what the artifacts define.
+- **Client-surface inventory**: determine whether the feature adds, changes, or
+  removes HTTP endpoints, event payloads, or client-facing DTOs; locate
+  frontend-guide.md when required.
 
 ### 4. Assess the Codebase and Classify Findings
 
@@ -154,6 +192,15 @@ For each item in the intent inventory, inspect the current code in scope and pro
 
 Each `Finding` records: a stable id, the `source-ref` it traces to, the `gap-type`, a
 severity, and a short human-readable description with the evidence (the file/area observed).
+
+Before treating a finding as actionable work for this feature, classify its
+scope. A finding owned by another feature, shared test infrastructure, or a
+third-party constraint is not appended to tasks.md. Record it in deferred.md
+with the concrete issue, scope boundary, unblocking condition, and affected
+checked task IDs. If it is required to satisfy this feature's spec/plan, it is
+in scope regardless of cost or difficulty.
+If it invalidates acceptance evidence for a checked task, reopen that task and
+treat the finding as in-scope/blocking; it cannot remain only in deferred.md.
 
 **Edge cases:**
 
@@ -188,6 +235,8 @@ Before appending anything, output a compact, severity-graded summary (no file wr
 - Constitution principles checked (or "skipped — template")
 - Findings by gap type (missing / partial / contradicts / unrequested)
 - Findings by severity
+- Findings routed to deferred.md and why they are outside scope
+- Frontend handoff requirement and current guide status
 
 ### 7. Append Convergence Tasks (or report converged)
 
@@ -214,6 +263,9 @@ Append to the **end** of `tasks.md`, per the append contract:
    `CRITICAL`.
 4. Never reuse or renumber existing IDs. If a prior Convergence phase exists, add a new,
    separately-numbered one below it — do not touch the old one.
+5. If client-facing change is required but frontend-guide.md is missing, append
+   a convergence task to create it from
+   `.specify/templates/frontend-guide-template.md`.
 
 **If there are no actionable findings** (`converged` outcome):
 
@@ -221,13 +273,33 @@ Append to the **end** of `tasks.md`, per the append contract:
 - Report: **"✅ Converged — the implementation satisfies the spec, plan, and tasks."**
 - Include the summary counts of what was checked.
 
+### 7a. Synchronize the frontend guide
+
+When the feature changes the client surface and frontend-guide.md exists:
+
+1. Compare routes with OpenAPI and router/handler code after normalizing path params.
+2. Compare request/response fields with canonical schemas/generated types.
+3. Compare every documented enum in both directions with its canonical definition.
+4. Compare success and error statuses with handler behavior and Problem Details contracts.
+5. Record numeric counts and test evidence in the guide.
+6. Set `READY_FOR_FRONTEND` only when all checks are complete; otherwise retain
+   the truthful non-ready status and report the missing evidence.
+   A previously ready surface follows `READY_FOR_FRONTEND` → `CHANGED` while
+   revised, then `CHANGED` → `READY_FOR_FRONTEND` after the counted sync and
+   evidence complete; no frontend acknowledgement is required.
+
+When the feature has no client-surface change, confirm tasks.md says so and do
+not create frontend-guide.md.
+
 ### 8. Provide Next Actions (Handoff)
 
 - On `tasks_appended`: state how many tasks were appended under which phase, and recommend
-  running `/speckit.implement` to complete them; note that a follow-up converge
+  running `$speckit-implement` to complete them; note that a follow-up converge
   run will find fewer or no remaining items.
 - On `converged`: recommend proceeding to review / opening a PR. No further implement pass
   is needed for this feature's specified scope.
+- In both outcomes: list deferred entries created or observed, and report the
+  frontend guide path/status or the explicit no-client-change decision.
 
 ### 9. Check for extension hooks
 
@@ -241,6 +313,7 @@ After producing the result, check if `.specify/extensions.yml` exists in the pro
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
 - Report the convergence outcome (`converged` or `tasks_appended`) in-session before listing
   any hooks, so users can decide whether to run optional follow-up commands.
+- When constructing command invocations from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `$speckit-git-commit`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
 

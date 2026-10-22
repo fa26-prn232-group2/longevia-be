@@ -1,159 +1,168 @@
 # Agent Rules & Navigation
 
-Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), PostgreSQL
-(EF Core Code First). Client vào qua Nginx (HTTP/HTTPS); các service gọi nhau
-đồng bộ qua gRPC; sự kiện bất đồng bộ qua RabbitMQ.
+Project: **Longevia Backend** — ASP.NET Core microservices (.NET 10), PostgreSQL
+(EF Core Code First). Clients enter through Nginx (HTTP/HTTPS); services call each
+other synchronously over gRPC; asynchronous events go through RabbitMQ.
 
 ## 1. Startup & Navigation
 
-- Đọc hết `AGENTS.md` này trước khi bắt đầu.
-- Chỉ đọc tài liệu liên quan tới task. Không quét toàn bộ `docs/`.
-- Chọn tài liệu theo loại task:
-    - Kiến trúc: `docs/system-design/`
-    - Quy trình phát triển: `docs/development/`
-- **Skills là workflow nạp được, không phải tài liệu**:
-    - Skill canonical nằm ở `.agents/skills/<name>/SKILL.md`. OpenCode, Codex,
-      Cursor và Gemini CLI đọc trực tiếp; **không tạo bản copy** dưới
+- Read this entire `AGENTS.md` before starting.
+- Read only the documents relevant to the task. Do not scan all of `docs/`.
+- Choose documents by task type:
+    - Architecture: `docs/system-design/`
+    - Development process: `docs/development/`
+- **Skills are loadable workflows, not documentation**:
+    - Canonical skills live in `.agents/skills/<name>/SKILL.md`. OpenCode, Codex,
+      Cursor and Gemini CLI read them directly; **do not create copies** under
       `.opencode/skills`.
-    - `.opencode/agents/*.md` chỉ là permission adapter cho OpenCode; không
-      được chứa workflow thứ hai.
-    - Chạy trọn một feature đầu-cuối thì dùng `speckit-orchestrate`. Nó điều
-      khiển analyze → implement → converge và tự quản git, gate, verification.
-    - Các skill `speckit-*` lẻ vẫn dùng được cho từng bước một.
-    - Gọi bằng cú pháp của host agent: `$name` (Codex), `/name` (OpenCode/Claude),
-      hoặc skill tool. Tên skill là chuẩn chung, không phụ thuộc cú pháp.
-- Trước mỗi lần chạy Spec-kit, đọc `docs/development/agent-workflow.md` và
-  `docs/development/team-workflow.md`. Repo dùng chung cho cả nhóm: feature là
-  `specs/<owner>-<NNN>-<slug>` trên nhánh `feat/<slug>`, và mọi skill phải bind
-  feature bằng `pwsh scripts/speckit/team-feature.ps1 resolve -Json` trước khi
-  ghi file.
-- Trước khi viết hoặc sửa code, đọc tài liệu `docs/system-design/` và
-  `docs/development/` liên quan tới task. `docs/system-design/` là nguồn chuẩn
-  cho agent khi triển khai và phải được giữ chính xác.
+    - `.opencode/agents/*.md` is only a permission adapter for OpenCode; it must
+      not contain a second workflow.
+    - To run a whole feature end to end, use `speckit-orchestrate`. It drives
+      analyze → implement → converge and owns git, gates and verification.
+    - Individual `speckit-*` skills remain usable for one step at a time.
+    - Invoke them with the host agent's syntax: `$name` (Codex), `/name`
+      (OpenCode/Claude), or the skill tool. Skill names are the common standard,
+      independent of syntax.
+- Before each Spec-kit run, read `docs/development/agent-workflow.md` and
+  `docs/development/team-workflow.md`. The repository is shared by the whole
+  team: a feature is `specs/<owner>-<NNN>-<slug>` on branch `feat/<slug>`, and
+  every skill must bind the feature with
+  `pwsh scripts/speckit/team-feature.ps1 resolve -Json` before writing files.
+- Before writing or editing code, read the `docs/system-design/` and
+  `docs/development/` documents relevant to the task. `docs/system-design/` is
+  the authoritative source for implementation and must be kept accurate.
 
 ### Authoritative sources
 
-- Yêu cầu nghiệp vụ và sản phẩm: `docs/requirements/` (BRD, PRD).
-- Quyết định kiến trúc (ADR): `docs/decisions/`.
-- Contract machine-readable (REST/gRPC/event): `contracts/` và
+- Business and product requirements: `docs/requirements/` (BRD, PRD).
+- Architecture decisions (ADR): `docs/decisions/`.
+- Machine-readable contracts (REST/gRPC/event): `contracts/` and
   `docs/api/api-spec.md`.
-- Source code và test là bằng chứng hiện thực; khi chúng mâu thuẫn với một
-  contract hoặc tài liệu đã duyệt, DỪNG và báo phạm vi bị ảnh hưởng.
-- Thứ tự ưu tiên khi mâu thuẫn:
+- Source code and tests are implementation evidence; when they contradict an
+  approved contract or document, STOP and report the affected scope.
+- Priority order for conflicts:
   Constitution > `docs/system-design/` > `docs/development/` >
   `docs/requirements/` + `docs/decisions/` > `docs/api/` + `contracts/` >
   `specs/` > source.
 
 ## 2. Workflow Compliance
 
-- **BẮT BUỘC** — Tuân thủ đầy đủ
-  [agent-workflow.md](docs/development/agent-workflow.md):
-    - **Task lớn / feature mới**: đi theo quy trình Spec-kit từng bước.
-    - **Task nhỏ** (sửa lỗi đơn giản, sửa doc, config): Spec-kit là tùy chọn,
-      nhưng vẫn **phải** theo các nguyên tắc cốt lõi ở §4.
-    - **Tự đề xuất và làm bước tiếp theo** thay vì trả việc lại. Chỉ dừng ở
-      các stop condition mà workflow đang chạy quy định.
-- **Chỉ chạy speckit khi được yêu cầu**: nếu dev không gọi `speckit-*` thì
-  không cần chạy workflow speckit, nhưng vẫn phải theo `docs/development/` và
-  `docs/system-design/`.
-- **BẮT BUỘC** — Git:
-    - **Không tự ý thao tác git**: Agent **KHÔNG ĐƯỢC** chạy bất kỳ lệnh thay
-      đổi git nào (`commit`, `push`, `tag`, `branch`, `checkout`, `merge`,
-      `rebase`, `reset`, `amend`, viết lại lịch sử) khi chưa có yêu cầu/cho
-      phép rõ ràng của dev. Chỉ được đọc (`git status/log/diff`). Điều này áp
-      dụng cả khi dev đã duyệt một plan có nhắc commit — mỗi thao tác git vẫn
-      cần chỉ thị riêng. NGOẠI LỆ: gọi một skill tự khai báo git policy (ví dụ
-      `speckit-orchestrate`) là sự cho phép thường trực cho lần chạy đó; policy
-      của skill đó chi phối, gồm cả nhịp commit và danh sách phải hỏi trước.
-    - Commit message tiếng Anh, theo Conventional Commits.
-    - **Mặc định không commit/push lên `main`**: ưu tiên nhánh feature + PR có ít
-      nhất 1 reviewer. Agent MUST NOT **tự động** `push`, `tag`, tạo PR,
-      force-push hay rebase commit của người khác; chỉ thực hiện khi dev yêu cầu
-      hoặc cho phép rõ ràng cho lần đó — khi đã được cho phép thì được phép cả
-      commit/push thẳng `main`.
-    - Chỉ stage path thuộc feature đang bind. Không `git add -A`, không stage
-      thay đổi có sẵn từ trước của người khác.
-    - **Gate chia theo độ lớn thay đổi.** Bảng dưới là nguồn chân lý duy nhất
-      cho gate; đừng lặp lại gate ở tài liệu khác.
+- **MANDATORY** — Follow
+  [agent-workflow.md](docs/development/agent-workflow.md) in full:
+    - **Large task / new feature**: follow the Spec-kit process step by step.
+    - **Small task** (simple bug fix, doc or config change): Spec-kit is optional,
+      but the core principles in §4 still apply.
+    - **Propose and do the next step yourself** instead of handing work back.
+      Stop only at the stop conditions the running workflow defines.
+- **Run speckit only when asked**: if the developer does not invoke `speckit-*`,
+  you do not need to run the speckit workflow, but you must still follow
+  `docs/development/` and `docs/system-design/`.
+- **MANDATORY** — Git:
+    - **Do not touch git on your own**: the agent MUST NOT run any
+      state-changing git command (`commit`, `push`, `tag`, `branch`, `checkout`,
+      `merge`, `rebase`, `reset`, `amend`, history rewriting) without an explicit
+      request or permission from the developer. Read-only commands
+      (`git status/log/diff`) are allowed. This applies even when the developer
+      has approved a plan that mentions commits — every git operation still
+      needs its own instruction. EXCEPTION: invoking a skill that declares its
+      own git policy (e.g. `speckit-orchestrate`) grants standing permission for
+      that run; that skill's policy governs, including commit cadence and what
+      must be asked first.
+    - Commit messages in English, following Conventional Commits.
+    - **Do not commit/push to `main` by default**: prefer a feature branch + PR
+      with at least 1 reviewer. The agent MUST NOT **automatically** `push`,
+      `tag`, create a PR, force-push or rebase someone else's commits; do these
+      only when the developer requests or explicitly permits it for that run —
+      once permitted, committing/pushing directly to `main` is allowed.
+    - Stage only paths belonging to the bound feature. No `git add -A`, and do
+      not stage pre-existing changes made by someone else.
+    - **Gates scale with change size.** The table below is the single source of
+      truth for gates; do not repeat it in other documents.
 
-        | Thay đổi | Gate |
+        | Change | Gate |
         | --- | --- |
-        | Sửa nhỏ (typo, doc, config, một task) | `make lint` + test cho project vừa chạm |
-        | Một phase của feature | `make lint` + `make test PROJECTS=<path>` scoped theo project đã chạm |
-        | Trước `push` / `tag` | `make check` chạy đầy đủ |
+        | Small change (typo, doc, config, one task) | `make lint` + tests for the project touched |
+        | One feature phase | `make lint` + `make test PROJECTS=<path>` scoped to the projects touched |
+        | Before `push` / `tag` | full `make check` |
 
-        `make lint` = format-check + build (warnings as errors) — đây là **fast
-        gate**. `make check` gồm format-check, build Release, toàn bộ test và
-        quét package lỗ hổng — đây là **close-out gate**. Cả hai KHÔNG thuộc
-        vòng lặp mỗi typo.
+        `make lint` = format-check + build (warnings as errors) — the **fast
+        gate**. `make check` = format-check, Release build, full test suite and
+        package vulnerability scan — the **close-out gate**. Neither belongs in
+        the loop for every typo.
 
 ## 3. Code Compliance
 
-- **BẮT BUỘC** — Tuân thủ tài liệu trong:
-    - `docs/development/` — quy trình, convention, chuẩn handler, validation,
-      routing, testing, migration.
-    - `docs/system-design/` — kiến trúc tổng thể, design pattern, event-driven
-      design, ranh giới module.
-- Khi viết code, **phải** đọc và đối chiếu tài liệu liên quan tới task trước
-  khi làm.
-- **Ranh giới service** (theo `docs/system-design/diagrams/png/c4-model-lv2.png`):
-    - Mỗi service sở hữu database riêng; không truy cập chéo DB của service khác.
-      **Ngoại lệ duy nhất**: Recommendation sở hữu `recommendation_db` chỉ chứa
-      corpus tri thức đã nhúng (RAG), **không** chứa dữ liệu người dùng
-      (Constitution 2.0.0 §I, `docs/decisions/002-recommendation-knowledge-base.md`).
-    - **Client-facing (qua Nginx)**: Identity, Diet, Progress. Recommendation là
-      **service nội bộ, gRPC-only**, không expose REST và không route qua Nginx.
-    - Giao tiếp đồng bộ **giữa các service qua gRPC**; client bên ngoài vào qua
-      Nginx (HTTP/HTTPS). Không dùng HTTP trực tiếp giữa hai service, không gọi
-      xuyên module bằng import nội bộ.
-    - Giao tiếp bất đồng bộ qua RabbitMQ; publish event và consume qua contract.
-    - Schema do EF Core **Code First** quản lý (migrations), không sửa DB bằng tay.
-- **BẮT BUỘC** — File môi trường: mọi comment trong file có tên bắt đầu bằng
-  `.env` (ví dụ `.env.example`) **phải viết bằng tiếng Anh**.
-- **BẮT BUỘC** — Phối hợp nhóm (chi tiết ở `docs/development/team-workflow.md`):
-    - Danh tính là **máy-local**: mỗi dev có `.specify/owner.json` (gitignored,
-      chỉ chứa `{"handle": "..."}`). File thiếu/trống → agent dừng, hỏi dev
-      handle rồi ghi hộ; MUST NOT tự đoán handle.
-    - 1 feature = 1 owner = 1 nhánh. Không hai người cùng sửa `tasks.md` của một
-      feature.
-    - Một service chỉ có **một** feature đang mở được tạo migration; hai feature
-      không cùng lúc sửa một file trong `contracts/`.
-    - File dùng chung (`contracts/`, `Directory.Packages.props`, solution, DI
-      registration, migration project) phải khai trong `plan.md` mục
-      "Shared Files & Conflict Hotspots" trước khi sửa.
-    - `.agents/skills/**` và `.specify/**` là hạ tầng dùng chung do lead sở hữu;
-      nhánh feature MUST NOT sửa (ngoại lệ: `.specify/owner.json` là state
-      máy-local, dev tự điền và không commit). Thay đổi hạ tầng đi qua
-      `chore/skills-*`.
-    - `specs/registry.md` sinh tự động; không sửa tay. Cập nhật `meta.json`
-      (`services`, `status`) rồi chạy `pwsh scripts/speckit/team-feature.ps1 registry -Write`.
-- Nếu feature thay đổi HTTP endpoint, event payload hoặc DTO client-facing thì
-  phải cập nhật `specs/<owner>-<NNN>-<slug>/frontend-guide.md`; chỉ đặt
-  `READY_FOR_FRONTEND` khi contract, implementation, test evidence và sync
-  check có số đếm đều hoàn tất. Feature không đổi client surface phải ghi kết
-  luận đó trong `tasks.md`.
-- Nếu tài liệu mâu thuẫn, dùng chuỗi ưu tiên ở §1 (Authoritative sources).
+- **MANDATORY** — Follow the documents in:
+    - `docs/development/` — process, conventions, handler/validation/routing
+      standards, testing, migrations.
+    - `docs/system-design/` — overall architecture, design patterns,
+      event-driven design, module boundaries.
+- When writing code, you **must** read and check the documents relevant to the
+  task first.
+- **Service boundaries** (per `docs/system-design/diagrams/png/c4-model-lv2.png`):
+    - Each service owns its own database; never access another service's DB.
+      **Only exception**: Recommendation owns `recommendation_db`, which contains
+      only the embedded knowledge corpus (RAG), **not** user data
+      (Constitution §I, `docs/decisions/002-recommendation-knowledge-base.md`).
+    - **Client-facing (through Nginx)**: Identity, Diet, Progress. Recommendation
+      is an **internal, gRPC-only service**; it exposes no REST and is not routed
+      through Nginx.
+    - Synchronous **inter-service calls go over gRPC**; external clients enter
+      through Nginx (HTTP/HTTPS). Do not use direct HTTP between two services,
+      and do not call across modules via internal imports.
+    - Asynchronous communication goes through RabbitMQ; publish and consume via
+      contracts.
+    - Schema is managed by EF Core **Code First** (migrations); never change the
+      DB by hand.
+- **MANDATORY** — Environment files: every comment in a file whose name starts
+  with `.env` (e.g. `.env.example`) **must be written in English**.
+- **MANDATORY** — Team coordination (details in
+  `docs/development/team-workflow.md`):
+    - Identity is **machine-local**: each developer has `.specify/owner.json`
+      (gitignored, containing only `{"handle": "..."}`). If the file is
+      missing/empty, the agent stops, asks the developer for a handle and writes
+      it; MUST NOT guess a handle.
+    - 1 feature = 1 owner = 1 branch. Two people must not edit the same feature's
+      `tasks.md`.
+    - Only **one** open feature may create migrations for a service; two features
+      must not edit the same file under `contracts/` at the same time.
+    - Shared files (`contracts/`, `Directory.Packages.props`, the solution, DI
+      registration, migration projects) must be listed in `plan.md` under
+      "Shared Files & Conflict Hotspots" before editing.
+    - `.agents/skills/**` and `.specify/**` are shared infrastructure owned by
+      the lead; feature branches MUST NOT change them (exception:
+      `.specify/owner.json` is machine-local state, filled by each developer and
+      never committed). Infrastructure changes go through `chore/skills-*`.
+    - `meta.json` is the per-feature source of truth: update `services` and
+      `status` there. View the aggregate with
+      `pwsh scripts/speckit/team-feature.ps1 registry` (printed, not committed).
+- If a feature changes an HTTP endpoint, event payload or client-facing DTO, it
+  must update `specs/<owner>-<NNN>-<slug>/frontend-guide.md`; set
+  `READY_FOR_FRONTEND` only when contract, implementation, test evidence and the
+  counted sync check are all complete. A feature that does not change the client
+  surface must record that conclusion in `tasks.md`.
+- If documents conflict, use the priority order in §1 (Authoritative sources).
 
 ## 4. Core Principles
 
-- **Tuân thủ Constitution (BẮT BUỘC)**: với **mọi hành động** — dù có theo
-  quy trình Spec-kit hay không — phải đọc và tuân thủ
-  [`.specify/memory/constitution.md`](.specify/memory/constitution.md). Đây là
-  văn bản kiến trúc có thẩm quyền cao nhất của dự án. Khi constitution mâu
-  thuẫn với tài liệu khác, constitution thắng ở ranh giới kiến trúc và nguyên
-  tắc.
-- **Giải quyết xung đột**: nếu tài liệu và source code mâu thuẫn về kiến trúc,
-  data model hoặc hành vi người dùng thấy được, DỪNG, giải thích, và hỏi cái
-  nào là chuẩn. Với chi tiết mà tài liệu để ngỏ, tự quyết, rồi ghi lại quyết
-  định và lý do trong báo cáo.
-- **Makefile**: luôn ưu tiên target Makefile hơn lệnh thủ công nếu có target
-  tương đương.
-- **Ngôn ngữ giao tiếp**: dùng tiếng Việt khi trao đổi với dev.
-- **Hỏi bằng question UI, không hỏi bằng văn xuôi**: khi cần dev quyết định,
-  dùng công cụ `question` với các lựa chọn cụ thể, mỗi lựa chọn có nhãn ngắn và
-  mô tả hậu quả, đánh dấu lựa chọn ưu tiên bằng "(Recommended)". Chỉ dùng văn
-  xuôi cho câu hỏi mở mà lựa chọn sẽ làm mất thông tin.
-- **Tài liệu trong `specs/`**: viết bằng tiếng Việt theo
-  agent-workflow.md §IV.7.
-- **Đường dẫn tương đối**: luôn dùng đường dẫn tương đối khi tham chiếu file
-  trong doc, spec và code; tránh đường dẫn tuyệt đối kiểu `file:///C:/...`.
+- **Follow the Constitution (MANDATORY)**: for **every action** — whether or not
+  it follows the Spec-kit process — read and comply with
+  [`.specify/memory/constitution.md`](.specify/memory/constitution.md). It is the
+  project's highest architectural authority. When the constitution conflicts
+  with another document, the constitution wins at architectural boundaries and
+  principles.
+- **Resolve conflicts**: if documents and source code disagree about
+  architecture, data model or user-visible behaviour, STOP, explain, and ask
+  which one is authoritative. For details the documents leave open, decide, then
+  record the decision and reason in the report.
+- **Makefile**: always prefer a Makefile target over a manual command when an
+  equivalent target exists.
+- **Communication language**: talk to the developer in Vietnamese.
+- **Ask with the question UI, not in prose**: when the developer must decide,
+  use the `question` tool with concrete options, each with a short label and a
+  consequence description, marking the preferred option with "(Recommended)".
+  Use prose only for open questions where choices would lose information.
+- **Documents under `specs/`**: written in Vietnamese per agent-workflow.md
+  §IV.7.
+- **Relative paths**: always use relative paths when referencing files in docs,
+  specs and code; avoid absolute paths such as `file:///C:/...`.

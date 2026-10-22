@@ -15,7 +15,7 @@ Ba quy tắc đủ để tránh phần lớn xung đột:
 
 1. **1 feature = 1 owner = 1 nhánh.** Không hai người cùng sửa `tasks.md` của
    một feature. Nếu hai người phải làm chung, tách thành hai feature (mỗi người
-   một owner) và liên kết chúng trong `specs/registry.md`.
+   một owner) và ghi chú quan hệ đó trong `meta.json` (`description`) của cả hai.
 2. **1 service = 1 feature đang mở tại một thời điểm**, nếu feature đó tạo
    migration hoặc đổi `contracts/`. Hai feature khác owner không được cùng lúc
    sửa `DbContext`, migration project, hay cùng một file contract.
@@ -68,9 +68,9 @@ Mỗi feature có `meta.json` — nguồn sự thật cho owner/number/slug/bran
 }
 ```
 
-`specs/registry.md` là bảng tổng hợp sinh tự động từ các `meta.json`; không sửa
-tay. Cập nhật `services` và `status` trong `meta.json` của chính mình, rồi chạy
-lại lệnh registry.
+Bảng tổng hợp chỉ là **view**, không phải file trong repo: chạy
+`pwsh scripts/speckit/team-feature.ps1 registry` khi cần xem. Nguồn sự thật là
+`meta.json` của từng feature — cập nhật `services` và `status` ở đó.
 
 ## III. Helper
 
@@ -91,8 +91,8 @@ pwsh scripts/speckit/team-feature.ps1 new -Slug user-auth -Description "Email/pa
 # Bind lại sau khi clone / chuyển nhánh
 pwsh scripts/speckit/team-feature.ps1 bind
 
-# Sinh lại bảng registry
-pwsh scripts/speckit/team-feature.ps1 registry -Write
+# Xem bảng feature đang mở (chỉ in ra, không ghi file)
+pwsh scripts/speckit/team-feature.ps1 registry
 
 # Kiểm tra toàn vẹn (số trùng, slug trùng, meta.json thiếu, bind lệch)
 pwsh scripts/speckit/team-feature.ps1 check
@@ -109,12 +109,12 @@ spec của người khác sau khi bạn `git checkout`.
 3. **Tạo feature**: chạy `$speckit-specify`. Nếu chưa có `.specify/owner.json`,
    agent hỏi handle rồi ghi hộ; sau đó gọi helper `new`, sinh
    `specs/<owner>-<NNN>-<slug>/` và ghi `meta.json`.
-4. **Điền registry**: trong `meta.json`, khai báo `services` mà feature sẽ chạm.
-   Nếu cần sửa file dùng chung, ghi rõ ở mục "Shared Files & Conflict Hotspots"
-   trong `plan.md` (bước plan).
+4. **Khai báo phạm vi**: trong `meta.json`, khai báo `services` mà feature sẽ
+   chạm. Nếu cần sửa file dùng chung, ghi rõ ở mục "Shared Files & Conflict
+   Hotspots" trong `plan.md` (bước plan).
 5. **Chạy các bước Spec-kit** theo [`agent-workflow.md`](agent-workflow.md).
 6. **Trước khi mở PR**: `pwsh scripts/speckit/team-feature.ps1 check`, cập nhật
-   `status` nếu feature đã đóng, sinh lại registry, chạy `make check`.
+   `status` nếu feature đã đóng, chạy `make check`.
 7. **PR**: 1 reviewer bắt buộc; người khác không push hộ. Sau khi merge, người
    tiếp theo merge `main` vào nhánh của mình trước khi tạo migration mới.
 
@@ -125,12 +125,11 @@ báo và không feature đang mở nào khác sở hữu:
 
 | Path | Vì sao xung đột | Cách xử lý |
 | --- | --- | --- |
-| `contracts/**` | nhiều feature cùng đổi một schema | khai báo trong registry; merge tuần tự; feature sau rebase rồi cập nhật |
+| `contracts/**` | nhiều feature cùng đổi một schema | khai báo `services` trong `meta.json`; merge tuần tự; feature sau rebase rồi cập nhật |
 | `Directory.Packages.props` | thêm/xoá package dùng chung | gộp vào PR nhỏ riêng nếu có thể |
 | `*.slnx` | thêm project | chỉ người tạo project sửa, merge sớm |
 | DI/registration (`Program.cs`, `ServiceCollectionExtensions`) | hai feature cùng thêm service | khai báo trong plan; feature sau rebase và thêm lại |
 | `Migrations/**` | timestamp + model snapshot | một service một feature đang mở; regenerate sau merge `main` |
-| `specs/registry.md` | file tổng hợp | lead/registry owner cập nhật; registry sinh lại bằng script |
 | `.specify/owner.json` | danh tính **máy-local** | gitignored, mỗi dev tự điền; không phải file chia sẻ |
 | `.agents/skills/**`, `.specify/**` | hạ tầng dùng chung | lead sở hữu, PR `chore/skills-*` (trừ `.specify/owner.json`, state local) |
 
@@ -158,7 +157,6 @@ báo và không feature đang mở nào khác sở hữu:
 
 - [ ] `pwsh scripts/speckit/team-feature.ps1 check` xanh (không warning mới).
 - [ ] `meta.json`: `services` đúng, `status` đúng.
-- [ ] `specs/registry.md` đã sinh lại và nằm trong commit.
 - [ ] `plan.md` liệt kê đủ file dùng chung; không sửa file của feature khác.
 - [ ] Không có thay đổi ngoài phạm vi feature trong diff.
 - [ ] `make check` xanh.

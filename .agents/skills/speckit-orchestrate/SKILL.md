@@ -31,8 +31,8 @@ drift from the repository and become the thing that is wrong.
 2. `.specify/memory/constitution.md`
 3. `docs/development/agent-workflow.md` and `docs/development/team-workflow.md`
 4. `docs/README.md` and the development/architecture documents it links to
-5. `specs/registry.md` and the `meta.json` of every open feature (shared-file
-   coordination)
+5. The feature table and every open feature's `meta.json` (shared-file
+   coordination): run `pwsh scripts/speckit/team-feature.ps1 registry`.
 6. The feature's `spec.md`, `plan.md`, `tasks.md`, `frontend-guide.md` (if
    present), and `deferred.md` (if present)
 
@@ -115,9 +115,9 @@ If you skip one of these, say so in the report. A silent skip reads as a pass.
   migration numbering. Parallel edits there lose work and duplicate migration
   versions.
 
-**Team coordination.** Before the first write, read `specs/registry.md` and the
-`meta.json` of every open feature. STOP and escalate when another open feature
-already owns:
+**Team coordination.** Before the first write, run
+`pwsh scripts/speckit/team-feature.ps1 registry` and read the `meta.json` of
+every open feature. STOP and escalate when another open feature already owns:
 
 - the same service/module or the same EF Core migration project (migration
   numbering and the model snapshot cannot be merged by hand);

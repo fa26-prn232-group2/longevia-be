@@ -27,7 +27,6 @@ Các file managed còn lại giữ nguyên bản phát hành.
 | `scripts/speckit/team-feature.ps1` | định danh feature nhóm: `owner/resolve/new/bind/registry/check` |
 | `.specify/templates/overrides/plan-template.md` | thêm mục "Shared Files & Conflict Hotspots" |
 | `.specify/owner.json` | handle máy-local của dev (gitignored ở root `.gitignore`, không commit) |
-| `specs/registry.md` | bảng feature sinh tự động từ `meta.json` |
 
 Override template dùng đúng cơ chế có sẵn (`Resolve-TemplateContent` ưu tiên
 `.specify/templates/overrides/`), nên không cần sửa template managed.

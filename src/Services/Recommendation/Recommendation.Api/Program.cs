@@ -4,6 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Recommendation.Api.Extensions;
 using Recommendation.Api.Middlewares;
+using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,13 @@ builder.Services.AddSingleton(sp =>
 });
 
 // ---------------------------------------------------------------------------
+// Knowledge store + adapter RAG (Phase 2): đăng ký tường minh theo interface,
+// không dùng service locator.
+// ---------------------------------------------------------------------------
+
+builder.Services.AddKnowledgeStore();
+
+// ---------------------------------------------------------------------------
 // gRPC server (service nội bộ, không đi qua Nginx - Constitution §I).
 // ---------------------------------------------------------------------------
 
@@ -119,10 +127,11 @@ builder.Services.AddGrpcHealthChecks(options =>
 var app = builder.Build();
 
 // ---------------------------------------------------------------------------
-// Knowledge store: KnowledgeDbContext, UseVector() và MigrateAsync() được
-// đăng ký ở Phase 2 (T024/T029) vì hiện chưa có entity (T020-T023).
-// Migration phải chạy trước khi phục vụ request.
+// Knowledge store: migration của recommendation_db phải chạy trước khi phục vụ
+// request (T024/T029). Chỉ migration của service này, không đụng DB khác.
 // ---------------------------------------------------------------------------
+
+await app.Services.MigrateKnowledgeStoreAsync();
 
 app.MapGrpcHealthChecksService();
 app.MapHealthChecks("/health");

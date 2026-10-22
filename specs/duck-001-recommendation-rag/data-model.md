@@ -198,39 +198,46 @@ chunk.needs_review = S(page)      cho ÍT NHẤT một page trong chunk
 ## 5. Truy vấn truy xuất (hybrid + RRF)
 
 ```sql
-WITH v AS (
-    SELECT id,
-           ROW_NUMBER() OVER (ORDER BY embedding <=> @qvec) AS r
-    FROM kb.chunk
-    WHERE corpus_id = @corpus
-      AND (@chapter = 0 OR chapter_number = @chapter)
-    ORDER BY embedding <=> @qvec
-    LIMIT 50
-), k AS (
-    SELECT id,
-           ROW_NUMBER() OVER (ORDER BY ts_rank(content_tsv, plainto_tsquery('simple', unaccent(@q))) DESC) AS r
-    FROM kb.chunk
-    WHERE corpus_id = @corpus
-      AND (@chapter = 0 OR chapter_number = @chapter)
-      AND content_tsv @@ plainto_tsquery('simple', unaccent(@q))
-    LIMIT 50
+WITH vector_candidates AS (
+    SELECT c.id,
+           ROW_NUMBER() OVER (ORDER BY c.embedding <=> CAST(@qvec AS vector)) AS rank
+    FROM kb.chunk AS c
+    WHERE c.corpus_id = @corpus
+      AND (@chapter = 0 OR c.chapter_number = @chapter)
+      AND (NOT @requireVerified OR c.verified)
+    ORDER BY c.embedding <=> CAST(@qvec AS vector)
+    LIMIT @maxCandidates
+), keyword_candidates AS (
+    SELECT c.id,
+           ROW_NUMBER() OVER (
+               ORDER BY ts_rank(c.content_tsv, plainto_tsquery('simple', unaccent(@q))) DESC) AS rank
+    FROM kb.chunk AS c
+    WHERE c.corpus_id = @corpus
+      AND (@chapter = 0 OR c.chapter_number = @chapter)
+      AND (NOT @requireVerified OR c.verified)
+      AND c.content_tsv @@ plainto_tsquery('simple', unaccent(@q))
+    LIMIT @maxCandidates
 )
-SELECT c.id, c.content, c.chapter_number, c.chapter_title,
+SELECT c.id, c.corpus_id, c.content, c.chapter_number,
+       ch.title AS chapter_title, ch.source_file,
        c.book_page_from, c.book_page_to, c.pdf_page_from, c.pdf_page_to,
        c.verified, c.needs_review,
-       SUM(1.0 / (60 + s.r)) AS rrf_score
-FROM (SELECT * FROM v UNION ALL SELECT * FROM k) s
-JOIN kb.chunk c ON c.id = s.id
-GROUP BY c.id
+       SUM(1.0 / (60 + merged.rank)) AS rrf_score
+FROM (SELECT * FROM vector_candidates UNION ALL SELECT * FROM keyword_candidates) AS merged
+JOIN kb.chunk AS c   ON c.id = merged.id
+JOIN kb.chapter AS ch ON ch.id = c.chapter_id
+GROUP BY c.id, ch.id
 ORDER BY rrf_score DESC
-LIMIT 8;
+LIMIT @topK;
 ```
 
 Ghi chú triển khai:
-- `@qvec` = chuỗi dạng `[0.1,0.2,...]` của vector **câu hỏi đã L2-normalize**, truyền kiểu text + cast `$1::vector`.
+- `@qvec` = chuỗi dạng `[0.1,0.2,...]` của vector **câu hỏi đã L2-normalize**, truyền kiểu text và cast bằng `CAST(@qvec AS vector)`. `$1::vector` **không** dùng được trong `FromSqlRaw` của EF (tham số hoá tạo `$1`), nên dùng `CAST(...)` — tương đương về ngữ nghĩa và đã kiểm chứng trên `recommendation_db`.
+- **`kb.chunk` không có cột `chapter_title`/`source_file`** — hai cột này nằm ở `kb.chapter`, nên truy vấn phải `JOIN kb.chapter` để lấy tiêu đề chương và tệp nguồn cho `Citation`.
 - `unaccent(@q)` áp vào **tham số** → planner vẫn dùng GIN index (đã verify bằng `EXPLAIN`).
-- `LIMIT 8` = `RAG__TOP_K`; `50` = `RAG__MAX_CANDIDATES`.
+- `LIMIT @topK` mặc định 8 (tối đa 20); `@maxCandidates` mặc định 50 (`RAG__TOP_K`, `RAG__MAX_CANDIDATES`).
 - Trả về **projection** (không select `embedding`) — xem D-14.
+- Cờ `@requireVerified` = `RAG__REQUIRE_VERIFIED` **hoặc** yêu cầu từ request (mặc định `false`, theo D-07).
 
 ---
 

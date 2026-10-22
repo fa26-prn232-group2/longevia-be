@@ -8,8 +8,30 @@
     <PackageReference Include="Google.GenAI" />
     <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" />
+    <!-- Codegen tu .proto sang client/server gRPC (chi tiet contract: contracts/recommendation/v1/README.md). -->
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <!--
+      Ghim EF Core 10.0.12 o startup project de thong nhat voi
+      Recommendation.Infrastructure (package Design keo dung ban 10.0.12).
+      Khong kem theo: Npgsql.EFCore.PostgreSQL chi yeu cau [10.0.4, 11.0.0)
+      nen neu thieu dong nay Api se resolve 10.0.4 va xung dot CS1705.
+      Design chi dung cho `dotnet ef`, khong flow sang project khac.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="All" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Contract gRPC cua Recommendation. `Access="Internal"` giu type contract o
+      pham vi assembly: project test sinh ban rieng (GrpcServices="Client") nen
+      khong xay ra mau thuan CS0436 giua hai assembly.
+    -->
+    <Protobuf Include="..\..\..\..\contracts\recommendation\v1\recommendation.proto"
+              GrpcServices="Server"
+              Access="Internal" />
   </ItemGroup>
 
   <ItemGroup>

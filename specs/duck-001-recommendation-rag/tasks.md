@@ -57,50 +57,50 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Contract
 
-- [ ] T018 Tạo `contracts/recommendation/v1/recommendation.proto` theo bản thiết kế `specs/duck-001-recommendation-rag/contracts/recommendation.proto`: 5 RPC (`GetMealRecommendations`, `AnalyzeNutrientGaps`, `EvaluateLongevityHabits`, `AskLongevityQuestion`, `SearchLongevityKnowledge`), enum `MealType`/`BiologicalSex`/`UserGoal`, message `UserProfile`/`Citation`/`ScoreComponent`/`Disclaimer`/`CandidateFood`/`NutrientGap`/`KnowledgeSnippet` — **giữ nguyên số field và thứ tự** như bản thiết kế
-- [ ] T019 Tạo `contracts/recommendation/v1/README.md` mô tả quy ước đặt tên field, quy tắc `book_page` (bản in) vs `pdf_page` (scan) và nguồn chân lý
+- [x] T018 Tạo `contracts/recommendation/v1/recommendation.proto` theo bản thiết kế `specs/duck-001-recommendation-rag/contracts/recommendation.proto`: 5 RPC (`GetMealRecommendations`, `AnalyzeNutrientGaps`, `EvaluateLongevityHabits`, `AskLongevityQuestion`, `SearchLongevityKnowledge`), enum `MealType`/`BiologicalSex`/`UserGoal`, message `UserProfile`/`Citation`/`ScoreComponent`/`Disclaimer`/`CandidateFood`/`NutrientGap`/`KnowledgeSnippet` — **giữ nguyên số field và thứ tự** như bản thiết kế; include file này trong `Recommendation.Api.csproj` với `GrpcServices="Server"` và trong `Recommendation.IntegrationTests.csproj` với `GrpcServices="Client"` (đường dẫn tương đối từ project: `../../../contracts/recommendation/v1/recommendation.proto`)
+- [x] T019 Tạo `contracts/recommendation/v1/README.md` mô tả quy ước đặt tên field, quy tắc `book_page` (bản in) vs `pdf_page` (scan) và nguồn chân lý
 
 ### Mô hình dữ liệu
 
-- [ ] T020 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Corpus.cs` — cột: `Id` uuid PK, `CorpusKey`, `Version`, `Title`, `SourcePath`, `ChapterCount`, `ChunkCount`, `EmbeddingModel`, `EmbeddingDim`, `ChunkerParams` jsonb, `IsActive`, `EmbeddedAt`, `CreatedAt`; unique `(CorpusKey, Version)`; unique index có điều kiện `(CorpusKey) WHERE IsActive`
-- [ ] T021 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Chapter.cs` — `Id` uuid PK, `CorpusId` FK cascade, `ChapterNumber`, `Title`, `SourceFile`, `BookPageFrom/To`, `PdfPageFrom/To`; unique `(CorpusId, ChapterNumber)`
-- [ ] T022 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Chunk.cs` — `Id` bigserial PK, `CorpusId`/`ChapterId` FK cascade, `ChapterNumber` (denormalized), `ChunkIndex`, `Content`, `ContentTsv` tsvector, `TokenCount`, `ContentHash`, `BookPageFrom/To`, `PdfPageFrom/To`, `Verified`, `NeedsReview`, `Embedding` vector(768), `CreatedAt`; unique `(CorpusId, ChapterId, ChunkIndex)`
-- [ ] T023 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/PageFlag.cs` — `Id` bigserial PK, `CorpusId` FK cascade, `PdfPage`, `BookPage`, `Kind`, `SourceFile`, `Note`; unique `(CorpusId, PdfPage, Kind, SourceFile)`
-- [ ] T024 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/KnowledgeDbContext.cs` — chỉ trỏ `recommendation_db`, `HasDefaultSchema("kb")`, không tham chiếu DB khác
-- [ ] T025 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/CorpusConfiguration.cs`
-- [ ] T026 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChapterConfiguration.cs`
-- [ ] T027 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChunkConfiguration.cs` — cột `Embedding` kiểu `Pgvector.Vector` với `HasColumnType("vector(768)")`, `ContentTsv` kiểu `NpgsqlTsVector`, index `GIN(ContentTsv)`, index HNSW `.HasMethod("hnsw").HasOperators("vector_cosine_ops").HasStorageParameter("m", 16).HasStorageParameter("ef_construction", 64)`, index `(CorpusId, ChapterNumber)` và `(BookPageFrom, BookPageTo)`
-- [ ] T028 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/PageFlagConfiguration.cs`
-- [ ] T029 Tạo migration `InitialKnowledgeStore` bằng `make ef-add NAME=InitialKnowledgeStore PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`; **review file sinh ra** trước khi áp dụng; trước khi chạy lệnh phải `git fetch origin && git merge origin/main` để timestamp migration không thấp hơn migration mới nhất (theo `docs/development/migration.md`)
-- [ ] T030 Bổ sung vào migration `InitialKnowledgeStore`: `CREATE EXTENSION IF NOT EXISTS unaccent;` và trigger duy trì `content_tsv` (`BEFORE INSERT OR UPDATE OF content` → `NEW.content_tsv := to_tsvector('simple', unaccent(NEW.content))`) bằng `migrationBuilder.Sql(...)` — `vector` extension do `HasPostgresExtension("vector")` sinh ra
-- [ ] T031 Áp dụng migration trên container thật (`make ef-update PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`) và xác nhận có 4 bảng trong schema `kb` + index HNSW + trigger `tsvector`
+- [x] T020 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Corpus.cs` — cột: `Id` uuid PK, `CorpusKey`, `Version`, `Title`, `SourcePath`, `ChapterCount`, `ChunkCount`, `EmbeddingModel`, `EmbeddingDim`, `ChunkerParams` jsonb, `IsActive`, `EmbeddedAt`, `CreatedAt`; unique `(CorpusKey, Version)`; unique index có điều kiện `(CorpusKey) WHERE IsActive`
+- [x] T021 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Chapter.cs` — `Id` uuid PK, `CorpusId` FK cascade, `ChapterNumber`, `Title`, `SourceFile`, `BookPageFrom/To`, `PdfPageFrom/To`; unique `(CorpusId, ChapterNumber)`
+- [x] T022 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/Chunk.cs` — `Id` bigserial PK, `CorpusId`/`ChapterId` FK cascade, `ChapterNumber` (denormalized), `ChunkIndex`, `Content`, `ContentTsv` tsvector, `TokenCount`, `ContentHash`, `BookPageFrom/To`, `PdfPageFrom/To`, `Verified`, `NeedsReview`, `Embedding` vector(768), `CreatedAt`; unique `(CorpusId, ChapterId, ChunkIndex)`
+- [x] T023 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Entities/PageFlag.cs` — `Id` bigserial PK, `CorpusId` FK cascade, `PdfPage`, `BookPage`, `Kind`, `SourceFile`, `Note`; unique `(CorpusId, PdfPage, Kind, SourceFile)`
+- [x] T024 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/KnowledgeDbContext.cs` — chỉ trỏ `recommendation_db`, `HasDefaultSchema("kb")`, không tham chiếu DB khác
+- [x] T025 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/CorpusConfiguration.cs`
+- [x] T026 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChapterConfiguration.cs`
+- [x] T027 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/ChunkConfiguration.cs` — cột `Embedding` kiểu `Pgvector.Vector` với `HasColumnType("vector(768)")`, `ContentTsv` kiểu `NpgsqlTsVector`, index `GIN(ContentTsv)`, index HNSW `.HasMethod("hnsw").HasOperators("vector_cosine_ops").HasStorageParameter("m", 16).HasStorageParameter("ef_construction", 64)`, index `(CorpusId, ChapterNumber)` và `(BookPageFrom, BookPageTo)`
+- [x] T028 [P] Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Persistence/Configurations/PageFlagConfiguration.cs`
+- [x] T029 Tạo migration `InitialKnowledgeStore` bằng `make ef-add NAME=InitialKnowledgeStore PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`; **review file sinh ra** trước khi áp dụng; trước khi chạy lệnh phải `git fetch origin && git merge origin/main` để timestamp migration không thấp hơn migration mới nhất (theo `docs/development/migration.md`)
+- [x] T030 Bổ sung vào migration `InitialKnowledgeStore`: `CREATE EXTENSION IF NOT EXISTS unaccent;` và trigger duy trì `content_tsv` (`BEFORE INSERT OR UPDATE OF content` → `NEW.content_tsv := to_tsvector('simple', unaccent(NEW.content))`) bằng `migrationBuilder.Sql(...)` — `vector` extension do `HasPostgresExtension("vector")` sinh ra
+- [x] T031 Áp dụng migration trên container thật (`make ef-update PROJECT=src/Services/Recommendation/Recommendation.Infrastructure`) và xác nhận có 4 bảng trong schema `kb` + index HNSW + trigger `tsvector`
 
 ### Abstraction (Application)
 
-- [ ] T032 Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IKnowledgeStore.cs` — `SearchAsync(KnowledgeQuery, CancellationToken)` trả `IReadOnlyList<RetrievedChunk>`, `UpsertAsync(...)`, `CountAsync(...)`
-- [ ] T033 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IEmbeddingProvider.cs` — `EmbedAsync(string, CancellationToken)` và `EmbedBatchAsync(IReadOnlyList<string>, CancellationToken)` trả `IReadOnlyList<float[]>`
-- [ ] T034 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IChatModel.cs` — `CompleteAsync(StructuredPrompt, CancellationToken)` trả JSON đã parse
-- [ ] T035 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IClock.cs` — dùng để test thời gian
-- [ ] T036 [P] Tạo model nội bộ trong `src/Services/Recommendation/Recommendation.Domain/Models/`: `KnowledgeChunk.cs`, `RetrievedChunk.cs`, `Citation.cs`, `UserProfile.cs`, `CandidateFood.cs`, `NutrientGap.cs`, `ScoreComponent.cs`, `KnowledgeQuery.cs` (C# thuần, không EF/ASP.NET)
+- [x] T032 Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IKnowledgeStore.cs` — `SearchAsync(KnowledgeQuery, CancellationToken)` trả `IReadOnlyList<RetrievedChunk>`, `UpsertAsync(...)`, `CountAsync(...)`
+- [x] T033 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IEmbeddingProvider.cs` — `EmbedAsync(string, CancellationToken)` và `EmbedBatchAsync(IReadOnlyList<string>, CancellationToken)` trả `IReadOnlyList<float[]>`
+- [x] T034 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IChatModel.cs` — `CompleteAsync(StructuredPrompt, CancellationToken)` trả JSON đã parse
+- [x] T035 [P] Tạo `src/Services/Recommendation/Recommendation.Application/Abstractions/IClock.cs` — dùng để test thời gian
+- [x] T036 [P] Tạo model nội bộ trong `src/Services/Recommendation/Recommendation.Domain/Models/`: `KnowledgeChunk.cs`, `RetrievedChunk.cs`, `Citation.cs`, `UserProfile.cs`, `CandidateFood.cs`, `NutrientGap.cs`, `ScoreComponent.cs`, `KnowledgeQuery.cs` (C# thuần, không EF/ASP.NET)
 
 ### Adapter Google AI
 
-- [ ] T037 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiEmbeddingProvider.cs` — dùng `Google.GenAI.Client.Models.EmbedContentAsync(model, List<Content>, EmbedContentConfig { OutputDimensionality = 768, TaskType = "RETRIEVAL_DOCUMENT" })`; **model và số chiều đọc từ `RagOptions.EmbeddingModel` / `RagOptions.EmbeddingDim`** (nguồn duy nhất, phải khớp cột `vector(n)` của `kb.chunk`); đọc `EmbedContentResponse.Embeddings[i].Values` (`List<double>`); **L2-normalize** vector trước khi trả về (research.md D-13); retry + backoff khi lỗi quota
-- [ ] T038 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiChatModel.cs` — `GenerateContentAsync` với `GenerateContentConfig { ResponseMimeType = "application/json", ResponseJsonSchema = JsonNode.Parse(schema), SystemInstruction = new Content { Parts = [new Part { Text = ... }] }, Temperature = 0.1 }`; parse JSON trả về; retry 2 lần exponential backoff; lỗi parse → trả `abstain`
-- [ ] T039 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/SchemaFactory.cs` — sinh JSON schema cho từng loại response dưới dạng `JsonNode` (thứ tự property cố định)
+- [x] T037 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiEmbeddingProvider.cs` — **model và số chiều đọc từ `RagOptions.EmbeddingModel` / `RagOptions.EmbeddingDim`** (nguồn duy nhất, phải khớp cột `vector(n)` của `kb.chunk`); `TaskType` tách đúng hai chiều theo research D-12 — `RETRIEVAL_QUERY` khi nhúng **câu hỏi lúc truy xuất**, `RETRIEVAL_DOCUMENT` khi nhúng **tài liệu/chunk**; đọc `EmbedContentResponse.Embeddings[i].Values`; **L2-normalize** trước khi trả về (D-13); retry + backoff khi lỗi quota
+- [x] T038 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/GoogleAiChatModel.cs` — `GenerateContentAsync` với `GenerateContentConfig { ResponseMimeType = "application/json", ResponseJsonSchema = JsonNode.Parse(schema), SystemInstruction = new Content { Parts = [new Part { Text = ... }] }, Temperature = 0.1 }`; parse JSON trả về; retry 2 lần exponential backoff; lỗi parse → trả `abstain`
+- [x] T039 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/SchemaFactory.cs` — sinh JSON schema cho từng loại response dưới dạng `JsonNode` (thứ tự property cố định)
 
 ### Truy xuất tri thức
 
-- [ ] T040 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/PgKnowledgeStore.cs` — hiện thực `IKnowledgeStore`: vector top-50 (`embedding <=> @qvec`) + keyword top-50 (`content_tsv @@ plainto_tsquery('simple', unaccent(@q))`) → merge RRF `SUM(1.0/(60+rank))` → top-k; **projection** không select cột `embedding`
-- [ ] T041 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/ChunkSearchResult.cs` — keyless entity cho `FromSqlRaw` trả `Id, Content, ChapterNumber, ChapterTitle, BookPageFrom, BookPageTo, PdfPageFrom, PdfPageTo, Verified, NeedsReview, RrfScore`
-- [ ] T042 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/VectorQueryBuilder.cs` — chuyển `float[]` → chuỗi `[0.1,0.2,...]` + ép kiểu `$1::vector`; query vector câu hỏi cũng phải L2-normalize
-- [ ] T043 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/QueryNormalizer.cs` — bỏ dấu tiếng Việt ở phía **query** (dùng `unaccent` trong SQL, không tự viết hàm bỏ dấu trong C#)
+- [x] T040 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/PgKnowledgeStore.cs` — hiện thực `IKnowledgeStore`: vector top-50 (`embedding <=> @qvec`) + keyword top-50 (`content_tsv @@ plainto_tsquery('simple', unaccent(@q))`) → merge RRF `SUM(1.0/(60+rank))` → top-k; **projection** không select cột `embedding`
+- [x] T041 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/ChunkSearchResult.cs` — keyless entity cho `FromSqlRaw`, trả `Id, CorpusId, Content, ChapterNumber, ChapterTitle, SourceFile, BookPageFrom, BookPageTo, PdfPageFrom, PdfPageTo, Verified, NeedsReview, RrfScore` (`ChapterTitle`/`SourceFile` đến từ `JOIN kb.chapter`)
+- [x] T042 Tạo `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/VectorQueryBuilder.cs` — chuyển `float[]` → chuỗi `[0.1,0.2,...]` + ép kiểu `$1::vector`; query vector câu hỏi cũng phải L2-normalize
+- [x] T043 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/QueryNormalizer.cs` — bỏ dấu tiếng Việt ở phía **query** (dùng `unaccent` trong SQL, không tự viết hàm bỏ dấu trong C#)
 
 ### Sinh câu trả lời có căn cứ
 
-- [ ] T044 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/PromptBuilder.cs` — 3 tầng ràng buộc (research.md D-10): grounding + abstain; unverified guard ("chưa đối chiếu bản in"); corpus-as-data (chống prompt injection); nội dung sách luôn gắn nhãn là dữ liệu
-- [ ] T045 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/CitationResolver.cs` — verify `quote` khớp chuỗi với `content` của chunk (chuẩn hoá whitespace + bỏ dấu khi so khớp); citation không khớp → loại; mất hết citation → hạ response xuống `abstained = true`
-- [ ] T046 Tạo `src/Services/Recommendation/Recommendation.Application/Common/Errors/RecommendationErrors.cs` — factory `AppException` với mã ổn định `recommendation.*` (vd `recommendation.no_candidate_food`, `recommendation.knowledge_unavailable`, `recommendation.provider_unavailable`)
+- [x] T044 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/PromptBuilder.cs` — 3 tầng ràng buộc (research.md D-10): grounding + abstain; unverified guard ("chưa đối chiếu bản in"); corpus-as-data (chống prompt injection); nội dung sách luôn gắn nhãn là dữ liệu
+- [x] T045 Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/CitationResolver.cs` — verify `quote` khớp chuỗi với `content` của chunk (chuẩn hoá whitespace + bỏ dấu khi so khớp); citation không khớp → loại; mất hết citation → hạ response xuống `abstained = true`
+- [x] T046 Tạo `src/Services/Recommendation/Recommendation.Application/Common/Errors/RecommendationErrors.cs` — factory `AppException` với mã ổn định `recommendation.*` (vd `recommendation.no_candidate_food`, `recommendation.knowledge_unavailable`, `recommendation.provider_unavailable`)
 
 **Checkpoint**: migration đã áp dụng trên Postgres thật; `IKnowledgeStore` trả về chunk thật từ `kb.chunk`; `make lint` + `make test PROJECTS=src/Services/Recommendation` xanh.
 
@@ -130,7 +130,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T057 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/GetMealRecommendationsUseCase.cs` — thứ tự: lọc dị ứng → lọc sở thích → rule 105% → chọn tối đa 5 món bằng AI trong tập đã lọc → gắn `rationale` + `citations`; `longevity_tip` lấy từ RAG, fallback sang tip tĩnh trong `Domain/Constants`
 - [ ] T058 [US1] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/DisclaimerText.cs` — nội dung khuyến cáo BR-04
 - [ ] T059 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` (partial) — hiện thực `GetMealRecommendations`, map DTO nội bộ ↔ message `contracts/recommendation/v1/recommendation.proto`, deadline 5s
-- [ ] T060 [US1] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Meals/MealRecommendationMapper.cs` — map `CandidateFood` → `RecommendedMeal`, `Citation` → message `Citation`
+- [ ] T060 [US1] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/MealRecommendationMapper.cs` — map `CandidateFood` → `RecommendedMeal`, `Citation` → message `Citation`
 - [ ] T061 [US1] Viết test hồi quy prompt cho `GetMealRecommendations` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Meals/MealPromptTests.cs` — assert prompt có lệnh "chỉ dùng nguyên liệu trong danh mục", có tầng unverified guard, không có tên món nào ngoài danh mục
 - [ ] T062 [US1] Cập nhật `docs/api/api-spec.md` §5 và `docs/requirements/prd.md` §2.4 nếu hợp đồng thực tế lệch với bản thiết kế `contracts/recommendation.proto`
 
@@ -185,7 +185,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 ### Implementation cho User Story 3
 
 - [ ] T082 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/AskLongevityQuestionUseCase.cs` — truy xuất → dựng prompt 3 tầng → gọi `IChatModel` → `CitationResolver` → `AskLongevityQuestionResponse`; luôn kèm `disclaimer`
-- [ ] T083 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/AskLongevityQuestionMapper.cs` — map nội bộ ↔ message `AskLongevityQuestionRequest/Response`
+- [ ] T083 [US3] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/AskLongevityQuestionMapper.cs` — map nội bộ ↔ message `AskLongevityQuestionRequest/Response`
 - [ ] T084 [US3] Bổ sung `AskLongevityQuestion` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs` — map lỗi sang `Status` đúng; deadline 5s
 - [ ] T085 [US3] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Ask/SafetyGuard.cs` — câu hỏi về thuốc/liều/chẩn đoán/thay thế điều trị → từ chối và hướng về bác sĩ; nội dung bệnh nền vẫn trả ở mức lối sống kèm disclaimer + cờ chưa đối chiếu
 
@@ -208,7 +208,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 - [ ] T088 [US4] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/SearchLongevityKnowledgeUseCase.cs` — dùng `IKnowledgeStore.SearchAsync` với `chapter_filter` + `top_k`, trả `KnowledgeSnippet` kèm `score` và `verified`
 - [ ] T089 [US4] Bổ sung `SearchLongevityKnowledge` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
-- [ ] T090 [US4] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/SearchKnowledgeMapper.cs`
+- [ ] T090 [US4] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/SearchKnowledgeMapper.cs`
 
 **Checkpoint**: User Story 4 chạy độc lập.
 
@@ -232,7 +232,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T095 [P] [US5] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/MicronutrientRda.cs` — bảng nhu cầu tham chiếu theo nhóm tuổi và giới cho ~18 vi chất (A, C, D, E, K, B1–B12, canxi, sắt, magiê, kẽm, iot, selen, omega-3, chất xơ)
 - [ ] T096 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/NutrientGapCalculator.cs` — tính `average_intake` (7 ngày), `deficit`, `severity` theo ngưỡng 25%/50%
 - [ ] T097 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/AnalyzeNutrientGapsUseCase.cs` — nhận hồ sơ + 7 ngày + mục tiêu → `gaps[]` (deterministic) + phần diễn giải/thực phẩm gợi ý có căn cứ (RAG) + `citations` + `disclaimer`
-- [ ] T098 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/NutrientGapMapper.cs`
+- [ ] T098 [US5] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/NutrientGapMapper.cs`
 - [ ] T099 [US5] Bổ sung `AnalyzeNutrientGaps` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
 
 **Checkpoint**: User Story 5 chạy độc lập, kết quả deterministic.
@@ -256,7 +256,7 @@ description: "Task list for feature duck/001/recommendation-rag"
 - [ ] T103 [P] [US6] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/LongevityRubric.cs` — trọng số + ngưỡng điểm tối đa từng nhánh (fasting 16h, sleep 7h, hydration 7/7 ngày, nutrition 90%)
 - [ ] T104 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/LongevityRubricCalculator.cs` — chấm từng nhánh 0–100 theo ngưỡng, tính điểm tổng theo trọng số, trả `ScoreComponent[]`
 - [ ] T105 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/EvaluateLongevityHabitsUseCase.cs` — `score_breakdown` + `actionable_insights` (có citations khi có trong sách) + `disclaimer`
-- [ ] T106 [US6] Tạo `src/Services/Recommendation/Recommendation.Application/Features/LongevityHabits/LongevityHabitMapper.cs`
+- [ ] T106 [US6] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/LongevityHabitMapper.cs`
 - [ ] T107 [US6] Bổ sung `EvaluateLongevityHabits` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
 
 **Checkpoint**: User Story 6 chạy độc lập, điểm deterministic.

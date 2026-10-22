@@ -7,10 +7,25 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <!-- Codegen client gRPC tu .proto de integration test goi server that. -->
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <!--
+      Thong nhat EF Core 10.0.12 voi Recommendation.Infrastructure (package
+      Design keo dung ban nay). Chi dung o muc build-time; Npgsql chi yeu cau
+      [10.0.4, 11.0.0) nen thieu dong nay se resolve 10.0.4 va xung dot CS1705.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="All" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Client gRPC cho contract Recommendation (GrpcServices="Client"). -->
+    <Protobuf Include="..\..\..\..\..\contracts\recommendation\v1\recommendation.proto"
+              GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>

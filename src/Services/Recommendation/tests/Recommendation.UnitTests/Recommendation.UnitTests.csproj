@@ -7,6 +7,12 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <!--
+      Thong nhat EF Core 10.0.12 voi Recommendation.Infrastructure (package
+      Design keo dung ban nay). Chi dung o muc build-time; Npgsql chi yeu cau
+      [10.0.4, 11.0.0) nen thieu dong nay se resolve 10.0.4 va xung dot CS1705.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="All" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />

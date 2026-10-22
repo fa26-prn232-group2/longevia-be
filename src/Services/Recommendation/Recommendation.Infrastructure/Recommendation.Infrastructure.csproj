@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="Google.GenAI" />
+    <!-- Can cho `dotnet ef migrations` (design-time); khong dung luc runtime. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="All" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
     <PackageReference Include="Polly" />

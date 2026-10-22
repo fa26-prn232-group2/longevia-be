@@ -18,7 +18,7 @@ public sealed class GoogleAiOptions
     public string ApiKey { get; set; } = string.Empty;
 
     /// <summary>Model sinh câu trả lời có căn cứ.</summary>
-    public string ChatModel { get; set; } = "gemini-3.5-flash";
+    public string ChatModel { get; set; } = "gemini-3.5-flash-lite";
 
     /// <summary>Timeout cho một lời gọi provider (milliseconds).</summary>
     public int TimeoutMs { get; set; } = 30_000;

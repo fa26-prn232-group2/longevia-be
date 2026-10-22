@@ -110,6 +110,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
+      GOOGLE_AI__CHAT_MODEL: ${GOOGLE_AI__CHAT_MODEL:-gemini-3.5-flash-lite}
       RECOMMENDATION__GRPC_PORT: ${RECOMMENDATION__GRPC_PORT:-50051}
       RECOMMENDATION__HTTP_PORT: ${RECOMMENDATION__HTTP_PORT:-8080}
       RAG__TOP_K: ${RAG__TOP_K:-8}

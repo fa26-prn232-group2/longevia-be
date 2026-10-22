@@ -48,7 +48,7 @@ Quyết định kiến trúc nền: [ADR 002](../../docs/decisions/002-recommend
 - Ngập 100 RPS mỗi container (PRD §3.1)
 
 **Constraints**:
-- Constitution 2.0.0 §I: `recommendation_db` **MUST NOT** chứa dữ liệu người dùng; Recommendation vẫn gRPC-only, **MUST NOT** expose qua Nginx
+- Constitution 2.1.0 §I: `recommendation_db` **MUST NOT** chứa dữ liệu người dùng; Recommendation vẫn gRPC-only, **MUST NOT** expose qua Nginx
 - Không truy cập chéo DB; không import code nội bộ giữa các service
 - Timeout gRPC 5.0s; retry 2 lần exponential backoff khi provider lỗi
 - Mọi response có `disclaimer` (BR-04); citation bắt buộc có `verified` + `source_file` (BR-06)
@@ -193,7 +193,7 @@ Xem [research.md](./research.md): 14 quyết định kỹ thuật (D-01…D-14),
 3. 3 RPC gốc trả lời có căn cứ (`citations[]`) + `disclaimer`; gap vi chất và điểm thói quen **deterministic**, có `gaps[]` / `score_breakdown[]`.
 4. 2 RPC mới: hỏi sách (có citation, `abstained` khi thiếu căn cứ) và tra cứu đoạn.
 5. Lọc dị ứng bằng code ở Recommendation; `calorie_cap_reached` đúng rule 105%; ≤ 5 món mỗi bữa.
-6. Constitution 2.0.0 + ADR 002 + tài liệu đồng bộ (đã merge ở Phase 0).
+6. Constitution 2.1.0 + ADR 002 + tài liệu đồng bộ (đã merge ở Phase 0).
 7. Unit + Integration + E2E xanh; eval golden set chạy được và có báo cáo groundedness.
 8. `make check` xanh trước khi push.
 

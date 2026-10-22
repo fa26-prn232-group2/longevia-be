@@ -2,7 +2,7 @@
 
 **Feature**: `duck/001/recommendation-rag` | **Date**: 2026-10-22 | **Plan**: [plan.md](./plan.md)
 
-> Ràng buộc Constitution 2.0.0 §I: `recommendation_db` **chỉ** chứa corpus tri thức đã nhúng. **Không bảng nào** trong đây chứa dữ liệu người dùng.
+> Ràng buộc Constitution 2.1.0 §I: `recommendation_db` **chỉ** chứa corpus tri thức đã nhúng. **Không bảng nào** trong đây chứa dữ liệu người dùng.
 
 ---
 
@@ -165,7 +165,7 @@ CREATE INDEX ix_chunk_hnsw    ON kb.chunk USING hnsw (embedding vector_cosine_op
 | R4 | `verified` / `needs_review` của chunk = hợp của cờ của các trang trong `book_page_from..book_page_to` | tính lúc ingest (§4) |
 | R5 | `chapter_number` phải khớp `kb.chapter.chapter_number` | chỉ ghi qua pipeline ingest |
 | R6 | `embedding` luôn L2-normalized | chuẩn hoá ngay sau khi nhúng (D-13) |
-| R7 | Không có cột nào chứa dữ liệu người dùng | Constitution 2.0.0 §I — kiểm tra bằng integration test (SC-009) |
+| R7 | Không có cột nào chứa dữ liệu người dùng | Constitution 2.1.0 §I — kiểm tra bằng integration test (SC-009) |
 
 ---
 

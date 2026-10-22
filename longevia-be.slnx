@@ -11,6 +11,9 @@
     <Project Path="src/Services/Identity/tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj" />
     <Project Path="src/Services/Identity/tests/Identity.UnitTests/Identity.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Worker/">
+    <Project Path="src/Services/Worker/Worker.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Longevia.Shared.csproj" />
   </Folder>

@@ -64,7 +64,9 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
   khi làm.
 - **Ranh giới service** (theo `docs/system-design/diagrams/png/c4-model-lv2.png`):
     - Mỗi service sở hữu database riêng; không truy cập chéo DB của service khác.
-      Service stateless (Recommendation) không sở hữu DB nào.
+      **Ngoại lệ duy nhất**: Recommendation sở hữu `recommendation_db` chỉ chứa
+      corpus tri thức đã nhúng (RAG), **không** chứa dữ liệu người dùng
+      (Constitution 2.0.0 §I, `docs/decisions/002-recommendation-knowledge-base.md`).
     - **Client-facing (qua Nginx)**: Identity, Diet, Progress. Recommendation là
       **service nội bộ, gRPC-only**, không expose REST và không route qua Nginx.
     - Giao tiếp đồng bộ **giữa các service qua gRPC**; client bên ngoài vào qua

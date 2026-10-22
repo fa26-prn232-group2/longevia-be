@@ -8,6 +8,7 @@ Mỗi file ghi một quyết định kiến trúc/vận hành đã chốt, kèm 
 | # | Ngày | Tiêu đề | Trạng thái |
 | --- | --- | --- | --- |
 | [001](001-authn-authz-architecture.md) | 2026-10-07 | AuthN/AuthZ Architecture | Accepted |
+| [002](002-recommendation-knowledge-base.md) | 2026-10-22 | Knowledge Base & RAG cho Recommendation Service | Accepted |
 
 ## Quy ước
 

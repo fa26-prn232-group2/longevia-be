@@ -2,6 +2,7 @@ using Grpc.Core;
 using Recommendation.Api.Mapping;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.Meals;
+using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Search;
 using Contracts = Longevia.Recommendation.Contracts.V1;
 
@@ -13,6 +14,7 @@ namespace Recommendation.Api.Endpoints;
 /// </summary>
 internal sealed partial class RecommendationGrpcService(
     GetMealRecommendationsUseCase getMealRecommendations,
+    AnalyzeNutrientGapsUseCase analyzeNutrientGaps,
     AskLongevityQuestionUseCase askLongevityQuestion,
     SearchLongevityKnowledgeUseCase searchLongevityKnowledge)
     : Contracts.RecommendationService.RecommendationServiceBase
@@ -28,6 +30,19 @@ internal sealed partial class RecommendationGrpcService(
             .ConfigureAwait(false);
 
         return MealRecommendationMapper.ToProtoResponse(result);
+    }
+
+    /// <summary>Phân tích thiếu hụt vi chất 7 ngày, deterministic theo bảng RDA (US5).</summary>
+    public override async Task<Contracts.NutrientGapResponse> AnalyzeNutrientGaps(
+        Contracts.NutrientGapRequest request,
+        ServerCallContext context)
+    {
+        var applicationRequest = NutrientGapMapper.ToApplicationRequest(request);
+        var result = await analyzeNutrientGaps
+            .ExecuteAsync(applicationRequest, context.CancellationToken)
+            .ConfigureAwait(false);
+
+        return NutrientGapMapper.ToProtoResponse(result);
     }
 
     /// <summary>Hỏi tri thức trong sách, có trích dẫn và abstain khi thiếu căn cứ (US3).</summary>

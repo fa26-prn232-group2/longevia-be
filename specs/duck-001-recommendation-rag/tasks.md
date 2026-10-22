@@ -222,18 +222,18 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 5
 
-- [ ] T091 [P] [US5] Unit test `MicronutrientRda` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/MicronutrientRdaTests.cs` — nhu cầu tham chiếu theo nhóm tuổi và giới (người lớn nam ≠ người lớn nữ); giá trị thiếu tính đúng
-- [ ] T092 [P] [US5] Unit test `NutrientGapCalculator` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/NutrientGapCalculatorTests.cs` — ngưỡng severity: <25% nhẹ, 25–50% trung bình, >50% nặng; biên đúng 25% và 50%
-- [ ] T093 [P] [US5] Unit test `AnalyzeNutrientGapsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/AnalyzeNutrientGapsUseCaseTests.cs` — cùng đầu vào cho cùng kết quả; thực phẩm gợi ý không chứa thành phần dị ứng; phần giải thích có citations
-- [ ] T094 [US5] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/NutrientGaps/AnalyzeNutrientGapsGrpcTests.cs` — gọi server thật, assert `gaps[]` chứa chất xơ với `severity` và `target` đúng
+- [x] T091 [P] [US5] Unit test `MicronutrientRda` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/MicronutrientRdaTests.cs` — nhu cầu tham chiếu theo nhóm tuổi và giới (người lớn nam ≠ người lớn nữ); giá trị thiếu tính đúng
+- [x] T092 [P] [US5] Unit test `NutrientGapCalculator` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/NutrientGapCalculatorTests.cs` — ngưỡng severity: <25% nhẹ, 25–50% trung bình, >50% nặng; biên đúng 25% và 50%
+- [x] T093 [P] [US5] Unit test `AnalyzeNutrientGapsUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/NutrientGaps/AnalyzeNutrientGapsUseCaseTests.cs` — cùng đầu vào cho cùng kết quả; thực phẩm gợi ý không chứa thành phần dị ứng; phần giải thích có citations
+- [x] T094 [US5] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/NutrientGaps/AnalyzeNutrientGapsGrpcTests.cs` — gọi server thật, assert `gaps[]` chứa chất xơ với `severity` và `target` đúng
 
 ### Implementation cho User Story 5
 
-- [ ] T095 [P] [US5] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/MicronutrientRda.cs` — bảng nhu cầu tham chiếu theo nhóm tuổi và giới cho ~18 vi chất (A, C, D, E, K, B1–B12, canxi, sắt, magiê, kẽm, iot, selen, omega-3, chất xơ)
-- [ ] T096 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/NutrientGapCalculator.cs` — tính `average_intake` (7 ngày), `deficit`, `severity` theo ngưỡng 25%/50%
-- [ ] T097 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/AnalyzeNutrientGapsUseCase.cs` — nhận hồ sơ + 7 ngày + mục tiêu → `gaps[]` (deterministic) + phần diễn giải/thực phẩm gợi ý có căn cứ (RAG) + `citations` + `disclaimer`
-- [ ] T098 [US5] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/NutrientGapMapper.cs`
-- [ ] T099 [US5] Bổ sung `AnalyzeNutrientGaps` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
+- [x] T095 [P] [US5] Tạo `src/Services/Recommendation/Recommendation.Domain/Constants/MicronutrientRda.cs` — bảng nhu cầu tham chiếu theo nhóm tuổi và giới cho ~18 vi chất (A, C, D, E, K, B1–B12, canxi, sắt, magiê, kẽm, iot, selen, omega-3, chất xơ)
+- [x] T096 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/NutrientGapCalculator.cs` — tính `average_intake` (7 ngày), `deficit`, `severity` theo ngưỡng 25%/50%
+- [x] T097 [US5] Tạo `src/Services/Recommendation/Recommendation.Application/Features/NutrientGaps/AnalyzeNutrientGapsUseCase.cs` — nhận hồ sơ + 7 ngày + mục tiêu → `gaps[]` (deterministic) + phần diễn giải/thực phẩm gợi ý có căn cứ (RAG) + `citations` + `disclaimer`
+- [x] T098 [US5] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/NutrientGapMapper.cs`
+- [x] T099 [US5] Bổ sung `AnalyzeNutrientGaps` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
 
 **Checkpoint**: User Story 5 chạy độc lập, kết quả deterministic.
 

@@ -14,4 +14,10 @@ public enum StructuredResponseKind
     /// Mô hình không được sinh món mới hay số liệu dinh dưỡng.
     /// </summary>
     MealSelection = 1,
+
+    /// <summary>
+    /// Giải thích khoảng thiếu vi chất do hệ thống tính sẵn + thực phẩm gợi ý lấy
+    /// từ sách + trích dẫn. Mô hình không được tính lại hay bịa số liệu.
+    /// </summary>
+    NutrientGapAnalysis = 2,
 }

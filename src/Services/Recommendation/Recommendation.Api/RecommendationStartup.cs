@@ -7,6 +7,7 @@ using Recommendation.Api.Extensions;
 using Recommendation.Api.Middlewares;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.Meals;
+using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Search;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
@@ -126,6 +127,11 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<MealSelectionParser>();
         builder.Services.AddScoped<MealSelector>();
         builder.Services.AddScoped<GetMealRecommendationsUseCase>();
+
+        // Phân tích vi chất (US5): bảng RDA + calculator thuần nên singleton; use
+        // case phụ thuộc IKnowledgeStore (scoped) nên phải scoped.
+        builder.Services.AddSingleton<NutrientGapCalculator>();
+        builder.Services.AddScoped<AnalyzeNutrientGapsUseCase>();
 
         // Hỏi tri thức trong sách (US3): guard deterministic + use case phụ thuộc
         // IKnowledgeStore (scoped) nên use case phải scoped.

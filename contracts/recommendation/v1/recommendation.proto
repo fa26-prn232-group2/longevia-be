@@ -1,4 +1,4 @@
-syntax = "proto3";
+﻿syntax = "proto3";
 
 package longevia.recommendation.v1;
 
@@ -140,6 +140,17 @@ message DailyNutrientSummary {
   double carbs = 4;
   double fat = 5;
   double fiber = 6;
+  // Vi chất (vitamin/khoáng) của ngày; caller quyết định gửi vi chất nào.
+  // Không gửi một vi chất nghĩa là "chưa có dữ liệu", KHÔNG phải "đã nạp 0".
+  repeated MicronutrientIntake micronutrients = 7;
+}
+
+// Một vi chất đã nạp trong ngày. `nutrient` phải khớp khoá trong bảng nhu cầu
+// tham chiếu của service (ví dụ "Vitamin D", "Calcium", "Omega-3").
+message MicronutrientIntake {
+  string nutrient = 1;
+  string unit = 2;               // mg | mcg | g | kcal
+  double amount = 3;
 }
 
 message NutrientGapRequest {
@@ -155,7 +166,7 @@ message NutrientGapRequest {
 
 message NutrientGap {
   string nutrient = 1;                 // "Vitamin D" | "Omega-3" | "Fiber"...
-  string unit = 2;                     // mg | g | IU
+  string unit = 2;                     // mg | mcg | g | kcal
   double target = 3;                   // theo nhóm tuổi và giới
   double average_intake = 4;
   double deficit = 5;

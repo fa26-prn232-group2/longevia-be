@@ -15,6 +15,7 @@ public static class SchemaFactory
     {
         StructuredResponseKind.GroundedAnswer => GroundedAnswerSchema(),
         StructuredResponseKind.MealSelection => MealSelectionSchema(),
+        StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisSchema(),
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind),
             kind,
@@ -111,5 +112,51 @@ public static class SchemaFactory
             },
         },
         ["required"] = new JsonArray("selections"),
+    };
+
+    private static JsonObject NutrientGapAnalysisSchema() => new()
+    {
+        ["type"] = "object",
+        ["properties"] = new JsonObject
+        {
+            ["analysis_summary"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Giải thích ngắn gọn bằng tiếng Việt, chỉ dựa trên CONTEXT và số liệu đã cho.",
+            },
+            ["suggested_foods"] = new JsonObject
+            {
+                ["type"] = "array",
+                ["description"] = "Tên thực phẩm xuất hiện nguyên văn trong CONTEXT (có thể rỗng).",
+                ["items"] = new JsonObject
+                {
+                    ["type"] = "string",
+                },
+            },
+            ["citations"] = new JsonObject
+            {
+                ["type"] = "array",
+                ["description"] = "Các trích dẫn chống đỡ phần giải thích (có thể rỗng).",
+                ["items"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["chunk_index"] = new JsonObject
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "Chỉ số đoạn trong CONTEXT (bắt đầu từ 0).",
+                        },
+                        ["quote"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Trích nguyên văn từ đoạn tương ứng.",
+                        },
+                    },
+                    ["required"] = new JsonArray("chunk_index", "quote"),
+                },
+            },
+        },
+        ["required"] = new JsonArray("analysis_summary", "suggested_foods", "citations"),
     };
 }

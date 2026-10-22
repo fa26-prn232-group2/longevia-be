@@ -125,9 +125,12 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
         {
             Prompts.Add(prompt);
 
-            var completion = prompt.ResponseKind == StructuredResponseKind.GroundedAnswer
-                ? GroundedAnswerDouble.Complete(prompt)
-                : MealSelection();
+            var completion = prompt.ResponseKind switch
+            {
+                StructuredResponseKind.GroundedAnswer => GroundedAnswerDouble.Complete(prompt),
+                StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisDouble.Complete(prompt),
+                _ => MealSelection(),
+            };
 
             return Task.FromResult(completion);
         }

@@ -14,6 +14,8 @@
 # Keep Docker and shell entrypoints LF even on Windows checkouts.
 *.sh      text eol=lf
 Dockerfile text eol=lf
+# PowerShell entrypoints are invoked by pwsh on every OS.
+*.ps1     text eol=lf
 
 # Binary
 *.png     binary

@@ -1,18 +1,16 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 -> 2.0.0
-Bump rationale: MAJOR - Principle I is amended in meaning. Recommendation is no
-longer a service without any database: it owns `recommendation_db`, a
-knowledge store (chunks + embeddings of reference material) used for RAG, per
-ADR 002. The database MUST NOT hold user data, and Recommendation stays
-internal / gRPC-only. This relaxes the previous "stateless service owns no
-database" rule and therefore needs a new major version.
+Version change: 2.0.0 -> 2.1.0
+Bump rationale: MINOR - Development Workflow & Quality Gates gains one
+operational requirement (machine-local owner identity). No core principle is
+added, removed, or reinterpreted.
 
-Modified principles:
-  - I. Service Boundaries & Data Ownership (stateless-service rule replaced by
-    an explicit, narrowly scoped exception for the Recommendation knowledge
-    store; no other principle changed)
+Modified principles: none.
+
+Modified sections:
+  - Development Workflow & Quality Gates (added the `.specify/owner.json`
+    identity requirement)
 
 Added sections: none.
 
@@ -141,6 +139,11 @@ assertion là đúng cái cần; kiểm chứng thật là điều kiện để 
 
 - Theo [agent-workflow.md](docs/development/agent-workflow.md): task lớn/feature
   dùng Spec-kit; task nhỏ làm trực tiếp nhưng vẫn tuân Core Principles.
+- Danh tính Spec-kit là cấu hình **máy-local** tại `.specify/owner.json`
+  (gitignored), chỉ chứa handle ngắn chữ thường (2–20 ký tự `[a-z0-9-]`). Khi
+  skill tạo feature mà file thiếu/trống, agent MUST dừng, hỏi dev handle, và ghi
+  hộ bằng `scripts/speckit/team-feature.ps1 owner -Handle <handle>`; MUST NOT tự
+  đoán handle hay tạo feature với owner rỗng.
 - Không tự ý thao tác git khi chưa được cho phép; commit message tiếng Anh theo
   Conventional Commits.
 - Tài liệu trong `specs/` MUST viết bằng tiếng Việt; đường dẫn tham chiếu MUST là
@@ -163,4 +166,4 @@ assertion là đúng cái cần; kiểm chứng thật là điều kiện để 
 - Dùng `AGENTS.md` làm hướng dẫn vận hành runtime; hiến pháp là thẩm quyền cao
   nhất khi hai bên mâu thuẫn.
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-22
+**Version**: 2.1.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-22

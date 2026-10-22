@@ -68,6 +68,11 @@ appsettings.*.local.json
 secrets.json
 .envrc
 
+# ---- Spec Kit local state ----
+# Per-machine developer handle used to name specs/<owner>-<NNN>-<slug>.
+# Each developer fills their own; it must never be committed.
+.specify/owner.json
+
 # ---- Docker / local data volumes ----
 deployments/**/data/
 *.pid

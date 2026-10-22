@@ -70,44 +70,53 @@ Given that feature description, do this:
      - "Create a dashboard for analytics" → "analytics-dashboard"
      - "Fix payment processing timeout bug" → "fix-payment-timeout"
 
-2. **Branch creation** (optional, via hook):
+2. **Team branch rule**:
 
-   If a `before_specify` hook ran successfully in the Pre-Execution Checks above, it will have created/switched to a git branch and output JSON containing `BRANCH_NAME` and `FEATURE_NUM`. Note these values for reference, but the branch name does **not** dictate the spec directory name.
+   Features are named `specs/<owner>-<NNN>-<slug>` and each feature has exactly
+   one branch, `feat/<slug>`. `<NNN>` counts features per owner, never
+   repository-wide, so two developers can never collide.
 
-   If the user explicitly provided `GIT_BRANCH_NAME`, pass it through to the hook so the branch script uses the exact value as the branch name (bypassing all prefix/suffix generation).
+   - If the current branch is `main` or is not `feat/<slug>`, STOP and tell the
+     developer to create or check out the branch first. Do not create a branch on
+     their behalf unless they explicitly ask.
+   - The slug must equal the branch suffix. If they differ, STOP and ask which
+     one is correct.
+   - If a `before_specify` hook created a branch, it must follow the same rule;
+     the hook never chooses the directory name.
 
-3. **Create the spec feature directory**:
+3. **Create the spec feature directory with the team helper**:
 
-   Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
+   Never compute the number, the owner, or the directory name yourself, and never
+   run `create-new-feature.ps1` (it numbers repository-wide and is not team-safe).
 
-   **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
-   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
-   2. Otherwise, auto-generate it under `specs/`:
-      - Check `.specify/init-options.json` for `feature_numbering` (preferred) or `branch_numbering` (deprecated, migration only — will be removed in a future release)
-      - If `"timestamp"`: prefix is `YYYYMMDD-HHMMSS` (current timestamp)
-      - If `"sequential"` or absent: prefix is `NNN` (next available 3-digit number after scanning existing directories in `specs/`)
-      - Construct the directory name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
-      - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<directory-name>`
-      - If `branch_numbering` was used (and `feature_numbering` was absent), emit a one-line warning: "⚠️ `branch_numbering` in init-options.json is deprecated. Rename to `feature_numbering`."
-
-   **Create the directory and spec file**:
-   - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
-   - Resolve the active `spec-template` through the Spec Kit preset/template resolution stack (equivalent to `specify preset resolve spec-template`)
-   - Copy the resolved `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
-   - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
-   - Persist the resolved path to `.specify/feature.json`:
-     ```json
-     {
-       "feature_directory": "<resolved feature dir>"
-     }
-     ```
-     Write the actual resolved directory path value (for example, `specs/003-user-auth`), not the literal string `SPECIFY_FEATURE_DIRECTORY`.
-     This allows downstream commands (`$speckit-plan`, `$speckit-tasks`, etc.) to locate the feature directory without relying on git branch name conventions.
+   1. Confirm `git rev-parse --abbrev-ref HEAD` is `feat/<slug>`.
+   2. **Ensure this machine has an owner handle.** Run
+      `pwsh scripts/speckit/team-feature.ps1 owner`.
+      If no handle is configured, ask the developer once through the host's
+      structured question mechanism, explaining in one sentence what a handle
+      is: the short name used to prefix their feature directory, so `duck`
+      produces `specs/duck-001-user-auth`; 2-20 lowercase letters, digits or
+      hyphens. Offer the sanitized git email local-part and sanitized git user
+      name as suggestions, and let them type their own. Then run
+      `pwsh scripts/speckit/team-feature.ps1 owner -Handle <handle>`.
+      Never invent a handle and never create a feature with an empty owner.
+   3. Run:
+      `pwsh scripts/speckit/team-feature.ps1 new -Slug <slug> -Description "<feature description>" -Json`
+   4. Parse `FEATURE_DIR`, `SPEC_FILE`, `FEATURE_NUM`, `OWNER` and `BRANCH`. The
+      helper created `specs/<owner>-<NNN>-<slug>/`, copied the resolved
+      `spec-template` into `spec.md`, wrote `meta.json`, and bound
+      `.specify/feature.json`.
+   5. Treat `FEATURE_DIR` as `SPECIFY_FEATURE_DIRECTORY` and keep `SPEC_FILE`
+      for the rest of this skill.
+   6. If the helper fails (slug already used, wrong branch, unresolved owner),
+      STOP and report the error verbatim. Do not invent another number or slug.
 
    **IMPORTANT**:
-   - You must only create one feature per `$speckit-specify` invocation
-   - The spec directory name and the git branch name are independent — they may be the same but that is the user's choice
-   - The spec directory and file are always created by this command, never by the hook
+   - You must only create one feature per `$speckit-specify` invocation.
+   - Do not edit `.specify/feature.json` by hand.
+   - Do not edit `meta.json` by hand except for `status`, `services` and
+     `description`; the directory name is derived from `owner`, `number` and
+     `slug`.
 
 4. Load the resolved active `spec-template` file to understand required sections.
 
@@ -270,12 +279,15 @@ Check if `.specify/extensions.yml` exists in the project root.
 ## Completion Report
 
 Report completion to the user with:
-- `SPECIFY_FEATURE_DIRECTORY` — the feature directory path
+- `FEATURE_DIR` — the feature directory path, in the form `specs/<owner>-<NNN>-<slug>`
+- `OWNER`, `FEATURE_NUM` and `BRANCH` returned by the helper
 - `SPEC_FILE` — the spec file path
 - Checklist results summary
 - Readiness for the next phase (`$speckit-clarify` or `$speckit-plan`)
 
-**NOTE:** Branch creation is handled by the `before_specify` hook (git extension). Spec directory and file creation are always handled by this core command.
+**NOTE:** Branch creation is the developer's decision; directory numbering is the
+team helper's decision. This command never computes a repository-wide number and
+never creates the directory by hand.
 
 ## Quick Guidelines
 

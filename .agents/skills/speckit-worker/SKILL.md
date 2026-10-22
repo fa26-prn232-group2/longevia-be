@@ -59,6 +59,20 @@ that back to the orchestrator rather than inferring its contents.
     consistency instead of copying those project rules into this skill:
     publish events inside the transaction, and communicate only through
     contracts, never via cross-module imports.
+12. **Feature-bound work only.** If the orchestrator did not already pass the
+    resolved feature, verify it with
+    `pwsh scripts/speckit/team-feature.ps1 resolve -Json` before the first write.
+    Never infer the feature from the newest directory under `specs/`.
+13. **Never touch shared infrastructure.** Do not edit `.agents/skills/**`,
+    `.specify/scripts/**`, `.specify/templates/**` (except
+    `.specify/templates/overrides/**` when the task explicitly says so),
+    `.specify/owner.json`, `Directory.Packages.props`, the solution file, or
+    another feature's `specs/**` directory. Report the need instead of doing it.
+14. **Shared files and migrations.** Edit a shared file only when `plan.md` lists
+    it under "Shared Files & Conflict Hotspots". Never add a migration to a
+    project that another open feature is already migrating; report the conflict.
+15. **Scope is the file list.** Only edit files named by the delegated task or by
+    `plan.md`. Anything else belongs in the report, not in an edit.
 
 ## Reporting
 

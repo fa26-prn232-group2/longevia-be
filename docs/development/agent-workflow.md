@@ -41,12 +41,23 @@ subagent và không chạy full close-out gate.
 
 ## II. Các Giai Đoạn & Lệnh Thực Thi
 
-Bắt đầu một tính năng mới (ví dụ `meal-planning`) bằng cách tạo một nhánh git
-tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
+Bắt đầu một tính năng mới bằng nhánh `feat/<slug>` rồi chạy tuần tự. Repo dùng
+chung cho cả nhóm: feature được định danh bằng `specs/<owner>-<NNN>-<slug>`, số
+đếm riêng theo owner. Xem [`team-workflow.md`](team-workflow.md) trước khi bắt
+đầu.
+
+### 0. Giai đoạn 0 — Bind feature (bắt buộc)
+- **Lệnh:** `pwsh scripts/speckit/team-feature.ps1 owner -Handle <handle>` (lần
+  đầu trên máy), `... new -Slug <slug>` (khi tạo) và `... resolve -Json` (trước
+  mọi skill khác).
+- **Kết quả:** `.specify/owner.json` (máy-local, gitignored) +
+  `specs/<owner>-<NNN>-<slug>/` + `meta.json`; `.specify/feature.json` được bind
+  theo nhánh. Skill STOP nếu nhánh hiện tại không khớp feature hoặc chưa có
+  handle.
 
 ### 1. Giai đoạn 1 — Đặc tả (Specification)
 - **Lệnh:** `speckit-specify <mô tả tính năng>`
-- **Kết quả:** `specs/[###-feature-name]/spec.md` gồm User Stories, Requirements
+- **Kết quả:** `specs/<owner>-<NNN>-<slug>/spec.md` gồm User Stories, Requirements
   và Success Criteria đo lường được.
 
 ### 2. Giai đoạn 2 — Làm rõ (Clarify)
@@ -82,7 +93,7 @@ tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 
 ### 1. Checklist chất lượng yêu cầu
 - **Lệnh:** `speckit-checklist <domain>` (ví dụ `security`, `api`)
-- **Kết quả:** checklist trong `specs/[###-feature-name]/checklists/`.
+- **Kết quả:** checklist trong `specs/<owner>-<NNN>-<slug>/checklists/`.
 
 ### 2. Quản trị Constitution
 - **Lệnh:** `speckit-constitution`
@@ -101,7 +112,7 @@ tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 3. **Kiểm thử sau mỗi bước**: sau mỗi task/user story quan trọng chạy `make lint`
    và test scoped; trước push/tag chạy `make check`.
 4. **Lưu trữ trong `specs/`**: mọi tài liệu đặc tả, kế hoạch, task của tính năng
-   nằm trong `specs/[###-tên-tính-năng]/` và phải commit cùng code.
+   nằm trong `specs/<owner>-<NNN>-<slug>/` và phải commit cùng code.
 5. **Gợi ý bước tiếp theo**: sau mỗi giai đoạn, agent phải chủ động đề xuất
    lệnh/skill kế tiếp cho dev.
 6. **Phạm vi Spec-kit**: dành cho task lớn/feature phức tạp; task nhỏ, hotfix,
@@ -121,3 +132,15 @@ tương ứng (ví dụ `feat/meal-planning`) rồi chạy tuần tự:
 11. **Nâng cấp Spec Kit**: `specify integration upgrade` sẽ bị chặn nếu một
     skill đã được sửa tay (trạng thái `Modified managed files` trong
     `specify integration status`). Luôn review diff rồi mới dùng `--force`.
+    Danh sách tuỳ biến có chủ đích ở
+    [`spec-kit-customizations.md`](spec-kit-customizations.md).
+12. **Feature binding**: mọi skill `speckit-*` phải xác thực feature bằng
+    `scripts/speckit/team-feature.ps1 resolve -Json` trước khi ghi file. Không
+    suy đoán từ thư mục mới nhất trong `specs/`, không sửa `.specify/feature.json`
+    bằng tay, không làm việc trên `main`.
+13. **1 feature = 1 owner = 1 nhánh**: không hai người cùng sửa `tasks.md` của
+    một feature; không hai feature đang mở cùng chạm một service/migration project
+    hoặc cùng file trong `contracts/`. File dùng chung phải khai trong `plan.md`
+    (mục "Shared Files & Conflict Hotspots").
+14. **Skill là hạ tầng dùng chung**: `.agents/skills/**` do lead sở hữu; nhánh
+    feature MUST NOT sửa skill, thay đổi đi qua nhánh `chore/skills-*`.

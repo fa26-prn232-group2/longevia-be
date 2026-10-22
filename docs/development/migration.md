@@ -36,6 +36,14 @@ dotnet ef database update --project <Infrastructure project>
 - **Serialize migration numbering**: không để nhiều phase/nhánh cùng tạo migration
   song song trên một service — timestamp sẽ đụng nhau. Xem cost discipline trong
   skill `speckit-orchestrate` §3.
+- **Theo nhóm**: một service chỉ được có một feature đang mở tạo migration. Khai
+  báo `services` trong `meta.json` của feature; nếu service đã có feature khác
+  đang mở, DỪNG và phối hợp thay vì tạo migration thứ hai.
+- Trước `make ef-add`, merge `origin/main` vào nhánh để timestamp không thấp hơn
+  migration mới nhất.
+- Nếu sau khi merge phát hiện migration của feature khác đã vào `main` và làm
+  lệch model snapshot: xoá migration vừa tạo, merge `main`, sinh lại migration;
+  MUST NOT sửa tay snapshot.
 - Migration MUST review được: xem file sinh ra trước khi áp dụng.
 - Thay đổi phá vỡ dữ liệu (drop/đổi kiểu) cần kế hoạch backfill rõ ràng.
 - Không sửa migration đã áp dụng ở môi trường chia sẻ; tạo migration mới.

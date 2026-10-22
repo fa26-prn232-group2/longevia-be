@@ -16,6 +16,24 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Feature Binding (team)
+
+This repository is worked on by a team, so a feature is identified by the branch
+`feat/<slug>` and the directory `specs/<owner>-<NNN>-<slug>`. There is no
+repository-wide counter.
+
+1. Run `pwsh scripts/speckit/team-feature.ps1 resolve -Json` from the repo root
+   and use the returned `FEATURE_DIR`, `FEATURE_SPEC`, `IMPL_PLAN`, `TASKS`,
+   `OWNER`, `SLUG` and `BRANCH` for the rest of this skill.
+2. If it fails, STOP and report the error verbatim. Never fall back to the newest
+   directory under `specs/`, and never edit `.specify/feature.json` by hand. The
+   usual fixes are: check out `feat/<slug>`, or run
+   `pwsh scripts/speckit/team-feature.ps1 bind`.
+3. Never work when the current branch is `main` or when the bound branch differs
+   from the current branch.
+4. If the developer names a feature different from the bound one, STOP: one
+   checkout handles one feature at a time.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before analysis)**:

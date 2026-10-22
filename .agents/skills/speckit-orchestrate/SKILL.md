@@ -29,24 +29,37 @@ drift from the repository and become the thing that is wrong.
 
 1. `AGENTS.md` (project root)
 2. `.specify/memory/constitution.md`
-3. `docs/development/agent-workflow.md`
+3. `docs/development/agent-workflow.md` and `docs/development/team-workflow.md`
 4. `docs/README.md` and the development/architecture documents it links to
-5. The feature's `spec.md`, `plan.md`, `tasks.md`, `frontend-guide.md` (if
+5. `specs/registry.md` and the `meta.json` of every open feature (shared-file
+   coordination)
+6. The feature's `spec.md`, `plan.md`, `tasks.md`, `frontend-guide.md` (if
    present), and `deferred.md` (if present)
 
 Read them once per run, not once per subagent call. Pass paths, not copies.
 
 ## §1 Resolve the feature
 
-1. A feature number or path from the user is authoritative.
-2. Otherwise resolve the active feature with
-   `pwsh .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks`
-   (add `-RequireSpec` when the analyze step must see `spec.md`); never select the
-   newest directory by convention. `.specify/feature.json` is machine-local state
-   rewritten by that script — do not edit it by hand.
-3. If neither yields a directory containing `spec.md`, `plan.md` and
-   `tasks.md`, STOP and say which `speckit-*` skill must run first. Do not
-   generate the missing artifacts yourself.
+This repository is shared by a team. A feature is identified by its branch
+`feat/<slug>` and its directory `specs/<owner>-<NNN>-<slug>`; there is no
+repository-wide counter.
+
+1. A feature path from the user is authoritative **only if** it belongs to the
+   current branch. If the branch and the id disagree, the branch wins and you
+   STOP to reconcile — never silently work on another developer's feature.
+2. Resolve with
+   `pwsh scripts/speckit/team-feature.ps1 resolve -Json`
+   and take `FEATURE_DIR`, `OWNER`, `NUMBER`, `SLUG` and `BRANCH` from it. That
+   command verifies the bound feature against the current branch. Never select
+   the newest directory under `specs/`, and never trust `.specify/feature.json`
+   on its own: it is machine-local state that survives branch switches.
+3. If resolution fails (wrong branch, unbound checkout, `main`), STOP and report
+   the error verbatim. The developer fixes it with `git checkout feat/<slug>`
+   then `pwsh scripts/speckit/team-feature.ps1 bind`. Do not create the missing
+   artifacts yourself.
+4. If the directory does not contain `spec.md`, `plan.md` and `tasks.md`, STOP
+   and say which `speckit-*` skill must run first.
+5. Do not run Spec Kit work on `main`, `master` or `develop`.
 
 ## §2 Split of responsibility
 
@@ -101,6 +114,20 @@ If you skip one of these, say so in the report. A silent skip reads as a pass.
 - SERIALIZE phases that both write `tasks.md`, generated registration files, or
   migration numbering. Parallel edits there lose work and duplicate migration
   versions.
+
+**Team coordination.** Before the first write, read `specs/registry.md` and the
+`meta.json` of every open feature. STOP and escalate when another open feature
+already owns:
+
+- the same service/module or the same EF Core migration project (migration
+  numbering and the model snapshot cannot be merged by hand);
+- the same file under `contracts/`;
+- a shared file this feature needs (`Directory.Packages.props`, the solution
+  file, a DI/registration file).
+
+`plan.md` lists those paths under "Shared Files & Conflict Hotspots". Only the
+owning feature may change a shared file; the other feature re-plans after that
+change lands on `main`.
 
 ## §4 Loop A — settle the artifacts before any code
 
@@ -213,6 +240,23 @@ Invoking this skill grants standing authorization for these phase commits.
 Before work, capture `git status --short` and verify `HEAD` exists. Without a
 `HEAD`, disable auto-commit for the run because no safe baseline exists.
 
+**Team constraints — non-negotiable:**
+
+- Commit only on the feature branch resolved in §1 (`feat/<slug>`). Never commit
+  on `main`, `master` or `develop` unless the developer explicitly asks for this
+  run. A mismatch between the branch and the bound feature is a hard stop.
+- Do not push, open a pull request, or create/switch/delete branches on your own.
+  Do them only when the developer explicitly asks for this run. Never force-push,
+  never rewrite another developer's history, and never rebase commits you do not
+  own.
+- Stage only paths owned by this feature: its `specs/<owner>-<NNN>-<slug>/`
+  directory and the source paths listed in `plan.md`. Never `git add -A` and never
+  stage a pre-existing unrelated change.
+- A shared file may be staged only when `plan.md` lists it under "Shared Files &
+  Conflict Hotspots" and no other open feature owns it.
+- Never commit a migration or generated registration file that was not rebuilt
+  after the last merge from `origin/main`.
+
 - Commit only after that phase's §6 gate is green.
 - Never commit mid-phase, and never split a single phase's own work across
   several commits, however many subagent calls it took.
@@ -252,6 +296,11 @@ Interrupt only where a wrong guess would be expensive or irreversible.
 4. A gate is red and the fix is outside the feature's declared scope.
 5. The next action touches production: push, tag, or a migration on a live DB.
 6. An iteration cap in §4 or §7 is reached.
+7. Another open feature owns a shared file this feature must change (`contracts/`,
+   package props, solution, DI/registration, migration project), or the current
+   branch does not match the bound feature.
+8. No owner handle is configured in `.specify/owner.json` and the developer is
+   not reachable to provide one. Ask once; never guess the handle.
 
 Ask with the host agent's structured question mechanism (OpenCode: the
 `question` tool; other agents: the equivalent UI, or prose plus a stop when no
@@ -280,8 +329,10 @@ to ask more.
 
 Follow the report language in `AGENTS.md` (currently Vietnamese). Keep it short:
 
+- the feature id (`owner/NNN/slug`) and the branch
 - what shipped, by commit
 - the gate result, and any §3 step you skipped
+- shared files touched, and how the registry coordination ended
 - what is NOT done and why
 - decisions you made alone, with reasons
 - what needs the developer

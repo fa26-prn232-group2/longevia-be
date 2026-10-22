@@ -22,7 +22,11 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
     - Các skill `speckit-*` lẻ vẫn dùng được cho từng bước một.
     - Gọi bằng cú pháp của host agent: `$name` (Codex), `/name` (OpenCode/Claude),
       hoặc skill tool. Tên skill là chuẩn chung, không phụ thuộc cú pháp.
-- Trước mỗi lần chạy Spec-kit, đọc `docs/development/agent-workflow.md`.
+- Trước mỗi lần chạy Spec-kit, đọc `docs/development/agent-workflow.md` và
+  `docs/development/team-workflow.md`. Repo dùng chung cho cả nhóm: feature là
+  `specs/<owner>-<NNN>-<slug>` trên nhánh `feat/<slug>`, và mọi skill phải bind
+  feature bằng `pwsh scripts/speckit/team-feature.ps1 resolve -Json` trước khi
+  ghi file.
 - Trước khi viết hoặc sửa code, đọc tài liệu `docs/system-design/` và
   `docs/development/` liên quan tới task. `docs/system-design/` là nguồn chuẩn
   cho agent khi triển khai và phải được giữ chính xác.
@@ -62,6 +66,13 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
       `speckit-orchestrate`) là sự cho phép thường trực cho lần chạy đó; policy
       của skill đó chi phối, gồm cả nhịp commit và danh sách phải hỏi trước.
     - Commit message tiếng Anh, theo Conventional Commits.
+    - **Mặc định không commit/push lên `main`**: ưu tiên nhánh feature + PR có ít
+      nhất 1 reviewer. Agent MUST NOT **tự động** `push`, `tag`, tạo PR,
+      force-push hay rebase commit của người khác; chỉ thực hiện khi dev yêu cầu
+      hoặc cho phép rõ ràng cho lần đó — khi đã được cho phép thì được phép cả
+      commit/push thẳng `main`.
+    - Chỉ stage path thuộc feature đang bind. Không `git add -A`, không stage
+      thay đổi có sẵn từ trước của người khác.
     - **Gate chia theo độ lớn thay đổi.** Bảng dưới là nguồn chân lý duy nhất
       cho gate; đừng lặp lại gate ở tài liệu khác.
 
@@ -99,8 +110,25 @@ Dự án: **Longevia Backend** — hệ microservices ASP.NET Core (.NET 10), Po
     - Schema do EF Core **Code First** quản lý (migrations), không sửa DB bằng tay.
 - **BẮT BUỘC** — File môi trường: mọi comment trong file có tên bắt đầu bằng
   `.env` (ví dụ `.env.example`) **phải viết bằng tiếng Anh**.
+- **BẮT BUỘC** — Phối hợp nhóm (chi tiết ở `docs/development/team-workflow.md`):
+    - Danh tính là **máy-local**: mỗi dev có `.specify/owner.json` (gitignored,
+      chỉ chứa `{"handle": "..."}`). File thiếu/trống → agent dừng, hỏi dev
+      handle rồi ghi hộ; MUST NOT tự đoán handle.
+    - 1 feature = 1 owner = 1 nhánh. Không hai người cùng sửa `tasks.md` của một
+      feature.
+    - Một service chỉ có **một** feature đang mở được tạo migration; hai feature
+      không cùng lúc sửa một file trong `contracts/`.
+    - File dùng chung (`contracts/`, `Directory.Packages.props`, solution, DI
+      registration, migration project) phải khai trong `plan.md` mục
+      "Shared Files & Conflict Hotspots" trước khi sửa.
+    - `.agents/skills/**` và `.specify/**` là hạ tầng dùng chung do lead sở hữu;
+      nhánh feature MUST NOT sửa (ngoại lệ: `.specify/owner.json` là state
+      máy-local, dev tự điền và không commit). Thay đổi hạ tầng đi qua
+      `chore/skills-*`.
+    - `specs/registry.md` sinh tự động; không sửa tay. Cập nhật `meta.json`
+      (`services`, `status`) rồi chạy `pwsh scripts/speckit/team-feature.ps1 registry -Write`.
 - Nếu feature thay đổi HTTP endpoint, event payload hoặc DTO client-facing thì
-  phải cập nhật `specs/<feature>/frontend-guide.md`; chỉ đặt
+  phải cập nhật `specs/<owner>-<NNN>-<slug>/frontend-guide.md`; chỉ đặt
   `READY_FOR_FRONTEND` khi contract, implementation, test evidence và sync
   check có số đếm đều hoàn tất. Feature không đổi client surface phải ghi kết
   luận đó trong `tasks.md`.

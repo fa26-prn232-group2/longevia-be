@@ -48,6 +48,8 @@ docs/
 
 ### Phát triển
 - [development/agent-workflow.md](development/agent-workflow.md) — quy trình Spec-kit.
+- [development/team-workflow.md](development/team-workflow.md) — làm việc nhóm, định danh feature, file dùng chung.
+- [development/spec-kit-customizations.md](development/spec-kit-customizations.md) — các tuỳ biến Spec Kit có chủ đích.
 - [development/coding-conventions.md](development/coding-conventions.md) — convention C#/.NET.
 - [development/code-hygiene.md](development/code-hygiene.md) — ngưỡng cấu trúc code.
 - [development/git-workflow.md](development/git-workflow.md) — git & commit.

@@ -1,12 +1,13 @@
 ---
 title: "CHƯƠNG 12 - CÁCH ĐỂ GIỮ MÃI TUỔI THANH XUÂN"
 source: CheDoAnTruongTho (reduced).pdf
+book_pages: "230-281"
 pdf_pages: "223-274"
 engine: gemini-3.5-flash
-generated_at: 2026-10-21T18:02:58+00:00
+generated_at: 2026-10-22T06:08:15+00:00
 reviewed: false
 ---
-<!-- p.223 -->
+<!-- sách 230 · PDF 223 -->
 # CHƯƠNG 12
 
 ## CÁCH ĐỂ GIỮ MÃI TUỔI THANH XUÂN
@@ -15,14 +16,14 @@ Tôi đã trì hoãn viết cuốn sách này trong nhiều năm vì e ngại nh
 
 Tôi biết ơn sinh viên và nhà nghiên cứu khoa học phi thường tại các phòng thí nghiệm của tôi ở Los Angeles và Milan, những người đã cống hiến hết mình trong nhiều năm, cho phép tôi thử
 
-<!-- p.224 -->
+<!-- sách 231 · PDF 224 -->
 nghiệm và chứng minh các giả thuyết của mình. Tôi cũng biết ơn các cộng tác viên từ tất cả mọi nơi trên thế giới và trong nhiều lĩnh vực. Trong 30 năm nghiên cứu về sự lão hóa, động lực thúc đẩy tôi tiến lên là mong muốn khám phá các gen, các cơ chế phân tử điều chỉnh quá trình lão hóa và kéo dài tuổi thọ khỏe mạnh với mục tiêu cuối cùng là giúp những người đã không còn những lựa chọn điều trị. Cách đây không lâu, tôi đến thăm một nhà báo nổi tiếng bị ung thư giai đoạn cuối. Bác sĩ ung thư của ông ấy đã nhún vai và cho ông về nhà.
 
 Họ nói với ông: “Chúng tôi không thể làm gì được nữa.”
 
 Mặc dù tôi hiểu tại sao các bác sĩ của ông lại lưỡng lự khi thử các ý tưởng của tôi – ông ấy sụt cân rất nhiều vào thời điểm đó – tôi thực sự tin rằng dường như luôn có cách có thể giải quyết được vấn đề. Không may là hệ thống không phải lúc nào cũng cho phép áp dụng những cách còn rủi ro như vậy. Đáng buồn thay, tôi không thể can thiệp vào trường hợp của ông ấy và ông đã qua đời. Tôi không biết điều gì sẽ xảy ra với người phi công của hãng Air France, vị thẩm phán ở Los Angeles hoặc nhà báo của tờ *Times* nếu họ chưa thử chế độ ăn dựa trên nhịn ăn, nhưng tôi nghĩ họ sẽ không khỏe như vậy nếu họ không thử. Bên cạnh việc cần có một quy trình chính thức và thích hợp để xác định các can thiệp y tế (thử nghiệm ngẫu nhiên lớn, sự chấp thuận của FDA...) thì việc thử các biện pháp can thiệp mới và sáng tạo cũng quan trọng và không thể bỏ qua. Vì vậy, khi không có các lựa chọn khả thi, điều quan trọng là phải áp dụng một can thiệp có tính chất dung hòa tôn trọng những biện pháp tiêu chuẩn nhưng phải xem xét cẩn trọng những trị liệu tích hợp dựa trên dữ liệu khoa học và an toàn đầy đủ.
 
-<!-- p.225 -->
+<!-- sách 232 · PDF 225 -->
 Nhờ bằng chứng từ Năm Trụ cột, tôi tin tưởng rằng FMD và các phương pháp tiếp cận dinh dưỡng và tích hợp khác của chúng tôi sẽ tiếp tục giúp mọi người khỏe mạnh và/hoặc trở nên khỏe mạnh hơn bằng cách tác động vào khả năng tự tái tạo và trẻ hóa của cơ thể. Tôi cũng hy vọng những nghiên cứu về tuổi thọ của chúng tôi và từ các phòng thí nghiệm của đồng nghiệp sẽ được triển khai nhanh chóng bởi các bác sĩ và chuyên gia dinh dưỡng luôn sẵn sàng áp dụng những phương pháp điều trị tích hợp mới với chi phí thấp đã được kiểm chứng.
 
 Cuốn tiểu thuyết yêu thích của tôi là *One, None and One Hundred Thousand* (Một, không và một trăm nghìn) của tác giả Luigi Pirandello. Tiền đề của cuốn sách này rất đơn giản: Nếu không ai biết bạn, theo một cách nào đó, bạn như thể không tồn tại; nhưng nếu một trăm nghìn người biết bạn, có một trăm nghìn phiên bản của bạn ở trong đầu họ. Tôi thấy công việc của chúng tôi cũng giống như vậy. Nếu chúng tôi có một khám phá không giúp được bất kỳ ai, theo một cách nào đó, chúng tôi coi như đã không phát hiện ra gì cả. Nhưng nếu khám phá của chúng tôi giúp hàng trăm nghìn người sống lâu hơn và khỏe mạnh hơn, thì khám phá đó tồn tại trong những người còn sống hoặc khỏe mạnh hơn nhờ chúng.
@@ -31,7 +32,7 @@ Vì thế tôi hy vọng rằng cuốn sách này cũng sẽ bán chạy ở nh�
 
 Dưới đây, tôi xin tóm tắt ngắn gọn những phát hiện quan trọng nhất và các kết luận trong nghiên cứu của chúng tôi.
 
-<!-- p.226 -->
+<!-- sách 233 · PDF 226 -->
 ## CHẾ ĐỘ ĂN TRƯỜNG THỌ
 
 1. **Ăn một chế độ gần như thuần chay với một ít cá:** Cố gắng áp dụng một chế độ ăn 100% chủ yếu từ thực vật và cá, nhưng giới hạn tiêu thụ cá xuống còn hai hoặc ba bữa một tuần và tránh các loại cá có hàm lượng thủy ngân cao. Sau 65-70 tuổi, nếu bạn bắt đầu giảm khối lượng cơ, sức mạnh và cân nặng, cần bổ sung nhiều cá và trái cây hơn cũng như đưa vào một số thực phẩm có nguồn gốc động vật như trứng, phô mai và sữa chua làm từ sữa cừu hoặc sữa dê.
@@ -40,7 +41,7 @@ Dưới đây, tôi xin tóm tắt ngắn gọn những phát hiện quan trọn
 
 3. **Giảm thiểu chất béo xấu và đường, tối đa hóa chất béo tốt và carbohydrate phức tạp:** Chế độ ăn uống nên giàu chất béo không bão hòa – “chất béo tốt” bao gồm chất béo từ cá hồi, hạnh nhân và quả óc chó – đồng thời giảm thiểu chất béo bão hòa, hydro hóa và chất béo dạng trans. Tương tự như vậy, chế độ ăn nên giàu carbohydrate phức tạp, chẳng hạn như từ bánh mì nguyên cám và rau, nhưng ít đường và hạn chế mì ống,
 
-<!-- p.227 -->
+<!-- sách 234 · PDF 227 -->
 gạo, bánh mì trắng, nước ép trái cây và trái cây có chứa carbohydrate dễ chuyển hóa thành đường đơn. Cuối cùng, chế độ ăn nên ít protein động vật nhưng tương đối giàu protein thực vật, để giảm thiểu những tác động tiêu cực của protein động vật đối với bệnh tật và tối đa hóa tác dụng nuôi dưỡng của protein thực vật.
 
 4. **Dinh dưỡng đầy đủ:** Cơ thể cần protein, axit béo thiết yếu (omega-3 và omega-6), khoáng chất, vitamin và đủ lượng đường để chiến đấu trong các trận chiến đang diễn ra bên trong và bên ngoài tế bào. Để đảm bảo bạn nhận được đủ chất dinh dưỡng, ba ngày một lần hãy uống một viên vitamin tổng hợp và một viên khoáng chất, cùng với một viên nang mềm dầu cá chứa omega-3 từ nhà sản xuất có uy tín.
@@ -51,7 +52,7 @@ gạo, bánh mì trắng, nước ép trái cây và trái cây có chứa carbo
 
 7. **Giới hạn thời gian được phép ăn trong một ngày:** Hạn chế thời gian được phép ăn tối đa trong khoảng từ 11-12 tiếng mỗi ngày. Ví dụ, nếu bạn ăn sáng sau 8 giờ sáng, bạn nên ăn tối xong trước 8 giờ tối. Thời gian ăn
 
-<!-- p.228 -->
+<!-- sách 235 · PDF 228 -->
 ngắn hơn (10 tiếng hoặc ít hơn) đã được chứng minh hiệu quả hơn trong việc tăng cường sức khỏe, nhưng khó thực hiện hơn và tăng nguy cơ các tác dụng không mong muốn, như sỏi mật.
 
 8. **Chế độ nhịn ăn không hoàn toàn kéo dài định kỳ:** Những người dưới 70 tuổi, không ốm yếu hoặc suy dinh dưỡng và không mắc một số bệnh nhất định, nên trải qua các giai đoạn năm ngày áp dụng một chế độ nhịn ăn không hoàn toàn với lượng calo tương đối cao (xem chương 6). FMD cũng có thể thích hợp cho người lớn tuổi hơn, nhưng chỉ khi cần thiết và được bác sĩ đề nghị áp dụng.
@@ -62,17 +63,17 @@ ngắn hơn (10 tiếng hoặc ít hơn) đã được chứng minh hiệu quả
 
 Đi bộ nhanh một giờ mỗi ngày. Đi cầu thang bộ thay vì thang cuốn và thang máy, ngay cả khi bạn phải đi lên nhiều tầng. Vào cuối tuần, cố gắng đi bộ, thậm chí đến những nơi xa, nhưng tránh khu vực ô nhiễm. Tập thể dục vừa phải khoảng 2,5 giờ một tuần, thực hiện một phần bài tập ở cường độ cao. Tập tạ hoặc bài tập không tạ nhằm làm khỏe cơ (kết hợp với tiêu thụ 30 gram protein sau khi tập tạ).
 
-<!-- p.229 -->
+<!-- sách 236 · PDF 229 -->
 ## TÂM HỒN TRƯỜNG CỬU
 
 Trong cuốn sách này tôi viết rất ít về vấn đề tinh thần. Tôi không phải là chuyên gia trong lĩnh vực này, tôi thấy rằng các nghiên cứu về cách tâm trí có thể giúp chúng ta sống lâu hơn và khỏe mạnh hơn là rất ít, chưa đi đến kết luận cuối cùng. Mặc dù có nhiều nghiên cứu về các khía cạnh xã hội của tuổi thọ, nhưng sẽ rất khó để tìm được một tập hợp nhất quán bao gồm các nghiên cứu cơ bản, lâm sàng và dịch tễ học trên người trăm tuổi ủng hộ vai trò quan trọng của một hành vi xã hội cụ thể đối với tuổi thọ khỏe mạnh. Trong trường hợp không có dữ liệu khoa học mạnh mẽ, tôi phỏng đoán rằng sống gần gũi với gia đình và bạn bè, theo các tổ chức tôn giáo hoặc tâm linh và tình nguyện giúp đỡ người khác đều quan trọng cho một cuộc sống lâu dài và khỏe mạnh. Tuy nhiên, tôi cũng đã thấy nhiều người cô đơn sống lâu và khỏe mạnh, có thể là vì họ tập trung vào những niềm vui đơn giản và có được sức mạnh từ bản năng của chính mình và khả năng tìm thấy hạnh phúc từ những điều nhỏ bé – ăn một số loại thực phẩm, đi dạo trong công viên, nói chuyện với nhân viên thu ngân ở cửa hàng tạp hóa địa phương. Cha tôi, năm nay 91 tuổi, gần đây phải cắt bỏ một phần dạ dày vì một khối u nghi ngờ. Cha mẹ tôi ly thân và ông sống một mình. Việc hồi phục của ông rất khó khăn, và ông đã sụt cân trong vài tuần. Vì vậy, ông bắt đầu ăn xô cô la và những món ăn khác mà ông thích khi còn trẻ nhưng đã không ăn trong nhiều năm. Ông lại tiếp tục chế độ tập luyện hằng ngày. Không chỉ lấy lại số cân nặng đã mất, ông dường như vui vẻ hơn khi chúng tôi nói chuyện với ông và mong đợi mỗi ngày mới đến. Sống đến 110 tuổi khỏe mạnh, trong trường hợp của cha tôi, ít liên quan đến các mối quan hệ xã hội và tình bạn mà là từ những điều đơn giản, như một thanh xô cô la bị ngăn cấm lâu nay. Với
 
-<!-- p.230 -->
+<!-- sách 237 · PDF 230 -->
 ông Salvatore Caruso, người đã chứng kiến cha tôi lớn lên, đó là về sự cạnh tranh. Ông muốn trở thành người đàn ông lớn tuổi nhất trên thế giới. Khi tôi thông báo với ông rằng một người nào đó ở Sicily lớn tuổi hơn, ông nói: “Ta sẽ đánh bại ông ta.” Và cuối cùng ông đã làm được.
 
 Tôi hy vọng một ngày nào đó sẽ đánh bại ông Salvatore. Tôi sẽ gặp ông ở phía bên kia, người bạn già của tôi. Hy vọng tôi còn một thời gian rất dài cho đến lúc đó.
 
-<!-- p.231 -->
+<!-- sách 238 · PDF 231 -->
 # PHỤ LỤC A
 
 ## CHẾ ĐỘ ĂN TRƯỜNG THỌⁱ
@@ -82,14 +83,14 @@ Kế hoạch ăn uống trong hai tuần được trình bày dưới đây dự
 
 i. Đây chỉ là chế độ ăn tham khảo đối với độc giả Việt Nam do nguồn thực phẩm chính trong thực đơn không phổ biến tại Việt Nam.
 
-<!-- p.232 -->
+<!-- sách 239 · PDF 232 -->
 canxi, sắt, magiê và omega-3 (từ dầu cá hoặc các nguồn khác). Để phòng ngừa tình trạng thiếu chất, tôi khuyến khích bạn uống một viên vitamin tổng hợp và khoáng chất và ba ngày một viên nang mềm dầu omega-3. Chế độ ăn uống này là lý tưởng đối với những người có cân nặng bình thường, từ 20 đến 65 tuổi. Sau 65 tuổi, lượng calo và protein nên được điều chỉnh để ngăn chặn tình trạng giảm cân, giảm khối lượng cơ không mong muốn.
 
 Chế độ ăn sau đây bao gồm ba bữa ăn (bữa sáng, bữa trưa và bữa tối) và một bữa ăn nhẹ. Nó cung cấp khoảng 1.700 đến 1.800 calo mỗi ngày. Đây là nhu cầu calo trung bình cho một phụ nữ từ 31 đến 50 tuổi, ít vận động có chiều cao 162,5 cm, cân nặng 56,7 kg và BMI 21,5 hoặc một phụ nữ hoạt động vừa phải trên 50 tuổi. Với nam giới có chiều cao 172,7 cm, cân nặng 69 kg, và BMI 22,5, mọi thành phần trong các công thức nên tăng thêm khoảng 20%. Các khẩu phần nên được điều chỉnh dựa trên nhu cầu duy trì hay đạt được trọng lượng cơ thể bình thường (BMI và vòng eo; xem Chương 4). Những người có xu hướng giảm cân và giảm dưới mức bình thường có thể tăng khẩu phần của các món ăn khác nhau, trong khi những người dễ tăng cân có thể giảm xuống hoặc kết hợp bữa trưa với bữa tối đồng thời giảm khẩu phần ăn. Chế độ ăn cung cấp khoảng 55% đến 60% calo từ carbohydrate, hầu hết là carbohydrate phức tạp, lý tưởng chủ yếu từ rau và ngũ cốc, nhưng cũng có trong mì ống và bánh mì. Hầu như không thành phần nào có thêm đường, mặc dù đường có trong trái cây và các loại thực phẩm khác. Chế độ ăn có khoảng 30-35% calo từ chất béo, phần lớn ở dạng chất béo không bão hòa “lành mạnh” và 10-11% calo từ protein, phần lớn từ thực vật và cá.
 
 Bữa trưa và bữa tối được chia thành một bữa ăn ít calo, ít protein và một bữa ăn nhiều calo, giàu protein cung cấp tất
 
-<!-- p.233 -->
+<!-- sách 240 · PDF 233 -->
 cả các chất dinh dưỡng cần thiết. Bữa ăn nhiều calo và protein chứa ít nhất 30 gram protein để tối ưu hóa sự phát triển cơ bắp (xem chương 5). Mặc dù các bữa ăn ít protein được liệt kê là bữa trưa, chúng vẫn có thể được chuyển sang bữa tối. Tuy nhiên, tôi khuyên bạn nên áp dụng các bữa ăn ít protein cho tất cả các bữa trưa hoặc cho tất cả các bữa tối. Tất cả các bữa nên được tiêu thụ gói gọn trong vòng 12 giờ một ngày và bữa ăn cuối cùng nên trước giờ đi ngủ ít nhất từ ba đến bốn tiếng.
 
 ### LƯU Ý QUAN TRỌNG
@@ -102,7 +103,7 @@ Country statistics: Italy. Geneva: World Health Organization, 2016. http://www.w
 
 Food and Nutrition Information Center. “Interactive DRI [Dietary
 
-<!-- p.234 -->
+<!-- sách 241 · PDF 234 -->
 Reference Intakes] for Professionals.” Washington, DC: United States Department of Agriculture, 2016. http://fnic.nal.usda.gov/fnic/interactiveDRI/index.php.
 
 Guideline: Sugars Intake for Adults and Children. Geneva: World Health Organization, 2015. http://apps.who.int/iris/bitstream/10665/149782/1/9789241549028_eng.pdf?ua=1.
@@ -137,7 +138,7 @@ i. Các khẩu phần được tính cho một phụ nữ có cân nặng và ch
 
 ii. Bánh mì focaccia là một sản phẩm bánh mì Ý nướng bằng lò nướng phẳng có kiểu dáng và kết cấu tương tự như bột bánh pizza
 
-<!-- p.235 -->
+<!-- sách 242 · PDF 235 -->
 - Hạt thông (9 g, 1 muỗng canh)
 - Nho khô (9 g, 1 muỗng canh)
 - Dầu ô liu (12 ml, 1 muỗng canh)
@@ -168,7 +169,7 @@ Mì ống với bông cải xanh và đậu đen.
 i. Hướng dẫn chế độ ăn của Hoa Kỳ khuyến nghị hạn chế natri dưới 2,3 gram một ngày.
 ii. Trong các công thức này, khi có thể, hãy sử dụng các loại rau tươi theo mùa, và các loại đậu khô (đậu, đậu lăng, đậu Hà Lan) đã được ngâm qua đêm.
 
-<!-- p.236 -->
+<!-- sách 243 · PDF 236 -->
 Đun sôi một nồi nước lớn. Cho muối, đậu đen, bông cải xanh và mì ống vào nồi. Nấu cho đến khi mì chín. Để ráo nước và trộn với dầu ô liu, tỏi, ớt và phô mai Parmesan.
 
 *Món tráng miệng gợi ý*: hạt óc chó (25 g) và nam việt quất sấy khô không đường (20 g) hoặc trái cây khô không đường khác
@@ -201,7 +202,7 @@ Nấu gạo hoang. Cho đậu cô ve vào một nồi khác với nước,
 i. Đường đã có trong trái cây và trái cây sấy khô. Trong các thực đơn hằng ngày sau, hạn chế thêm đường (để làm ngọt cà phê hoặc trà) và lượng đường tự nhiên có trong nước ép trái cây, mật ong và xi-rô dưới 8 đến 10 gram một ngày (2 muỗng cà phê).
 ii. Gạo hoang là hạt của một loại cỏ thủy sinh tương tự như lúa. Loại cỏ này mọc tự nhiên trong đầm lầy nước ngọt nông và dọc theo bờ suối hoặc hồ. Chúng có hình dạng và được nấu giống như các loại gạo khác.
 
-<!-- p.237 -->
+<!-- sách 244 · PDF 237 -->
 thêm cà chua, tỏi và muối. Khi đậu mềm, thêm dầu và húng quế và để nghỉ 2 đến 3 phút trước khi ăn cùng cơm.
 
 *Món ăn kèm:* rau lá xanh (ví dụ: rau diếp xoăn hoặc cải xoăn), luộc chín, nêm với dầu ô liu và chanh (200 g)
@@ -233,7 +234,7 @@ Hấp hoặc nướng cá hồi và măng tây. Rưới thêm dầu ô liu và n
 
 i. Giấm balsamic là một loại giấm rất đậm, đậm đặc với hương vị mạnh mẽ có nguồn gốc từ Ý, được làm hoàn toàn hoặc một phần từ nho. Nho phải là nước nho mới nghiền với tất cả vỏ, hạt và thân.
 
-<!-- p.238 -->
+<!-- sách 245 · PDF 238 -->
 ## NGÀY 3
 
 ### Bữa sáng
@@ -270,7 +271,7 @@ Bánh mì đậu garbanzo (*farinata di ceci*) với rau sống (ví dụ: cà r
 - Bột đậu garbanzo (240 g)
 - Nước (240 ml)
 
-<!-- p.239 -->
+<!-- sách 246 · PDF 239 -->
 * Dầu ô liu (2 muỗng canh, không bắt buộc)
 * Một chút muối và hạt tiêu
 
@@ -303,7 +304,7 @@ Bánh mì nho khô quế hoặc 2 lát bánh mì nướng (80 g)
 
 Mứt mơ, không thêm đường (20 g, 1 muỗng canh)
 
-<!-- p.240 -->
+<!-- sách 247 · PDF 240 -->
 ### Bữa trưa
 
 Salad lúa mạch với ô liu và các loại hạt
@@ -336,7 +337,7 @@ Súp mì ống và đậu lăng (*pasta e lenticchie*)
 * Khoai tây (1 củ vừa)
 * Cà rốt (1 củ vừa)
 
-<!-- p.241 -->
+<!-- sách 248 · PDF 241 -->
 - Cà chua (1 quả vừa)
 - Tỏi (2 tép, cắt đôi)
 - Hương thảo (lượng tùy ý)
@@ -371,7 +372,7 @@ Xà lách Escarole, ô liu, cà chua và húng quế
 - Cà chua phơi khô (150 g)
 - Húng tây (5 lá)
 
-<!-- p.242 -->
+<!-- sách 249 · PDF 242 -->
 - Bánh mì nâu, nướng (40 g) (ăn kèm)
 
 Luộc xà lách Escarole. Để ráo nước và nguội một chút. Thêm dầu ô liu, cà chua phơi khô, ô liu và húng tây.
@@ -404,7 +405,7 @@ Luộc bạch tuộc và khoai tây trong hai nồi riêng. Để ráo nước. 
 
 *Món tráng miệng gợi ý:* nam việt quất (50 g) hoặc nam việt quất sấy khô (20 g) và hạnh nhân (25 g)
 
-<!-- p.243 -->
+<!-- sách 250 · PDF 243 -->
 ### NGÀY 6
 
 #### Bữa sáng
@@ -443,7 +444,7 @@ Thanh xô cô la đen với ngũ cốc nguyên cám và các loại hạt; chọ
 
 * Đậu hải quân (150 g, ướt, để ráo)
 
-<!-- p.244 -->
+<!-- sách 251 · PDF 244 -->
 * Đậu cô ve (150 g)
 * Cà rốt (2 củ vừa), thái lát
 * Khoai tây (1 củ vừa, cắt khối)
@@ -480,7 +481,7 @@ Cải Brussels với tỏi, hạt thông và phô mai Parmesan
 
 * Cải Brussels (250 g)
 
-<!-- p.245 -->
+<!-- sách 252 · PDF 245 -->
 - Tỏi (2 tép, cắt lát)
 - Hạt thông (9 g, 1 muỗng cà phê)
 - Ớt cay (không bắt buộc)
@@ -514,7 +515,7 @@ Mì spaghetti với ngao và trai
 
 Nấu ngao và trai trong chảo nước và tỏi, cà chua, mùi tây và rượu nấu ăn. Luộc mì spaghetti với nước muối trong một nồi
 
-<!-- p.246 -->
+<!-- sách 253 · PDF 246 -->
 riêng. Vớt mì để ráo và cho ngao và trai vào chảo. Khi chảo còn nóng, cho dầu ô liu vào đảo đều. Thêm muối và tiêu vừa ăn. Ăn kèm với mùi tây tươi.
 
 *Món ăn kèm:* rau lá xanh luộc, nêm với dầu, muối và hạt tiêu
@@ -551,7 +552,7 @@ Salad Hy Lạp, phô mai feta, ô liu, hành tây và ớt chuông
 - Muối vừa ăn
 - Bánh mì nâu (40 g) (ăn kèm)
 
-<!-- p.247 -->
+<!-- sách 254 · PDF 247 -->
 ### Bữa ăn nhẹ
 
 Sữa hạt phỉ, không đường (1 ly, 240 ml)
@@ -590,7 +591,7 @@ Mứt dâu, không thêm đường (20 g, 1 muỗng canh)
 
 Xúp bí đỏ với bánh mì nướng (có thể thay thế bằng xúp bông cải xanh)
 
-<!-- p.248 -->
+<!-- sách 255 · PDF 248 -->
 - Bí ngô hoặc bí vàng, gọt vỏ, bỏ hạt và cắt nhỏ (300 g)
 - Dầu ô liu (12 ml, 1 muỗng canh)
 - Ớt khô (không bắt buộc)
@@ -621,7 +622,7 @@ Mì ống với cá ngừ, ô liu, nụ bạch hoa và cà chua
 - Mùi tây
 - Muối và tiêu
 
-<!-- p.249 -->
+<!-- sách 256 · PDF 249 -->
 Đun sôi một nồi nước lớn để luộc mì. Dùng một chảo khác, nấu cá ngừ, ô liu, cà chua và tỏi với một ít nước. Thêm mì ống đã ráo nước vào chảo khi cá chín. Trộn dầu ô liu và để hỗn hợp nghỉ trong vài phút. Thêm mùi tây, muối và tiêu cho vừa ăn.
 
 *Món ăn kèm:* atisô (150 g), luộc và nêm với dầu và chanh ăn kèm với bánh mì nâu (40 g)
@@ -653,7 +654,7 @@ Cơm với bí ngòi và đậu Hà Lan
 
 Nấu cơm với nước muối. Để ráo nước và đặt sang một bên. Dùng một chảo nước khác, cho bí ngòi, đậu Hà Lan, hành tây vào đảo đều. Chắt nước, trộn với ngò tây, muối và tiêu cho vừa miệng. Thêm cơm và dầu ô liu và để nghỉ trong 2 đến 3 phút. Thêm phô mai Parmesan hoặc pesto, tùy thích.
 
-<!-- p.250 -->
+<!-- sách 257 · PDF 250 -->
 #### Bữa ăn nhẹ
 
 Sữa dừa, không đường (1 ly, 240 ml)
@@ -687,7 +688,7 @@ Cà phê, espresso hoặc Americano
 
 Sữa hạnh nhân, không đường (1 ly, 240 ml)
 
-<!-- p.251 -->
+<!-- sách 258 · PDF 251 -->
 Bánh mì nho khô và hạt óc chó (60 g)
 
 Chuối (1 quả vừa)
@@ -725,7 +726,7 @@ Cơm gạo lứt đen với bí ngòi và tôm
 * Bí ngòi (250 g) (thái lát)
 * Cà chua bi (150 g)
 
-<!-- p.252 -->
+<!-- sách 259 · PDF 252 -->
 * Tôm (60 g)
 * Phô mai Parmesan (5 g, 1 muỗng canh)
 * Hoa nghệ tây (4 g)
@@ -763,7 +764,7 @@ Salad lúa mì spenta kiểu Địa Trung Hải với atisô và nấm
 * Cà chua bi (150 g)
 * Ô liu (20 g)
 
-<!-- p.253 -->
+<!-- sách 260 · PDF 253 -->
 - Dầu ô liu (12 g, 1 muỗng canh)
 - Muối và tiêu
 - Nấm (150 g)
@@ -795,7 +796,7 @@ Minestrone kiểu Liguria (minestrone alla Genovese)
 - Muối và tiêu
 - Mì ống (40 g)
 
-<!-- p.254 -->
+<!-- sách 261 · PDF 254 -->
 - Dầu ô liu (25 ml, 2 muỗng canh)
 - Pesto (1 muỗng cà phê)
 
@@ -832,7 +833,7 @@ Xúp cà chua với húng tây, nước xốt pesto và bánh mì nướng
 
 Luộc cà chua, cà rốt, cần tây, khoai tây và hành tây bằng nước muối. Khi rau mềm, xay nhuyễn bằng máy xay cầm tay. Thêm dầu, húng tây, muối và tiêu. Ăn với pesto và bánh mì nướng.
 
-<!-- p.255 -->
+<!-- sách 262 · PDF 255 -->
 *Món ăn kèm:* salad rau hỗn hợp trộn cà rốt và cà chua; hoặc rau lá xanh luộc (200 g) với bánh mì nâu (40 g)
 
 ### Bữa ăn nhẹ
@@ -867,7 +868,7 @@ Cà phê hoặc trà
 
 Sữa hạnh nhân không đường (1 ly, 240 ml)
 
-<!-- p.256 -->
+<!-- sách 263 · PDF 256 -->
 Bánh mì nam việt quất (80 g)
 
 Mật ong (10 g, 2 muỗng cà phê)
@@ -902,7 +903,7 @@ Pizza với rau, cá cơm và cá mòi (không phô mai)
 
 - Đế bánh pizza, làm sẵn (100 g)
 
-<!-- p.257 -->
+<!-- sách 264 · PDF 257 -->
 - Cá mòi và cá cơm (90 g)
 - Cà chua bi (80 g)
 - Atisô, đóng hộp (50 g)
@@ -919,7 +920,7 @@ Rải cá, tất cả các loại rau và quả ô liu lên đế bánh pizza. T
 
 Uống một viên vitamin tổng hợp và khoáng chất cùng một viên nang mềm dầu omega-3.
 
-<!-- p.258 -->
+<!-- sách 265 · PDF 258 -->
 # PHỤ LỤC B
 
 ## NGUỒN THỰC PHẨM GIÀU VITAMIN VÀ KHOÁNG CHẤT
@@ -943,7 +944,7 @@ Uống một viên vitamin tổng hợp và khoáng chất cùng một viên nan
 | Cá hồi, đỏ, nấu chín | 75 gram | 4 | 67 |
 | Cá hồi, hồng, còn xương, nấu chín | 75 gram | 3,7 | 62 |
 
-<!-- p.259 -->
+<!-- sách 266 · PDF 259 -->
 | Thực phẩm | Khẩu phần chuẩn | Vitamin B₁₂ microgram | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Cá, cá ngừ, màu sáng, đóng hộp ngâm dầu, để ráo | 1 bát | 3,21 | 54 |
@@ -971,7 +972,7 @@ Uống một viên vitamin tổng hợp và khoáng chất cùng một viên nan
 | Bông cải xanh, cắt nhỏ, đông lạnh, nấu chín | 1/2 bát | 52 | 13 |
 | Cải bẹ xanh, cắt nhỏ, đông lạnh, luộc | 1/2 bát | 52 | 13 |
 
-<!-- p.260 -->
+<!-- sách 267 · PDF 260 -->
 | Thực phẩm | Khẩu phần chuẩn | Microgram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Đậu xanh, đông lạnh, luộc | 1/2 bát | 47 | 12 |
@@ -999,7 +1000,7 @@ Uống một viên vitamin tổng hợp và khoáng chất cùng một viên nan
 | Các thức uống, sữa dừa, có đường, bổ sung canxi và vitamin A, B₁₂ và D₂ | 1 bát | 451 | 45 |
 | Các thức uống, sữa hạnh nhân sô cô la, không đường, bảo quản ở nhiệt độ phòng, bổ sung vitamin D₂ và E | 1 bát | 451 | 45 |
 
-<!-- p.261 -->
+<!-- sách 268 · PDF 261 -->
 | Thực phẩm | Khẩu phần chuẩn | Milligram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Các thức uống, sữa hạnh nhân vanilla, có đường | 236 ml | 451 | 45 |
@@ -1024,7 +1025,7 @@ Uống một viên vitamin tổng hợp và khoáng chất cùng một viên nan
 | Lá cải củ, tươi, luộc | 1/2 bát | 99 | 10 |
 | Cải xoăn, tươi, nấu chín | 1 bát | 94 | 9 |
 
-<!-- p.262 -->
+<!-- sách 269 · PDF 262 -->
 | Thực phẩm | Khẩu phần chuẩn | Milligram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Bí mùa đông, bí dâu, nấu chín, nướng, không muối | 1 bát | 90 | 9 |
@@ -1052,7 +1053,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Ngũ cốc ăn sáng, bổ sung 100% DV sắt | 1 phần | 18 | 100 |
 | Cacao, bột, không đường | 1 bát | 12 | 67 |
 
-<!-- p.263 -->
+<!-- sách 270 · PDF 263 -->
 | Thực phẩm | Khẩu phần chuẩn | Milligram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Hàu, phương Đông, nấu chín với nhiệt ẩm | 85 gram | 8 | 44 |
@@ -1079,7 +1080,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Cá ngừ, vây xanh, tươi, nấu chín với nhiệt khô | 85 gram | 1 | 6 |
 | Hạt dẻ cười, rang khô | 28 gram (49 hạt) | 1 | 6 |
 
-<!-- p.264 -->
+<!-- sách 271 · PDF 264 -->
 | Thực phẩm | Khẩu phần chuẩn | Milligram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Bông cải xanh, luộc và để ráo | 1/2 bát | 1 | 6 |
@@ -1107,7 +1108,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Trứng, luộc chín kỹ | 1 quả to | 75 | 260 | 5 |
 | Bí mùa hè, các loại, luộc | 1/2 bát | 10 | 191 | 4 |
 
-<!-- p.265 -->
+<!-- sách 272 · PDF 265 -->
 | Thực phẩm | Khẩu phần chuẩn | Microgram tương đương hoạt động retinol (RAE) mỗi khẩu phần | Đơn vị quốc tế (IU) mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- | --- |
 | Cá hồi đỏ, nấu chín | 85 gram | 59 | 176 | 4 |
@@ -1139,7 +1140,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Cải bó xôi, nấu chín | 1/2 bát | 9 | 15 |
 | Đậu xanh, đông lạnh, nấu chín | 1/2 bát | 8 | 13 |
 
-<!-- p.266 -->
+<!-- sách 273 · PDF 266 -->
 ### NGUỒN THỰC PHẨM CHỨA VITAMIN D
 
 | Thực phẩm | Khẩu phần chuẩn | Đơn vị quốc tế (IU) mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
@@ -1166,7 +1167,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Cá trống, châu Âu, đóng hộp ngâm dầu, để ráo, không xương | 28 gram | 20 | 5 |
 | Nấm trắng, nấu chín, luộc, để ráo, không muối | 1 bát | 12 | 3 |
 
-<!-- p.267 -->
+<!-- sách 274 · PDF 267 -->
 ### NGUỒN THỰC PHẨM CHỨA VITAMIN E
 (ALPHA-TOCOPHEROL)
 
@@ -1201,7 +1202,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Trai, nấu chín | 75 gram | 0,03 | 0,59 |
 | Bạch tuộc, nấu chín | 75 gram | 0 | 0,13 |
 
-<!-- p.268 -->
+<!-- sách 275 · PDF 268 -->
 | Thực phẩm | Khẩu phần chuẩn | Axit Alphalinolenic (ALA) (g) | Eicosapentaenoic (EPA) / Docosahexaenoic (DHA) (g) |
 | --- | --- | --- | --- |
 | Hàu, phương Đông/ Blue Point, nấu chín | 75 gram | 0,04 - 0,05 | 0,33 - 0,41 |
@@ -1224,7 +1225,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Cá ngừ, trắng, đóng hộp với nước | 75 gram | 0,05 | 0,65 |
 | Cá ngẩn, nấu chín | 75 gram | 0,17 | 1,2 |
 
-<!-- p.269 -->
+<!-- sách 276 · PDF 269 -->
 | Thực phẩm | Khẩu phần chuẩn | Axit Alphalinolenic (ALA) (g) | Eicosapentaenoic (EPA) / Docosahexaenoic (DHA) (g) |
 | --- | --- | --- | --- |
 | Đậu (trắng, pinto), nấu chín | 175 ml | 0,17 - 0,24 | 0 |
@@ -1248,7 +1249,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Dầu óc chó | 5 ml (1 muỗng cà phê) | 0,48 | 0 |
 | Dầu cá trích | 5 ml (1 muỗng canh) | 0,04 | 0,48 |
 
-<!-- p.270 -->
+<!-- sách 277 · PDF 270 -->
 | Thực phẩm | Khẩu phần chuẩn | Axit Alphalinolenic (ALA) (g) | Eicosapentaenoic (EPA) / Docosahexaenoic (DHA) (g) |
 | --- | --- | --- | --- |
 | Dầu cá hồi | 5 ml (1 muỗng cà phê) | 0,05 | 1,44 |
@@ -1278,7 +1279,7 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Đậu thận, đóng hộp | 1/2 bát | 35 | 9 |
 | Chuối | 1 quả vừa | 32 | 8 |
 
-<!-- p.271 -->
+<!-- sách 278 · PDF 271 -->
 | Thực phẩm | Khẩu phần chuẩn | Milligram mỗi khẩu phần | Phần trăm giá trị dinh dưỡng hằng ngày (% DV) |
 | --- | --- | --- | --- |
 | Cá hồi Đại Tây Dương, nuôi, nấu chín | 85 gram | 26 | 7 |
@@ -1289,14 +1290,14 @@ Giá trị dinh dưỡng hằng ngày của canxi là 1.000 mg cho người lớ
 | Táo | 1 quả vừa | 9 | 2 |
 | Cà rốt sống | 1 củ vừa | 7 | 2 |
 
-<!-- p.272 -->
+<!-- sách 279 · PDF 272 -->
 # LỜI CẢM ƠN
 
 Cuốn sách này tổng kết 30 năm hành trình của tôi trên con đường đi tìm bí mật của tuổi thọ. Trong quá trình đó, tôi đã được đồng hành với những người tiên phong và cả những nhà nghiên cứu trẻ xuất sắc. Xin cảm ơn Giáo sư Scott Norton và Robert Gracy ở Texas đã cho tôi cơ hội để học hóa sinh và bắt đầu nghiên cứu trong lĩnh vực lão hóa. Tôi xin cảm ơn Giáo sư Roy Walford tại UCLA đã dạy tôi dám thách thức các quy tắc sẵn có và suy nghĩ về lão hóa theo một cách mới sáng tạo. Tôi xin cảm ơn Giáo sư Joan Valentine và Edith Gralla ở UCLA đã cho tôi cơ sở di truyền và phân tử vững chắc mà từ đó tôi có thể xây dựng nên nghiên cứu của mình. Xin cảm ơn Giáo sư Caleb Finch tại Đại học Nam California đã đưa tôi đến với sinh học thần kinh và các lý thuyết về lão hóa và đã là một người cố vấn tuyệt vời từ khi tôi hoàn thành chương trình nghiên cứu sinh cho đến tận ngày hôm nay. Tôi xin cảm ơn Giáo sư Pinchas Cohen vì quá trình hợp tác lâu dài hiệu quả và sự hỗ trợ của ông với tư cách Hiệu trưởng Trường Lão khoa ở Đại học Nam California. Tôi xin cảm ơn Giáo sư Marco Foiani, giám đốc Viện IFOM, đã cho tôi cơ hội dẫn dắt một nhóm nghiên cứu về ung thư ở Ý. Tôi xin cảm ơn một nhóm các nhà di truyền học tiên phong trong 25 năm với các cuộc tranh luận, thảo luận vô tận và những khám phá đã cho phép tất cả chúng ta đóng góp vào một cuộc cách mạng phi thường trong lĩnh vực lão hóa và tuổi thọ. Tôi vô cùng biết ơn các sinh viên, các nhà nghiên cứu của tôi và các đồng nghiệp. Nếu không có họ, tôi chỉ có thể khám phá ra một phần nhỏ của những thành tựu chúng tôi đã cùng nhau đạt được. Đặc biệt cảm ơn Tiến sĩ Paola Fabrizio vì vai trò quan trọng của cô trong các khám phá tại phòng thí nghiệm Đại học Nam California của tôi không lâu sau cuộc hẹn và Giáo sư Min Wei đã nhiều năm dẫn dắt phòng thí nghiệm này.
 
 Tôi xin cảm ơn tất cả các đồng nghiệp đã chia sẻ kiến thức chuyên môn quý báu thuộc các lĩnh vực chuyên ngành của họ:
 
-<!-- p.273 -->
+<!-- sách 280 · PDF 273 -->
 Xin cảm ơn Giáo sư Alessio Nencioni, bác sĩ chuyên khoa nội tại Bệnh viện San Martino, Đại học Genoa vì lời khuyên của ông ở chương 7. Giáo sư Nencioni chịu trách nhiệm cho nghiên cứu được tài trợ bởi Quỹ Umberto Veronesi về chế độ nhịn ăn không hoàn toàn và hóa trị trên bệnh nhân ung thư vú.
 
 Tanya Dorff, bác sĩ ung thư và phó giáo sư y học lâm sàng, Bệnh viện Ung thư Norris Đại học Nam California, người phụ trách các thử nghiệm lâm sàng về chế độ nhịn ăn không hoàn toàn và hóa trị liệu tại Đại học Nam California và Alessandro Laviano, Giáo sư y học lâm sàng, Đại học La Sapienza, Rome.
@@ -1311,7 +1312,7 @@ Về chương 10, tôi xin cảm ơn Tiến sĩ Markus Bock, nhà thần kinh h�
 
 Xin cảm ơn Patrizio Odetti, trưởng khoa Lão khoa tại Bệnh viện San Martino của Đại học Genoa, một trong những chương trình lão khoa hàng đầu nước Ý với một số lượng lớn bệnh nhân sa sút trí tuệ.
 
-<!-- p.274 -->
+<!-- sách 281 · PDF 274 -->
 Đối với chương 11, tôi cũng xin cảm ơn Tiến sĩ Markus Bock, Giáo sư Andreas Michalsen và Giáo sư Kurt Hong, MD, PhD.
 
 Cuối cùng, Thực đơn Hai Tuần được viết với sự giúp đỡ của nhà nghiên cứu dinh dưỡng Noemi Renzetti và chuyên gia dinh dưỡng Mahshid Shelechi và Susan Kim, những người tôi mang ơn với cả tấm lòng.

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -159,6 +159,45 @@ def check_page(page: int) -> dict[str, Any]:
     return result
 
 
+def _write_page_number_check(review: Path, pages: list[int]) -> None:
+    """Đối chiếu số trang in trên đầu trang với quy tắc ánh xạ PDF -> sách."""
+    from .ocr import ocr_page
+    from .pagemap import verify
+
+    records: dict[int, dict[str, Any]] = {}
+    for page in pages:
+        try:
+            records[page] = ocr_page("tesseract", page)
+        except Exception:  # noqa: BLE001
+            continue
+
+    result = verify(pages, records)
+    rows = result["rows"]
+    anomalies = result["anomalies"]
+    noise = result["noise"]
+    lines = [
+        "# Kiểm tra số trang in trên đầu trang",
+        "",
+        "So số trang in (đọc bằng Tesseract) với quy tắc ánh xạ PDF -> sách gốc.",
+        "Lệch đơn lẻ là lỗi đọc ký tự của Tesseract (6 đọc thành 8, 5 thành 8,",
+        "1 thành 7...); chỉ cụm từ 3 trang liên tiếp mới là sai lệch thật.",
+        "",
+        f"- Trang đọc được số đầu trang: {len(rows)}/{len(pages)}",
+        f"- Trang nhiễu OCR (đơn lẻ): {len(noise)}",
+        f"- Cụm sai lệch thật (thiếu/thừa trang): {len(anomalies)}",
+        "",
+    ]
+    if anomalies:
+        lines.extend(["| PDF | Số đọc được | Số kỳ vọng |", "| --- | --- | --- |"])
+        for row in anomalies:
+            lines.append(f"| {row['pdf']} | {row['read']} | {row['expected']} |")
+    else:
+        lines.append(
+            "Không phát hiện cụm nào lệch: ánh xạ PDF -> sách gốc nhất quán trên toàn sách."
+        )
+    (review / "page-numbers.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def run(pages: list[int], workers: int = 4) -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -219,6 +258,8 @@ def run(pages: list[int], workers: int = 4) -> dict[str, Any]:
             gemini_lines.append(f"- Trang {result['page']}: {note}")
     (review / "gemini.md").write_text("\n".join(gemini_lines) + "\n", encoding="utf-8")
 
+    _write_page_number_check(review, pages)
+
     update_status(
         "qa",
         state="done",
@@ -232,3 +273,4 @@ def run(pages: list[int], workers: int = 4) -> dict[str, Any]:
         "flagged": len(flagged),
         "missing": sum(1 for r in results if "missing_vision" in r.get("flags", [])),
     }
+

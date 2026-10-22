@@ -2,7 +2,7 @@
 title: "Chế độ ăn trường thọ - bản Markdown"
 source: CheDoAnTruongTho (reduced).pdf
 pdf_pages: "1-274"
-generated_at: 2026-10-21T18:02:58+00:00
+generated_at: 2026-10-22T06:08:15+00:00
 reviewed: false
 ---
 
@@ -23,9 +23,18 @@ Bản chuyển từ PDF scan 274 trang (ảnh thuần, không có text layer) sa
 
 - `00-index.md` - mục lục và liên kết chương.
 - `00-front-matter.md` - phần đầu sách (lời giới thiệu, lời mở đầu...).
-- `NN-<slug>.md` - mỗi chương một file, có `<!-- p.N -->` đánh dấu trang PDF.
+- `NN-<slug>.md` - mỗi chương một file, có marker `<!-- sách N · PDF M -->`.
 - `images/` - hình cắt từ sách, WebP quality 85.
 - `glossary.md` - thuật ngữ/viết tắt trích tự động, chưa có định nghĩa.
+
+## Đánh số trang
+
+- Marker trong mỗi file: `<!-- sách 35 · PDF 27 -->` — số trang trên bản in
+  trước, số trang trong file PDF scan.
+- Bản in đánh số từ trang 9. PDF bắt đầu đúng ở trang 9 (lệch +8) và từ
+  PDF 91 trở đi lệch +7, vì **PDF 91 là ảnh chụp trùng của trang sách 98**;
+  trang trùng đã bị loại khỏi bản Markdown.
+- Quy tắc ánh xạ nằm trong `scripts/book-ocr/src/pagemap.py`.
 
 ## Cảnh báo
 
@@ -39,9 +48,10 @@ Bản chuyển từ PDF scan 274 trang (ảnh thuần, không có text layer) sa
 
 - Số chương: 13
 - Tổng số hình đã cắt: 35
-- Tổng số trang: 274
+- Số trang PDF: 274
+- Số trang sách gốc: 9-281
 - Model dùng để nhận dạng:
-  - `gemini-3.5-flash`: 228 trang
+  - `gemini-3.5-flash`: 227 trang
   - `gemini-3.5-flash-lite`: 34 trang
   - `gemini-3.1-flash-lite`: 6 trang
   - `manual`: 4 trang

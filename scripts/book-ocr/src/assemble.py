@@ -14,6 +14,7 @@ import numpy as np
 
 from .common import dirs, page_id, setup_logging, update_status
 from .manual import apply_patches, manual_page
+from .pagemap import book_page, book_range, is_duplicate, marker
 from .render import page_png
 from .vision import load_vision
 
@@ -160,7 +161,7 @@ def _crop_figures(page: int, record: dict[str, Any], review: list[str]) -> tuple
 
 def _page_block(page: int, markdown: str) -> str:
     body = markdown.strip()
-    return f"<!-- p.{page} -->\n{body}".strip()
+    return f"{marker(page)}\n{body}".strip()
 
 
 def build(pages: list[int] | None = None) -> dict[str, Any]:
@@ -182,6 +183,12 @@ def build(pages: list[int] | None = None) -> dict[str, Any]:
     recovered: list[int] = []
 
     for page in target:
+        if is_duplicate(page):
+            review.append(
+                f"- Bỏ trang PDF {page}: ảnh chụp trùng của trang sách "
+                f"{book_page(page)} (đã có ở PDF {page - 1})."
+            )
+            continue
         override = manual_page(page)
         if override is not None:
             markdown = override
@@ -275,6 +282,7 @@ def build(pages: list[int] | None = None) -> dict[str, Any]:
             "---",
             f"title: {yaml_title}",
             "source: CheDoAnTruongTho (reduced).pdf",
+            f"book_pages: \"{book_range(section.start_page, section.end_page)}\"",
             f"pdf_pages: \"{pages_label}\"",
             f"engine: {primary_model}",
             f"generated_at: {generated_at}",
@@ -289,6 +297,7 @@ def build(pages: list[int] | None = None) -> dict[str, Any]:
                 "file": path.name,
                 "title": section.title,
                 "number": section.number,
+                "book_pages": book_range(section.start_page, section.end_page),
                 "pdf_pages": pages_label,
                 "figures": section.figures,
             }
@@ -296,7 +305,9 @@ def build(pages: list[int] | None = None) -> dict[str, Any]:
         log.info("wrote %s (%s pages, %s figures)", path.name, pages_label, section.figures)
 
     _write_index(out_dir, manifest, total)
-    _write_readme(out_dir, manifest, total, generated_at, models, recovered)
+    _write_readme(
+        out_dir, manifest, total, generated_at, models, recovered, book_range(target[0], target[-1])
+    )
     _write_glossary(out_dir, chapters)
     _write_review(review)
     (out_dir / ".manifest.json").write_text(
@@ -317,15 +328,16 @@ def _write_index(out_dir: Path, manifest: list[dict[str, Any]], total: int) -> N
         "",
         "# Mục lục",
         "",
-        f"Sách có {total} trang PDF (bắt đầu từ trang sách 9, không có bìa/mục lục gốc).",
+        "Số trang sách gốc đánh từ 9 (bản in). File PDF bắt đầu ở trang sách 9 nên "
+        "lệch +8; từ PDF 91 trở đi lệch +7 vì PDF 91 là ảnh chụp trùng của trang sách 98.",
         "",
-        "| # | Chương | Trang PDF | Hình |",
-        "| --- | --- | --- | --- |",
+        "| # | Chương | Trang sách | Trang PDF | Hình |",
+        "| --- | --- | --- | --- | --- |",
     ]
     for item in manifest:
         lines.append(
             f"| {item['number']} | [{item['title']}]({item['file']}) | "
-            f"{item['pdf_pages']} | {item['figures']} |"
+            f"{item['book_pages']} | {item['pdf_pages']} | {item['figures']} |"
         )
     (out_dir / "00-index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -337,6 +349,7 @@ def _write_readme(
     generated_at: str,
     models: dict[str, int] | None = None,
     recovered: list[int] | None = None,
+    book_pages: str = "",
 ) -> None:
     lines = [
         "---",
@@ -364,9 +377,18 @@ def _write_readme(
         "",
         "- `00-index.md` - mục lục và liên kết chương.",
         "- `00-front-matter.md` - phần đầu sách (lời giới thiệu, lời mở đầu...).",
-        "- `NN-<slug>.md` - mỗi chương một file, có `<!-- p.N -->` đánh dấu trang PDF.",
+        "- `NN-<slug>.md` - mỗi chương một file, có marker `<!-- sách N · PDF M -->`.",
         "- `images/` - hình cắt từ sách, WebP quality 85.",
         "- `glossary.md` - thuật ngữ/viết tắt trích tự động, chưa có định nghĩa.",
+        "",
+        "## Đánh số trang",
+        "",
+        "- Marker trong mỗi file: `<!-- sách 35 · PDF 27 -->` — số trang trên bản in",
+        "  trước, số trang trong file PDF scan.",
+        "- Bản in đánh số từ trang 9. PDF bắt đầu đúng ở trang 9 (lệch +8) và từ",
+        "  PDF 91 trở đi lệch +7, vì **PDF 91 là ảnh chụp trùng của trang sách 98**;",
+        "  trang trùng đã bị loại khỏi bản Markdown.",
+        "- Quy tắc ánh xạ nằm trong `scripts/book-ocr/src/pagemap.py`.",
         "",
         "## Cảnh báo",
         "",
@@ -380,7 +402,8 @@ def _write_readme(
         "",
         f"- Số chương: {len(manifest)}",
         f"- Tổng số hình đã cắt: {sum(m['figures'] for m in manifest)}",
-        f"- Tổng số trang: {total}",
+        f"- Số trang PDF: {total}",
+        f"- Số trang sách gốc: {book_pages}",
     ]
     if models:
         lines.append("- Model dùng để nhận dạng:")

@@ -201,14 +201,14 @@ description: "Task list for feature duck/001/recommendation-rag"
 
 ### Tests cho User Story 4
 
-- [ ] T086 [P] [US4] Unit test `SearchLongevityKnowledgeUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Search/SearchLongevityKnowledgeUseCaseTests.cs` — `top_k` mặc định 8, tối đa 20; lọc theo chương; kết quả sắp xếp giảm dần theo điểm
-- [ ] T087 [US4] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Search/SearchLongevityKnowledgeGrpcTests.cs` — truy vấn tiếng Việt có dấu ("nhịn ăn gián đoạn") trả về đoạn có `book_page` hợp lý; truy vấn lọc chương chỉ trả đoạn thuộc chương đó
+- [x] T086 [P] [US4] Unit test `SearchLongevityKnowledgeUseCase` trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Search/SearchLongevityKnowledgeUseCaseTests.cs` — `top_k` mặc định 8, tối đa 20; lọc theo chương; kết quả sắp xếp giảm dần theo điểm
+- [x] T087 [US4] Integration test trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Search/SearchLongevityKnowledgeGrpcTests.cs` — truy vấn tiếng Việt có dấu ("nhịn ăn gián đoạn") trả về đoạn có `book_page` hợp lý; truy vấn lọc chương chỉ trả đoạn thuộc chương đó
 
 ### Implementation cho User Story 4
 
-- [ ] T088 [US4] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/SearchLongevityKnowledgeUseCase.cs` — dùng `IKnowledgeStore.SearchAsync` với `chapter_filter` + `top_k`, trả `KnowledgeSnippet` kèm `score` và `verified`
-- [ ] T089 [US4] Bổ sung `SearchLongevityKnowledge` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
-- [ ] T090 [US4] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/SearchKnowledgeMapper.cs`
+- [x] T088 [US4] Tạo `src/Services/Recommendation/Recommendation.Application/Features/Search/SearchLongevityKnowledgeUseCase.cs` — dùng `IKnowledgeStore.SearchAsync` với `chapter_filter` + `top_k`, trả `KnowledgeSnippet` kèm `score` và `verified`
+- [x] T089 [US4] Bổ sung `SearchLongevityKnowledge` vào `src/Services/Recommendation/Recommendation.Api/Endpoints/RecommendationGrpcService.cs`
+- [x] T090 [US4] Tạo `src/Services/Recommendation/Recommendation.Api/Mapping/SearchKnowledgeMapper.cs`
 
 **Checkpoint**: User Story 4 chạy độc lập.
 

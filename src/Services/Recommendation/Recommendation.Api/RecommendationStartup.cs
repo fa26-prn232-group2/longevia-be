@@ -7,6 +7,7 @@ using Recommendation.Api.Extensions;
 using Recommendation.Api.Middlewares;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.Meals;
+using Recommendation.Application.Features.Search;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
 
@@ -130,6 +131,10 @@ public static class RecommendationStartup
         // IKnowledgeStore (scoped) nên use case phải scoped.
         builder.Services.AddSingleton<SafetyGuard>();
         builder.Services.AddScoped<AskLongevityQuestionUseCase>();
+
+        // Tra cứu đoạn sách (US4): use case phụ thuộc IKnowledgeStore (scoped) nên
+        // cũng phải scoped.
+        builder.Services.AddScoped<SearchLongevityKnowledgeUseCase>();
 
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."));

@@ -2,6 +2,7 @@ using Grpc.Core;
 using Recommendation.Api.Mapping;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.Meals;
+using Recommendation.Application.Features.Search;
 using Contracts = Longevia.Recommendation.Contracts.V1;
 
 namespace Recommendation.Api.Endpoints;
@@ -12,7 +13,8 @@ namespace Recommendation.Api.Endpoints;
 /// </summary>
 internal sealed partial class RecommendationGrpcService(
     GetMealRecommendationsUseCase getMealRecommendations,
-    AskLongevityQuestionUseCase askLongevityQuestion)
+    AskLongevityQuestionUseCase askLongevityQuestion,
+    SearchLongevityKnowledgeUseCase searchLongevityKnowledge)
     : Contracts.RecommendationService.RecommendationServiceBase
 {
     /// <summary>Gợi ý bữa ăn trong danh mục an toàn do caller gửi (US1).</summary>
@@ -39,5 +41,18 @@ internal sealed partial class RecommendationGrpcService(
             .ConfigureAwait(false);
 
         return AskLongevityQuestionMapper.ToProtoResponse(result);
+    }
+
+    /// <summary>Tra cứu các đoạn sách theo truy vấn tự do, có lọc theo chương (US4).</summary>
+    public override async Task<Contracts.SearchKnowledgeResponse> SearchLongevityKnowledge(
+        Contracts.SearchKnowledgeRequest request,
+        ServerCallContext context)
+    {
+        var applicationRequest = SearchKnowledgeMapper.ToApplicationRequest(request);
+        var result = await searchLongevityKnowledge
+            .ExecuteAsync(applicationRequest, context.CancellationToken)
+            .ConfigureAwait(false);
+
+        return SearchKnowledgeMapper.ToProtoResponse(result);
     }
 }

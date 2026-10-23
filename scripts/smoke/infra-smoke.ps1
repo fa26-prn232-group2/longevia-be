@@ -71,44 +71,20 @@ Assert-Test -Name "Nginx /healthz returns 200 OK and text 'ok'" -TestBlock {
 
 # 2. Nginx Gateway 404 ProblemDetails UTF-8 on unknown routes
 Assert-Test -Name "Nginx unknown route returns 404 ProblemDetails with Vietnamese UTF-8" -TestBlock {
-    try {
-        $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/unknown-service/test" -UseBasicParsing -TimeoutSec 5
-        return $false # Should not succeed
-    } catch {
-        if ($null -eq $_.Exception.Response) {
-            throw $_.Exception.Message
-        }
-        $statusCode = $_.Exception.Response.StatusCode.value__
-        $stream = $_.Exception.Response.GetResponseStream()
-        $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::UTF8)
-        $body = $reader.ReadToEnd()
-        $contentType = $_.Exception.Response.ContentType
-        
-        $hasProblemJson = $contentType -like "*problem+json*"
-        $hasVietnamese = $body -like "*Không tìm thấy*"
-        return ($statusCode -eq 404 -and $hasProblemJson -and $hasVietnamese)
-    }
+    $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/unknown-service/test" -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 5
+    $contentType = if ($resp.Headers["Content-Type"]) { $resp.Headers["Content-Type"] } else { "" }
+    $hasProblemJson = $contentType -like "*problem+json*"
+    $hasVietnamese = $resp.Content -like "*Không tìm thấy*"
+    return ($resp.StatusCode -eq 404 -and $hasProblemJson -and $hasVietnamese)
 }
 
 # 3. Nginx Gateway 502 ProblemDetails UTF-8 on unreachable upstream (/api/diet/health)
 Assert-Test -Name "Nginx unreachable upstream returns 502 ProblemDetails with Vietnamese UTF-8" -TestBlock {
-    try {
-        $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/diet/health" -UseBasicParsing -TimeoutSec 5
-        return $false # Diet service is not deployed yet; gateway must return 502
-    } catch {
-        if ($null -eq $_.Exception.Response) {
-            throw $_.Exception.Message
-        }
-        $statusCode = $_.Exception.Response.StatusCode.value__
-        $stream = $_.Exception.Response.GetResponseStream()
-        $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::UTF8)
-        $body = $reader.ReadToEnd()
-        $contentType = $_.Exception.Response.ContentType
-
-        $hasProblemJson = $contentType -like "*problem+json*"
-        $hasVietnamese = $body -like "*Dịch vụ không khả dụng*"
-        return ($statusCode -eq 502 -and $hasProblemJson -and $hasVietnamese)
-    }
+    $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/diet/health" -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 5
+    $contentType = if ($resp.Headers["Content-Type"]) { $resp.Headers["Content-Type"] } else { "" }
+    $hasProblemJson = $contentType -like "*problem+json*"
+    $hasVietnamese = $resp.Content -like "*Dịch vụ không khả dụng*"
+    return ($resp.StatusCode -eq 502 -and $hasProblemJson -and $hasVietnamese)
 }
 
 # 4. Prometheus Health (/api/v1/targets)

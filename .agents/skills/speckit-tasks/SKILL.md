@@ -92,9 +92,10 @@ repository-wide counter.
    - If contracts/ exists: Map interface contracts to user stories
    - If research.md exists: Extract decisions for setup tasks
    - Determine from spec, plan, and contracts whether the feature adds, changes,
-     or removes an HTTP endpoint, event payload, or client-facing DTO. Do not
-     infer "no change" from silence: add an explicit task that records the
-     decision.
+     or removes (a) an HTTP endpoint, event payload, or client-facing DTO, or
+     (b) a gRPC method/message, event contract/topology, or other
+     service-to-service integration surface. Do not infer "no change" from
+     silence: add an explicit task that records the decision.
    - Generate tasks organized by user story (see Task Generation Rules below)
    - Generate dependency graph showing user story completion order
    - Create parallel execution examples per user story
@@ -112,13 +113,19 @@ repository-wide counter.
    - Dependencies section showing story completion order
    - Parallel execution examples per story
    - Implementation strategy section (MVP first, incremental delivery)
-   - A final frontend handoff decision:
+   - A final integration handoff decision:
      - If the client surface changes, add tasks to create/update
        `FEATURE_DIR/frontend-guide.md` from
        `.specify/templates/frontend-guide-template.md`, maintain its lifecycle
        status, and perform a counted source/contract sync at close-out.
-     - If it does not change, add one task to record that conclusion in
-       tasks.md and do not create frontend-guide.md.
+     - If the backend integration surface changes, add tasks to create/update
+       `FEATURE_DIR/backend-integration-guide.md` from
+       `.specify/templates/backend-integration-guide-template.md`, maintain its
+       lifecycle status, and perform a counted source/contract sync at
+       close-out.
+     - If both surfaces change, add tasks for both guides.
+     - If neither changes, add one task to record that conclusion in tasks.md
+       and do not create either guide.
    - A deferred-work rule: findings outside this feature belong in
      `FEATURE_DIR/deferred.md` using the deferred template; in-scope work must
      remain an executable task.
@@ -167,7 +174,7 @@ Output path to generated tasks.md and summary:
 - Independent test criteria for each story
 - Suggested MVP scope (typically just User Story 1)
 - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
-- Frontend handoff decision and whether a guide is required
+- Integration handoff decision and whether a frontend/backend guide is required
 - Deferred-work handling included when applicable
 
 Context for task generation: $ARGUMENTS
@@ -238,16 +245,21 @@ Every task MUST strictly follow this format:
    - Foundational/blocking tasks → Foundational phase (Phase 2)
    - Story-specific setup → within that story's phase
 
-5. **Frontend Handoff and Deferred Work**:
+5. **Integration Handoff and Deferred Work**:
    - Treat HTTP endpoints, event payloads, and client-facing DTOs as the client
-     surface.
-   - A changed client surface requires `frontend-guide.md`; link to canonical
-     contracts instead of duplicating schemas in prose.
-   - The final sync task must count routes, fields, enums, and HTTP/error
-     statuses checked against source/contracts. `READY_FOR_FRONTEND` is invalid
-     before implementation, test evidence, and sync are complete.
-   - A feature with no client-surface change records that conclusion in a task
-     and does not create a guide.
+     surface. Treat gRPC methods/messages, service event contracts/topology, and
+     other service-to-service contracts as the backend integration surface.
+   - A changed client surface requires `frontend-guide.md`; a changed backend
+     integration surface requires `backend-integration-guide.md`. Link to
+     canonical contracts instead of duplicating schemas in prose.
+   - The final frontend sync task must count routes, fields, enums, and
+     HTTP/error statuses checked against source/contracts. The final backend
+     sync task must count RPCs, message fields, enums, error codes/trailers,
+     deadlines, event fields, routing keys, and topology. `READY_FOR_FRONTEND`
+     and `READY_FOR_BACKEND` are invalid before implementation, test evidence,
+     and sync are complete.
+   - A feature with no integration-surface change records that conclusion in a
+     task and does not create a guide.
    - Never generate an unchecked task for work that is genuinely outside the
      feature. Record it in `deferred.md` with why it is out of scope, what
      unblocks it, and any completed task whose evidence it weakens.
@@ -266,5 +278,5 @@ Every task MUST strictly follow this format:
 - [ ] tasks.md generated with all phases, task IDs, and file paths
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with task count, story breakdown, and MVP scope
-- [ ] Frontend handoff decision is explicit and guide/sync tasks exist exactly when required
+- [ ] Integration handoff decision is explicit and frontend/backend guide/sync tasks exist exactly when required
 - [ ] Out-of-scope work is routed to deferred.md rather than left as an unfinished feature task

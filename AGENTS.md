@@ -141,6 +141,12 @@ other synchronously over gRPC; asynchronous events go through RabbitMQ.
   `READY_FOR_FRONTEND` only when contract, implementation, test evidence and the
   counted sync check are all complete. A feature that does not change the client
   surface must record that conclusion in `tasks.md`.
+- If a feature changes a gRPC method/message, event contract/topology or other
+  service-to-service integration surface, it must update
+  `specs/<owner>-<NNN>-<slug>/backend-integration-guide.md`; set
+  `READY_FOR_BACKEND` only when contract, implementation, test evidence and the
+  counted sync check are all complete. A feature that does not change the
+  backend integration surface must record that conclusion in `tasks.md`.
 - If documents conflict, use the priority order in §1 (Authoritative sources).
 
 ## 4. Core Principles

@@ -120,10 +120,13 @@ chung cho cả nhóm: feature được định danh bằng `specs/<owner>-<NNN>-
 7. **Ngôn ngữ tài liệu trong `specs/`**: mọi tài liệu trong `specs/` (đặc tả, kế
    hoạch, checklist, tasks, báo cáo) **phải viết bằng tiếng Việt** để dev đọc và
    đối chiếu.
-8. **Bàn giao frontend**: feature đổi HTTP endpoint, event payload hoặc DTO
-   client-facing phải có `specs/<feature>/frontend-guide.md`; chỉ đặt
-   `READY_FOR_FRONTEND` khi contract, implementation, test evidence và sync check
-   hoàn tất. Feature không đổi client surface phải ghi kết luận trong `tasks.md`.
+8. **Bàn giao tích hợp**: feature đổi HTTP endpoint, event payload hoặc DTO
+   client-facing phải có `specs/<feature>/frontend-guide.md`; feature đổi gRPC
+   method/message, event contract/topology hoặc surface service-to-service khác
+   phải có `specs/<feature>/backend-integration-guide.md`. Chỉ đặt
+   `READY_FOR_FRONTEND`/`READY_FOR_BACKEND` khi contract, implementation, test
+   evidence và sync check hoàn tất. Feature không đổi surface tương ứng phải ghi
+   kết luận trong `tasks.md`.
 9. **Việc ngoài phạm vi**: ghi vào `specs/<feature>/deferred.md` với vấn đề, lý do
    ngoài phạm vi và điều kiện gỡ; không để lại checkbox trong `tasks.md`.
 10. **Skill discovery**: canonical tại `.agents/skills/<name>/SKILL.md`. OpenCode,

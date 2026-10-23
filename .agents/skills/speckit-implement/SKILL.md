@@ -121,11 +121,15 @@ repository-wide counter.
    - **IF EXISTS**: Read research.md for technical decisions and constraints
    - **IF EXISTS**: Read .specify/memory/constitution.md for governance constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
-   - **IF EXISTS**: Read frontend-guide.md and deferred.md
-   - Determine whether the feature changes an HTTP endpoint, event payload, or
-     client-facing DTO by reading spec/plan/contracts. If it changes the client
-     surface, frontend-guide.md is required. If it does not, tasks.md must state
-     that conclusion and no guide should be created.
+   - **IF EXISTS**: Read frontend-guide.md, backend-integration-guide.md, and
+     deferred.md
+   - Determine whether the feature changes (a) an HTTP endpoint, event payload,
+     or client-facing DTO, or (b) a gRPC method/message, event
+     contract/topology, or other service-to-service integration surface by
+     reading spec/plan/contracts. A changed client surface requires
+     frontend-guide.md; a changed backend integration surface requires
+     backend-integration-guide.md. If a surface does not change, tasks.md must
+     state that conclusion and no guide for it should be created.
 
 4. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
@@ -206,13 +210,14 @@ repository-wide counter.
      task list. If the finding invalidates acceptance evidence for a completed
      task, reopen that task and treat the work as in-scope/blocking; defer only
      a limitation that leaves the completion claim true.
-   - If a frontend guide is required, keep its status honest: `DRAFT` while the
-     contract is unsettled, `IN_PROGRESS` during implementation, `CHANGED` when
-     an already handed-off surface changes, and `DEPRECATED` when retiring a
-     surface. A previously ready surface transitions `READY_FOR_FRONTEND` →
-     `CHANGED` while being revised, then `CHANGED` → `READY_FOR_FRONTEND` once
-     contract, implementation, evidence, and sync are complete; frontend
-     acknowledgement is not required. Do not set `READY_FOR_FRONTEND` in this step unless contract,
+   - If a frontend or backend integration guide is required, keep its status
+     honest: `DRAFT` while the contract is unsettled, `IN_PROGRESS` during
+     implementation, `CHANGED` when an already handed-off surface changes, and
+     `DEPRECATED` when retiring a surface. A previously ready surface
+     transitions `READY_FOR_FRONTEND`/`READY_FOR_BACKEND` → `CHANGED` while
+     being revised, then back to the ready status once contract,
+     implementation, evidence, and sync are complete; acknowledgement is not
+     required. Do not set a ready status in this step unless contract,
      implementation, test evidence, and the counted sync checklist are all
      complete.
 
@@ -228,8 +233,13 @@ repository-wide counter.
    - For a changed client surface, compare frontend-guide.md with canonical
      contracts/source and fill counts for routes, fields, enums, and
      HTTP/error statuses. Only then may its status become READY_FOR_FRONTEND.
-   - For an unchanged client surface, confirm tasks.md records that conclusion
-     and frontend-guide.md was not created.
+   - For a changed backend integration surface, compare
+     backend-integration-guide.md with canonical contracts/source and fill
+     counts for RPCs, message fields, enums, error codes/trailers, deadlines,
+     event fields, routing keys, and topology. Only then may its status become
+     READY_FOR_BACKEND.
+   - For an unchanged client or backend integration surface, confirm tasks.md
+     records that conclusion and the corresponding guide was not created.
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `$speckit-tasks` first to regenerate the task list.
 
@@ -276,7 +286,7 @@ Report final status with summary of completed work.
 
 - [ ] All tasks in tasks.md completed and marked `[X]`
 - [ ] Implementation validated against specification, plan, and test coverage
-- [ ] Frontend handoff requirement resolved and any guide status/evidence is truthful
+- [ ] Frontend and backend integration handoff requirements resolved and any guide status/evidence is truthful
 - [ ] Out-of-scope findings recorded in deferred.md, with no in-scope work hidden there
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work

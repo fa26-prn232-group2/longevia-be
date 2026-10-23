@@ -34,7 +34,8 @@ drift from the repository and become the thing that is wrong.
 5. The feature table and every open feature's `meta.json` (shared-file
    coordination): run `pwsh scripts/speckit/team-feature.ps1 registry`.
 6. The feature's `spec.md`, `plan.md`, `tasks.md`, `frontend-guide.md` (if
-   present), and `deferred.md` (if present)
+   present), `backend-integration-guide.md` (if present), and `deferred.md` (if
+   present)
 
 Read them once per run, not once per subagent call. Pass paths, not copies.
 
@@ -178,15 +179,20 @@ artifacts are frozen.
    exists to prevent.
 3. If it appended anything, implement it through §5, then return to step 1.
    **Cap 3 outer iterations, then escalate.**
-4. **Sync `frontend-guide.md`** when the feature changes the client surface. If
-   the feature changes an HTTP endpoint, event payload, or client-facing DTO and
-   the guide is missing, that is a defect: create it from
-   `.specify/templates/frontend-guide-template.md` before continuing. Sync at
-   the end of EVERY outer iteration, so the last one also serves as the
+4. **Sync integration guides** when the feature changes the client surface or
+   the backend integration surface. If a changed surface's guide is missing,
+   that is a defect:
+   - client surface → create `frontend-guide.md` from
+     `.specify/templates/frontend-guide-template.md`;
+   - backend integration surface → create `backend-integration-guide.md` from
+     `.specify/templates/backend-integration-guide-template.md`.
+   Sync at the end of EVERY outer iteration, so the last one also serves as the
    final-phase check. Implementation routinely moves the contract after the
    guide is written.
    Compare against canonical contracts/source and **count** what you checked; a
-   re-read that produces no numbers is a re-read that did not happen:
+   re-read that produces no numbers is a re-read that did not happen.
+
+   Frontend guide:
    - every `json:"…"` tag the feature's DTOs emit → each must appear in the guide
    - every value of every enum the guide documents → compare against its
      constant block, in both directions
@@ -194,11 +200,21 @@ artifacts are frozen.
      contract form before comparing, or the two look like a mismatch
    - every HTTP status the guide claims → each must be one the handler can return
 
+   Backend integration guide:
+   - every RPC and message field → compare against the canonical protobuf,
+     including field numbers and enum values in both directions
+   - every error code/trailer and deadline → compare against server code/config
+   - every event, exchange, queue, routing key, and producer/consumer pair →
+     compare against the canonical event contract/topology
+   - every retry, idempotency, outbox, DLQ, and compatibility claim → compare
+     against implementation
+
    Correct every mismatch before continuing. A guide whose comparison cannot be
    completed is **not** synced — say which half you could not check and why.
-   A surface already handed off follows `READY_FOR_FRONTEND` → `CHANGED` while
-   it is revised, then `CHANGED` → `READY_FOR_FRONTEND` after implementation,
-   evidence and counted sync complete; frontend acknowledgement is not required.
+   A surface already handed off follows
+   `READY_FOR_FRONTEND`/`READY_FOR_BACKEND` → `CHANGED` while it is revised,
+   then back to its ready status after implementation, evidence and counted sync
+   complete; acknowledgement is not required.
 5. Run the full close-out gate **once, at close-out only** — never per
    iteration. It is the pre-push gate, and §3 already budgets it at one run per
    feature. A required gate that cannot run or is not green is a hard stop, not a
@@ -229,6 +245,8 @@ true.
 - `speckit-analyze` reported 0 CRITICAL and 0 HIGH in Loop A
 - a feature that changes the client surface has a synced `frontend-guide.md`
   from step 4 this run
+- a feature that changes the backend integration surface has a synced
+  `backend-integration-guide.md` from step 4 this run
 - no deferred finding invalidates acceptance evidence
 - the required full close-out gate passed
 

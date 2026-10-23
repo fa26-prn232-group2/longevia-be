@@ -106,8 +106,9 @@ of the code relative to the feature's artifacts — no git, no branch comparison
   work that belongs to this feature;
 - create or append `deferred.md` for a finding that is genuinely outside the
   feature; and
-- synchronize an existing required `frontend-guide.md` against canonical
-  contracts/source during close-out.
+- synchronize existing required `frontend-guide.md` and
+  `backend-integration-guide.md` against canonical contracts/source during
+  close-out.
 
 It MUST NOT:
 
@@ -190,9 +191,11 @@ Create an internal model (do not echo raw artifacts):
   search for the concepts each requirement describes, derive the set of source files and
   components in scope for assessment. Bound the assessment to these — do **not** infer
   scope beyond what the artifacts define.
-- **Client-surface inventory**: determine whether the feature adds, changes, or
-  removes HTTP endpoints, event payloads, or client-facing DTOs; locate
-  frontend-guide.md when required.
+- **Integration-surface inventory**: determine whether the feature adds,
+  changes, or removes HTTP endpoints, event payloads, or client-facing DTOs
+  (frontend surface), and gRPC methods/messages, event contracts/topology, or
+  other service-to-service contracts (backend integration surface); locate
+  frontend-guide.md or backend-integration-guide.md when required.
 
 ### 4. Assess the Codebase and Classify Findings
 
@@ -254,7 +257,7 @@ Before appending anything, output a compact, severity-graded summary (no file wr
 - Findings by gap type (missing / partial / contradicts / unrequested)
 - Findings by severity
 - Findings routed to deferred.md and why they are outside scope
-- Frontend handoff requirement and current guide status
+- Frontend and backend integration handoff requirements and current guide status
 
 ### 7. Append Convergence Tasks (or report converged)
 
@@ -284,6 +287,9 @@ Append to the **end** of `tasks.md`, per the append contract:
 5. If client-facing change is required but frontend-guide.md is missing, append
    a convergence task to create it from
    `.specify/templates/frontend-guide-template.md`.
+6. If backend integration change is required but
+   backend-integration-guide.md is missing, append a convergence task to create
+   it from `.specify/templates/backend-integration-guide-template.md`.
 
 **If there are no actionable findings** (`converged` outcome):
 
@@ -291,7 +297,7 @@ Append to the **end** of `tasks.md`, per the append contract:
 - Report: **"✅ Converged — the implementation satisfies the spec, plan, and tasks."**
 - Include the summary counts of what was checked.
 
-### 7a. Synchronize the frontend guide
+### 7a. Synchronize the integration guides
 
 When the feature changes the client surface and frontend-guide.md exists:
 
@@ -306,8 +312,25 @@ When the feature changes the client surface and frontend-guide.md exists:
    revised, then `CHANGED` → `READY_FOR_FRONTEND` after the counted sync and
    evidence complete; no frontend acknowledgement is required.
 
-When the feature has no client-surface change, confirm tasks.md says so and do
-not create frontend-guide.md.
+When the feature changes the backend integration surface and
+backend-integration-guide.md exists:
+
+1. Compare every RPC and message field with the canonical protobuf, including
+   field numbers and enum values in both directions.
+2. Compare error codes/trailers and deadlines with server implementation and
+   configuration.
+3. Compare every event, exchange, queue, routing key, and producer/consumer
+   pair with the canonical event contract/topology.
+4. Compare retry, idempotency, outbox, DLQ, and compatibility claims with code.
+5. Record numeric counts and test evidence in the guide.
+6. Set `READY_FOR_BACKEND` only when all checks are complete; otherwise retain
+   the truthful non-ready status and report the missing evidence.
+   A previously ready surface follows `READY_FOR_BACKEND` → `CHANGED` while
+   revised, then `CHANGED` → `READY_FOR_BACKEND` after the counted sync and
+   evidence complete.
+
+When a surface does not change, confirm tasks.md says so and do not create the
+corresponding guide.
 
 ### 8. Provide Next Actions (Handoff)
 
@@ -317,7 +340,7 @@ not create frontend-guide.md.
 - On `converged`: recommend proceeding to review / opening a PR. No further implement pass
   is needed for this feature's specified scope.
 - In both outcomes: list deferred entries created or observed, and report the
-  frontend guide path/status or the explicit no-client-change decision.
+  frontend/backend guide paths and statuses or the explicit no-change decisions.
 
 ### 9. Check for extension hooks
 

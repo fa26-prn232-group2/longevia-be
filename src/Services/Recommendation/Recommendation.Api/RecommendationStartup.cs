@@ -10,6 +10,7 @@ using Recommendation.Api.Middlewares;
 using Recommendation.Application.Abstractions;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.LongevityHabits;
+using Recommendation.Application.Features.MealPlans;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Plans;
@@ -248,6 +249,18 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<PlanDateRange>();
         builder.Services.AddSingleton<PlanPromptFormatter>();
         builder.Services.AddSingleton<PlanRationaleBuilder>();
+
+        // Kế hoạch ăn uống (US1): filter/splitter/parser/validator/fallback thuần
+        // nên singleton; use case phụ thuộc IKnowledgeStore (scoped) nên scoped.
+        builder.Services.AddSingleton<PlanAllergenFilter>();
+        builder.Services.AddSingleton<MealPlanCandidateFilter>();
+        builder.Services.AddSingleton<WeeklyBudgetSplitter>();
+        builder.Services.AddSingleton<MealPlanPromptBuilder>();
+        builder.Services.AddSingleton<MealPlanSelectionParser>();
+        builder.Services.AddSingleton<MealPlanValidator>();
+        builder.Services.AddSingleton<MealPlanFallbackSelector>();
+        builder.Services.AddSingleton<MealPlanSuggestionBuilder>();
+        builder.Services.AddScoped<GenerateMealPlanUseCase>();
 
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."))

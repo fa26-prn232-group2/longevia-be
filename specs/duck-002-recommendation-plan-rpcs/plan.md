@@ -532,7 +532,8 @@ validate
 - `MealPlanValidatorTests`: sai số ngày/bữa; món ngoài; >5 món; ±10%; fixture
   "đủ đa dạng" = >= 12 món, có món giàu protein/carbs/fat, món 0 calo, không
   allergen.
-- `MealPlanFallbackSelectorTests`: provider-down; không lặp; target_not_met.
+- `MealPlanFallbackSelectorTests`: provider-down; không lặp khi còn lựa chọn;
+  giữ đủ bữa khi candidate khan hiếm; `target_not_met`.
 - `MealPlanSuggestionBuilderTests`: có/không corpus; suggestion không food_id.
 - `WorkoutActivityCatalogTests`: alias chương 5; preference; equipment;
   limitations.

@@ -39,6 +39,12 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
     public IServiceProvider Services =>
         _app?.Services ?? throw new InvalidOperationException("Fixture chưa khởi động.");
 
+    /// <summary>Lượt gọi <c>GenerateMealPlan</c> kế tiếp sẽ nhận phản hồi abstain.</summary>
+    public void AbstainNextMealPlan() => _chatModel.AbstainNextMealPlan();
+
+    /// <summary>Lượt gọi <c>GenerateMealPlan</c> kế tiếp sẽ trả quote không có trong sách.</summary>
+    public void UseInvalidCitationForNextMealPlan() => _chatModel.UseInvalidCitationForNextMealPlan();
+
     public async Task InitializeAsync()
     {
         _postgres = new PostgreSqlBuilder("pgvector/pgvector:pg17").Build();
@@ -123,7 +129,14 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
         private const int SelectionCount = 5;
         private const int CitationWordCount = 12;
 
+        private int _abstainNextMealPlan;
+        private int _invalidCitationNextMealPlan;
+
         public List<StructuredPrompt> Prompts { get; } = [];
+
+        public void AbstainNextMealPlan() => Interlocked.Exchange(ref _abstainNextMealPlan, 1);
+
+        public void UseInvalidCitationForNextMealPlan() => Interlocked.Exchange(ref _invalidCitationNextMealPlan, 1);
 
         public Task<ChatCompletion> CompleteAsync(StructuredPrompt prompt, CancellationToken cancellationToken)
         {
@@ -133,12 +146,24 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
             {
                 StructuredResponseKind.GroundedAnswer => GroundedAnswerDouble.Complete(prompt),
                 StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisDouble.Complete(prompt),
-                StructuredResponseKind.MealPlanSelection => MealPlanSelection(prompt.UserPrompt),
+                StructuredResponseKind.MealPlanSelection => CompleteMealPlan(prompt.UserPrompt),
                 StructuredResponseKind.WorkoutPlanSelection => WorkoutPlanSelection(prompt.UserPrompt),
                 _ => MealSelection(),
             };
 
             return Task.FromResult(completion);
+        }
+
+        private ChatCompletion CompleteMealPlan(string userPrompt)
+        {
+            if (Interlocked.Exchange(ref _abstainNextMealPlan, 0) == 1)
+            {
+                return new ChatCompletion { Abstained = true, AbstainReason = "provider_unavailable" };
+            }
+
+            var invalidCitation = Interlocked.Exchange(ref _invalidCitationNextMealPlan, 0) == 1;
+
+            return MealPlanSelection(userPrompt, invalidCitation);
         }
 
         private static ChatCompletion MealSelection()
@@ -160,9 +185,11 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
             };
         }
 
-        private static ChatCompletion MealPlanSelection(string userPrompt)
+        private static ChatCompletion MealPlanSelection(string userPrompt, bool invalidCitation)
         {
-            var quote = ExtractFirstCorpusQuote(userPrompt);
+            var quote = invalidCitation
+                ? "Câu trích dẫn này không xuất hiện trong bất kỳ đoạn sách nào."
+                : ExtractFirstCorpusQuote(userPrompt);
             var days = new JsonArray();
 
             foreach (var (date, segment) in SplitByDate(userPrompt))

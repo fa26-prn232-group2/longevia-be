@@ -186,9 +186,9 @@ request là cách duy nhất bảo đảm 100% có nguồn.
 5 món/bữa, hoặc lệch calo/macro > ±10%, chạy `MealPlanFallbackSelector`:
 
 1. Với từng ngày/bữa, duyệt candidate an toàn theo `MacroFitScore` tăng dần.
-2. Thêm món nếu không trùng món đã dùng **trong cùng ngày** (bắt buộc); ưu tiên
-   không trùng trong tuần khi còn lựa chọn; tie-break lặp tuần = ít lần dùng
-   nhất, rồi `food_id` ordinal; tối đa 5 món.
+2. Ưu tiên không trùng món đã dùng **trong cùng ngày**; chỉ lặp khi không đủ
+   candidate để giữ đủ bữa; ưu tiên không trùng trong tuần khi còn lựa chọn;
+   tie-break lặp tuần = ít lần dùng nhất, rồi `food_id` ordinal; tối đa 5 món.
 3. Ưu tiên tổ hợp đưa tổng bữa gần ngân sách bữa nhất; nếu không thể đạt ±10%
    ngày, trả tổ hợp gần nhất.
 4. Nếu không đạt ±10% vì candidate không đủ, ghi `target_not_met`; không bịa

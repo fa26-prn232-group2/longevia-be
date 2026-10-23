@@ -1,7 +1,7 @@
 # Tasks: Hạ tầng, Nginx Gateway, Background Worker & Giám sát Grafana
 
 **Input**: Kế hoạch kỹ thuật từ `specs/mavil-001-infra-observability/plan.md`  
-**Trạng thái**: Ready for Implementation  
+**Trạng thái**: Phase 1–7 đã xong (đã commit); Phase 8 đang thực hiện qua `speckit-orchestrate`  
 **Tất cả công việc phải tuân thủ nghiêm ngặt định dạng**: `- [ ] TXXX [P?] [US?] Mô tả công việc với đường dẫn tệp cụ thể`
 
 ---
@@ -48,7 +48,7 @@
 
 - [x] T010 [P] [US2] Viết multi-stage Dockerfile cho Identity Service sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Identity/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
 - [x] T011 [P] [US2] Viết multi-stage Dockerfile cho Background Worker sử dụng `aspnet:10.0-noble-chiseled` trong `src/Services/Worker/Dockerfile` (assert: user `app`, image < 180MB theo SC-002)
-- [x] T012 [US2] Cấu hình và kích hoạt container `identity` và `worker` trong `deployments/docker-compose.yml` tuân thủ phân tách 3 mạng `edge`/`internal_net`/`data_net` theo `plan.md` §7 (identity, worker: `edge` + `data_net`)
+- [x] T012 [US2] Cấu hình và kích hoạt container `identity` và `worker` trong `deployments/docker-compose.yml` tuân thủ phân tách 3 mạng `edge`/`internal_net`/`data_net` theo `plan.md` §7 (identity, worker: `edge` + `data_net`); xác nhận `depends_on: condition: service_healthy` cho identity/worker (Edge Case khởi động chậm, `spec.md:88`)
 
 **Điểm kiểm soát**: Hai container được build và khởi chạy thành công trong mạng Docker của dự án.
 
@@ -75,7 +75,7 @@
 
 **Mục tiêu**: Dựng Prometheus và Grafana trên cổng `3001` (nhường `3000` cho Frontend), tự động nạp Datasource và Dashboard ASP.NET Core.
 
-**Tiêu chí kiểm thử độc lập**: Truy cập `http://localhost:3001`, xác nhận Grafana mở được ngay (Anonymous Admin), Prometheus Datasource đã kết nối và Dashboard ASP.NET Core hiển thị biểu đồ.
+**Tiêu chí kiểm thử độc lập**: Truy cập `http://localhost:3001`, xác nhận Grafana mở được ngay (Anonymous `Viewer` — chỉ xem, không sửa cấu hình), Prometheus Datasource đã kết nối và Dashboard ASP.NET Core hiển thị biểu đồ.
 
 - [x] T019 [P] [US4] Viết cấu hình scrape Prometheus cào dữ liệu từ các service mỗi 10 giây trong `deployments/prometheus/prometheus.yml` (targets: `identity`, `worker`, `prometheus` self; RabbitMQ qua plugin `rabbitmq_prometheus` bật trong compose, nếu plugin không khả dụng thì bỏ target này và ghi lý do)
 - [x] T020 [P] [US4] Cấu hình tự động kết nối Datasource Prometheus trong `deployments/grafana/provisioning/datasources/prometheus.yml`
@@ -91,11 +91,11 @@
 
 **Mục tiêu**: Tích hợp mẫu đo lường vào Identity Service và hoàn thiện tài liệu hướng dẫn trong `AGENTS.md`.
 
-**Tiêu chí kiểm thử độc lập**: Chạy Identity Service, truy cập `http://localhost:8080/metrics` thấy số liệu OpenTelemetry xuất hiện.
+**Tiêu chí kiểm thử độc lập**: Chạy stack đầy đủ `make docker-up` trước (Prometheus không thuộc `make infra-up`). Gateway không route `/metrics` và image runtime chiseled **không có shell/curl** (không dùng `docker compose exec ... curl`). Xác minh bằng đường thật: `curl "http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22identity%22%7D"` trả `"value":["...,"1"]` (Prometheus đã scrape `identity:8080/metrics`), hoặc chạy container curl tạm trên mạng `longevia_edge`: `docker run --rm --network longevia_edge curlimages/curl -fsS http://identity:8080/metrics`.
 
-- [ ] T024 [US5] Tích hợp `AddObservability("IdentityService")` và `MapPrometheusScrapingEndpoint()` vào `src/Services/Identity/Identity.Api/Program.cs`
-- [ ] T025 [US5] Thêm PackageReferences OpenTelemetry vào `src/Services/Identity/Identity.Api/Identity.Api.csproj`
-- [ ] T026 [US5] Xác minh nội dung hướng dẫn Observability trong `AGENTS.md` (đã bổ sung ở plan) đầy đủ, chính xác cho các developer khác (2 dòng chuẩn, cổng 3001, cấm hardcode)
+- [x] T024 [US5] Tích hợp `AddObservability("IdentityService")` và `MapPrometheusScrapingEndpoint()` vào `src/Services/Identity/Identity.Api/Program.cs`
+- [x] T025 [US5] Thêm PackageReferences OpenTelemetry vào `src/Services/Identity/Identity.Api/Identity.Api.csproj`
+- [x] T026 [US5] Xác minh nội dung hướng dẫn Observability trong `AGENTS.md` (đã bổ sung ở plan) đầy đủ, chính xác cho các developer khác (2 dòng chuẩn, cổng 3001, cấm hardcode)
 
 **Điểm kiểm soát**: Mọi microservice có thể kích hoạt đo lường với 2 dòng code và hiển thị trên Grafana.
 
@@ -106,10 +106,13 @@
 **Mục đích**: Kiểm tra toàn diện chất lượng, kiểm tra gate và hoàn thiện tài liệu.
 
 - [ ] T027 [P] Kiểm tra tính nhất quán của file mẫu môi trường `.env.example` (100% comment tiếng Anh, đủ biến T002)
-- [ ] T028 Thực hiện kịch bản kiểm thử trong `specs/mavil-001-infra-observability/quickstart.md` và ghi số đo: `time make infra-up` (SC-001 ≤ 30s), p95 `/healthz` < 50ms, email xuất hiện trên Mailpit < 1s (SC-003), `docker images` < 180MB (SC-002)
-- [ ] T029 Chạy kiểm tra chất lượng mã nguồn toàn bộ giải pháp với `make lint` (0 warning, 0 error) + `make test PROJECTS=<path>` scoped cho Shared/Worker/Identity theo gate `AGENTS.md` §2
-- [ ] T031 [P] Viết smoke test e2e tự động `scripts/smoke/infra-smoke.ps1`: publish `UserRegisteredEvent` qua RabbitMQ → assert mail xuất hiện qua Mailpit API trong 5s; assert `/metrics` của identity/worker + Prometheus target `UP` (Hiến pháp §V: 1 đường e2e thật qua hạ tầng thật)
-- [ ] T030 Tạo `specs/mavil-001-infra-observability/frontend-guide.md` mô tả gateway 404 ProblemDetails UTF-8 + prefix stripping `/api/<service>/` (client surface duy nhất tính năng này đổi), kèm đếm sync-check
+- [ ] T028 Thực hiện kịch bản kiểm thử trong `specs/mavil-001-infra-observability/quickstart.md` và ghi số đo: `time make infra-up` (SC-001 ≤ 30s, phạm vi hạ tầng lõi `INFRA_SERVICES`), p95 `/healthz` < 50ms, email xuất hiện trên Mailpit < 1s (SC-003), `docker images` < 180MB (SC-002), và xác minh SC-004 bằng Grafana API (`/api/datasources`, `/api/search?query=ASP.NET`) chứ không chỉ mở mắt nhìn
+- [ ] T029 Chạy kiểm tra chất lượng mã nguồn toàn bộ giải pháp với `make lint` (0 warning, 0 error) + `make test PROJECTS=<path>` scoped cho Shared/Worker/Identity theo gate `AGENTS.md` §2; kèm **negative control** cho test mới (T016/T017): cố tình phá code → test đỏ đúng lý do → phục hồi → test xanh, ghi lại cả hai màu
+- [ ] T031 Viết smoke test e2e tự động `scripts/smoke/infra-smoke.ps1` (chạy sau `make docker-up` và sau T033): publish `UserRegisteredEvent` qua RabbitMQ → assert mail xuất hiện qua Mailpit API trong 5s; assert metrics/Prometheus bằng `curl http://localhost:9090/api/v1/targets` + query `up{job="identity"}`/`up{job="worker"} == 1` (image chiseled không có curl nên không dùng `docker compose exec`; nếu cần gọi trực tiếp thì `docker run --rm --network longevia_edge curlimages/curl -fsS http://identity:8080/metrics`); assert gateway `GET /api/unknown-service/test` → 404 `application/problem+json` với title tiếng Việt UTF-8 và `GET /api/identity/health` khi `identity` đã stop → 502 ProblemDetails JSON (T033). Script phải `exit ≠ 0` khi bất kỳ assert sai; chạy **một lần với assert cố tình sai** (ví dụ đổi kỳ vọng 502→200) để thấy đỏ đúng lý do rồi phục hồi — ghi lại cả hai lần (Hiến pháp §V: 1 đường e2e thật qua hạ tầng thật)
+- [ ] T030 Tạo `specs/mavil-001-infra-observability/frontend-guide.md` mô tả gateway 404/502 ProblemDetails UTF-8 + prefix stripping `/api/<service>/` (client surface duy nhất tính năng này đổi), kèm đếm sync-check
+- [ ] T032 [P] Bổ sung `healthcheck` cho `nginx` (`/healthz`) và `mailpit` (`/livez`) trong `deployments/docker-compose.yml` để US1 AS1 ("Healthy") kiểm được bằng `docker compose ps` (fixup Phase 3)
+- [ ] T033 Mở rộng `deployments/nginx/nginx.conf`: map `error_page 502 503 504` sang ProblemDetails JSON UTF-8 (`status` tương ứng, không trả trang HTML mặc định) theo Edge Case spec.md dòng 89 (fixup Phase 3)
+- [ ] T034 Nâng `MailKit` 4.11.0 → 4.18.1 trong `Directory.Packages.props` (đồng thời cập nhật `plan.md` §2 cho khớp), gỡ `<WarningsNotAsErrors>NU1902;NU1903</WarningsNotAsErrors>` và comment DEFERRED khỏi `src/Services/Worker/Worker.csproj`, rồi xác minh `make vuln` không còn advisory (fixup Phase 5; SC-005 / security advisory; `Directory.Packages.props` là shared file đã khai trong plan §5)
 
 ---
 
@@ -129,7 +132,7 @@ flowchart TD
     P1 --> P2
     P2 --> P3
     P2 --> P5
-    P3 & P5 --> P4
+    P3 --> P4
     P2 & P3 --> P6
     P6 --> P7
     P4 & P5 & P7 --> P8

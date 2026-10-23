@@ -141,6 +141,13 @@ other synchronously over gRPC; asynchronous events go through RabbitMQ.
   `READY_FOR_FRONTEND` only when contract, implementation, test evidence and the
   counted sync check are all complete. A feature that does not change the client
   surface must record that conclusion in `tasks.md`.
+- **MANDATORY — Observability & Metrics (Prometheus & Grafana)**:
+  - Mọi microservice (Identity, Diet, Progress, Recommendation, Worker) khi khởi tạo MUST tích hợp endpoint metrics để Prometheus thu thập và hiển thị lên Grafana (Dashboard cổng `3001`).
+  - Sử dụng extension chuẩn từ `Longevia.Shared` (2 dòng lệnh trong `Program.cs`):
+    1. Đăng ký OpenTelemetry: `builder.Services.AddObservability("<ServiceName>");`
+    2. Expose endpoint `/metrics`: `app.MapPrometheusScrapingEndpoint();`
+  - Thêm scrape job của service vào `deployments/prometheus/prometheus.yml` (Prometheus dùng `static_configs`); thiếu bước này service không xuất hiện trong Targets dù đã có 2 dòng trên.
+  - Tuyệt đối không tự viết logic thu thập metric riêng lẻ hay hardcode cổng Prometheus/Grafana trong mã nguồn service.
 - If documents conflict, use the priority order in §1 (Authoritative sources).
 
 ## 4. Core Principles

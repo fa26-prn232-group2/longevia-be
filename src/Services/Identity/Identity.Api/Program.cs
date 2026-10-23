@@ -1,3 +1,4 @@
+using Longevia.Shared.Observability;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,10 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Observability: the two standard lines (AGENTS.md §3). Ports come from
+// compose/Dockerfile (ASPNETCORE_HTTP_PORTS), never from code.
+builder.Services.AddObservability("IdentityService");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -36,5 +41,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+app.MapPrometheusScrapingEndpoint();
 
 app.Run();

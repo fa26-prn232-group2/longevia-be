@@ -5,14 +5,23 @@
 - **Không tự ý thao tác git**: agent MUST NOT chạy `commit`, `push`, `tag`,
   `branch`, `checkout`, `merge`, `rebase`, `reset`, `amend` khi chưa có yêu cầu/cho
   phép rõ ràng của dev. Chỉ được đọc (`git status/log/diff`).
-- Ngoại lệ: gọi một skill tự khai báo git policy (ví dụ `@speckit-orchestrate`) là
+- Ngoại lệ: gọi một skill tự khai báo git policy (ví dụ `speckit-orchestrate`) là
   cho phép thường trực cho lần chạy đó.
+- Khi dev yêu cầu/cho phép rõ ràng — kể cả `push`, tạo PR hay commit thẳng
+  `main` — agent thực hiện đúng phạm vi được cho phép; không tự mở rộng sang
+  thao tác khác (tag, force-push, rebase lịch sử người khác).
 - Commit message: **tiếng Anh**, theo Conventional Commits.
 
 ## 2. Branch
 
 - Feature: `feat/<name>`, sửa lỗi: `fix/<name>`, việc lặt vặt: `chore/<name>`.
-- Feature Spec-kit: dùng tên `###-feature-name` nếu workflow yêu cầu.
+- Feature Spec-kit: nhánh `feat/<slug>` là **duy nhất** cho feature đó và trùng
+  với thư mục `specs/<owner>-<NNN>-<slug>`. Xem
+  [`team-workflow.md`](team-workflow.md).
+- Mặc định không commit trực tiếp lên `main`: ưu tiên nhánh + PR có ít nhất 1
+  reviewer. Commit/push thẳng `main` chỉ khi dev yêu cầu rõ ràng cho lần đó.
+- Một feature chỉ có một nhánh và một owner. Không hai người cùng đẩy vào một
+  nhánh feature.
 
 ## 3. Commit
 

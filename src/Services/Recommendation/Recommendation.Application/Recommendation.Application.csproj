@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Recommendation.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Recommendation.Domain\Recommendation.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Longevia.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

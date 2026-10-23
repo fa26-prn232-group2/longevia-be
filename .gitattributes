@@ -1,4 +1,4 @@
-# Normalize line endings in the repository.
+﻿# Normalize line endings in the repository.
 * text=auto
 
 *.cs      text diff=csharp
@@ -14,9 +14,13 @@
 # Keep Docker and shell entrypoints LF even on Windows checkouts.
 *.sh      text eol=lf
 Dockerfile text eol=lf
+# PowerShell entrypoints are invoked by pwsh on every OS.
+*.ps1     text eol=lf
 
 # Binary
 *.png     binary
 *.jpg     binary
 *.jpeg    binary
 *.pdf     binary
+*.webp    binary
+*.jsonl.gz binary

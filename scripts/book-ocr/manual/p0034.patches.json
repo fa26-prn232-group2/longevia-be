@@ -1,0 +1,9 @@
+{
+  "patches": [
+    {
+      "find": "thế các bộ phận hư hỏng bằng những bộ phận mới",
+      "replace": "thể các bộ phận hư hỏng bằng những bộ phận mới",
+      "note": "Bản in ghi 'thể' (nối từ trang trước: 'cơ thể'), bản nhận dạng ghi 'thế'"
+    }
+  ]
+}

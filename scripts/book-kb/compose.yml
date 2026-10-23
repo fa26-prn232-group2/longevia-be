@@ -1,0 +1,51 @@
+name: longevia-book-kb
+
+# Offline ingest pipeline for the knowledge corpus. It writes to
+# recommendation_db (schema kb) - the corpus store owned by Recommendation.
+#
+# The container joins the data network of deployments/docker-compose.yml, so it
+# reaches the postgres service by its compose alias `postgres`.
+services:
+  book-kb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: longevia/book-kb:local
+    init: true
+    env_file:
+      - ../../.env
+    environment:
+      BOOK_KB_WORK: /work
+      BOOK_KB_CORPUS: /corpus
+      # `seed` ghi seed đã nén vào đây để commit (không cần provider/key).
+      BOOK_KB_SEED_ROOT: /seed-out
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
+      # Inside the compose network PostgreSQL is `postgres:5432`, not the
+      # host-published port in `.env` (localhost:5433).
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      # Pipeline reads the key from the host environment; never commit it.
+      GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
+      RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
+      RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
+      RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
+      RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
+      # Eval calls the real service over gRPC (it never calls the provider
+      # directly). Both containers share `longevia_data_net`.
+      RECOMMENDATION_GRPC_URL: ${RECOMMENDATION_GRPC_URL:-http://recommendation:50051}
+      BOOK_KB_PROTO: /contracts/recommendation.proto
+      BOOK_KB_GOLDEN_SET: /app/eval/golden-set.json
+    volumes:
+      - ../../artifacts/book-kb:/work
+      - ../../docs/reference/che-do-an-truong-tho:/corpus:ro
+      # Seed đã nén, commit vào repo để môi trường mới nạp mà không cần key.
+      - ../../resources/knowledge:/seed-out
+      # Single source of truth for the contract: mounted read-only, stubs are
+      # generated at eval time (never committed).
+      - ../../contracts/recommendation/v1:/contracts:ro
+    working_dir: /app
+    stop_grace_period: 30s
+
+networks:
+  default:
+    external: true
+    name: longevia_data_net

@@ -27,8 +27,8 @@ Nếu có nhiều phần, thêm hậu tố số: `erd-01.png`, `erd-02.png`, ...
 
 - **API Gateway**: Nginx
 - **Client-facing services** (qua Nginx): Identity, Diet, Progress
-- **Internal service**: Recommendation — gRPC-only, không expose REST, không có DB
-- **Database**: mỗi service sở hữu DB riêng — Identity DB, Diet DB, Progress DB
+- **Internal service**: Recommendation — gRPC-only, không expose REST; sở hữu `recommendation_db` chỉ chứa corpus tri thức đã nhúng (RAG), không chứa dữ liệu người dùng
+- **Database**: mỗi service sở hữu DB riêng — Identity DB, Diet DB, Progress DB, Recommendation DB (knowledge store)
 - **Message Broker**: RabbitMQ (services publish event; Background Worker consume)
 - **Background Worker** → Brevo (gửi email)
 - **External**: Cloudinary (media storage), Google AI (AI provider)

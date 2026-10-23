@@ -11,6 +11,22 @@
     <Project Path="src/Services/Identity/tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj" />
     <Project Path="src/Services/Identity/tests/Identity.UnitTests/Identity.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Worker/">
+    <Project Path="src/Services/Worker/Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Worker/tests/">
+    <Project Path="src/Services/Worker/tests/Worker.UnitTests/Worker.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Recommendation/">
+    <Project Path="src/Services/Recommendation/Recommendation.Api/Recommendation.Api.csproj" />
+    <Project Path="src/Services/Recommendation/Recommendation.Application/Recommendation.Application.csproj" />
+    <Project Path="src/Services/Recommendation/Recommendation.Domain/Recommendation.Domain.csproj" />
+    <Project Path="src/Services/Recommendation/Recommendation.Infrastructure/Recommendation.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Recommendation/tests/">
+    <Project Path="src/Services/Recommendation/tests/Recommendation.IntegrationTests/Recommendation.IntegrationTests.csproj" />
+    <Project Path="src/Services/Recommendation/tests/Recommendation.UnitTests/Recommendation.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Longevia.Shared.csproj" />
   </Folder>

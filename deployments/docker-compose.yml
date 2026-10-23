@@ -3,9 +3,21 @@ name: longevia
 # Local == production: the same images and this same file are used in both.
 # Copy ../.env.example to ../.env before running.
 #
-#   docker compose -f deployments/docker-compose.yml up -d
+#   docker compose --env-file .env -f deployments/docker-compose.yml up -d
+#
+# Compose only interpolates ${VARS} from the shell or from the file given with
+# --env-file. Because this file lives in `deployments/`, the root `.env` is not
+# picked up automatically - run
+#
+#   docker compose --env-file .env -f deployments/docker-compose.yml up -d
+#
+# to inject the values of the root `.env` (provider keys, ports).
 #
 # Backend services are added below once their Dockerfiles exist.
+#
+# First boot / seed reload MUST use `make up` or `make bootstrap` so the
+# one-shot `kb-bootstrap` job runs and is removed afterwards. A plain
+# `docker compose up -d` starts the services without loading the seed.
 #
 # Networks (required by ADR 001 section 2.2 - do not flatten these into one):
 #
@@ -14,13 +26,14 @@ name: longevia
 #   internal_net recommendation + the client-facing services that call it over
 #               gRPC. Nginx is deliberately NOT on this network, so neither the
 #               gateway nor `swagger-ui` can reach `recommendation:50051`.
-#   data_net    postgres + rabbitmq, joined only by the services that use them.
+#   data_net    postgres + redis + rabbitmq + mailpit, joined only by the
+#               services that use them.
 #
 # A container reaches another container only through a shared network.
 
 services:
   postgres:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-longevia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
@@ -28,6 +41,7 @@ services:
       IDENTITY_DB: ${IDENTITY_DB:-identity_db}
       DIET_DB: ${DIET_DB:-diet_db}
       PROGRESS_DB: ${PROGRESS_DB:-progress_db}
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -59,8 +73,41 @@ services:
       timeout: 5s
       retries: 12
 
+  # Ephemeral in-memory cache (Q2: NO volume, wiped on every recreate).
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Local fake mail server. Web UI on MAILPIT_WEB_PORT, SMTP catcher on
+  # MAILPIT_SMTP_PORT. No volume: mail is throwaway in dev.
+  mailpit:
+    image: axllent/mailpit:latest
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8025/api/v1/info >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    networks:
+      - data_net
+
   nginx:
     image: nginx:1.27-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     ports:
       - "${GATEWAY_PORT:-8080}:80"
     volumes:
@@ -83,6 +130,104 @@ services:
       - edge
 
   # -------------------------------------------------------------------------
+  # .NET services (Phase 4: identity + worker live; diet/progress/
+  # recommendation uncomment as each Dockerfile lands).
+  #
+  identity:
+    build:
+      context: ..
+      dockerfile: src/Services/Identity/Dockerfile
+    environment:
+      ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      RABBITMQ_HOST: rabbitmq
+      JWT__KEY_ID: ${JWT__KEY_ID:-longevia-dev-01}
+      JWT__SIGNING_PRIVATE_KEY: ${JWT__SIGNING_PRIVATE_KEY:-}
+      JWT__SIGNING_PUBLIC_KEY: ${JWT__SIGNING_PUBLIC_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+  # Internal gRPC service. Recommendation is NOT routed through nginx and is
+  # NOT published to the host: only services on `internal_net` can reach it.
+  # It owns `recommendation_db`, which holds the knowledge corpus only - never
+  # user data (Constitution section I).
+  # -------------------------------------------------------------------------
+  recommendation:
+    build:
+      context: ..
+      dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
+    # Secrets are injected explicitly and minimally: only the variables this
+    # service actually needs are listed under `environment:`. Do NOT use
+    # `env_file:` here - it would load the WHOLE root .env into the container,
+    # including JWT__SIGNING_PRIVATE_KEY, which belongs to Identity only
+    # (ADR 001 section 2.1).
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
+      GOOGLE_AI__CHAT_MODEL: ${GOOGLE_AI__CHAT_MODEL:-gemini-3.5-flash-lite}
+      RECOMMENDATION__GRPC_PORT: ${RECOMMENDATION__GRPC_PORT:-50051}
+      RECOMMENDATION__HTTP_PORT: ${RECOMMENDATION__HTTP_PORT:-8080}
+      # Server-side gRPC deadline; keep it above the provider's real generation
+      # latency, otherwise long grounded answers hit DEADLINE_EXCEEDED.
+      RECOMMENDATION__DEADLINE_SECONDS: ${RECOMMENDATION__DEADLINE_SECONDS:-30}
+      # Server-side gRPC deadline for the two plan RPCs (GenerateMealPlan and
+      # GenerateWorkoutPlan); the five existing RPCs keep the value above.
+      RECOMMENDATION__PLAN_DEADLINE_SECONDS: ${RECOMMENDATION__PLAN_DEADLINE_SECONDS:-90}
+      RAG__TOP_K: ${RAG__TOP_K:-8}
+      RAG__MAX_CANDIDATES: ${RAG__MAX_CANDIDATES:-50}
+      RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
+      RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
+      RAG__REQUIRE_VERIFIED: ${RAG__REQUIRE_VERIFIED:-false}
+      RAG__MIN_CITATION_SIMILARITY: ${RAG__MIN_CITATION_SIMILARITY:-0.75}
+      RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
+      RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal_net
+      - data_net
+
+  # -------------------------------------------------------------------------
+  # Deploy-time schema + seed bootstrap. Reuses the service image (EF Core
+  # migration is still the only schema source) and runs as a one-shot Compose
+  # job. It is intentionally behind the `bootstrap` profile so a plain
+  # `docker compose up -d` does not leave an exited container behind.
+  #
+  # Canonical first boot:
+  #   make up
+  #
+  # Manual seed reload:
+  #   make kb-ensure
+  # -------------------------------------------------------------------------
+  kb-bootstrap:
+    profiles: ["bootstrap"]
+    build:
+      context: ..
+      dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
+    command: ["--bootstrap", "--seed", "/seed", "--skip-if-loaded", "--verify"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      KNOWLEDGE_DB__CORPUS_KEY: ${KNOWLEDGE_DB__CORPUS_KEY:-che-do-an-truong-tho}
+      KNOWLEDGE_DB__SCHEMA: ${KNOWLEDGE_DB__SCHEMA:-kb}
+    volumes:
+      - ../resources/knowledge/che-do-an-truong-tho:/seed:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+    restart: "no"
+
+  # -------------------------------------------------------------------------
   # .NET services - uncomment as each Dockerfile is added.
   #
   # identity:
@@ -91,7 +236,7 @@ services:
   #     dockerfile: src/Services/Identity/Dockerfile
   #   environment:
   #     ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
-  #     RABBITMQ_HOST: rabbitmq
+  #   RABBITMQ_HOST: rabbitmq
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
@@ -108,6 +253,67 @@ services:
   # recommendation:  ... (internal, gRPC-only, stateless, no database)
   #   networks: internal_net ONLY - must not be reachable from nginx/swagger-ui
   #
+  worker:
+    build:
+      context: ..
+      dockerfile: src/Services/Worker/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      SMTP__HOST: ${SMTP__HOST:-mailpit}
+      SMTP__PORT: ${SMTP__PORT:-1025}
+      SMTP__USE_SSL: ${SMTP__USE_SSL:-false}
+      SMTP__USER: ${SMTP__USER:-}
+      SMTP__PASSWORD: ${SMTP__PASSWORD:-}
+      SMTP__SENDER_EMAIL: ${SMTP__SENDER_EMAIL:-no-reply@longevia.local}
+      REDIS__HOST: redis
+      REDIS__PORT: ${REDIS_PORT:-6379}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+  # ---------------------------------------------------------------------------
+  # Observability (Phase 6, US4): Prometheus scrapes identity/worker /metrics
+  # every 10s; Grafana serves provisioned dashboards on host 3001 (3000 stays
+  # reserved for the frontend). Both join `edge` only (plan.md section 7) and
+  # are fully provisioned from mounted files - zero manual setup (SC-004).
+  # `infra-up` lists explicit services so these never leak into it; the full
+  # `docker-up` (up -d --build) picks them up automatically.
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - edge
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - edge
   # worker:          ... (consumes RabbitMQ, sends email via Brevo)
   #   networks: data_net only
   #
@@ -115,6 +321,7 @@ services:
   #   identity:  JWT__SIGNING_PRIVATE_KEY + JWT__SIGNING_PUBLIC_KEY + JWT__KEY_ID
   #   diet:      JWT__SIGNING_PUBLIC_KEY  + JWT__KEY_ID   (never the private key)
   #   progress:  JWT__SIGNING_PUBLIC_KEY  + JWT__KEY_ID   (never the private key)
+  #   worker:    no JWT vars (never the private key)
   # -------------------------------------------------------------------------
 
 networks:

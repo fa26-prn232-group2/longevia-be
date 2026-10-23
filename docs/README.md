@@ -3,6 +3,9 @@
 ## Nguyên tắc tổ chức
 
 - `docs/` chỉ chứa tài liệu viết tay. Sinh tự động (Swagger, report) để nơi khác.
+- Ngoại lệ: `docs/reference/` chứa tài liệu tham chiếu được số hoá tự động từ sách
+  (không viết tay). Mọi file trong đó mang `reviewed: false` cho tới khi được đối
+  chiếu thủ công.
 - Tài liệu viết bằng tiếng Việt; thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
 - Thứ tự thẩm quyền khi mâu thuẫn: **Constitution > system-design > development > khác**.
 - Đường dẫn tham chiếu trong tài liệu dùng dạng tương đối.
@@ -17,6 +20,7 @@ docs/
   development/    # Quy trình, convention, setup, test, migration
   api/            # Quy chuẩn thiết kế API và đặc tả API chi tiết
   decisions/      # Architecture Decision Records (ADR)
+  reference/      # Tài liệu tham chiếu số hoá tự động (sách) — reviewed: false
 ```
 
 ## Mục lục
@@ -44,13 +48,19 @@ docs/
 
 ### Phát triển
 - [development/agent-workflow.md](development/agent-workflow.md) — quy trình Spec-kit.
+- [development/team-workflow.md](development/team-workflow.md) — làm việc nhóm, định danh feature, file dùng chung.
+- [development/spec-kit-customizations.md](development/spec-kit-customizations.md) — các tuỳ biến Spec Kit có chủ đích.
 - [development/coding-conventions.md](development/coding-conventions.md) — convention C#/.NET.
 - [development/code-hygiene.md](development/code-hygiene.md) — ngưỡng cấu trúc code.
 - [development/git-workflow.md](development/git-workflow.md) — git & commit.
 - [development/local-setup.md](development/local-setup.md) — chạy local bằng Docker.
+- [development/rag-ingestion.md](development/rag-ingestion.md) — pipeline tri thức sách: chunk, embedding, seed và tự động nạp khi deploy.
 - [development/testing.md](development/testing.md) — chiến lược test & gate.
 - [development/migration.md](development/migration.md) — EF Core Code First migrations.
 - [development/api-testing.md](development/api-testing.md) — test API bằng Swagger.
 
 ### Khác
 - [decisions/README.md](decisions/README.md) — danh mục ADR.
+- [reference/che-do-an-truong-tho/00-index.md](reference/che-do-an-truong-tho/00-index.md) — số hoá tự động sách *Chế độ ăn trường thọ* (Markdown theo chương); **chỉ dùng cho mục đích học tập**.
+- [../NOTICE.md](../NOTICE.md) — mục đích sử dụng, nội dung bên thứ ba có bản quyền và giấy phép các thành phần.
+- [../LICENSE](../LICENSE) — giấy phép MIT cho mã nguồn (không áp dụng cho nội dung sách).

@@ -1,0 +1,14 @@
+{
+  "patches": [
+    {
+      "find": "![Hình trang 135](images/p0135-fig-01.webp)",
+      "replace": "![Hình trang 135](images/p0135-fig-01.webp)\n\n*Biểu đồ 7.1. Phần trăm tuyên giảm ung thư phổi ở chuột áp dụng FMD kết hợp với hóa trị và không hóa trị.*",
+      "note": "Thiếu chú thích 'Biểu đồ 7.1'"
+    },
+    {
+      "find": "![Hình trang 135](images/p0135-fig-02.webp)",
+      "replace": "![Hình trang 135](images/p0135-fig-02.webp)\n\n*Biểu đồ 7.2. Các chu kỳ FMD giảm và trì hoãn ung thư ở chuột.*",
+      "note": "Thiếu chú thích 'Biểu đồ 7.2'"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Product Requirement Document (PRD) — Longevia Backend
+﻿# Product Requirement Document (PRD) — Longevia Backend
 
 ---
 
@@ -10,7 +10,7 @@ Hệ thống bao gồm 5 dịch vụ thành phần:
 1. **Identity Service** (Client-facing qua Nginx, sở hữu `identity_db`)
 2. **Diet Service** (Client-facing qua Nginx, sở hữu `diet_db`)
 3. **Progress Service** (Client-facing qua Nginx, sở hữu `progress_db`)
-4. **Recommendation Service** (Nội bộ gRPC-only, Stateless, không sở hữu DB)
+4. **Recommendation Service** (Nội bộ gRPC-only, sở hữu `recommendation_db` chỉ chứa corpus tri thức đã nhúng — không chứa dữ liệu người dùng)
 5. **Background Worker** (Consumer ngầm từ RabbitMQ, tích hợp Brevo Email API)
 
 ```
@@ -29,24 +29,33 @@ Hệ thống bao gồm 5 dịch vụ thành phần:
  │ `identity_db` │        │   `diet_db`   │        │ `progress_db` │
  └───┬───────────┘        └───┬───────┬───┘        └───────┬───────┘
      │                        │       │                    │
-     │ (Publish Event)        │       │ (gRPC :50051)      │ (Publish Event)
-     │                        ▼       ▼                    │
-     │                  ┌──────────────────────┐           │
-     │                  │  Recommendation Svc  │           │
-     │                  │ (Stateless, AI Engine)│          │
-     │                  └──────────────────────┘           │
-     │                                                     │
-     └────────────────────────┬────────────────────────────┘
-                              ▼ (Transactional Outbox)
-                     ┌──────────────────┐
-                     │     RabbitMQ     │
-                     └────────┬─────────┘
-                              │ (Consume Event)
-                              ▼
-                     ┌──────────────────┐
-                     │ Background Worker│ ──► [Brevo Email API]
-                     └──────────────────┘
+      │ (Publish Event)        │       │ (gRPC :50051)      │ (Publish Event)
+      │                        ▼       ▼                    │
+      │                  ┌──────────────────────┐           │
+      │                  │  Recommendation Svc  │           │
+      │                  │ (RAG + AI Engine)    │           │
+      │                  └──────────┬───────────┘           │
+      │                             │ (read/write kb)       │
+      │                             ▼                       │
+      │                  ┌──────────────────────┐           │
+      │                  │ `recommendation_db`  │           │
+      │                  └──────────────────────┘           │
+      │                                                     │
+      └────────────────────────┬────────────────────────────┘
+                               ▼ (Transactional Outbox)
+                      ┌──────────────────┐
+                      │     RabbitMQ     │
+                      └────────┬─────────┘
+                               │ (Consume Event)
+                               ▼
+                      ┌──────────────────┐
+                      │ Background Worker│ ──► [Brevo Email API]
+                      └──────────────────┘
 ```
+
+> Tri thức cho RAG được nạp **offline** bằng pipeline `scripts/book-kb` từ
+> [`docs/reference/che-do-an-truong-tho/`](../reference/che-do-an-truong-tho/README.md)
+> vào `recommendation_db` — không phải traffic runtime.
 
 ---
 
@@ -202,9 +211,84 @@ Theo dõi và lưu vết sự biến đổi của các chỉ số sinh học cơ
 ### 2.4 Recommendation Service
 
 #### A. Mục tiêu & Trách nhiệm
-Bộ não thông minh ứng dụng **Google AI (Gemini)**, hoạt động hoàn toàn **Stateless**, giao tiếp qua giao thức **gRPC nội bộ**, hỗ trợ đưa ra các nhận định chuyên sâu về dinh dưỡng trường thọ và chống lão hóa.
+Bộ não thông minh ứng dụng **Google AI (Gemini)**, giao tiếp qua giao thức **gRPC nội bộ**, hỗ trợ đưa ra các nhận định chuyên sâu về dinh dưỡng trường thọ và chống lão hóa.
 
-#### B. Định nghĩa Hợp đồng Protobuf (`contracts/recommendation/v1/recommendation.proto`)
+Service có **tầng tri thức RAG**: mọi khuyến nghị phải bám vào **corpus tri thức** — cuốn sách *Chế độ ăn trường thọ* đã được số hoá tại [`docs/reference/che-do-an-truong-tho/`](../reference/che-do-an-truong-tho/README.md) — và **phải truy ngược được** về chương + trang sách bản in. Khi corpus không đủ để trả lời, service **phải nói ra điều đó** thay vì suy diễn.
+
+Ngoài ra, service giữ **knowledge store** riêng (`recommendation_db`) chứa corpus đã nhúng; DB này **không chứa dữ liệu người dùng** (chi tiết ở [ADR 002](../decisions/002-recommendation-knowledge-base.md)).
+
+#### B. Danh sách User Stories & Acceptance Criteria
+
+##### US-REC-01: Gợi ý bữa ăn từ danh mục an toàn
+- **Mô tả**: Là người dùng, tôi muốn nhận gợi ý món ăn hợp với mục tiêu dinh dưỡng hôm nay, chắc chắn không chứa thành phần tôi dị ứng.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: Caller (Diet) gửi kèm `candidate_foods` — danh mục món an toàn kèm dinh dưỡng. Service **chỉ được chọn/pha trong danh mục này**, được trả về `food_id` để map về `FoodItems`; **không** được tự sinh món ngoài danh mục.
+  - `AC-2`: Lọc dị ứng thực hiện **bằng code** (không phải bằng prompt): mọi món có thành phần khớp `allergies` của hồ sơ bị loại **100%** (BR-03).
+  - `AC-3`: Nếu calo đã ăn hôm nay ≥ **105%** mục tiêu, service **không** gợi ý bữa ăn chính; chỉ trả gợi ý đồ uống không calo hoặc thói quen thư giãn/giấc ngủ, kèm cờ `calorie_cap_reached = true` (BR-03).
+  - `AC-4`: Mỗi món gợi ý kèm `rationale` (vì sao chọn) và `citations[]` trỏ về chương + trang sách trong corpus.
+  - `AC-5`: Mọi response kèm `disclaimer` theo BR-04.
+  - `AC-6`: Phần dinh dưỡng (`estimated_calories`, macro) lấy từ `candidate_foods` đã chọn — **không** để LLM tự bịa.
+  - `AC-7`: Hỗ trợ bữa sáng/trưa/tối/phụ và trả về **tối đa 5 món** mỗi bữa (FR-007).
+
+##### US-REC-02: Phân tích thiếu hụt vi chất 7 ngày
+- **Mô tả**: Là người dùng, tôi muốn biết trong tuần qua tôi đang thiếu vi chất nào và nên ăn gì để bù.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: Request phải nhận hồ sơ người dùng (tuổi, giới, chiều cao, cân nặng, mức hoạt động, dị ứng, sở thích ăn uống) và mục tiêu dinh dưỡng — không có ngữ cảnh thì không phân tích được.
+  - `AC-2`: Phần **gap vi chất tính bằng rule** (bảng RDA), `severity` theo ngưỡng % — **không** giao cho LLM tự suy luận số liệu.
+  - `AC-3`: `analysis_summary` và `suggested_foods` phải **có căn cứ trong sách** (`citations[]`); phần giải thích không có trong sách phải được nói rõ là suy luận từ dữ liệu người dùng.
+  - `AC-4`: Trả về đủ `deficient_nutrients[]`, `suggested_foods[]`, `analysis_summary` (giữ tương thích với contract cũ) **và** `gaps[]` chi tiết.
+
+##### US-REC-03: Đánh giá thói quen trường thọ
+- **Mô tả**: Là người dùng, tôi muốn biết điểm số và phần nào trong thói quen sống của tôi đang kéo điểm xuống.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: `longevity_score` (0–100) tính **deterministic** theo rubric cố định: fasting 35% / sleep 30% / hydration 20% / nutrition 15%.
+  - `AC-2`: Trả `score_breakdown[]` gồm điểm, trọng số và lý do của từng nhánh — cùng đầu vào phải cho cùng điểm.
+  - `AC-3`: `actionable_insights[]` phải có `citations[]` khi phát xuất từ sách.
+  - `AC-4`: Kèm `disclaimer` (BR-04).
+
+##### US-REC-04: Hỏi tri thức trong sách
+- **Mô tả**: Là người dùng, tôi muốn hỏi trực tiếp về chế độ ăn trường thọ và nhận câu trả lời có dẫn đích.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: Câu trả lời chỉ được dựa trên đoạn corpus được truy xuất; mỗi khẳng định kèm `citations[]` gồm `chapter_number`, `chapter_title`, `book_page` (trang bản in), `pdf_page` (trang file scan) và `quote` (trích đoạn nguyên văn).
+  - `AC-2`: `quote` phải được **kiểm chứng khớp chuỗi** với chunk nguồn. Citation không khớp thì bị loại; mất hết citation thì response chuyển sang `abstained = true`.
+  - `AC-3`: Khi corpus **không đủ** để trả lời, phải trả `abstained = true` kèm `abstain_reason` — **không** suy diễn ngoài sách.
+  - `AC-4`: Nội dung từ trang chưa đối chiếu bản in phải được đánh dấu `verified = false` và không được khẳng định như sự thật y tế.
+  - `AC-5`: Kèm `disclaimer` (BR-04).
+
+##### US-REC-05: Tra cứu tri thức
+- **Mô tả**: Là người dùng, tôi muốn tìm các đoạn trong sách liên quan đến một chủ đề.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: Trả danh sách `snippets[]` gồm nội dung đoạn, chương, trang sách, trang PDF và điểm liên quan.
+  - `AC-2`: Hỗ trợ lọc theo chương; `top_k` mặc định 8, tối đa 20.
+
+##### US-REC-06: Vòng đời tri thức (nội bộ, offline)
+- **Mô tả**: Là người bảo trì, tôi muốn nạp lại corpus khi tài liệu tham chiếu thay đổi mà không phải sửa code.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: Pipeline offline (`scripts/book-kb`) chunk → embed → nạp `recommendation_db`; **không** nằm trong runtime service.
+  - `AC-2`: Chunk lưu `book_page_from/to`, `pdf_page_from/to`; nguồn số trang là marker `<!-- sách N · PDF M -->` trong bản Markdown.
+  - `AC-3`: Nạp lại idempotent, không tạo chunk trùng (`corpus_version` = hash nội dung corpus).
+  - `AC-4`: Chunk từ trang có nghi vấn số liệu (`review/numbers.md`, `review/qa.md`) mang cờ `needs_review = true`.
+
+##### US-REC-07: Lập kế hoạch ăn uống theo tuần
+- **Mô tả**: Là người dùng, tôi muốn nhận kế hoạch ăn uống nhiều ngày bám mục tiêu dinh dưỡng, không chứa thành phần tôi dị ứng và có dẫn nguồn sách.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: RPC `GenerateMealPlan` nhận hồ sơ, mục tiêu ngày, `week_start_date` (thứ Hai), `days` (1..7), `meals_per_day` (1..4), `candidate_foods`; service **chỉ chọn trong danh mục này** và lọc allergen/dietary/`excluded_food_ids` **bằng code**.
+  - `AC-2`: Trả đúng `days` ngày liên tiếp, mỗi ngày đủ `meals_per_day` bữa (tối đa 5 món/bữa); calo/macro/fiber sao chép nguyên từ candidate và nằm trong ±10% ngân sách ngày khi khả thi.
+  - `AC-3`: Đã ăn ≥ **105%** mục tiêu trong ngày thuộc tuần (`consumed_calories` + `consumed_date`) → ngày đó `calorie_cap_reached = true`, không có bữa chính, tối đa 3 gợi ý đồ uống 0 calo/thói quen.
+  - `AC-4`: Citation chỉ thuộc chương 4 hoặc Phụ lục A (`book_page_from >= 238`) và `quote` phải khớp chunk nguồn; corpus rỗng → `citations` rỗng + warning `corpus_not_loaded`, **không** bịa nguồn.
+  - `AC-5`: Lỗi đầu vào trả mã ổn định (`recommendation.invalid_targets`, `recommendation.invalid_consumed_calories`, `recommendation.invalid_week_start`, ...) qua trailer `code`; mọi response có `disclaimer` (BR-04).
+  - `AC-6`: RPC **không** ghi DB, không lưu kế hoạch và không log hồ sơ/nội dung kế hoạch; caller chịu trách nhiệm lưu kết quả.
+
+##### US-REC-08: Lập kế hoạch tập luyện theo tuần
+- **Mô tả**: Là người dùng, tôi muốn nhận lịch tập an toàn cho số ngày và số buổi tôi chọn, tôn trọng giới hạn sức khỏe và dụng cụ hiện có.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: RPC `GenerateWorkoutPlan` nhận hồ sơ, `goal` (khác `GOAL_UNSPECIFIED`), `week_start_date` (thứ Hai), `days` (1..7), `sessions_per_week` (0 = `min(3, days)`, không lớn hơn `days`), `minutes_per_session` (0 = 30, hoặc 10..120), `activity_preference`, `equipment_available`, `limitations`.
+  - `AC-2`: Trả đủ `days` ngày và đúng `sessions_scheduled` buổi khi còn hoạt động an toàn; ngày còn lại `rest_day = true` với `activity` rỗng, `duration_minutes = 0`, `citations` rỗng.
+  - `AC-3`: Hoạt động/cường độ chỉ lấy từ catalog chương 5 + dữ liệu caller; limitation không khớp ánh xạ bị bỏ qua + warning `unsupported_limitation`; thiếu căn cứ cường độ → `intensity_unverified`; **không** suy diễn y tế.
+  - `AC-4`: Corpus rỗng → kế hoạch degraded từ dữ liệu caller + warning `activity_source_unverified`/`corpus_not_loaded`, không bịa citation; tham số buổi/phút sai khoảng → `recommendation.invalid_workout_params`.
+  - `AC-5`: RPC **không** ghi DB, không lưu lịch tập, không log hồ sơ/limitations; mọi response có `disclaimer` (BR-04).
+
+#### C. Định nghĩa Hợp đồng Protobuf (`contracts/recommendation/v1/recommendation.proto`)
 
 ```protobuf
 syntax = "proto3";
@@ -214,40 +298,123 @@ package longevia.recommendation.v1;
 option csharp_namespace = "Longevia.Recommendation.Contracts.V1";
 
 service RecommendationService {
-  rpc GetMealRecommendations (MealRecommendationRequest) returns (MealRecommendationResponse);
-  rpc AnalyzeNutrientGaps (NutrientGapRequest) returns (NutrientGapResponse);
-  rpc EvaluateLongevityHabits (LongevityHabitRequest) returns (LongevityHabitResponse);
+  rpc GetMealRecommendations   (MealRecommendationRequest)    returns (MealRecommendationResponse);
+  rpc AnalyzeNutrientGaps      (NutrientGapRequest)           returns (NutrientGapResponse);
+  rpc EvaluateLongevityHabits  (LongevityHabitRequest)       returns (LongevityHabitResponse);
+  rpc AskLongevityQuestion     (AskLongevityQuestionRequest)  returns (AskLongevityQuestionResponse);
+  rpc SearchLongevityKnowledge (SearchKnowledgeRequest)       returns (SearchKnowledgeResponse);
+  // Kế hoạch tuần (additive): message chi tiết xem contracts/recommendation/v1/recommendation.proto.
+  rpc GenerateMealPlan         (GenerateMealPlanRequest)      returns (GenerateMealPlanResponse);
+  rpc GenerateWorkoutPlan      (GenerateWorkoutPlanRequest)   returns (GenerateWorkoutPlanResponse);
+}
+
+enum MealType {
+  MEAL_TYPE_UNSPECIFIED = 0;
+  BREAKFAST = 1;
+  LUNCH = 2;
+  DINNER = 3;
+  SNACK = 4;
+}
+
+enum BiologicalSex {
+  SEX_UNSPECIFIED = 0;
+  MALE = 1;
+  FEMALE = 2;
+}
+
+enum UserGoal {
+  GOAL_UNSPECIFIED = 0;
+  LOSE_WEIGHT = 1;
+  MAINTAIN = 2;
+  BUILD_MUSCLE = 3;
+  LONGEVITY = 4;
+}
+
+// ---- Dữ liệu dùng chung ----
+
+message UserProfile {
+  int32 age = 1;
+  BiologicalSex sex = 2;
+  double height_cm = 3;
+  double weight_kg = 4;
+  string activity_level = 5;      // Sedentary | LightlyActive | ModeratelyActive | VeryActive
+  string dietary_preference = 6;  // None | Keto | Vegan | Mediterranean | LowCarb
+  repeated string allergies = 7;
+}
+
+message Citation {
+  int32 chapter_number = 1;       // 0 = phần đầu sách
+  string chapter_title = 2;
+  int32 book_page = 3;             // trang BẢN IN - nguồn chuẩn
+  int32 pdf_page = 4;              // trang file PDF scan - đối chiếu
+  string quote = 5;                // trích đoạn nguyên văn, đã verify khớp chunk
+  bool verified = 6;               // false = trang chưa đối chiếu tay / có cờ số liệu
+  string source_file = 7;
+}
+
+message ScoreComponent {
+  string key = 1;                  // fasting | sleep | hydration | nutrition
+  int32 score = 2;                 // 0-100 của nhánh
+  int32 weight = 3;                // trọng số %
+  string reason = 4;
+}
+
+message Disclaimer {
+  string text = 1;
+}
+
+// ---- 1. Gợi ý bữa ăn ----
+
+message CandidateFood {
+  string food_id = 1;              // map về FoodItems của Diet
+  string name = 2;
+  string serving_size = 3;
+  string serving_unit = 4;
+  int32 calories = 5;
+  double protein_grams = 6;
+  double carbs_grams = 7;
+  double fat_grams = 8;
+  double fiber_grams = 9;
+  repeated string allergens = 10;  // đã chuẩn hoá lowercase
 }
 
 message MealRecommendationRequest {
   string user_id = 1;
-  int32 target_calories_remaining = 2;
-  double target_protein_remaining = 3;
-  double target_carbs_remaining = 4;
-  double target_fat_remaining = 5;
-  repeated string allergies = 6;
-  string dietary_preference = 7;
+  MealType meal_type = 2;
+  UserGoal goal = 3;
+  UserProfile profile = 4;
+  int32 consumed_calories = 5;     // calo đã ăn hôm nay
+  int32 target_calories = 6;       // mục tiêu ngày
+  double target_protein_remaining = 7;
+  double target_carbs_remaining = 8;
+  double target_fat_remaining = 9;
+  repeated CandidateFood candidate_foods = 10;  // danh mục an toàn do caller gửi
+  string locale = 11;                          // "vi-VN"
+}
+
+message RecommendedMeal {
+  string food_id = 1;                // rỗng nếu là gợi ý ngoài danh mục
+  string name = 2;
+  string description = 3;
+  int32 estimated_calories = 4;
+  double protein_grams = 5;
+  double carbs_grams = 6;
+  double fat_grams = 7;
+  repeated string key_micronutrients = 8;
+  string rationale = 9;              // vì sao chọn món này
+  repeated Citation citations = 10;
 }
 
 message MealRecommendationResponse {
   repeated RecommendedMeal meals = 1;
   string longevity_tip = 2;
+  repeated Citation tip_citations = 3;
+  Disclaimer disclaimer = 4;
+  bool calorie_cap_reached = 5;      // BR-03: đã chạm trần 105%
+  string safety_note = 6;
 }
 
-message RecommendedMeal {
-  string name = 1;
-  string description = 2;
-  int32 estimated_calories = 3;
-  double protein_grams = 4;
-  double carbs_grams = 5;
-  double fat_grams = 6;
-  repeated string key_micronutrients = 7;
-}
-
-message NutrientGapRequest {
-  string user_id = 1;
-  repeated DailyNutrientSummary past_7_days = 2;
-}
+// ---- 2. Thiếu hụt vi chất ----
 
 message DailyNutrientSummary {
   string date = 1;
@@ -258,29 +425,122 @@ message DailyNutrientSummary {
   double fiber = 6;
 }
 
-message NutrientGapResponse {
-  repeated string deficient_nutrients = 1;
-  repeated string suggested_foods = 2;
-  string analysis_summary = 3;
+message NutrientGapRequest {
+  string user_id = 1;
+  UserProfile profile = 2;
+  repeated DailyNutrientSummary past_7_days = 3;
+  int32 target_calories = 4;
+  double target_protein_grams = 5;
+  double target_carbs_grams = 6;
+  double target_fat_grams = 7;
+  double target_fiber_grams = 8;
 }
+
+message NutrientGap {
+  string nutrient = 1;          // "Vitamin D", "Omega-3", "Fiber"...
+  string unit = 2;              // mg | g | IU
+  double target = 3;
+  double average_intake = 4;
+  double deficit = 5;
+  string severity = 6;          // mild | moderate | severe
+}
+
+message NutrientGapResponse {
+  repeated NutrientGap gaps = 1;
+  repeated string deficient_nutrients = 2;
+  repeated string suggested_foods = 3;
+  string analysis_summary = 4;
+  repeated Citation citations = 5;
+  Disclaimer disclaimer = 6;
+}
+
+// ---- 3. Đánh giá thói quen trường thọ ----
 
 message LongevityHabitRequest {
   string user_id = 1;
   double average_fasting_hours = 2;
   double average_sleep_hours = 3;
   int32 water_target_hit_days = 4;
+  UserProfile profile = 5;
+  double nutrition_adherence_rate = 6;   // % đạt target macro trong 7 ngày
 }
 
 message LongevityHabitResponse {
-  int32 longevity_score = 1; // Thang điểm 1 - 100
+  int32 longevity_score = 1;              // 0-100, deterministic
   repeated string actionable_insights = 2;
+  repeated ScoreComponent score_breakdown = 3;
+  repeated Citation citations = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 4. Hỏi tri thức sách ----
+
+message AskLongevityQuestionRequest {
+  string user_id = 1;
+  string question = 2;
+  UserProfile profile = 3;
+  int32 chapter_filter = 4;               // 0 = tất cả
+}
+
+message AskLongevityQuestionResponse {
+  string answer = 1;
+  repeated Citation citations = 2;
+  bool abstained = 3;                     // không đủ căn cứ trong sách
+  string abstain_reason = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 5. Tra cứu tri thức ----
+
+message SearchKnowledgeRequest {
+  string query = 1;
+  int32 chapter_filter = 2;
+  int32 top_k = 3;                        // mặc định 8, tối đa 20
+}
+
+message KnowledgeSnippet {
+  int32 chapter_number = 1;
+  string chapter_title = 2;
+  int32 book_page = 3;
+  int32 pdf_page = 4;
+  string text = 5;
+  double score = 6;
+  bool verified = 7;
+}
+
+message SearchKnowledgeResponse {
+  repeated KnowledgeSnippet snippets = 1;
 }
 ```
 
-#### C. Quy tắc kỹ thuật & Xử lý ngoại lệ
-- **Không truy cập DB**: Dịch vụ không giữ kết nối cơ sở dữ liệu nào. Mọi dữ liệu cần thiết phải được truyền qua message request từ caller.
-- **Timeout & Resilience**: Mỗi lời gọi gRPC áp dụng deadline tối đa 5000ms. Sử dụng `Polly` để retry 2 lần với Exponential Backoff khi gặp lỗi mạng với Google AI.
-- **Structured Prompting**: Bắt buộc ép kiểu phản hồi từ Google AI Gemini sang JSON có cấu trúc để parse thành công sang Protobuf message response.
+#### D. Quy tắc kỹ thuật & Xử lý ngoại lệ
+
+**D.1. Ranh giới dữ liệu**
+- **Không lưu dữ liệu người dùng**: service không giữ hồ sơ, nhật ký, token hay kết quả cá nhân hoá của bất kỳ ai. Mọi dữ liệu người dùng phải được truyền qua message request và trả về qua message response.
+- **Knowledge store**: service sở hữu `recommendation_db` (schema `kb`, extension `vector` của pgvector) chứa **corpus tri thức đã nhúng** — chunks + embeddings, kèm `book_page_from/to`, `pdf_page_from/to`, cờ `verified` / `needs_review`. Đây là **ngoại lệ duy nhất** so với nguyên tắc "mỗi service một DB" của Constitution, và được mô tả trong [ADR 002](../decisions/002-recommendation-knowledge-base.md).
+- **Ingest corpus là pipeline offline** (`scripts/book-kb`), không thuộc runtime service.
+
+**D.2. RAG & Grounding**
+- **Truy xuất hybrid**: vector similarity (pgvector, cosine) + BM25 (tiếng Việt, bỏ dấu) → merge bằng RRF → `top_k = 8`, candidate vector = 50.
+- **Grounding bắt buộc**: prompt phải ràng buộc *"chỉ dùng thông tin trong CONTEXT; không đủ thì abstain"*. Corpus được đưa vào prompt như **dữ liệu**, không phải chỉ dẫn (chống prompt injection).
+- **Citation bắt buộc**: mỗi khẳng định gắn `citations[]`; `quote` phải khớp chuỗi với chunk nguồn, nếu không khớp thì bỏ citation và hạ response xuống `abstained`.
+- **Abstain**: khi corpus không đủ căn cứ, **không** suy diễn — trả `abstained = true` kèm lý do.
+- **Chất lượng corpus**: chunk từ trang chưa đối chiếu bản in mang `verified = false`; nội dung đó **không được** dùng để khẳng định số liệu hay khuyến nghị y tế.
+
+**D.3. Phần tính toán không giao cho LLM**
+- Lọc dị ứng (100%), lọc sở thích ăn uống, rule chạm trần 105% calo: thực hiện bằng **code**.
+- Gap vi chất: tính bằng bảng RDA; `longevity_score`: tính bằng rubric cố định (fasting 35 / sleep 30 / hydration 20 / nutrition 15) → cùng đầu vào cho cùng kết quả.
+- LLM chỉ đóng vai trò diễn giải và chọn lựa trong dữ liệu đã được ràng buộc.
+
+**D.4. Timeout & Resilience**
+- Deadline phía server **cấu hình được** qua `RECOMMENDATION__DEADLINE_SECONDS` (mặc định **30s**, hợp lệ 5–120) vì phải lớn hơn latency sinh văn bản thực tế của provider. Sử dụng `Polly` để retry **2 lần** với Exponential Backoff khi gặp lỗi mạng với Google AI.
+- Provider lỗi, hết deadline hoặc parse lỗi → trả kết quả rỗng kèm `safety_note`/`abstain_reason`; **không** trả nội dung bịa, **không** làm sập caller.
+
+**D.5. Structured Prompting**
+- Bắt buộc ép kiểu phản hồi từ Google AI Gemini sang JSON có cấu trúc (`response_mime_type = application/json` + schema) để parse thành công sang Protobuf message response. Parse lỗi → retry 1 lần với prompt rút gọn, sau đó trả `abstained`.
+
+**D.6. Disclaimer**
+- Mọi response có trường `disclaimer` theo BR-04: mang tính chất tham khảo khoa học, không thay thế tư vấn bác sĩ chuyên khoa.
 
 ---
 
@@ -312,6 +572,9 @@ Xử lý các tác vụ nền bất đồng bộ, lắng nghe các sự kiện t
 - Thời gian phản hồi API đọc (Read API p95): `< 150ms`.
 - Thời gian phản hồi API ghi (Write API p95): `< 250ms`.
 - Thời gian phản hồi gRPC nội bộ từ `Recommendation Service`: `< 3500ms` (bao gồm thời gian sinh văn bản của Google AI).
+- **Truy xuất tri thức (RAG)**: bước retrieval (vector + BM25 + RRF) p95 `< 150ms` (đã kiểm chứng bằng test tích hợp); bước sinh câu trả lời `< 2500ms`.
+- **Thực đo (2026-10-22)**: với `gemini-3.5-flash-lite`, một lời gọi sinh văn bản mất **4,8–16,1s**, nên mục tiêu `gRPC < 3500ms` **chưa đạt**. Ghi nhận ở `specs/duck-001-recommendation-rag/deferred.md`; hướng gỡ: streaming, model nhanh hơn, hoặc cache theo ngữ cảnh.
+- **Chi phí & cache**: kết quả sinh được cache theo hash (context + prompt + hồ sơ đã chuẩn hoá) để tránh gọi lại Google AI cho câu hỏi lặp lại; embedding corpus chỉ tạo một lần theo phiên bản corpus.
 - Xử lý đồng thời (Concurrency): Chịu tải tối thiểu 100 RPS trên mỗi service container đơn lẻ.
 
 ### 3.2 Bảo mật & Quyền riêng tư (Security & Privacy)
@@ -327,7 +590,7 @@ Xử lý các tác vụ nền bất đồng bộ, lắng nghe các sự kiện t
 ### 3.3 Tính toàn vẹn & Tin cậy (Reliability & Consistency)
 - **Transactional Outbox Pattern**: Mọi domain event cần publish lên RabbitMQ phải được lưu cùng transaction DB với entity chính, bảo đảm không bao giờ mất sự kiện ngay cả khi RabbitMQ bị tạm ngắt.
 - **Idempotent Consumers**: Mọi consumer trong Worker phải kiểm tra trạng thái trước khi thực thi để tránh tạo tác dụng phụ lần hai khi có retry.
-- **Zero Cross-DB Access**: Tuyệt đối không có lời gọi SQL cross-database giữa các service.
+- **Zero Cross-DB Access**: Tuyệt đối không có lời gọi SQL cross-database giữa các service. Ngoại lệ duy nhất là `recommendation_db` — knowledge store của Recommendation, chỉ chứa corpus tri thức đã nhúng, không chứa dữ liệu người dùng (xem [ADR 002](../decisions/002-recommendation-knowledge-base.md)).
 
 ---
 
@@ -341,7 +604,14 @@ Xử lý các tác vụ nền bất đồng bộ, lắng nghe các sự kiện t
 | **Tra cứu thực phẩm** | Diet | `GET /api/diet/foods` | `diet_db`: `FoodItems` | — |
 | **Thiết lập mục tiêu calo** | Diet | `PUT /api/diet/targets/me` | `diet_db`: `DailyDietTargets` | — |
 | **Log nhật ký ăn uống** | Diet | `POST /api/diet/meals` | `diet_db`: `MealLogs`, `MealLogItems` | — |
-| **Gợi ý món ăn AI** | Diet ⇄ Recom. | `GET /api/diet/meals/ai-recommendations` ➔ `GetMealRecommendations` | Stateless | — |
+| **Gợi ý món ăn AI** (US-REC-01) | Diet ⇄ Recom. | `GET /api/diet/meals/ai-recommendations` ➔ `GetMealRecommendations` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Phân tích thiếu hụt vi chất** (US-REC-02) | Diet ⇄ Recom. | `AnalyzeNutrientGaps` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Đánh giá thói quen trường thọ** (US-REC-03) | Diet/Progress ⇄ Recom. | `EvaluateLongevityHabits` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Hỏi tri thức sách** (US-REC-04) | Diet ⇄ Recom. | `AskLongevityQuestion` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Tra cứu tri thức sách** (US-REC-05) | Diet ⇄ Recom. | `SearchLongevityKnowledge` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Kế hoạch ăn uống tuần** (US-REC-07) | Diet ⇄ Recom. | `GenerateMealPlan` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Kế hoạch tập luyện tuần** (US-REC-08) | Progress ⇄ Recom. | `GenerateWorkoutPlan` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Nạp corpus tri thức** (US-REC-06) | Recom. (offline) | `scripts/book-kb` | `recommendation_db`: `kb.chunks` (write) | — |
 | **Ghi nhận cân nặng/BMI** | Progress | `POST /api/progress/metrics` | `progress_db`: `BodyMetricLogs`| — |
 | **Đếm giờ nhịn ăn 16:8** | Progress | `POST /api/progress/fasting/start` | `progress_db`: `FastingSessions` | — |
 | **Gửi email chào mừng** | Worker | MassTransit Consumer | — | — |

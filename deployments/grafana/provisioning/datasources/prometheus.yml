@@ -1,0 +1,11 @@
+# Grafana datasource provisioning (US4, FR-010): Prometheus is wired
+# automatically at first boot — zero manual setup (SC-004).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

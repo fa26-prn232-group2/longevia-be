@@ -1,0 +1,28 @@
+﻿name: longevia-book-ocr
+
+services:
+  book-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: longevia/book-ocr:local
+    init: true
+    env_file:
+      - ../../.env
+    environment:
+      BOOK_OCR_INPUT: /input/book.pdf
+      BOOK_OCR_WORK: /work
+      BOOK_OCR_MODELS: /models
+      BOOK_OCR_MANUAL: /manual
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash,gemini-3.8-flash}
+      VISION_WORKERS: ${VISION_WORKERS:-2}
+      VISION_BATCH_SIZE: ${VISION_BATCH_SIZE:-3}
+    volumes:
+      - ../../../docs/CheDoAnTruongTho (reduced).pdf:/input/book.pdf:ro
+      - ../../artifacts/book-ocr:/work
+      - ./manual:/manual:ro
+    working_dir: /app
+    shm_size: 2gb
+    stop_grace_period: 30s
+

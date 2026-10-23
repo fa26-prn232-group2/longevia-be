@@ -1,7 +1,9 @@
-# ---- .NET build output ----
+﻿# ---- .NET build output ----
 [Bb]in/
 [Oo]bj/
 artifacts/
+# Knowledge-base pipeline output (chunks, embeddings, eval reports).
+artifacts/book-kb/
 [Dd]ebug/
 [Rr]elease/
 *.user
@@ -68,12 +70,20 @@ appsettings.*.local.json
 secrets.json
 .envrc
 
+# ---- Spec Kit local state ----
+# Per-machine developer handle used to name specs/<owner>-<NNN>-<slug>.
+# Each developer fills their own; it must never be committed.
+.specify/owner.json
+
 # ---- Docker / local data volumes ----
 deployments/**/data/
 *.pid
 
 # ---- Node (agent tooling safety net) ----
 node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
 
 # ---- Merge / VCS leftovers ----
 *.orig
@@ -87,3 +97,7 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 *~
+
+# Python bytecode from the knowledge-base pipeline.
+__pycache__/
+*.pyc

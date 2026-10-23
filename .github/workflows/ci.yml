@@ -20,5 +20,8 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Feature registry check
+        run: make team-check
+
       - name: Gate (format-check + build Release + test + vulnerability scan)
         run: make check

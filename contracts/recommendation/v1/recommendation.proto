@@ -1,0 +1,370 @@
+﻿syntax = "proto3";
+
+package longevia.recommendation.v1;
+
+option csharp_namespace = "Longevia.Recommendation.Contracts.V1";
+
+// RecommendationService là service NỘI BỘ, gRPC-only, không route qua Nginx.
+// Mọi câu trả lời có căn cứ phải kèm Citation (chương + trang bản in + trang scan
+// + trích đoạn + trạng thái đối chiếu bản in).
+service RecommendationService {
+  // Gợi ý bữa ăn: chỉ chọn trong candidate_foods do caller gửi, lọc dị ứng bằng code.
+  rpc GetMealRecommendations   (MealRecommendationRequest)    returns (MealRecommendationResponse);
+  // Phân tích thiếu hụt vi chất 7 ngày (gap tính deterministic theo bảng RDA).
+  rpc AnalyzeNutrientGaps      (NutrientGapRequest)           returns (NutrientGapResponse);
+  // Đánh giá thói quen sống và chấm điểm Longevity (rubric cố định).
+  rpc EvaluateLongevityHabits  (LongevityHabitRequest)       returns (LongevityHabitResponse);
+  // Hỏi tri thức trong sách, có trích dẫn; abstain khi corpus không đủ căn cứ.
+  rpc AskLongevityQuestion     (AskLongevityQuestionRequest)  returns (AskLongevityQuestionResponse);
+  // Tra cứu các đoạn trong sách theo truy vấn.
+  rpc SearchLongevityKnowledge (SearchKnowledgeRequest)       returns (SearchKnowledgeResponse);
+
+  // Sinh kế hoạch ăn uống theo tuần; chỉ chọn trong candidate_foods, lọc
+  // allergen/dietary/excluded bằng code, fallback xác định khi provider lỗi.
+  rpc GenerateMealPlan    (GenerateMealPlanRequest)    returns (GenerateMealPlanResponse);
+
+  // Sinh kế hoạch tập luyện theo tuần; hoạt động/thời lượng/cường độ chỉ từ
+  // chương 5 và giới hạn caller, fallback skeleton khi provider lỗi.
+  rpc GenerateWorkoutPlan (GenerateWorkoutPlanRequest) returns (GenerateWorkoutPlanResponse);
+}
+
+enum MealType {
+  MEAL_TYPE_UNSPECIFIED = 0;
+  BREAKFAST = 1;
+  LUNCH = 2;
+  DINNER = 3;
+  SNACK = 4;
+}
+
+enum BiologicalSex {
+  SEX_UNSPECIFIED = 0;
+  MALE = 1;
+  FEMALE = 2;
+}
+
+enum UserGoal {
+  GOAL_UNSPECIFIED = 0;
+  LOSE_WEIGHT = 1;
+  MAINTAIN = 2;
+  BUILD_MUSCLE = 3;
+  LONGEVITY = 4;
+}
+
+// ---- Dữ liệu dùng chung ----
+
+// Hồ sơ người dùng — đi vào qua request, KHÔNG được lưu lại.
+message UserProfile {
+  int32 age = 1;
+  BiologicalSex sex = 2;               // MALE | FEMALE
+  double height_cm = 3;
+  double weight_kg = 4;
+  string activity_level = 5;           // Sedentary | LightlyActive | ModeratelyActive | VeryActive
+  string dietary_preference = 6;       // None | Keto | Vegan | Mediterranean | LowCarb
+  repeated string allergies = 7;
+}
+
+// Trích dẫn — mỗi khẳng định phải gắn ít nhất một citation.
+message Citation {
+  int32 chapter_number = 1;            // 0 = phần đầu sách
+  string chapter_title = 2;
+  int32 book_page = 3;                 // trang BẢN IN — nguồn chuẩn để người dùng tự tra
+  int32 pdf_page = 4;                  // trang file PDF scan — đối chiếu
+  string quote = 5;                    // trích đoạn nguyên văn, đã verify khớp chunk nguồn
+  bool verified = 6;                   // false = trang chưa đối chiếu bản in
+  string source_file = 7;              // tệp Markdown nguồn
+}
+
+// Thành phần điểm trong thang chấm điểm thói quen trường thọ.
+message ScoreComponent {
+  string key = 1;                      // fasting | sleep | hydration | nutrition
+  int32 score = 2;                     // 0-100 của nhánh
+  int32 weight = 3;                    // trọng số % (fasting 35 | sleep 30 | hydration 20 | nutrition 15)
+  string reason = 4;
+}
+
+// Khuyến cáo bắt buộc theo BR-04.
+message Disclaimer {
+  string text = 1;
+}
+
+// ---- 1. Gợi ý bữa ăn ----
+
+// Món trong danh mục an toàn do caller gửi kèm. LLM KHÔNG được sinh món ngoài danh mục.
+message CandidateFood {
+  string food_id = 1;                  // map về FoodItems của service dinh dưỡng
+  string name = 2;
+  string serving_size = 3;
+  string serving_unit = 4;             // g | ml | chén | đĩa
+  int32 calories = 5;
+  double protein_grams = 6;
+  double carbs_grams = 7;
+  double fat_grams = 8;
+  double fiber_grams = 9;
+  repeated string allergens = 10;      // đã chuẩn hoá lowercase
+}
+
+message MealRecommendationRequest {
+  string user_id = 1;
+  MealType meal_type = 2;
+  UserGoal goal = 3;
+  UserProfile profile = 4;
+  int32 consumed_calories = 5;         // calo đã ăn hôm nay — dùng cho rule 105%
+  int32 target_calories = 6;           // mục tiêu calo ngày
+  double target_protein_remaining = 7;
+  double target_carbs_remaining = 8;
+  double target_fat_remaining = 9;
+  repeated CandidateFood candidate_foods = 10;
+  string locale = 11;                  // "vi-VN"
+}
+
+message RecommendedMeal {
+  string food_id = 1;                  // rỗng nếu là gợi ý ngoài danh mục
+  string name = 2;
+  string description = 3;
+  int32 estimated_calories = 4;        // lấy từ candidate_foods, KHÔNG do AI ước lượng
+  double protein_grams = 5;
+  double carbs_grams = 6;
+  double fat_grams = 7;
+  repeated string key_micronutrients = 8;
+  string rationale = 9;                // vì sao chọn món này
+  repeated Citation citations = 10;
+}
+
+message MealRecommendationResponse {
+  repeated RecommendedMeal meals = 1;  // tối đa 5 món mỗi bữa
+  string longevity_tip = 2;
+  repeated Citation tip_citations = 3;
+  Disclaimer disclaimer = 4;
+  bool calorie_cap_reached = 5;        // true khi calo đã ăn >= 105% mục tiêu
+  string safety_note = 6;
+}
+
+// ---- 2. Thiếu hụt vi chất ----
+
+message DailyNutrientSummary {
+  string date = 1;
+  int32 calories = 2;
+  double protein = 3;
+  double carbs = 4;
+  double fat = 5;
+  double fiber = 6;
+  // Vi chất (vitamin/khoáng) của ngày; caller quyết định gửi vi chất nào.
+  // Không gửi một vi chất nghĩa là "chưa có dữ liệu", KHÔNG phải "đã nạp 0".
+  repeated MicronutrientIntake micronutrients = 7;
+}
+
+// Một vi chất đã nạp trong ngày. `nutrient` phải khớp khoá trong bảng nhu cầu
+// tham chiếu của service (ví dụ "Vitamin D", "Calcium", "Omega-3").
+message MicronutrientIntake {
+  string nutrient = 1;
+  string unit = 2;               // mg | mcg | g | kcal
+  double amount = 3;
+}
+
+message NutrientGapRequest {
+  string user_id = 1;
+  UserProfile profile = 2;
+  repeated DailyNutrientSummary past_7_days = 3;
+  int32 target_calories = 4;
+  double target_protein_grams = 5;
+  double target_carbs_grams = 6;
+  double target_fat_grams = 7;
+  double target_fiber_grams = 8;
+}
+
+message NutrientGap {
+  string nutrient = 1;                 // "Vitamin D" | "Omega-3" | "Fiber"...
+  string unit = 2;                     // mg | mcg | g | kcal
+  double target = 3;                   // theo nhóm tuổi và giới
+  double average_intake = 4;
+  double deficit = 5;
+  string severity = 6;                 // mild (<25%) | moderate (25-50%) | severe (>50%)
+}
+
+message NutrientGapResponse {
+  repeated NutrientGap gaps = 1;
+  repeated string deficient_nutrients = 2;
+  repeated string suggested_foods = 3;
+  string analysis_summary = 4;
+  repeated Citation citations = 5;
+  Disclaimer disclaimer = 6;
+}
+
+// ---- 3. Đánh giá thói quen trường thọ ----
+
+message LongevityHabitRequest {
+  string user_id = 1;
+  double average_fasting_hours = 2;
+  double average_sleep_hours = 3;
+  int32 water_target_hit_days = 4;
+  UserProfile profile = 5;
+  double nutrition_adherence_rate = 6; // % đạt target macro trong 7 ngày
+}
+
+message LongevityHabitResponse {
+  int32 longevity_score = 1;           // 0-100, deterministic
+  repeated string actionable_insights = 2;
+  repeated ScoreComponent score_breakdown = 3;
+  repeated Citation citations = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 4. Hỏi tri thức sách ----
+
+message AskLongevityQuestionRequest {
+  string user_id = 1;
+  string question = 2;
+  UserProfile profile = 3;
+  int32 chapter_filter = 4;            // 0 = tất cả
+}
+
+message AskLongevityQuestionResponse {
+  string answer = 1;
+  repeated Citation citations = 2;
+  bool abstained = 3;                  // true = corpus không đủ căn cứ
+  string abstain_reason = 4;
+  Disclaimer disclaimer = 5;
+}
+
+// ---- 5. Tra cứu tri thức ----
+
+message SearchKnowledgeRequest {
+  string query = 1;
+  int32 chapter_filter = 2;
+  int32 top_k = 3;                     // mặc định 8, tối đa 20
+}
+
+message KnowledgeSnippet {
+  int32 chapter_number = 1;
+  string chapter_title = 2;
+  int32 book_page = 3;
+  int32 pdf_page = 4;
+  string text = 5;
+  double score = 6;
+  bool verified = 7;
+}
+
+message SearchKnowledgeResponse {
+  repeated KnowledgeSnippet snippets = 1;
+}
+
+// ---- 6. Kế hoạch ăn uống theo tuần ----
+
+message GenerateMealPlanRequest {
+  UserProfile profile = 1;                  // bắt buộc
+  int32 target_calories = 2;                // mục tiêu NGÀY, > 0
+  double target_protein_grams = 3;          // mục tiêu NGÀY, >= 0
+  double target_carbs_grams = 4;            // mục tiêu NGÀY, >= 0
+  double target_fat_grams = 5;              // mục tiêu NGÀY, >= 0
+  double target_fiber_grams = 6;            // tuỳ chọn; >= 0; 0 = không gửi
+  string week_start_date = 7;               // ISO YYYY-MM-DD, phải là thứ Hai
+  int32 days = 8;                           // 1..7
+  int32 meals_per_day = 9;                  // 1..4
+  repeated CandidateFood candidate_foods = 10; // >= 1; nếu > 120 cắt theo FR-025
+  repeated string excluded_food_ids = 11;   // tuỳ chọn
+  int32 consumed_calories = 12;             // tuỳ chọn; >= 0; 0 = không gửi
+  string consumed_date = 13;                // ISO; bắt buộc nếu consumed_calories > 0
+  string locale = 14;                       // chỉ hỗ trợ vi-VN
+}
+
+message GenerateMealPlanResponse {
+  repeated MealPlanDay days = 1;
+  repeated Citation citations = 2;          // hợp nhất citation đã verify
+  repeated PlanWarning warnings = 3;
+  Disclaimer disclaimer = 4;
+  bool used_fallback = 5;
+  string week_start_date = 6;               // ISO
+  int32 days_requested = 7;                 // số ngày caller yêu cầu
+  int32 weekly_target_calories = 8;         // target ngày × days_requested
+  double weekly_target_protein_grams = 9;
+  double weekly_target_carbs_grams = 10;
+  double weekly_target_fat_grams = 11;
+  double weekly_target_fiber_grams = 12;    // 0 nếu không gửi
+}
+
+message MealPlanDay {
+  string date = 1;                          // ISO YYYY-MM-DD
+  int32 target_calories = 2;
+  double target_protein_grams = 3;
+  double target_carbs_grams = 4;
+  double target_fat_grams = 5;
+  double target_fiber_grams = 6;
+  int32 total_calories = 7;
+  double total_protein_grams = 8;
+  double total_carbs_grams = 9;
+  double total_fat_grams = 10;
+  double total_fiber_grams = 11;
+  repeated PlannedMeal meals = 12;          // rỗng nếu calorie_cap_reached
+  repeated PlanSuggestion suggestions = 13; // tối đa 3/ngày; đồ uống 0 calo/thói quen
+  bool calorie_cap_reached = 14;
+}
+
+message PlannedMeal {
+  MealType meal_type = 1;
+  int32 target_calories = 2;
+  repeated PlannedFood foods = 3;           // tối đa 5, thuộc candidate_foods
+  string rationale = 4;                     // do code dựng từ request/citation
+  repeated Citation citations = 5;          // đã verify; có thể rỗng
+}
+
+message PlannedFood {
+  string food_id = 1;
+  string name = 2;
+  string serving_size = 3;
+  string serving_unit = 4;
+  int32 calories = 5;
+  double protein_grams = 6;
+  double carbs_grams = 7;
+  double fat_grams = 8;
+  double fiber_grams = 9;
+  repeated string allergens = 10;
+}
+
+message PlanSuggestion {
+  string text = 1;
+  repeated Citation citations = 2;
+}
+
+message PlanWarning {
+  string code = 1;                          // mã ổn định
+  string message = 2;                       // tiếng Việt, ngắn gọn
+  string scope = 3;                         // "plan" hoặc ngày ISO
+}
+
+// ---- 7. Kế hoạch tập luyện theo tuần ----
+
+message GenerateWorkoutPlanRequest {
+  UserProfile profile = 1;                  // bắt buộc
+  UserGoal goal = 2;                        // bắt buộc, khác GOAL_UNSPECIFIED
+  string week_start_date = 3;               // ISO YYYY-MM-DD, thứ Hai
+  int32 days = 4;                           // 1..7
+  int32 sessions_per_week = 5;              // 0 = min(3, days); khác 1..7; <= days
+  int32 minutes_per_session = 6;            // 0 = mặc định 30; khác 10..120
+  repeated string activity_preference = 7;  // có thể rỗng
+  repeated string equipment_available = 8;  // rỗng = không có thiết bị
+  repeated string limitations = 9;          // tuỳ chọn
+  string locale = 10;                       // chỉ hỗ trợ vi-VN
+}
+
+message GenerateWorkoutPlanResponse {
+  repeated WorkoutPlanDay days = 1;
+  repeated Citation citations = 2;          // hợp nhất citation đã verify
+  repeated PlanWarning warnings = 3;
+  Disclaimer disclaimer = 4;
+  bool used_fallback = 5;
+  string week_start_date = 6;               // ISO
+  int32 days_requested = 7;                 // số ngày caller yêu cầu
+  int32 sessions_scheduled = 8;             // số buổi thực tế sau mặc định/giới hạn
+  int32 minutes_per_session = 9;
+}
+
+message WorkoutPlanDay {
+  string date = 1;                          // ISO YYYY-MM-DD
+  bool rest_day = 2;
+  string activity = 3;                      // rỗng nếu rest_day
+  int32 duration_minutes = 4;               // 0 nếu rest_day
+  string intensity = 5;                     // rỗng nếu không có căn cứ sách
+  repeated string equipment_used = 6;
+  string rationale = 7;                     // do code dựng từ request/citation
+  repeated Citation citations = 8;          // đã verify; rỗng nếu rest_day/corpus rỗng
+}

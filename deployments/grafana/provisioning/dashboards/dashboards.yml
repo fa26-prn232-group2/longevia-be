@@ -1,0 +1,14 @@
+# Grafana dashboard provider provisioning (US4, FR-010): loads every
+# dashboard JSON from the provisioned folder automatically at boot.
+apiVersion: 1
+
+providers:
+  - name: ASP.NET Core
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards

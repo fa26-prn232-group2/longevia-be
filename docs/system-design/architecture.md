@@ -16,7 +16,7 @@ Người dùng dùng **Web App** và **Mobile App**. Hai client nói chuyện v�
 | **Identity Service** | Đăng ký/đăng nhập, hồ sơ người dùng, JWT | `identity_db` |
 | **Diet Service** | Kế hoạch ăn uống / dinh dưỡng | `diet_db` |
 | **Progress Service** | Theo dõi tiến độ | `progress_db` |
-| **Recommendation Service** | Sinh gợi ý qua Google AI | **không có DB** (stateless) |
+| **Recommendation Service** | Sinh gợi ý qua Google AI, RAG trên tri thức sách | `recommendation_db` (knowledge store, không chứa dữ liệu người dùng) |
 | **RabbitMQ** | Message broker cho sự kiện bất đồng bộ | — |
 | **Background Worker** | Consume event, gửi email qua Brevo | — |
 
@@ -28,6 +28,11 @@ Người dùng dùng **Web App** và **Mobile App**. Hai client nói chuyện v�
   lượng nội bộ, **không** đi qua Nginx.
 - **Bất đồng bộ**: service publish event lên **RabbitMQ**; **Background Worker**
   consume rồi gọi Brevo. Chi tiết: [event-driven-design.md](event-driven-design.md).
+- **Tri thức (offline)**: corpus tri thức trong
+  [`docs/reference/`](../reference/che-do-an-truong-tho/README.md) được pipeline
+  `scripts/book-kb` chunk → embed → nạp vào `recommendation_db`. Pipeline chạy
+  ngoài runtime, không phải traffic của client. Chi tiết:
+  [ADR 002](../decisions/002-recommendation-knowledge-base.md).
 
 ## Quyết định nền tảng
 
@@ -38,7 +43,9 @@ Người dùng dùng **Web App** và **Mobile App**. Hai client nói chuyện v�
 
 ## Ràng buộc & phi chức năng
 
-- Stateless service có thể scale ngang; Recommendation không giữ state.
+- Service stateless có thể scale ngang. Recommendation giữ state chỉ ở
+  `recommendation_db` (knowledge store, read-mostly); mọi dữ liệu người dùng
+  vẫn đi qua gRPC request/response và không được lưu lại.
 - Cấu hình/secret qua biến môi trường.
 - Local và production dùng cùng image + Docker Compose.
 

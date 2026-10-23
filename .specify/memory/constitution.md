@@ -1,25 +1,22 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (template, unversioned) -> 1.0.0
-Bump rationale: initial ratification; all placeholders replaced with concrete
-project principles. No backward-incompatible change to an existing ratified
-constitution because none existed.
+Version change: 2.0.0 -> 2.1.0
+Bump rationale: MINOR - Development Workflow & Quality Gates gains one
+operational requirement (machine-local owner identity). No core principle is
+added, removed, or reinterpreted.
 
-Modified principles:
-  - [PRINCIPLE_1_NAME] -> I. Service Boundaries & Data Ownership
-  - [PRINCIPLE_2_NAME] -> II. Synchronous Inter-Service Calls via gRPC
-  - [PRINCIPLE_3_NAME] -> III. Asynchronous Communication via RabbitMQ
-  - [PRINCIPLE_4_NAME] -> IV. Contract-First Interfaces
-  - [PRINCIPLE_5_NAME] -> V. Test-First & Verified Gates (NON-NEGOTIABLE)
+Modified principles: none.
 
-Added sections:
-  - Technology & Platform Constraints (was [SECTION_2_NAME])
-  - Development Workflow & Quality Gates (was [SECTION_3_NAME])
+Modified sections:
+  - Development Workflow & Quality Gates (added the `.specify/owner.json`
+    identity requirement)
+
+Added sections: none.
 
 Removed sections: none.
 
-Deferred TODOs: none. All bracketed tokens were replaced with concrete text.
+Deferred TODOs: none.
 -->
 
 # Longevia Backend Constitution
@@ -32,7 +29,19 @@ Hệ thống là microservices; mỗi service sở hữu một database riêng.
 
 - Mỗi service sở hữu một database riêng và MUST chỉ đọc/ghi database của chính
   nó. Truy cập chéo database của service khác là vi phạm nghiêm trọng, kể cả chỉ
-  để đọc. Service stateless (Recommendation) không sở hữu database nào.
+  để đọc.
+- **Ngoại lệ duy nhất — knowledge store của Recommendation.** `Recommendation`
+  MAY sở hữu `recommendation_db` chứa **corpus tri thức đã nhúng** (chunks +
+  embeddings của tài liệu tham chiếu) phục vụ RAG, theo
+  [ADR 002](../../docs/decisions/002-recommendation-knowledge-base.md).
+  - `recommendation_db` MUST NOT chứa dữ liệu người dùng: không hồ sơ, không
+    nhật ký, không token, không kết quả cá nhân hoá.
+  - Mọi dữ liệu người dùng đi vào `Recommendation` qua gRPC request và trả về
+    qua gRPC response; `Recommendation` MUST NOT lưu lại chúng.
+  - `Recommendation` vẫn là service **nội bộ, gRPC-only** và MUST NOT được
+    expose qua gateway.
+  - Các service còn lại (Identity, Diet, Progress) không sở hữu DB nào ngoài DB
+    của chính mình.
 - Service MUST NOT import code nội bộ của service khác. Mọi phụ thuộc liên
   service đi qua contract (API, gRPC, event), không qua source.
 - Một thay đổi schema chỉ được thực hiện bởi service sở hữu schema đó.
@@ -41,6 +50,9 @@ Hệ thống là microservices; mỗi service sở hữu một database riêng.
 
 Rationale: dữ liệu dùng chung qua DB là nguyên nhân gốc của coupling trong
 microservices; sở hữu dữ liệu riêng là điều kiện để service tiến hóa độc lập.
+Ngoại lệ cho knowledge store giữ nguyên nguyên tắc: dữ liệu người dùng vẫn
+tách biệt hoàn toàn, còn DB của Recommendation chỉ chứa corpus tri thức công
+khai, không phải dữ liệu vận hành của người dùng.
 
 ### II. Synchronous Inter-Service Calls via gRPC
 
@@ -106,6 +118,9 @@ assertion là đúng cái cần; kiểm chứng thật là điều kiện để 
 ## Technology & Platform Constraints
 
 - Stack: ASP.NET Core (.NET 10) cho các service; PostgreSQL làm database.
+- Knowledge store của Recommendation dùng extension `vector` (pgvector), nên
+  image PostgreSQL phải có extension này. Việc ingest corpus là pipeline
+  **offline**, không nằm trong runtime service.
 - Schema do EF Core **Code First** quản lý qua migrations; MUST NOT sửa database
   bằng tay. Mỗi service quản lý migration của database mình sở hữu.
 - Gateway: Nginx là điểm vào công khai duy nhất cho client, và chỉ expose các
@@ -124,6 +139,11 @@ assertion là đúng cái cần; kiểm chứng thật là điều kiện để 
 
 - Theo [agent-workflow.md](docs/development/agent-workflow.md): task lớn/feature
   dùng Spec-kit; task nhỏ làm trực tiếp nhưng vẫn tuân Core Principles.
+- Danh tính Spec-kit là cấu hình **máy-local** tại `.specify/owner.json`
+  (gitignored), chỉ chứa handle ngắn chữ thường (2–20 ký tự `[a-z0-9-]`). Khi
+  skill tạo feature mà file thiếu/trống, agent MUST dừng, hỏi dev handle, và ghi
+  hộ bằng `scripts/speckit/team-feature.ps1 owner -Handle <handle>`; MUST NOT tự
+  đoán handle hay tạo feature với owner rỗng.
 - Không tự ý thao tác git khi chưa được cho phép; commit message tiếng Anh theo
   Conventional Commits.
 - Tài liệu trong `specs/` MUST viết bằng tiếng Việt; đường dẫn tham chiếu MUST là
@@ -146,4 +166,4 @@ assertion là đúng cái cần; kiểm chứng thật là điều kiện để 
 - Dùng `AGENTS.md` làm hướng dẫn vận hành runtime; hiến pháp là thẩm quyền cao
   nhất khi hai bên mâu thuẫn.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-05
+**Version**: 2.1.0 | **Ratified**: 2026-10-05 | **Last Amended**: 2026-10-22

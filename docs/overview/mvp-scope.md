@@ -9,7 +9,7 @@ Chi tiết yêu cầu kỹ thuật và user stories xem tại: [Product Requirem
 | **Identity** | Đăng ký tài khoản, Đăng nhập, Ký JWT ES256, Refresh Token, Đổi mật khẩu, Hồ sơ thể trạng cơ bản & Dị ứng | HTTP REST qua Nginx Gateway, sở hữu `identity_db` |
 | **Diet** | Thư viện món ăn, Đặt mục tiêu Calo/Macro (TDEE/BMR), Ghi nhật ký ăn uống 4 bữa, Thực đơn mẫu tuần | HTTP REST qua Nginx Gateway, sở hữu `diet_db` |
 | **Progress** | Nhật ký chỉ số cơ thể (Cân nặng, BMI, Huyết áp, Nhịp tim), Fasting Timer (16:8/18:6), Log nước & giấc ngủ, Dashboard tiến độ & Streaks | HTTP REST qua Nginx Gateway, sở hữu `progress_db` |
-| **Recommendation** | AI Gợi ý thực đơn cá nhân hóa, AI Phân tích thiếu hụt vi chất 7 ngày, AI Đánh giá thói quen trường thọ | **gRPC nội bộ**, Stateless, không DB, không route qua Nginx |
+| **Recommendation** | AI Gợi ý thực đơn cá nhân hóa (chỉ chọn từ danh mục an toàn, loại trừ dị ứng), AI Phân tích thiếu hụt vi chất 7 ngày, AI Đánh giá thói quen trường thọ, RAG tri thức sách *Chế độ ăn trường thọ* (hỏi sách & tra cứu, kèm trích dẫn chương + trang) | **gRPC nội bộ**, sở hữu `recommendation_db` (knowledge store, không chứa dữ liệu người dùng), không route qua Nginx |
 | **Background Worker** | Gửi email kích hoạt tài khoản, email chào mừng, email đặt lại mật khẩu, gửi email báo cáo tuần | Consumer bất đồng bộ từ RabbitMQ, gọi Brevo API |
 
 ## Ngoài phạm vi (Out of Scope)

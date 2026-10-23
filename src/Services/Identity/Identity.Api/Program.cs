@@ -4,6 +4,7 @@ using Identity.Application;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
+using Longevia.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -40,6 +41,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddObservability("IdentityService");
+
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
@@ -57,6 +60,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
+app.MapPrometheusScrapingEndpoint();
 
 if (app.Configuration.GetValue("Database:AutoMigrate", false) && !app.Environment.IsEnvironment("Testing"))
 {

@@ -87,6 +87,10 @@ mindmap
    - Mọi phân tích chỉ số sinh học và đề xuất vi chất từ AI chỉ mang tính chất tham khảo khoa học, luôn kèm khuyến cáo tham vấn bác sĩ chuyên khoa đối với các trường hợp bệnh lý nền.
 5. **BR-05 (Bảo lưu dữ liệu & Tính nhất quán lịch sử)**:
    - Khi người dùng cập nhật thông tin chiều cao/cân nặng hiện tại, các bản ghi nhật ký bữa ăn và chỉ số trong quá khứ không bị tính toán lại, nhằm bảo toàn dữ liệu lịch sử trung thực.
+6. **BR-06 (Khuyến nghị có căn cứ trong tri thức sách)**:
+   - Mọi khuyến nghị, phân tích và câu trả lời do AI sinh ra phải dựa trên **corpus tri thức** của hệ thống (sách *Chế độ ăn trường thọ*) và phải **truy ngược được** về chương + trang sách kèm trích đoạn.
+   - Khi corpus không đủ căn cứ, hệ thống phải **nói rõ không có dữ liệu** thay vì suy diễn.
+   - Nội dung lấy từ trang chưa được đối chiếu với bản in phải được **đánh dấu là chưa kiểm chứng** và không được khẳng định như sự thật y tế.
 
 ---
 
@@ -98,7 +102,7 @@ graph LR
         A[Đăng ký, Đăng nhập, JWT ES256, Hồ sơ thể trạng]
         B[Thư viện món ăn, Đặt mục tiêu TDEE/Macro, Log 4 bữa ăn]
         C[Log cân nặng, BMI, Huyết áp, Nhịp tim, Fasting timer, Water log]
-        D[AI gợi ý thực đơn, phân tích thiếu hụt vi chất tuần]
+        D[AI gợi ý thực đơn, phân tích thiếu hụt vi chất tuần, tra cứu tri thức sách trường thọ]
         E[Worker gửi email kích hoạt, reset mật khẩu, digest tuần]
     end
 
@@ -117,7 +121,7 @@ graph LR
 
 | Rủi ro | Mức độ | Biện pháp giảm thiểu |
 | :--- | :---: | :--- |
-| **Phản hồi sai lệch từ AI (Hallucination)** | Cao | Sử dụng cấu trúc System Prompt nghiêm ngặt, ràng buộc AI chỉ được chọn nguyên liệu trong danh mục an toàn, ép buộc định dạng JSON schema đầu ra. |
+| **Phản hồi sai lệch từ AI (Hallucination)** | Cao | Sử dụng cấu trúc System Prompt nghiêm ngặt, ràng buộc AI chỉ được chọn nguyên liệu trong danh mục an toàn, ép buộc định dạng JSON schema đầu ra; mọi khuyến nghị phải kèm trích dẫn chương + trang sách và phải "abstain" khi corpus không đủ căn cứ (BR-06). |
 | **Người dùng bỏ dở việc log bữa ăn do tốn thời gian** | Cao | Thiết kế tính năng lưu món ăn yêu thích, copy thực đơn hôm trước, và tìm kiếm tức thì. |
 | **Rò rỉ dữ liệu chỉ số sức khỏe nhạy cảm** | Nghiêm trọng | Phân tách cơ sở dữ liệu riêng biệt theo từng service, mã hóa dữ liệu đường truyền (TLS), không chia sẻ token private key giữa các container. |
-| **Chi phí gọi API AI tăng cao** | Trung bình | Kiến trúc Recommendation Service dạng Stateless, chỉ gọi AI khi người dùng chủ động yêu cầu; áp dụng caching thực đơn mẫu phổ biến. |
+| **Chi phí gọi API AI tăng cao** | Trung bình | Kiến trúc Recommendation Service chỉ gọi AI khi người dùng chủ động yêu cầu, có cache theo ngữ cảnh; tri thức được nạp sẵn một lần (offline) vào kho tri thức của hệ thống, không gọi lại AI cho từng truy vấn. |

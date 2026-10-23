@@ -17,15 +17,50 @@
   </ItemGroup>
 
   <ItemGroup Label="Messaging">
-    <PackageVersion Include="MassTransit" Version="9.2.3" />
-    <PackageVersion Include="MassTransit.RabbitMQ" Version="9.2.3" />
-    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="9.2.3" />
+    <PackageVersion Include="MassTransit" Version="8.3.6" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.3.6" />
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.3.6" />
+  </ItemGroup>
+
+  <ItemGroup Label="Hosting">
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Email">
+    <PackageVersion Include="MailKit" Version="4.18.1" />
+    <PackageVersion Include="MimeKit" Version="4.18.1" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup Label="Caching">
+    <PackageVersion Include="StackExchange.Redis" Version="2.8.24" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.20.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
   </ItemGroup>
 
   <ItemGroup Label="gRPC">
     <PackageVersion Include="Grpc.AspNetCore" Version="2.84.0" />
+    <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="2.84.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.84.0" />
     <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
+  </ItemGroup>
+
+  <!--
+    Recommendation knowledge store (pgvector) and the Gemini provider.
+    Npgsql 10 has no built-in `vector` type, so the pgvector provider is
+    required (research.md D-11).
+  -->
+  <ItemGroup Label="Vector store and AI provider">
+    <PackageVersion Include="Pgvector" Version="0.3.2" />
+    <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+    <PackageVersion Include="Google.GenAI" Version="1.26.1" />
+    <PackageVersion Include="Polly" Version="8.8.0" />
   </ItemGroup>
 
   <ItemGroup Label="API and validation">

@@ -119,12 +119,17 @@ factory chung:
 public static class UserErrors
 {
     public static AppException NotFound(Guid id) =>
-        AppException.NotFound($"Không tìm thấy người dùng {id}.") with { Code = "identity.user_not_found" };
+        AppException.NotFound($"Không tìm thấy người dùng {id}.").WithCode("identity.user_not_found");
 
     public static AppException EmailTaken(string email) =>
-        AppException.Conflict($"Email {email} đã được sử dụng.") with { Code = "identity.email_taken" };
+        AppException.Conflict($"Email {email} đã được sử dụng.").WithCode("identity.email_taken");
 }
 ```
+
+> `AppException` là `sealed class` kế thừa `Exception`, **không** phải `record` —
+> C# cấm `record` kế thừa `Exception` (CS8864). Vì vậy không dùng cú pháp
+> `with { Code = ... }`; dùng `WithCode(code)` / `WithErrors(errors)` trả về bản sao
+> của lỗi.
 
 ### 3.3 Nơi ném lỗi
 
@@ -187,7 +192,7 @@ public sealed class ValidationFilter<TRequest> : IEndpointFilter
         if (!result.IsValid)
         {
             var errors = result.Errors.Select(e => new FieldError(e.PropertyName, e.ErrorMessage)).ToList();
-            throw AppException.BadRequest("Dữ liệu không hợp lệ.") with { Errors = errors, Code = "validation.failed" };
+            throw AppException.BadRequest("Dữ liệu không hợp lệ.").WithCode("validation.failed").WithErrors(errors);
         }
         return await next(ctx);
     }

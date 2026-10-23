@@ -224,3 +224,16 @@ không thể giữ nguyên cả hai. Cần một quyết định tường minh t
 - [../reference/che-do-an-truong-tho/README.md](../reference/che-do-an-truong-tho/README.md)
 - [001-authn-authz-architecture.md](001-authn-authz-architecture.md)
 - [../../.specify/memory/constitution.md](../../.specify/memory/constitution.md)
+
+### Bổ sung (2026-10-23) — Seed và bước deploy `kb-init`
+
+Quyết định D-02 (ingest là pipeline offline) vẫn giữ nguyên, nhưng **load** được
+tách khỏi **re-index** để môi trường mới không phải gọi provider:
+
+- Artifact đã embed được đóng gói thành **seed** tại `resources/knowledge/<corpus_key>/`
+  (`build.json`, `chunks.jsonl.gz`, `page_flags.jsonl.gz`) và commit vào repo.
+- Khi deploy, compose chạy hai bước một lần: `kb-schema` (chạy chính image service với
+  `--migrate-only`, tạo schema `kb` bằng migration EF Core) rồi `kb-init`
+  (`load --work /seed --skip-if-loaded --verify`). Chỉ sau đó `recommendation` mới khởi động.
+- Nạp seed **không cần** `GOOGLE_AI__API_KEY`; re-index vẫn cần và vẫn thủ công.
+- Runtime service vẫn **read-only**; `kb-init` là bước deploy, không phải runtime.

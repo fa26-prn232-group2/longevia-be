@@ -4,6 +4,22 @@ Microservices backend cho **Longevia** — ASP.NET Core (.NET 10), PostgreSQL, g
 tiếp đồng bộ giữa các service qua **gRPC**, sự kiện bất đồng bộ qua **RabbitMQ**.
 Client vào qua **Nginx** (API Gateway, HTTP/HTTPS).
 
+## Mục đích sử dụng & Miễn trừ trách nhiệm
+
+> **Dự án chỉ nhằm mục đích học tập** (dự án môn học), không dùng cho mục đích
+> thương mại và không phải sản phẩm đang vận hành.
+
+- Nội dung sách trong [`docs/reference/che-do-an-truong-tho/`](docs/reference/che-do-an-truong-tho/README.md)
+  có bản quyền thuộc tác giả, dịch giả và nhà xuất bản; chỉ dùng trong phạm vi học
+  tập, **không phân phối lại**, sẽ gỡ bỏ khi có yêu cầu.
+- Dữ liệu phái sinh (embeddings/seed) sinh từ nội dung đó cũng chỉ dùng cho học tập.
+- Hệ thống **không phải tư vấn y tế**: mọi phân tích và gợi ý chỉ mang tính tham
+  khảo, không thay thế bác sĩ hoặc chuyên gia dinh dưỡng. Văn bản sách được số hoá
+  bằng OCR nên có thể sai sót; số liệu phải đối chiếu bản in.
+- Mã nguồn theo giấy phép [MIT](LICENSE); giấy phép này **không** áp dụng cho nội
+  dung sách.
+- Chi tiết thành phần bên thứ ba và yêu cầu gỡ bỏ: [NOTICE.md](NOTICE.md).
+
 ## Kiến trúc
 
 ```
@@ -108,12 +124,21 @@ không kèm version.
 Copy-Item .env.example .env
 
 # 2. Bật hạ tầng (PostgreSQL, RabbitMQ, Nginx, Swagger UI)
-docker compose -f deployments/docker-compose.yml up -d
+# --env-file là bắt buộc: compose nằm ở deployments/ nên không tự đọc .env ở gốc
+docker compose --env-file .env -f deployments/docker-compose.yml up -d
 
 # 3. Build và test
 make lint
 make check
 ```
+
+> **Tri thức sách là tự động.** Lệnh `up -d` ở trên cũng chạy hai bước deploy:
+> `kb-schema` (tạo schema `kb` bằng migration của service) và `kb-init` (nạp corpus
+> từ seed đã commit ở `resources/knowledge/`). Bước nạp **không cần API key**;
+> nếu corpus đã nạp đúng phiên bản thì nó bỏ qua trong vài giây. Máy khác hoặc VPS
+> cũng chỉ cần đúng lệnh đó. Muốn nạp tay: `make kb-ensure`; muốn kiểm tra:
+> `make kb-verify`; muốn chứng minh từ DB rỗng: `make kb-smoke`. Chi tiết:
+> [`docs/development/rag-ingestion.md`](docs/development/rag-ingestion.md).
 
 Test API nhanh bằng Swagger: xem [`docs/development/api-testing.md`](docs/development/api-testing.md).
 

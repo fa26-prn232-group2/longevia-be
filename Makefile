@@ -1,4 +1,4 @@
-# Longevia Backend - Make targets wrap the .NET CLI.
+﻿# Longevia Backend - Make targets wrap the .NET CLI.
 # The gate ladder these targets form is the single source of truth in AGENTS.md §2.
 #
 #   make lint    fast gate   -> format-check + build (warnings as errors)
@@ -17,7 +17,8 @@ TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
 	infra-up infra-down docker-up docker-down docker-stop docker-logs \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
-	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean
+	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
+	kb-build kb-load kb-verify kb-eval kb-seed kb-ensure kb-smoke
 
 # Docker Compose for the full stack (deployments/docker-compose.yml).
 # Local == production: the same file is used in both.
@@ -38,6 +39,11 @@ WORKERS ?=
 BATCH ?=
 BOOK_OCR_VISION_ARGS := $(if $(WORKERS),--workers $(WORKERS),) $(if $(BATCH),--batch $(BATCH),)
 BOOK_OCR_CONTAINER := book-ocr-night
+
+# Book knowledge-base pipeline (scripts/book-kb). Docker-only, writes to
+# artifacts/book-kb and loads the corpus into recommendation_db.
+# Never part of the .NET gate.
+BOOK_KB := $(DOCKER) compose --env-file .env -f scripts/book-kb/compose.yml
 
 help:
 	@echo Targets:
@@ -77,6 +83,14 @@ help:
 	@echo   book-ocr-logs    follow the detached pipeline log
 	@echo   book-ocr-status  print status.json
 	@echo   book-ocr-clean   remove container, image and artifacts/book-ocr
+	@echo.
+	@echo   kb-build         build the book knowledge-base image
+	@echo   kb-load          load the corpus into recommendation_db
+	@echo   kb-verify        verify chapters, chunks and page ranges
+	@echo   kb-eval          run the golden-set evaluation
+	@echo   kb-seed          export the compressed seed under resources/knowledge
+	@echo   kb-ensure        load the committed seed into recommendation_db (no API key)
+	@echo   kb-smoke         prove an empty database is loaded by kb-init (isolated project)
 
 restore:
 	$(DOTNET) restore $(SLN_OR_DIR)
@@ -198,3 +212,25 @@ book-ocr-clean:
 	-$(DOCKER) rm -f $(BOOK_OCR_CONTAINER)
 	$(BOOK_OCR) down --rmi local -v
 	powershell -NoProfile -Command "if (Test-Path 'artifacts/book-ocr') { Remove-Item -Recurse -Force 'artifacts/book-ocr' }"
+
+kb-build:
+	$(BOOK_KB) build
+	$(BOOK_KB) run --rm book-kb build
+
+kb-load:
+	$(BOOK_KB) run --rm book-kb load
+
+kb-verify:
+	$(BOOK_KB) run --rm book-kb verify
+
+kb-eval:
+	$(BOOK_KB) run --rm book-kb eval
+
+kb-seed:
+	$(BOOK_KB) run --rm book-kb seed
+
+kb-ensure:
+	$(DOCKER) compose --env-file .env -f deployments/docker-compose.yml run --rm kb-init
+
+kb-smoke:
+	$(PWSH) -NoProfile -File scripts/book-kb/smoke-seed.ps1

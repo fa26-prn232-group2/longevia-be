@@ -1,0 +1,10 @@
+﻿{
+  "owner": "duck",
+  "number": 1,
+  "slug": "recommendation-rag",
+  "branch": "feat/recommendation-rag",
+  "status": "open",
+  "services": ["recommendation"],
+  "description": "Recommendation Service voi RAG tren tri thuc sach 'Che do an truong tho': 5 gRPC RPC, knowledge store pgvector recommendation_db, corpus ingest offline, citation chuong + trang, loc di ung va rule 105% bang code. Pham vi: chi Recommendation; tich hop phia Diet tach sang feature rieng.",
+  "opened_at": "2026-10-22"
+}

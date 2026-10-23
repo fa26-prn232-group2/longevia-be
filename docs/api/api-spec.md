@@ -1,4 +1,4 @@
-# Tài Liệu Đặc Tả API Chi Tiết (API Specification) — Longevia Backend
+﻿# Tài Liệu Đặc Tả API Chi Tiết (API Specification) — Longevia Backend
 
 ---
 
@@ -513,6 +513,28 @@ service RecommendationService {
 }
 
 // ---- Dùng chung ----
+enum MealType {
+  MEAL_TYPE_UNSPECIFIED = 0;
+  BREAKFAST = 1;
+  LUNCH = 2;
+  DINNER = 3;
+  SNACK = 4;
+}
+
+enum BiologicalSex {
+  SEX_UNSPECIFIED = 0;
+  MALE = 1;
+  FEMALE = 2;
+}
+
+enum UserGoal {
+  GOAL_UNSPECIFIED = 0;
+  LOSE_WEIGHT = 1;
+  MAINTAIN = 2;
+  BUILD_MUSCLE = 3;
+  LONGEVITY = 4;
+}
+
 message UserProfile {
   int32 age = 1;
   BiologicalSex sex = 2;               // MALE | FEMALE
@@ -600,6 +622,17 @@ message DailyNutrientSummary {
   double carbs = 4;
   double fat = 5;
   double fiber = 6;
+  // Vi chất (vitamin/khoáng) của ngày; caller quyết định gửi vi chất nào.
+  // Không gửi một vi chất nghĩa là "chưa có dữ liệu", KHÔNG phải "đã nạp 0".
+  repeated MicronutrientIntake micronutrients = 7;
+}
+
+// Một vi chất đã nạp trong ngày. `nutrient` phải khớp khoá trong bảng nhu cầu
+// tham chiếu của service (ví dụ "Vitamin D", "Calcium", "Omega-3").
+message MicronutrientIntake {
+  string nutrient = 1;
+  string unit = 2;               // mg | mcg | g | kcal
+  double amount = 3;
 }
 
 message NutrientGapRequest {
@@ -691,8 +724,14 @@ message SearchKnowledgeResponse {
 
 - `candidate_foods` là **danh mục an toàn** do caller gửi; service **chỉ được chọn/pha trong danh mục này** và trả về `food_id` map ngược về `FoodItems`.
 - Lọc dị ứng 100% và rule chạm trần 105% calo thực hiện bằng **code**, không phải bằng prompt.
+- Mỗi bữa trả về **tối đa 5 món** (`meals[]`). `food_id` rỗng chỉ dùng cho gợi ý ngoài danh mục: khi `calorie_cap_reached = true` service chỉ trả đồ uống 0 calo cùng mẹo thư giãn/giấc ngủ.
+- `estimated_calories` và macro của mỗi món lấy **nguyên giá trị từ `candidate_foods`** đã chọn; mô hình chỉ chọn món, viết `rationale` và trả `citations`.
 - `quote` trong `Citation` phải khớp chuỗi với chunk nguồn; không khớp thì bỏ citation, mất hết citation thì response chuyển sang `abstained`.
 - Mọi response có `disclaimer`; `abstained = true` khi corpus không đủ căn cứ.
+- **Từ chối vì lý do y tế** (thuốc, liều, chẩn đoán, thay thế điều trị): `answer` là thông điệp hướng người dùng tới bác sĩ, `citations` **rỗng**, `abstained = false`. Client phân biệt "từ chối" với "có câu trả lời" bằng **không có citation**; contract chưa có trường `refused` (xem `specs/duck-001-recommendation-rag/deferred.md`).
+- **Hỏi về chế độ ăn cho người mắc bệnh** vẫn được trả lời ở mức lối sống, kèm `disclaimer`.
+- **Deadline phía server**: cấu hình qua `RECOMMENDATION__DEADLINE_SECONDS` (mặc định **30s**, hợp lệ 5–120). Deadline phải **lớn hơn** latency sinh văn bản thực tế của provider.
+- `DailyNutrientSummary.micronutrients`: caller gửi vi chất nào thì service tính gap cho vi chất đó; **không gửi** một vi chất nghĩa là *chưa có dữ liệu*, **không** phải đã nạp 0. Đơn vị không quy đổi được (ví dụ `IU`) bị bỏ qua thay vì đoán.
 - Knowledge store: `recommendation_db` (schema `kb`, pgvector) — chỉ chứa corpus tri thức đã nhúng, **không** chứa dữ liệu người dùng. Xem [ADR 002](../decisions/002-recommendation-knowledge-base.md).
 
 ---

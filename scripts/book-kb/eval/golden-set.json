@@ -1,0 +1,406 @@
+{
+  "description": "Bộ câu hỏi vàng cho eval groundedness (T108). 42 câu trong sách trải đều 13 chương + 8 câu ngoài sách; trang kỳ vọng là trang bản in thật của chunk chứa câu trả lời trong artifacts/book-kb/chunks.jsonl.",
+  "total": 50,
+  "questions": [
+    {
+      "id": "g01",
+      "question": "Từ lâu con người đã bị ám ảnh với điều gì?",
+      "expected_chapter": 0,
+      "expected_book_page": 9,
+      "expected_answer_terms": ["sự sống", "cái chết"],
+      "out_of_book": false
+    },
+    {
+      "id": "g02",
+      "question": "Tác giả đã nghiên cứu về sống lâu khỏe mạnh trong bao nhiêu năm?",
+      "expected_chapter": 0,
+      "expected_book_page": 14,
+      "expected_answer_terms": ["hơn 30 năm"],
+      "out_of_book": false
+    },
+    {
+      "id": "g03",
+      "question": "Bệnh nhân viết thư cho tác giả thường hỏi về chế độ nhịn ăn không hoàn toàn như thế nào?",
+      "expected_chapter": 0,
+      "expected_book_page": 19,
+      "expected_answer_terms": ["FMD", "nhịn ăn"],
+      "out_of_book": false
+    },
+    {
+      "id": "g04",
+      "question": "Tác giả trở về thị trấn nào ở vùng Calabria?",
+      "expected_chapter": 1,
+      "expected_book_page": 22,
+      "expected_answer_terms": ["Molochio", "Calabria"],
+      "out_of_book": false
+    },
+    {
+      "id": "g05",
+      "question": "Ông Salvatore Caruso mất năm 2015 ở tuổi bao nhiêu?",
+      "expected_chapter": 1,
+      "expected_book_page": 23,
+      "expected_answer_terms": ["110"],
+      "out_of_book": false
+    },
+    {
+      "id": "g06",
+      "question": "Chế độ ăn truyền thống của Genoa và Liguria gồm những thực phẩm nào?",
+      "expected_chapter": 1,
+      "expected_book_page": 26,
+      "expected_answer_terms": ["dầu ô liu", "cá cơm"],
+      "out_of_book": false
+    },
+    {
+      "id": "g07",
+      "question": "Giả thuyết lão hóa được lập trình nói về điều gì?",
+      "expected_chapter": 2,
+      "expected_book_page": 36,
+      "expected_answer_terms": ["lão hóa", "lập trình"],
+      "out_of_book": false
+    },
+    {
+      "id": "g08",
+      "question": "Phòng thí nghiệm của tác giả đưa ra bằng chứng thực nghiệm cho giả thuyết nào?",
+      "expected_chapter": 2,
+      "expected_book_page": 37,
+      "expected_answer_terms": ["lão hóa được lập trình"],
+      "out_of_book": false
+    },
+    {
+      "id": "g09",
+      "question": "Tác giả xác định được gen đầu tiên điều hòa quá trình gì?",
+      "expected_chapter": 2,
+      "expected_book_page": 46,
+      "expected_answer_terms": ["lão hóa", "gen"],
+      "out_of_book": false
+    },
+    {
+      "id": "g10",
+      "question": "Tuổi thọ trung bình của chuột là khoảng bao lâu?",
+      "expected_chapter": 2,
+      "expected_book_page": 52,
+      "expected_answer_terms": ["hai năm rưỡi"],
+      "out_of_book": false
+    },
+    {
+      "id": "g11",
+      "question": "Chương 3 nói về bao nhiêu trụ cột của sự trường thọ?",
+      "expected_chapter": 3,
+      "expected_book_page": 56,
+      "expected_answer_terms": ["năm trụ cột"],
+      "out_of_book": false
+    },
+    {
+      "id": "g12",
+      "question": "Hai người lớn tuổi nhất nước Ý mà tác giả đến thăm là ai?",
+      "expected_chapter": 3,
+      "expected_book_page": 57,
+      "expected_answer_terms": ["Salvatore Caruso", "Emma Morano"],
+      "out_of_book": false
+    },
+    {
+      "id": "g13",
+      "question": "Vì sao nhiều chế độ ăn phổ biến chỉ đúng phần nào?",
+      "expected_chapter": 3,
+      "expected_book_page": 62,
+      "expected_answer_terms": ["một hoặc hai trụ cột"],
+      "out_of_book": false
+    },
+    {
+      "id": "g14",
+      "question": "Carbohydrate dạng đơn giản có trong những thực phẩm nào?",
+      "expected_chapter": 4,
+      "expected_book_page": 70,
+      "expected_answer_terms": ["nước trái cây", "mật ong", "soda"],
+      "out_of_book": false
+    },
+    {
+      "id": "g15",
+      "question": "Chế độ ăn Trường thọ khuyến nghị tiêu thụ bao nhiêu gram protein trên mỗi pound cân nặng?",
+      "expected_chapter": 4,
+      "expected_book_page": 79,
+      "expected_answer_terms": ["0,31-0,36 gram"],
+      "out_of_book": false
+    },
+    {
+      "id": "g16",
+      "question": "Không nên ăn trong vòng bao nhiêu tiếng trước khi đi ngủ?",
+      "expected_chapter": 4,
+      "expected_book_page": 84,
+      "expected_answer_terms": ["ba đến bốn tiếng"],
+      "out_of_book": false
+    },
+    {
+      "id": "g17",
+      "question": "Chế độ ăn Trường thọ giới hạn các bữa ăn có cá tối đa mấy lần mỗi tuần?",
+      "expected_chapter": 4,
+      "expected_book_page": 102,
+      "expected_answer_terms": ["hai đến ba lần"],
+      "out_of_book": false
+    },
+    {
+      "id": "g18",
+      "question": "Những người sống tới 100 tuổi và khỏe mạnh có đặc điểm vận động gì khi về già?",
+      "expected_chapter": 5,
+      "expected_book_page": 105,
+      "expected_answer_terms": ["năng vận động"],
+      "out_of_book": false
+    },
+    {
+      "id": "g19",
+      "question": "Nên đạp xe, chạy hoặc bơi bao lâu cách ngày?",
+      "expected_chapter": 5,
+      "expected_book_page": 108,
+      "expected_answer_terms": ["30-40 phút"],
+      "out_of_book": false
+    },
+    {
+      "id": "g20",
+      "question": "Nên tập thể dục cường độ trung bình bao nhiêu giờ mỗi tuần?",
+      "expected_chapter": 5,
+      "expected_book_page": 112,
+      "expected_answer_terms": ["2,5 giờ", "5 giờ"],
+      "out_of_book": false
+    },
+    {
+      "id": "g21",
+      "question": "Nghiên cứu FMD năm ngày mỗi tháng trong khoảng ba tháng giúp giảm hơn bao nhiêu kg?",
+      "expected_chapter": 6,
+      "expected_book_page": 120,
+      "expected_answer_terms": ["3,6 kg"],
+      "out_of_book": false
+    },
+    {
+      "id": "g22",
+      "question": "Những đối tượng nào không nên áp dụng FMD?",
+      "expected_chapter": 6,
+      "expected_book_page": 128,
+      "expected_answer_terms": ["phụ nữ mang thai", "trên 70 tuổi"],
+      "out_of_book": false
+    },
+    {
+      "id": "g23",
+      "question": "Người thừa cân hoặc béo phì nên thực hiện FMD bao lâu một lần?",
+      "expected_chapter": 6,
+      "expected_book_page": 130,
+      "expected_answer_terms": ["mỗi tháng một lần"],
+      "out_of_book": false
+    },
+    {
+      "id": "g24",
+      "question": "Chương 7 nói về chế độ nhịn ăn không hoàn toàn và dinh dưỡng trong phòng ngừa, điều trị bệnh gì?",
+      "expected_chapter": 7,
+      "expected_book_page": 135,
+      "expected_answer_terms": ["ung thư"],
+      "out_of_book": false
+    },
+    {
+      "id": "g25",
+      "question": "Corticosteroid nào làm tăng độc tính của hóa trị liệu?",
+      "expected_chapter": 7,
+      "expected_book_page": 144,
+      "expected_answer_terms": ["dexamethasone"],
+      "out_of_book": false
+    },
+    {
+      "id": "g26",
+      "question": "Bệnh nhân tiểu đường có nên nhịn ăn không?",
+      "expected_chapter": 7,
+      "expected_book_page": 153,
+      "expected_answer_terms": ["bác sĩ", "chấp thuận"],
+      "out_of_book": false
+    },
+    {
+      "id": "g27",
+      "question": "Người có BMI 25 có nguy cơ mắc bệnh tiểu đường cao gấp mấy lần so với người có BMI 21?",
+      "expected_chapter": 8,
+      "expected_book_page": 159,
+      "expected_answer_terms": ["sáu lần"],
+      "out_of_book": false
+    },
+    {
+      "id": "g28",
+      "question": "Thời gian được phép ăn mỗi ngày nên gói gọn tối đa trong bao nhiêu tiếng?",
+      "expected_chapter": 8,
+      "expected_book_page": 161,
+      "expected_answer_terms": ["12 tiếng"],
+      "out_of_book": false
+    },
+    {
+      "id": "g29",
+      "question": "Sau ba chu kỳ FMD, người béo phì giảm khoảng bao nhiêu kg?",
+      "expected_chapter": 8,
+      "expected_book_page": 171,
+      "expected_answer_terms": ["4 kg"],
+      "out_of_book": false
+    },
+    {
+      "id": "g30",
+      "question": "Nghiên cứu của Đại học Wisconsin cho thấy hạn chế calo làm giảm tỷ lệ tử vong của khỉ xuống bao nhiêu?",
+      "expected_chapter": 9,
+      "expected_book_page": 180,
+      "expected_answer_terms": ["26%"],
+      "out_of_book": false
+    },
+    {
+      "id": "g31",
+      "question": "Chế độ ăn Địa Trung Hải liên quan đến việc giảm nguy cơ mắc bệnh gì?",
+      "expected_chapter": 9,
+      "expected_book_page": 183,
+      "expected_answer_terms": ["tim mạch"],
+      "out_of_book": false
+    },
+    {
+      "id": "g32",
+      "question": "Chế độ ăn Ornish được đánh giá bằng phương pháp chụp nào?",
+      "expected_chapter": 9,
+      "expected_book_page": 187,
+      "expected_answer_terms": ["PET"],
+      "out_of_book": false
+    },
+    {
+      "id": "g33",
+      "question": "Protein nào tích tụ trong não của bệnh nhân Alzheimer?",
+      "expected_chapter": 10,
+      "expected_book_page": 196,
+      "expected_answer_terms": ["beta-amyloid"],
+      "out_of_book": false
+    },
+    {
+      "id": "g34",
+      "question": "Người có hai bản sao gen APOE4 có nguy cơ mắc Alzheimer lên đến bao nhiêu?",
+      "expected_chapter": 10,
+      "expected_book_page": 202,
+      "expected_answer_terms": ["91%"],
+      "out_of_book": false
+    },
+    {
+      "id": "g35",
+      "question": "Nên dùng bao nhiêu dầu ô liu mỗi ngày để phòng ngừa Alzheimer?",
+      "expected_chapter": 10,
+      "expected_book_page": 210,
+      "expected_answer_terms": ["50 ml"],
+      "out_of_book": false
+    },
+    {
+      "id": "g36",
+      "question": "Chế độ ăn phương Tây ảnh hưởng thế nào đến vi sinh vật trong ruột?",
+      "expected_chapter": 11,
+      "expected_book_page": 216,
+      "expected_answer_terms": ["viêm", "vi khuẩn"],
+      "out_of_book": false
+    },
+    {
+      "id": "g37",
+      "question": "Bệnh xơ cứng rải rác (MS) là rối loạn gì?",
+      "expected_chapter": 11,
+      "expected_book_page": 220,
+      "expected_answer_terms": ["tự miễn"],
+      "out_of_book": false
+    },
+    {
+      "id": "g38",
+      "question": "Viêm khớp dạng thấp ảnh hưởng đến khoảng bao nhiêu phần trăm dân số?",
+      "expected_chapter": 11,
+      "expected_book_page": 227,
+      "expected_answer_terms": ["1%"],
+      "out_of_book": false
+    },
+    {
+      "id": "g39",
+      "question": "Chế độ ăn Trường thọ khuyến nghị ăn mấy lần một ngày?",
+      "expected_chapter": 12,
+      "expected_book_page": 234,
+      "expected_answer_terms": ["hai lần", "bữa ăn nhẹ"],
+      "out_of_book": false
+    },
+    {
+      "id": "g40",
+      "question": "Thực đơn hai tuần cung cấp khoảng bao nhiêu calo mỗi ngày?",
+      "expected_chapter": 12,
+      "expected_book_page": 239,
+      "expected_answer_terms": ["1.700", "1.800"],
+      "out_of_book": false
+    },
+    {
+      "id": "g41",
+      "question": "Thực phẩm nào đứng đầu bảng nguồn thực phẩm chứa folate?",
+      "expected_chapter": 12,
+      "expected_book_page": 266,
+      "expected_answer_terms": ["cải bó xôi"],
+      "out_of_book": false
+    },
+    {
+      "id": "g42",
+      "question": "Ớt chuông đỏ ngọt sống cung cấp bao nhiêu miligam vitamin C mỗi khẩu phần?",
+      "expected_chapter": 12,
+      "expected_book_page": 272,
+      "expected_answer_terms": ["95"],
+      "out_of_book": false
+    },
+    {
+      "id": "g43",
+      "question": "Giá vàng hôm nay là bao nhiêu?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g44",
+      "question": "Làm thế nào để thay lốp xe ô tô?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g45",
+      "question": "Ai là tổng thống đầu tiên của Hoa Kỳ?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g46",
+      "question": "Cách cài đặt Windows 11 trên máy tính cá nhân?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g47",
+      "question": "Đội bóng nào vô địch World Cup 2022?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g48",
+      "question": "Bitcoin được tạo ra vào năm nào?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g49",
+      "question": "Làm sao để học lập trình Python hiệu quả?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    },
+    {
+      "id": "g50",
+      "question": "Thủ đô của nước Úc là gì?",
+      "expected_chapter": null,
+      "expected_book_page": null,
+      "expected_answer_terms": [],
+      "out_of_book": true
+    }
+  ]
+}

@@ -3,7 +3,15 @@ name: longevia
 # Local == production: the same images and this same file are used in both.
 # Copy ../.env.example to ../.env before running.
 #
-#   docker compose -f deployments/docker-compose.yml up -d
+#   docker compose --env-file .env -f deployments/docker-compose.yml up -d
+#
+# Compose only interpolates ${VARS} from the shell or from the file given with
+# --env-file. Because this file lives in `deployments/`, the root `.env` is not
+# picked up automatically - run
+#
+#   docker compose --env-file .env -f deployments/docker-compose.yml up -d
+#
+# to inject the values of the root `.env` (provider keys, ports).
 #
 # Backend services are added below once their Dockerfiles exist.
 #
@@ -29,6 +37,7 @@ services:
       IDENTITY_DB: ${IDENTITY_DB:-identity_db}
       DIET_DB: ${DIET_DB:-diet_db}
       PROGRESS_DB: ${PROGRESS_DB:-progress_db}
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -138,6 +147,110 @@ services:
     networks:
       - edge
       - data_net
+  # Internal gRPC service. Recommendation is NOT routed through nginx and is
+  # NOT published to the host: only services on `internal_net` can reach it.
+  # It owns `recommendation_db`, which holds the knowledge corpus only - never
+  # user data (Constitution section I).
+  # -------------------------------------------------------------------------
+  recommendation:
+    build:
+      context: ..
+      dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
+    # Secrets are injected explicitly and minimally: only the variables this
+    # service actually needs are listed under `environment:`. Do NOT use
+    # `env_file:` here - it would load the WHOLE root .env into the container,
+    # including JWT__SIGNING_PRIVATE_KEY, which belongs to Identity only
+    # (ADR 001 section 2.1).
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
+      GOOGLE_AI__CHAT_MODEL: ${GOOGLE_AI__CHAT_MODEL:-gemini-3.5-flash-lite}
+      RECOMMENDATION__GRPC_PORT: ${RECOMMENDATION__GRPC_PORT:-50051}
+      RECOMMENDATION__HTTP_PORT: ${RECOMMENDATION__HTTP_PORT:-8080}
+      # Server-side gRPC deadline; keep it above the provider's real generation
+      # latency, otherwise long grounded answers hit DEADLINE_EXCEEDED.
+      RECOMMENDATION__DEADLINE_SECONDS: ${RECOMMENDATION__DEADLINE_SECONDS:-30}
+      RAG__TOP_K: ${RAG__TOP_K:-8}
+      RAG__MAX_CANDIDATES: ${RAG__MAX_CANDIDATES:-50}
+      RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
+      RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
+      RAG__REQUIRE_VERIFIED: ${RAG__REQUIRE_VERIFIED:-false}
+      RAG__MIN_CITATION_SIMILARITY: ${RAG__MIN_CITATION_SIMILARITY:-0.75}
+      RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
+      RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
+    depends_on:
+      kb-init:
+        condition: service_completed_successfully
+    networks:
+      - internal_net
+      - data_net
+
+  # -------------------------------------------------------------------------
+  # Deploy-time schema step. Reuses the service image so the schema still comes
+  # from the EF Core migration (Code First) instead of a hand-written SQL file.
+  # ---------
+  kb-schema:
+    build:
+      context: ..
+      dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
+    command: ["--migrate-only"]
+    environment:
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+    restart: "no"
+
+  # -------------------------------------------------------------------------
+  # Deploy-time seed loader. Runs the offline pipeline image against the seed
+  # committed in resources/knowledge so a fresh volume gets the corpus without
+  # an API key and without anyone remembering to run the ingest.
+  #
+  # `--skip-if-loaded` makes it a no-op once the same corpus version is active.
+  # `--verify` fails loudly if the seed and the database disagree.
+  # -------------------------------------------------------------------------
+  kb-init:
+    build:
+      context: ../scripts/book-kb
+    image: longevia/book-kb:local
+    init: true
+    command: ["load", "--work", "/seed", "--skip-if-loaded", "--verify"]
+    environment:
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+    volumes:
+      - ../resources/knowledge/che-do-an-truong-tho:/seed:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kb-schema:
+        condition: service_completed_successfully
+    networks:
+      - data_net
+    restart: "no"
+
+  # -------------------------------------------------------------------------
+  # .NET services - uncomment as each Dockerfile is added.
+  #
+  # identity:
+  #   build:
+  #     context: ..
+  #     dockerfile: src/Services/Identity/Dockerfile
+  #   environment:
+  #     ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+  #   RABBITMQ_HOST: rabbitmq
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   networks:
+  #     - edge
+  #     - data_net
   #
   # diet:      ... (also calls recommendation over gRPC)
   #   networks: edge + internal_net + data_net
@@ -205,6 +318,8 @@ services:
       - prometheus
     networks:
       - edge
+  # worker:          ... (consumes RabbitMQ, sends email via Brevo)
+  #   networks: data_net only
   #
   # JWT env (see .env.example and ADR 001):
   #   identity:  JWT__SIGNING_PRIVATE_KEY + JWT__SIGNING_PUBLIC_KEY + JWT__KEY_ID

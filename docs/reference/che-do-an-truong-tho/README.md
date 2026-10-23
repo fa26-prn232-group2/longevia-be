@@ -8,6 +8,13 @@ reviewed: false
 
 # Chế độ ăn trường thọ - bản Markdown
 
+> **Chỉ dùng cho mục đích học tập.** Đây là bản số hoá (OCR) từ bản in sách
+> *Chế độ ăn trường thọ* của Tiến sĩ Valter Longo (bản dịch tiếng Việt). Bản quyền
+> nội dung thuộc tác giả, dịch giả và nhà xuất bản; nội dung chỉ dùng trong phạm vi
+> học tập, **không phân phối lại**, và sẽ được gỡ bỏ khi có yêu cầu (mở issue tại
+> repository). Văn bản OCR có thể sai sót — số liệu và liều lượng phải đối chiếu bản in.
+> Xem thêm [`NOTICE.md`](../../../NOTICE.md).
+
 Bản chuyển từ PDF scan 274 trang (ảnh thuần, không có text layer) sang Markdown
 để tra cứu khi triển khai Longevia.
 

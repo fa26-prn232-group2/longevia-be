@@ -1,7 +1,9 @@
-# ---- .NET build output ----
+﻿# ---- .NET build output ----
 [Bb]in/
 [Oo]bj/
 artifacts/
+# Knowledge-base pipeline output (chunks, embeddings, eval reports).
+artifacts/book-kb/
 [Dd]ebug/
 [Rr]elease/
 *.user
@@ -95,3 +97,7 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 *~
+
+# Python bytecode from the knowledge-base pipeline.
+__pycache__/
+*.pyc

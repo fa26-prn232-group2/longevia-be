@@ -55,6 +55,31 @@ public sealed class MealPlanSuggestionBuilderTests
     }
 
     [Fact]
+    public void RejectsChapterFourChunkWithoutSuggestionTopic()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [Chunk(4, 72, "Chế độ ăn cần cân bằng calo và macro giữa các bữa.")]);
+
+        Assert.Empty(result.Suggestions);
+        var warning = Assert.Single(result.Warnings);
+        Assert.Equal(PlanWarningCodes.SuggestionSourceMissing, warning.Code);
+        Assert.Equal("2026-10-28", warning.Scope);
+    }
+
+    [Fact]
+    public void KeepsAppendixChunkOnSuggestionTopic()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [Chunk(12, 238, "Uống trà thảo mộc không đường vào buổi tối để thư giãn và ngủ ngon.")]);
+
+        var suggestion = Assert.Single(result.Suggestions);
+        Assert.Contains("trà thảo mộc", suggestion.Text, StringComparison.Ordinal);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
     public void SuggestionHasNoFoodIdentifier()
     {
         Assert.Null(typeof(PlanSuggestion).GetProperty("FoodId"));

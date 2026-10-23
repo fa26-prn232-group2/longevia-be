@@ -354,3 +354,10 @@ task chưa tick của feature.
 - **T078 deferred**: không có finding ngoài phạm vi mới. Các mục storage/REST/monthly rollup/reminder/wearable/payment và tích hợp Diet/Progress vẫn out-of-scope trong `spec.md` Assumptions; **không tạo `deferred.md`.**
 - **T079 final review**: không có migration/bảng mới; `recommendation_db` chỉ `kb.*`; không expose REST/Nginx; không có `frontend-guide.md`; working tree chỉ chứa thay đổi thuộc feature.
 - **T080 meta**: `services: ["recommendation"]`, `status: "open"` — giữ open đến khi PR merge, sau merge đổi `closed`.
+
+---
+
+## Phase 6: Convergence
+
+- [x] T081 [US1] Giới hạn `suggestions` của ngày chạm trần 105% trong `src/Services/Recommendation/Recommendation.Application/Features/MealPlans/MealPlanSuggestionBuilder.cs` để chỉ dùng đoạn sách thực sự nói về đồ uống 0 calo/thói quen thư giãn thay vì lấy excerpt đầu tiên của bất kỳ chunk chương 4/Phụ lục A; khi không có đoạn phù hợp phải trả `suggestions` rỗng kèm warning `suggestion_source_missing`, và bổ sung test trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Plans/MealPlanSuggestionBuilderTests.cs` với fixture chương 4 nói về macro/dinh dưỡng chung (kỳ vọng rỗng + warning) cùng fixture Phụ lục A đúng chủ đề (kỳ vọng có suggestion) per FR-017/US1-AC4 (partial)
+- [x] T082 [US1] Emit warning `fiber_below_target` khi tổng fiber một ngày (không chạm trần) thấp hơn `target_fiber_grams` > 0 trong `src/Services/Recommendation/Recommendation.Application/Features/MealPlans/GenerateMealPlanUseCase.cs`; thêm test trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/MealPlans/GenerateMealPlanUseCaseTests.cs` và integration test trong `.../Recommendation.IntegrationTests/Features/Plans/GenerateMealPlanGrpcTests.cs` per FR-019 (partial)

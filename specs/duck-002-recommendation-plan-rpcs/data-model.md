@@ -232,6 +232,7 @@ Sao chép **nguyên giá trị** từ `CandidateFood`: `food_id`, `name`,
 | `corpus_not_loaded` | Không truy xuất được chunk nào | `plan` |
 | `ai_fallback_used` | AI lỗi, timeout hoặc kết quả không hợp lệ | `plan` |
 | `target_not_met` | Candidate không đủ để đạt ±10% | `plan`/ngày |
+| `fiber_below_target` | Tổng fiber ngày thấp hơn mục tiêu fiber (target > 0) | ngày |
 | `candidate_foods_truncated` | Cắt candidate > 120 | `plan` |
 | `duplicate_candidate_food` | Trùng `food_id` trong candidate | `plan` |
 | `unsupported_locale` | Locale không hỗ trợ | `plan` |

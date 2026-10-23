@@ -70,7 +70,7 @@ service RecommendationService {
 
 ## 5. Mã warning (trong `PlanWarning.code`)
 
-`corpus_not_loaded`, `ai_fallback_used`, `target_not_met`,
+`corpus_not_loaded`, `ai_fallback_used`, `target_not_met`, `fiber_below_target`,
 `candidate_foods_truncated`, `duplicate_candidate_food`, `unsupported_locale`,
 `consumed_date_outside_plan`, `suggestion_source_missing`,
 `no_limitations_assumed`, `unsupported_activity_preference`,

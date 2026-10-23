@@ -40,6 +40,36 @@ public sealed class GenerateMealPlanUseCaseTests
     }
 
     [Fact]
+    public async Task AddsFiberBelowTargetWarningForEachDay()
+    {
+        var useCase = CreateUseCase(new StubChatModel(SelectionFor(7)), new StubKnowledgeStore());
+
+        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+
+        var fiberWarnings = result.Warnings
+            .Where(warning => warning.Code == PlanWarningCodes.FiberBelowTarget)
+            .ToList();
+
+        Assert.Equal(7, fiberWarnings.Count);
+        Assert.All(fiberWarnings, warning => Assert.NotEqual(PlanWarning.PlanScope, warning.Scope));
+        Assert.All(
+            fiberWarnings,
+            warning => Assert.Contains("chất xơ", warning.Message, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task DoesNotAddFiberWarningWhenTargetIsNotProvided()
+    {
+        var useCase = CreateUseCase(new StubChatModel(SelectionFor(7)), new StubKnowledgeStore());
+
+        var result = await useCase.ExecuteAsync(
+            Request() with { TargetFiberGrams = 0 },
+            CancellationToken.None);
+
+        Assert.DoesNotContain(result.Warnings, warning => warning.Code == PlanWarningCodes.FiberBelowTarget);
+    }
+
+    [Fact]
     public async Task FallsBackWhenProviderAbstains()
     {
         var useCase = CreateUseCase(new StubChatModel(null), new StubKnowledgeStore());

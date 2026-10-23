@@ -896,6 +896,7 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 | `corpus_not_loaded` | `plan` | Không truy xuất được chunk nào |
 | `ai_fallback_used` | `plan` | AI lỗi, timeout hoặc kết quả không hợp lệ nên dùng fallback tất định |
 | `target_not_met` | `plan`/ngày | Candidate không đủ để đạt ±10% ngân sách ngày |
+| `fiber_below_target` | ngày | Tổng fiber ngày thấp hơn mục tiêu fiber caller gửi (target > 0) |
 | `candidate_foods_truncated` | `plan` | Cắt `candidate_foods` > 120 |
 | `duplicate_candidate_food` | `plan` | Trùng `food_id` trong `candidate_foods` |
 | `unsupported_locale` | `plan` | `locale` khác `vi-VN`; service dùng `vi-VN` |

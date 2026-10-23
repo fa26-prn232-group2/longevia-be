@@ -104,6 +104,7 @@ public sealed class GenerateMealPlanUseCase(
         selectedDays ??= [];
 
         var days = MergeDays(budget, cappedDates, selectedDays, chunks, warnings);
+        AddFiberWarnings(request, days, warnings);
         var citations = CollectCitations(days);
 
         return new GenerateMealPlanResult
@@ -273,6 +274,34 @@ public sealed class GenerateMealPlanUseCase(
         }
 
         return days;
+    }
+
+    private static void AddFiberWarnings(
+        GenerateMealPlanRequest request,
+        IReadOnlyList<MealPlanDay> days,
+        List<PlanWarning> warnings)
+    {
+        if (request.TargetFiberGrams <= 0)
+        {
+            return;
+        }
+
+        foreach (var day in days)
+        {
+            if (day.CalorieCapReached || day.TotalFiberGrams >= day.TargetFiberGrams)
+            {
+                continue;
+            }
+
+            warnings.Add(new PlanWarning
+            {
+                Code = PlanWarningCodes.FiberBelowTarget,
+                Message = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Tổng chất xơ ngày {day.Date} thấp hơn mục tiêu {day.TargetFiberGrams:0.#} g."),
+                Scope = day.Date,
+            });
+        }
     }
 
     private static IReadOnlyList<Citation> CollectCitations(IReadOnlyList<MealPlanDay> days) =>

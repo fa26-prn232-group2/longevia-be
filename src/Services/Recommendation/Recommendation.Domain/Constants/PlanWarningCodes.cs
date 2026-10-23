@@ -15,6 +15,9 @@ public static class PlanWarningCodes
     /// <summary>Candidate không đủ để đạt ±10% ngân sách ngày.</summary>
     public const string TargetNotMet = "target_not_met";
 
+    /// <summary>Tổng fiber ngày thấp hơn mục tiêu fiber caller gửi; không phải gate cứng ±10%.</summary>
+    public const string FiberBelowTarget = "fiber_below_target";
+
     /// <summary>Candidate vượt 120 món nên đã bị cắt theo macro-fit.</summary>
     public const string CandidateFoodsTruncated = "candidate_foods_truncated";
 

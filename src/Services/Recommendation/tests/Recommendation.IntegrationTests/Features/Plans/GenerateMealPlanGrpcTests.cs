@@ -176,6 +176,20 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
     }
 
     [Fact]
+    public async Task AddsFiberBelowTargetWarningForEachNonCappedDay()
+    {
+        var response = await fixture.Client.GenerateMealPlanAsync(BuildRequest());
+
+        var fiberWarnings = response.Warnings
+            .Where(warning => warning.Code == "fiber_below_target")
+            .ToList();
+
+        Assert.Equal(7, fiberWarnings.Count);
+        Assert.All(fiberWarnings, warning => Assert.NotEqual("plan", warning.Scope));
+        Assert.All(fiberWarnings, warning => Assert.False(string.IsNullOrWhiteSpace(warning.Message)));
+    }
+
+    [Fact]
     public async Task RationaleAndDisclaimerContainNoMedicalAdvice()
     {
         var response = await fixture.Client.GenerateMealPlanAsync(BuildRequest());

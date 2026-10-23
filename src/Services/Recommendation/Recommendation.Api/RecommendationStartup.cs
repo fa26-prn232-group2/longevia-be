@@ -15,6 +15,7 @@ using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Plans;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
 
@@ -261,6 +262,16 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<MealPlanFallbackSelector>();
         builder.Services.AddSingleton<MealPlanSuggestionBuilder>();
         builder.Services.AddScoped<GenerateMealPlanUseCase>();
+
+        // Kế hoạch tập luyện (US2): catalog/skeleton/prompt/parser/validator thuần
+        // nên singleton; use case phụ thuộc IKnowledgeStore (scoped) nên scoped.
+        builder.Services.AddSingleton<WorkoutLimitationRules>();
+        builder.Services.AddSingleton<WorkoutActivityCatalogBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanSkeletonBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanPromptBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanSelectionParser>();
+        builder.Services.AddSingleton<WorkoutPlanValidator>();
+        builder.Services.AddScoped<GenerateWorkoutPlanUseCase>();
 
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."))

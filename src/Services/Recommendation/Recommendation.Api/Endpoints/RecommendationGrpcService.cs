@@ -6,6 +6,7 @@ using Recommendation.Application.Features.MealPlans;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.WorkoutPlans;
 using Contracts = Longevia.Recommendation.Contracts.V1;
 
 namespace Recommendation.Api.Endpoints;
@@ -20,7 +21,8 @@ internal sealed partial class RecommendationGrpcService(
     EvaluateLongevityHabitsUseCase evaluateLongevityHabits,
     AskLongevityQuestionUseCase askLongevityQuestion,
     SearchLongevityKnowledgeUseCase searchLongevityKnowledge,
-    GenerateMealPlanUseCase generateMealPlan)
+    GenerateMealPlanUseCase generateMealPlan,
+    GenerateWorkoutPlanUseCase generateWorkoutPlan)
     : Contracts.RecommendationService.RecommendationServiceBase
 {
     /// <summary>Gợi ý bữa ăn trong danh mục an toàn do caller gửi (US1).</summary>
@@ -86,6 +88,19 @@ internal sealed partial class RecommendationGrpcService(
             .ConfigureAwait(false);
 
         return MealPlanMapper.ToProtoResponse(result);
+    }
+
+    /// <summary>Sinh kế hoạch tập luyện theo tuần trong giới hạn caller gửi (US2).</summary>
+    public override async Task<Contracts.GenerateWorkoutPlanResponse> GenerateWorkoutPlan(
+        Contracts.GenerateWorkoutPlanRequest request,
+        ServerCallContext context)
+    {
+        var applicationRequest = WorkoutPlanMapper.ToApplicationRequest(request);
+        var result = await generateWorkoutPlan
+            .ExecuteAsync(applicationRequest, context.CancellationToken)
+            .ConfigureAwait(false);
+
+        return WorkoutPlanMapper.ToProtoResponse(result);
     }
 
     /// <summary>Tra cứu các đoạn sách theo truy vấn tự do, có lọc theo chương (US4).</summary>

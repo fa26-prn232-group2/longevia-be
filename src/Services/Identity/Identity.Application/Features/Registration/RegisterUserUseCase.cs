@@ -2,10 +2,10 @@ using System.Security.Cryptography;
 using Identity.Application.Abstractions;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Common.Errors;
-using Identity.Application.Common.Events;
 using Identity.Application.Common.Mappers;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
+using Longevia.Shared.Events;
 
 namespace Identity.Application.Features.Registration;
 
@@ -40,7 +40,7 @@ public sealed class RegisterUserUseCase(
         await userRepository.AddAsync(user, ct);
 
         await eventPublisher.PublishAsync(
-            new UserRegisteredIntegrationEvent(
+            new UserRegisteredEvent(
                 user.Id,
                 user.Email,
                 user.FullName,

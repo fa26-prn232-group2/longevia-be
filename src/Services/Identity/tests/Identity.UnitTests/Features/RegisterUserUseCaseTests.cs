@@ -1,8 +1,8 @@
-using Identity.Application.Common.Events;
 using Identity.Application.Features.Registration;
 using Identity.Domain.Constants;
 using Identity.UnitTests.Common;
 using Longevia.Shared.Errors;
+using Longevia.Shared.Events;
 
 namespace Identity.UnitTests.Features;
 
@@ -38,7 +38,7 @@ public sealed class RegisterUserUseCaseTests
         Assert.True(await _userRepository.ExistsByEmailAsync(request.Email));
         Assert.Equal(1, _unitOfWork.SaveChangesCalls);
         Assert.Single(_eventPublisher.PublishedEvents);
-        Assert.IsType<UserRegisteredIntegrationEvent>(_eventPublisher.PublishedEvents[0]);
+        Assert.IsType<UserRegisteredEvent>(_eventPublisher.PublishedEvents[0]);
     }
 
     [Fact]

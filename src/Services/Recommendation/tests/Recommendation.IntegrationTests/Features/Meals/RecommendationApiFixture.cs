@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Grpc.Net.Client;
 using Longevia.Recommendation.Contracts.V1;
 using Microsoft.AspNetCore.Builder;
@@ -21,7 +22,7 @@ namespace Recommendation.IntegrationTests.Features.Meals;
 /// PostgreSQL thật qua Testcontainers; provider AI được thay bằng test double
 /// tất định để không phụ thuộc mạng hay API key.
 /// </summary>
-public sealed class RecommendationApiFixture : IAsyncLifetime
+public sealed partial class RecommendationApiFixture : IAsyncLifetime
 {
     private const int EmbeddingDimensions = 768;
 
@@ -114,10 +115,13 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
     /// Double tất định theo loại phản hồi: chọn món lấy 5 ứng viên đầu tiên của
     /// danh sách ĐÃ LỌC (không sinh món/số liệu mới); hỏi sách do
     /// <see cref="GroundedAnswerDouble"/> trả lời từ chính CONTEXT đã truy xuất.
+    /// Hai kind plan chỉ trả chỉ số món/hoạt động + citation, đúng schema
+    /// <c>MealPlanSelection</c>/<c>WorkoutPlanSelection</c>.
     /// </summary>
-    private sealed class DeterministicChatModel : IChatModel
+    private sealed partial class DeterministicChatModel : IChatModel
     {
         private const int SelectionCount = 5;
+        private const int CitationWordCount = 12;
 
         public List<StructuredPrompt> Prompts { get; } = [];
 
@@ -129,6 +133,8 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
             {
                 StructuredResponseKind.GroundedAnswer => GroundedAnswerDouble.Complete(prompt),
                 StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisDouble.Complete(prompt),
+                StructuredResponseKind.MealPlanSelection => MealPlanSelection(prompt.UserPrompt),
+                StructuredResponseKind.WorkoutPlanSelection => WorkoutPlanSelection(prompt.UserPrompt),
                 _ => MealSelection(),
             };
 
@@ -153,6 +159,186 @@ public sealed class RecommendationApiFixture : IAsyncLifetime
                 Payload = new JsonObject { ["selections"] = selections },
             };
         }
+
+        private static ChatCompletion MealPlanSelection(string userPrompt)
+        {
+            var quote = ExtractFirstCorpusQuote(userPrompt);
+            var days = new JsonArray();
+
+            foreach (var (date, segment) in SplitByDate(userPrompt))
+            {
+                var meals = new JsonArray();
+                foreach (var mealType in DetectMealTypes(segment))
+                {
+                    meals.Add(new JsonObject
+                    {
+                        ["meal_type"] = mealType,
+                        ["food_indices"] = new JsonArray(0),
+                        ["citations"] = CitationArray(quote),
+                    });
+                }
+
+                days.Add(new JsonObject
+                {
+                    ["date"] = date,
+                    ["meals"] = meals,
+                });
+            }
+
+            return new ChatCompletion
+            {
+                Payload = new JsonObject { ["days"] = days },
+            };
+        }
+
+        private static ChatCompletion WorkoutPlanSelection(string userPrompt)
+        {
+            var quote = ExtractFirstCorpusQuote(userPrompt);
+            var days = new JsonArray();
+
+            foreach (var (date, segment) in SplitByDate(userPrompt))
+            {
+                if (!LooksLikeWorkoutDay(segment))
+                {
+                    continue;
+                }
+
+                days.Add(new JsonObject
+                {
+                    ["date"] = date,
+                    ["activity_index"] = 0,
+                    ["citations"] = CitationArray(quote),
+                });
+            }
+
+            return new ChatCompletion
+            {
+                Payload = new JsonObject { ["days"] = days },
+            };
+        }
+
+        private static IReadOnlyList<(string Date, string Segment)> SplitByDate(string userPrompt)
+        {
+            var matches = IsoDatePattern().Matches(userPrompt);
+            var orderedDates = new List<string>();
+            var segments = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            for (var index = 0; index < matches.Count; index++)
+            {
+                var match = matches[index];
+                var date = match.Value;
+                var start = match.Index + match.Length;
+                var end = index + 1 < matches.Count ? matches[index + 1].Index : userPrompt.Length;
+                var segment = userPrompt[start..end];
+
+                if (segments.TryGetValue(date, out var existing))
+                {
+                    segments[date] = existing + "\n" + segment;
+                    continue;
+                }
+
+                orderedDates.Add(date);
+                segments[date] = segment;
+            }
+
+            return orderedDates.Select(date => (date, segments[date])).ToList();
+        }
+
+        private static IReadOnlyList<string> DetectMealTypes(string segment)
+        {
+            var lower = segment.ToLowerInvariant();
+            var mealTypes = new List<string>(4);
+
+            if (lower.Contains("breakfast", StringComparison.Ordinal)
+                || lower.Contains("bữa sáng", StringComparison.Ordinal))
+            {
+                mealTypes.Add("BREAKFAST");
+            }
+
+            if (lower.Contains("lunch", StringComparison.Ordinal)
+                || lower.Contains("bữa trưa", StringComparison.Ordinal))
+            {
+                mealTypes.Add("LUNCH");
+            }
+
+            if (lower.Contains("dinner", StringComparison.Ordinal)
+                || lower.Contains("bữa tối", StringComparison.Ordinal))
+            {
+                mealTypes.Add("DINNER");
+            }
+
+            if (lower.Contains("snack", StringComparison.Ordinal)
+                || lower.Contains("bữa phụ", StringComparison.Ordinal))
+            {
+                mealTypes.Add("SNACK");
+            }
+
+            return mealTypes;
+        }
+
+        private static bool LooksLikeWorkoutDay(string segment)
+        {
+            var lower = segment.ToLowerInvariant();
+
+            return lower.Contains("buổi", StringComparison.Ordinal)
+                || lower.Contains("session", StringComparison.Ordinal)
+                || lower.Contains("activity", StringComparison.Ordinal)
+                || lower.Contains("hoạt động", StringComparison.Ordinal);
+        }
+
+        private static string? ExtractFirstCorpusQuote(string userPrompt)
+        {
+            const string begin = "[BEGIN CORPUS DATA]";
+            const string end = "[END CORPUS DATA]";
+
+            var start = userPrompt.IndexOf(begin, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                return null;
+            }
+
+            start += begin.Length;
+            var endIndex = userPrompt.IndexOf(end, start, StringComparison.Ordinal);
+            var block = endIndex < 0 ? userPrompt[start..] : userPrompt[start..endIndex];
+
+            foreach (var line in block.Split(
+                '\n',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (line.StartsWith('[')
+                    && (line.Contains("chapter=", StringComparison.Ordinal)
+                        || line.Contains("status=", StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                var words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (words.Length > 0)
+                {
+                    return string.Join(' ', words.Take(CitationWordCount));
+                }
+            }
+
+            return null;
+        }
+
+        private static JsonArray CitationArray(string? quote)
+        {
+            var citations = new JsonArray();
+            if (quote is not null)
+            {
+                citations.Add(new JsonObject
+                {
+                    ["chunk_index"] = 0,
+                    ["quote"] = quote,
+                });
+            }
+
+            return citations;
+        }
+
+        [GeneratedRegex(@"\b\d{4}-\d{2}-\d{2}\b", RegexOptions.CultureInvariant)]
+        private static partial Regex IsoDatePattern();
     }
 
     private sealed class StubEmbeddingProvider : IEmbeddingProvider

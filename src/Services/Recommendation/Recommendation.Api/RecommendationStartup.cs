@@ -12,6 +12,7 @@ using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.LongevityHabits;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
+using Recommendation.Application.Features.Plans;
 using Recommendation.Application.Features.Search;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
@@ -240,6 +241,13 @@ public static class RecommendationStartup
         // Tra cứu đoạn sách (US4): use case phụ thuộc IKnowledgeStore (scoped) nên
         // cũng phải scoped.
         builder.Services.AddScoped<SearchLongevityKnowledgeUseCase>();
+
+        // Thành phần dùng chung của hai RPC plan (Phase 2): đều thuần, không I/O
+        // nên đăng ký singleton; use case plan (scoped) sẽ được thêm ở US1/US2.
+        builder.Services.AddSingleton<PlanRequestValidator>();
+        builder.Services.AddSingleton<PlanDateRange>();
+        builder.Services.AddSingleton<PlanPromptFormatter>();
+        builder.Services.AddSingleton<PlanRationaleBuilder>();
 
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."))

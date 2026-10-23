@@ -91,6 +91,63 @@ public sealed class CitationResolverTests
         Assert.Equal(62, citation.PdfPage);
     }
 
+    [Fact]
+    public void ResolveOptionalKeepsCitationWhoseQuoteMatches()
+    {
+        var citations = new CitationResolver().ResolveOptional(
+            new JsonObject
+            {
+                ["citations"] = Citations(
+                    Citation(1, "trình tự sắp xếp của chúng xác định chức năng cụ thể")),
+            },
+            [FatChunk(), ProteinChunk(unaccented: false)]);
+
+        var citation = Assert.Single(citations);
+        Assert.Equal(70, citation.BookPage);
+        Assert.True(citation.Verified);
+    }
+
+    [Fact]
+    public void ResolveOptionalDropsUnmatchedQuoteWithoutAbstaining()
+    {
+        var citations = new CitationResolver().ResolveOptional(
+            new JsonObject
+            {
+                ["citations"] = Citations(Citation(0, "Đây là câu không hề xuất hiện trong sách.")),
+            },
+            [FatChunk(), ProteinChunk(unaccented: false)]);
+
+        Assert.Empty(citations);
+    }
+
+    [Fact]
+    public void ResolveOptionalKeepsOnlyMatchingCitation()
+    {
+        var citations = new CitationResolver().ResolveOptional(
+            new JsonObject
+            {
+                ["citations"] = Citations(
+                    Citation(0, "câu không có trong sách"),
+                    Citation(0, "không bão hòa đơn (ví dụ như axit oleic trong dầu ô liu)")),
+            },
+            [FatChunk(), ProteinChunk(unaccented: false)]);
+
+        var citation = Assert.Single(citations);
+        Assert.Equal(72, citation.BookPage);
+    }
+
+    [Fact]
+    public void ResolveOptionalReturnsEmptyWithoutAbstaining()
+    {
+        var resolver = new CitationResolver();
+
+        Assert.Empty(resolver.ResolveOptional(null, [FatChunk()]));
+        Assert.Empty(resolver.ResolveOptional(new JsonObject(), [FatChunk()]));
+        Assert.Empty(resolver.ResolveOptional(
+            new JsonObject { ["citations"] = Citations(Citation(0, "không bão hòa đơn")) },
+            []));
+    }
+
     private static CitationResolution Resolve(
         JsonArray citations,
         bool useUnaccentedProteinChunk = false) =>

@@ -1,19 +1,22 @@
 using System.Diagnostics;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using Recommendation.Api.Deadlines;
 using Recommendation.Api.Observability;
 
 namespace Recommendation.Api.Middlewares;
 
 /// <summary>
 /// Giới hạn thời gian xử lý phía server cho mỗi lời gọi gRPC.
-/// Ngân sách đọc từ <c>RECOMMENDATION__DEADLINE_SECONDS</c> (mặc định 30s) và phải
-/// lớn hơn độ trễ sinh văn bản thực tế của provider.
+/// Ngân sách lấy theo method từ <see cref="RpcDeadlinePolicy"/>: hai RPC plan
+/// dùng <c>RECOMMENDATION__PLAN_DEADLINE_SECONDS</c> (mặc định 90s), 5 RPC cũ
+/// dùng <c>RECOMMENDATION__DEADLINE_SECONDS</c> (mặc định 30s) và phải lớn hơn
+/// độ trễ sinh văn bản thực tế của provider.
 /// Token hết hạn được truyền xuống use case qua <c>HttpContext.RequestAborted</c>.
 /// </summary>
 public sealed class ServerDeadlineInterceptor(
     ILogger<ServerDeadlineInterceptor> logger,
-    TimeSpan deadline) : Interceptor
+    RpcDeadlinePolicy deadlinePolicy) : Interceptor
 {
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request,
@@ -21,6 +24,7 @@ public sealed class ServerDeadlineInterceptor(
         UnaryServerMethod<TRequest, TResponse> continuation)
     {
         var clientToken = context.CancellationToken;
+        var deadline = deadlinePolicy.Resolve(context.Method);
 
         using var deadlineCts = new CancellationTokenSource(deadline);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(clientToken, deadlineCts.Token);

@@ -1,4 +1,4 @@
-# Smoke test cho đường deploy "DB rỗng -> kb-schema -> kb-init tự nạp seed" (T126).
+# Smoke test cho đường deploy "DB rỗng -> kb-bootstrap tự nạp seed" (T093).
 #
 # Chạy trong một compose project RIÊNG với volume RIÊNG, nên không bao giờ chạm
 # database `longevia_*` của máy dev. Kết thúc luôn dọn sạch (down -v).
@@ -25,7 +25,8 @@ $env:POSTGRES_PORT = [string]$HostPort
 # hoặc khi output bị redirect (nếu không, progress UI sẽ treo).
 $composeArgs = @(
     'compose', '--progress', 'plain', '--ansi', 'never',
-    '-p', $Project, '--env-file', $EnvFile, '-f', $ComposeFile
+    '-p', $Project, '--env-file', $EnvFile, '-f', $ComposeFile,
+    '--profile', 'bootstrap'
 )
 
 function Invoke-Step {
@@ -46,22 +47,22 @@ function Get-ChunkCount {
 
 try {
     Write-Host "[smoke] project=$Project host-port=$HostPort"
-    Invoke-Step 'build images' @('build', 'kb-schema', 'kb-init')
-    Invoke-Step 'start postgres' @('up', '--detach', 'postgres')
-    Invoke-Step 'first init (empty database)' @('run', '--rm', '-T', 'kb-init')
+    Invoke-Step 'build recommendation image' @('build', 'recommendation')
+    Invoke-Step 'start postgres' @('up', '--detach', '--wait', 'postgres')
+    Invoke-Step 'first bootstrap (empty database)' @('run', '--rm', '-T', '--no-deps', 'kb-bootstrap')
 
     $first = Get-ChunkCount
-    Write-Host "[smoke] chunks after first init: $first"
+    Write-Host "[smoke] chunks after first bootstrap: $first"
 
-    Write-Host '[smoke] second init (must skip)'
-    $second = & docker @composeArgs run --rm -T kb-init
-    if ($LASTEXITCODE -ne 0) { throw "second init failed with exit code $LASTEXITCODE" }
+    Write-Host '[smoke] second bootstrap (must skip)'
+    $second = & docker @composeArgs run --rm -T --no-deps kb-bootstrap
+    if ($LASTEXITCODE -ne 0) { throw "second bootstrap failed with exit code $LASTEXITCODE" }
     $secondText = ($second | Out-String)
-    $skipped = $secondText -match '"skipped"\s*:\s*true'
-    Write-Host "[smoke] second init skipped=$skipped"
+    $skipped = $secondText -match 'already active|skipping load|skipped'
+    Write-Host "[smoke] second bootstrap skipped=$skipped"
 
     $afterSecond = Get-ChunkCount
-    Write-Host "[smoke] chunks after second init: $afterSecond"
+    Write-Host "[smoke] chunks after second bootstrap: $afterSecond"
 
     if ($first -ne $ExpectedChunks) {
         throw "expected $ExpectedChunks chunks after the first init, got $first"

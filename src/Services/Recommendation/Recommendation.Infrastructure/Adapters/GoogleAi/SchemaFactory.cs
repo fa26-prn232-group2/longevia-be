@@ -16,6 +16,8 @@ public static class SchemaFactory
         StructuredResponseKind.GroundedAnswer => GroundedAnswerSchema(),
         StructuredResponseKind.MealSelection => MealSelectionSchema(),
         StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisSchema(),
+        StructuredResponseKind.MealPlanSelection => MealPlanSelectionSchema(),
+        StructuredResponseKind.WorkoutPlanSelection => WorkoutPlanSelectionSchema(),
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind),
             kind,
@@ -112,6 +114,120 @@ public static class SchemaFactory
             },
         },
         ["required"] = new JsonArray("selections"),
+    };
+
+    // Kế hoạch nhiều ngày: mô hình chỉ chọn chỉ số món trong danh mục ứng viên
+    // và trả trích dẫn; mọi rationale/số liệu do code dựng từ request + candidate.
+    private static JsonObject MealPlanSelectionSchema() => new()
+    {
+        ["type"] = "object",
+        ["properties"] = new JsonObject
+        {
+            ["days"] = new JsonObject
+            {
+                ["type"] = "array",
+                ["description"] = "Các ngày của kế hoạch, đúng ngày và đúng thứ tự đã cho trong prompt.",
+                ["items"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["date"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Ngày ISO YYYY-MM-DD đã cho trong prompt.",
+                        },
+                        ["meals"] = new JsonObject
+                        {
+                            ["type"] = "array",
+                            ["description"] = "Các bữa của ngày; chỉ chọn món trong danh mục ứng viên.",
+                            ["items"] = new JsonObject
+                            {
+                                ["type"] = "object",
+                                ["properties"] = new JsonObject
+                                {
+                                    ["meal_type"] = new JsonObject
+                                    {
+                                        ["type"] = "string",
+                                        ["description"] = "BREAKFAST | LUNCH | DINNER | SNACK theo bữa đã cho.",
+                                    },
+                                    ["food_indices"] = new JsonObject
+                                    {
+                                        ["type"] = "array",
+                                        ["description"] = "Chỉ số món trong danh mục ứng viên (bắt đầu từ 0), tối đa 5 và không trùng.",
+                                        ["items"] = new JsonObject { ["type"] = "integer" },
+                                    },
+                                    ["citations"] = CitationArraySchema(),
+                                },
+                                ["required"] = new JsonArray("meal_type", "food_indices", "citations"),
+                            },
+                        },
+                    },
+                    ["required"] = new JsonArray("date", "meals"),
+                },
+            },
+        },
+        ["required"] = new JsonArray("days"),
+    };
+
+    // Kế hoạch tập luyện: skeleton đã chốt ngày/buổi, mô hình chỉ chọn một
+    // hoạt động trong catalog đóng và trả trích dẫn; không viết thời lượng,
+    // cường độ hay bài tập mới.
+    private static JsonObject WorkoutPlanSelectionSchema() => new()
+    {
+        ["type"] = "object",
+        ["properties"] = new JsonObject
+        {
+            ["days"] = new JsonObject
+            {
+                ["type"] = "array",
+                ["description"] = "Các ngày có buổi tập trong skeleton; không trả ngày nghỉ.",
+                ["items"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["date"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Ngày ISO YYYY-MM-DD của buổi tập đã cho trong skeleton.",
+                        },
+                        ["activity_index"] = new JsonObject
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "Chỉ số hoạt động trong catalog đã cho (bắt đầu từ 0).",
+                        },
+                        ["citations"] = CitationArraySchema(),
+                    },
+                    ["required"] = new JsonArray("date", "activity_index", "citations"),
+                },
+            },
+        },
+        ["required"] = new JsonArray("days"),
+    };
+
+    private static JsonObject CitationArraySchema() => new()
+    {
+        ["type"] = "array",
+        ["description"] = "Các trích dẫn chống đỡ lựa chọn (có thể rỗng).",
+        ["items"] = new JsonObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JsonObject
+            {
+                ["chunk_index"] = new JsonObject
+                {
+                    ["type"] = "integer",
+                    ["description"] = "Chỉ số đoạn trong CONTEXT (bắt đầu từ 0).",
+                },
+                ["quote"] = new JsonObject
+                {
+                    ["type"] = "string",
+                    ["description"] = "Trích nguyên văn từ đoạn tương ứng.",
+                },
+            },
+            ["required"] = new JsonArray("chunk_index", "quote"),
+        },
     };
 
     private static JsonObject NutrientGapAnalysisSchema() => new()

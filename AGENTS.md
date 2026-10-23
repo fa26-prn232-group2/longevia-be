@@ -141,6 +141,12 @@ other synchronously over gRPC; asynchronous events go through RabbitMQ.
   `READY_FOR_FRONTEND` only when contract, implementation, test evidence and the
   counted sync check are all complete. A feature that does not change the client
   surface must record that conclusion in `tasks.md`.
+- If a feature changes a gRPC method/message, event contract/topology or other
+  service-to-service integration surface, it must update
+  `specs/<owner>-<NNN>-<slug>/backend-integration-guide.md`; set
+  `READY_FOR_BACKEND` only when contract, implementation, test evidence and the
+  counted sync check are all complete. A feature that does not change the
+  backend integration surface must record that conclusion in `tasks.md`.
 - **MANDATORY — Observability & Metrics (Prometheus & Grafana)**:
   - Mọi microservice (Identity, Diet, Progress, Recommendation, Worker) khi khởi tạo MUST tích hợp endpoint metrics để Prometheus thu thập và hiển thị lên Grafana (Dashboard cổng `3001`).
   - Sử dụng extension chuẩn từ `Longevia.Shared` (2 dòng lệnh trong `Program.cs`):

@@ -22,7 +22,7 @@ whichever feature directory happens to be newest under `specs/`.
 
 The artifact chain you can expect: `spec.md`, `research.md`, `plan.md`,
 `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `checklists/`,
-`frontend-guide.md`, and `deferred.md`.
+`frontend-guide.md`, `backend-integration-guide.md`, and `deferred.md`.
 Confirm each one exists before relying on it. If something is missing, report
 that back to the orchestrator rather than inferring its contents.
 

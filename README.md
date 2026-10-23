@@ -124,21 +124,22 @@ không kèm version.
 Copy-Item .env.example .env
 
 # 2. Bật hạ tầng (PostgreSQL, RabbitMQ, Nginx, Swagger UI)
-# --env-file là bắt buộc: compose nằm ở deployments/ nên không tự đọc .env ở gốc
-docker compose --env-file .env -f deployments/docker-compose.yml up -d
+# make up tự chạy bootstrap schema + seed rồi mới dựng service.
+make up
 
 # 3. Build và test
 make lint
 make check
 ```
 
-> **Tri thức sách là tự động.** Lệnh `up -d` ở trên cũng chạy hai bước deploy:
-> `kb-schema` (tạo schema `kb` bằng migration của service) và `kb-init` (nạp corpus
-> từ seed đã commit ở `resources/knowledge/`). Bước nạp **không cần API key**;
-> nếu corpus đã nạp đúng phiên bản thì nó bỏ qua trong vài giây. Máy khác hoặc VPS
-> cũng chỉ cần đúng lệnh đó. Muốn nạp tay: `make kb-ensure`; muốn kiểm tra:
-> `make kb-verify`; muốn chứng minh từ DB rỗng: `make kb-smoke`. Chi tiết:
-> [`docs/development/rag-ingestion.md`](docs/development/rag-ingestion.md).
+> **Tri thức sách là tự động.** `make up` chạy job một lần `kb-bootstrap`
+> (EF migration + nạp corpus từ seed đã commit ở `resources/knowledge/`), sau đó
+> container job tự xoá. Bước nạp **không cần API key**; nếu corpus đã nạp đúng
+> phiên bản thì nó bỏ qua trong vài giây. Máy khác hoặc VPS cũng chỉ cần
+> `make up`. Muốn chỉ nạp seed: `make bootstrap` hoặc `make kb-ensure`; muốn
+> kiểm tra: `make kb-verify`; muốn chứng minh từ DB rỗng: `make kb-smoke`.
+> Không dùng `docker compose up -d` cho lần chạy đầu vì lệnh đó không nạp seed.
+> Chi tiết: [`docs/development/rag-ingestion.md`](docs/development/rag-ingestion.md).
 
 Test API nhanh bằng Swagger: xem [`docs/development/api-testing.md`](docs/development/api-testing.md).
 

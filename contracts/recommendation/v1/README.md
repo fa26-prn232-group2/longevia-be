@@ -46,3 +46,5 @@ Hai hệ số trang khác nhau và **không được quy đổi qua lại**:
   nhật lại bản thiết kế.
 - Mô hình dữ liệu phía sau trích dẫn:
   `specs/duck-001-recommendation-rag/data-model.md` (schema `kb`).
+- Hướng dẫn gọi gRPC và ví dụ `grpcurl`:
+  `specs/duck-002-recommendation-plan-rpcs/backend-integration-guide.md`.

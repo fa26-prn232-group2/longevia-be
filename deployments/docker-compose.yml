@@ -15,6 +15,10 @@ name: longevia
 #
 # Backend services are added below once their Dockerfiles exist.
 #
+# First boot / seed reload MUST use `make up` or `make bootstrap` so the
+# one-shot `kb-bootstrap` job runs and is removed afterwards. A plain
+# `docker compose up -d` starts the services without loading the seed.
+#
 # Networks (required by ADR 001 section 2.2 - do not flatten these into one):
 #
 #   edge        nginx + client-facing services. This is the only network the
@@ -172,6 +176,9 @@ services:
       # Server-side gRPC deadline; keep it above the provider's real generation
       # latency, otherwise long grounded answers hit DEADLINE_EXCEEDED.
       RECOMMENDATION__DEADLINE_SECONDS: ${RECOMMENDATION__DEADLINE_SECONDS:-30}
+      # Server-side gRPC deadline for the two plan RPCs (GenerateMealPlan and
+      # GenerateWorkoutPlan); the five existing RPCs keep the value above.
+      RECOMMENDATION__PLAN_DEADLINE_SECONDS: ${RECOMMENDATION__PLAN_DEADLINE_SECONDS:-90}
       RAG__TOP_K: ${RAG__TOP_K:-8}
       RAG__MAX_CANDIDATES: ${RAG__MAX_CANDIDATES:-50}
       RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
@@ -181,54 +188,41 @@ services:
       RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
       RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
     depends_on:
-      kb-init:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     networks:
       - internal_net
       - data_net
 
   # -------------------------------------------------------------------------
-  # Deploy-time schema step. Reuses the service image so the schema still comes
-  # from the EF Core migration (Code First) instead of a hand-written SQL file.
-  # ---------
-  kb-schema:
+  # Deploy-time schema + seed bootstrap. Reuses the service image (EF Core
+  # migration is still the only schema source) and runs as a one-shot Compose
+  # job. It is intentionally behind the `bootstrap` profile so a plain
+  # `docker compose up -d` does not leave an exited container behind.
+  #
+  # Canonical first boot:
+  #   make up
+  #
+  # Manual seed reload:
+  #   make kb-ensure
+  # -------------------------------------------------------------------------
+  kb-bootstrap:
+    profiles: ["bootstrap"]
     build:
       context: ..
       dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
     image: longevia/recommendation:local
-    command: ["--migrate-only"]
+    command: ["--bootstrap", "--seed", "/seed", "--skip-if-loaded", "--verify"]
     environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - data_net
-    restart: "no"
-
-  # -------------------------------------------------------------------------
-  # Deploy-time seed loader. Runs the offline pipeline image against the seed
-  # committed in resources/knowledge so a fresh volume gets the corpus without
-  # an API key and without anyone remembering to run the ingest.
-  #
-  # `--skip-if-loaded` makes it a no-op once the same corpus version is active.
-  # `--verify` fails loudly if the seed and the database disagree.
-  # -------------------------------------------------------------------------
-  kb-init:
-    build:
-      context: ../scripts/book-kb
-    image: longevia/book-kb:local
-    init: true
-    command: ["load", "--work", "/seed", "--skip-if-loaded", "--verify"]
-    environment:
-      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      KNOWLEDGE_DB__CORPUS_KEY: ${KNOWLEDGE_DB__CORPUS_KEY:-che-do-an-truong-tho}
+      KNOWLEDGE_DB__SCHEMA: ${KNOWLEDGE_DB__SCHEMA:-kb}
     volumes:
       - ../resources/knowledge/che-do-an-truong-tho:/seed:ro
     depends_on:
       postgres:
         condition: service_healthy
-      kb-schema:
-        condition: service_completed_successfully
     networks:
       - data_net
     restart: "no"

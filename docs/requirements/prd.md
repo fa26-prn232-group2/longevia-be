@@ -269,6 +269,25 @@ Ngoài ra, service giữ **knowledge store** riêng (`recommendation_db`) chứa
   - `AC-3`: Nạp lại idempotent, không tạo chunk trùng (`corpus_version` = hash nội dung corpus).
   - `AC-4`: Chunk từ trang có nghi vấn số liệu (`review/numbers.md`, `review/qa.md`) mang cờ `needs_review = true`.
 
+##### US-REC-07: Lập kế hoạch ăn uống theo tuần
+- **Mô tả**: Là người dùng, tôi muốn nhận kế hoạch ăn uống nhiều ngày bám mục tiêu dinh dưỡng, không chứa thành phần tôi dị ứng và có dẫn nguồn sách.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: RPC `GenerateMealPlan` nhận hồ sơ, mục tiêu ngày, `week_start_date` (thứ Hai), `days` (1..7), `meals_per_day` (1..4), `candidate_foods`; service **chỉ chọn trong danh mục này** và lọc allergen/dietary/`excluded_food_ids` **bằng code**.
+  - `AC-2`: Trả đúng `days` ngày liên tiếp, mỗi ngày đủ `meals_per_day` bữa (tối đa 5 món/bữa); calo/macro/fiber sao chép nguyên từ candidate và nằm trong ±10% ngân sách ngày khi khả thi.
+  - `AC-3`: Đã ăn ≥ **105%** mục tiêu trong ngày thuộc tuần (`consumed_calories` + `consumed_date`) → ngày đó `calorie_cap_reached = true`, không có bữa chính, tối đa 3 gợi ý đồ uống 0 calo/thói quen.
+  - `AC-4`: Citation chỉ thuộc chương 4 hoặc Phụ lục A (`book_page_from >= 238`) và `quote` phải khớp chunk nguồn; corpus rỗng → `citations` rỗng + warning `corpus_not_loaded`, **không** bịa nguồn.
+  - `AC-5`: Lỗi đầu vào trả mã ổn định (`recommendation.invalid_targets`, `recommendation.invalid_consumed_calories`, `recommendation.invalid_week_start`, ...) qua trailer `code`; mọi response có `disclaimer` (BR-04).
+  - `AC-6`: RPC **không** ghi DB, không lưu kế hoạch và không log hồ sơ/nội dung kế hoạch; caller chịu trách nhiệm lưu kết quả.
+
+##### US-REC-08: Lập kế hoạch tập luyện theo tuần
+- **Mô tả**: Là người dùng, tôi muốn nhận lịch tập an toàn cho số ngày và số buổi tôi chọn, tôn trọng giới hạn sức khỏe và dụng cụ hiện có.
+- **Tiêu chí nghiệm thu (Acceptance Criteria)**:
+  - `AC-1`: RPC `GenerateWorkoutPlan` nhận hồ sơ, `goal` (khác `GOAL_UNSPECIFIED`), `week_start_date` (thứ Hai), `days` (1..7), `sessions_per_week` (0 = `min(3, days)`, không lớn hơn `days`), `minutes_per_session` (0 = 30, hoặc 10..120), `activity_preference`, `equipment_available`, `limitations`.
+  - `AC-2`: Trả đủ `days` ngày và đúng `sessions_scheduled` buổi khi còn hoạt động an toàn; ngày còn lại `rest_day = true` với `activity` rỗng, `duration_minutes = 0`, `citations` rỗng.
+  - `AC-3`: Hoạt động/cường độ chỉ lấy từ catalog chương 5 + dữ liệu caller; limitation không khớp ánh xạ bị bỏ qua + warning `unsupported_limitation`; thiếu căn cứ cường độ → `intensity_unverified`; **không** suy diễn y tế.
+  - `AC-4`: Corpus rỗng → kế hoạch degraded từ dữ liệu caller + warning `activity_source_unverified`/`corpus_not_loaded`, không bịa citation; tham số buổi/phút sai khoảng → `recommendation.invalid_workout_params`.
+  - `AC-5`: RPC **không** ghi DB, không lưu lịch tập, không log hồ sơ/limitations; mọi response có `disclaimer` (BR-04).
+
 #### C. Định nghĩa Hợp đồng Protobuf (`contracts/recommendation/v1/recommendation.proto`)
 
 ```protobuf
@@ -284,6 +303,9 @@ service RecommendationService {
   rpc EvaluateLongevityHabits  (LongevityHabitRequest)       returns (LongevityHabitResponse);
   rpc AskLongevityQuestion     (AskLongevityQuestionRequest)  returns (AskLongevityQuestionResponse);
   rpc SearchLongevityKnowledge (SearchKnowledgeRequest)       returns (SearchKnowledgeResponse);
+  // Kế hoạch tuần (additive): message chi tiết xem contracts/recommendation/v1/recommendation.proto.
+  rpc GenerateMealPlan         (GenerateMealPlanRequest)      returns (GenerateMealPlanResponse);
+  rpc GenerateWorkoutPlan      (GenerateWorkoutPlanRequest)   returns (GenerateWorkoutPlanResponse);
 }
 
 enum MealType {
@@ -587,6 +609,8 @@ Xử lý các tác vụ nền bất đồng bộ, lắng nghe các sự kiện t
 | **Đánh giá thói quen trường thọ** (US-REC-03) | Diet/Progress ⇄ Recom. | `EvaluateLongevityHabits` | `recommendation_db`: `kb.chunks` (read) | — |
 | **Hỏi tri thức sách** (US-REC-04) | Diet ⇄ Recom. | `AskLongevityQuestion` | `recommendation_db`: `kb.chunks` (read) | — |
 | **Tra cứu tri thức sách** (US-REC-05) | Diet ⇄ Recom. | `SearchLongevityKnowledge` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Kế hoạch ăn uống tuần** (US-REC-07) | Diet ⇄ Recom. | `GenerateMealPlan` | `recommendation_db`: `kb.chunks` (read) | — |
+| **Kế hoạch tập luyện tuần** (US-REC-08) | Progress ⇄ Recom. | `GenerateWorkoutPlan` | `recommendation_db`: `kb.chunks` (read) | — |
 | **Nạp corpus tri thức** (US-REC-06) | Recom. (offline) | `scripts/book-kb` | `recommendation_db`: `kb.chunks` (write) | — |
 | **Ghi nhận cân nặng/BMI** | Progress | `POST /api/progress/metrics` | `progress_db`: `BodyMetricLogs`| — |
 | **Đếm giờ nhịn ăn 16:8** | Progress | `POST /api/progress/fasting/start` | `progress_db`: `FastingSessions` | — |

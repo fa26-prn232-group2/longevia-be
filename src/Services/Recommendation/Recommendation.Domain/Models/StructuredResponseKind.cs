@@ -20,4 +20,17 @@ public enum StructuredResponseKind
     /// từ sách + trích dẫn. Mô hình không được tính lại hay bịa số liệu.
     /// </summary>
     NutrientGapAnalysis = 2,
+
+    /// <summary>
+    /// Chọn món cho kế hoạch nhiều ngày: chỉ số món trong danh mục ứng viên +
+    /// trích dẫn cho từng bữa. Không có rationale hay số liệu dinh dưỡng; code
+    /// dựng các phần đó từ dữ liệu request và candidate.
+    /// </summary>
+    MealPlanSelection = 3,
+
+    /// <summary>
+    /// Chọn hoạt động cho các buổi tập trong skeleton: chỉ số hoạt động trong
+    /// catalog đóng + trích dẫn. Không có thời lượng/cường độ/bài tập mới.
+    /// </summary>
+    WorkoutPlanSelection = 4,
 }

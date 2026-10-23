@@ -22,8 +22,9 @@ Hiện tại: 13 chương, 188 chunk, model `gemini-embedding-001`, 768 chiều.
 
 ```powershell
 # Nạp seed vào recommendation_db (idempotent, không cần key)
-docker compose --env-file .env -f deployments/docker-compose.yml up -d   # service kb-init tự nạp
-make kb-ensure                                                          # hoặc nạp tay
+make up          # first boot: schema + seed + services
+make bootstrap   # chỉ schema + seed, không dựng service
+make kb-ensure   # nạp/cập nhật seed bằng job .NET kb-bootstrap
 ```
 
 ## Khi nào phải xuất lại seed
@@ -41,6 +42,6 @@ nên chạy lại không tốn thêm chi phí cho phần đã nhúng).
 
 - **Không sửa tay** các file trong thư mục này — chúng là dữ liệu sinh tự động.
 - Seed phải khớp `embedding_dim` với cột `vector(n)` trong `kb.chunk`; lệch số chiều
-  sẽ làm `kb-init` dừng với lỗi rõ ràng (không ghi dữ liệu sai).
+  sẽ làm `kb-bootstrap` dừng với lỗi rõ ràng (không ghi dữ liệu sai).
 - Nội dung là **dữ liệu phái sinh từ sách có bản quyền**, chỉ dùng cho mục đích học tập;
   xem [`NOTICE.md`](../../../NOTICE.md) mục 2 và mục 3.

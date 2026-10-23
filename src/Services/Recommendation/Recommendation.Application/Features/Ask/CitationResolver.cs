@@ -40,6 +40,33 @@ public sealed partial class CitationResolver
         };
     }
 
+    /// <summary>
+    /// Biến thể dùng cho hai RPC plan (D-08): giữ các citation có <c>quote</c> khớp
+    /// nội dung đoạn nguồn, bỏ citation sai và **không** abstain khi danh sách
+    /// rỗng — plan vẫn hợp lệ khi corpus rỗng.
+    /// </summary>
+    public IReadOnlyList<Citation> ResolveOptional(JsonObject? payload, IReadOnlyList<RetrievedChunk> chunks)
+    {
+        ArgumentNullException.ThrowIfNull(chunks);
+
+        if (payload?["citations"] is not JsonArray citations || chunks.Count == 0)
+        {
+            return [];
+        }
+
+        var resolved = new List<Citation>();
+        foreach (var node in citations)
+        {
+            var citation = ResolveOne(node as JsonObject, chunks);
+            if (citation is not null)
+            {
+                resolved.Add(citation);
+            }
+        }
+
+        return resolved;
+    }
+
     private static Citation? ResolveOne(JsonObject? node, IReadOnlyList<RetrievedChunk> chunks)
     {
         if (node is null || !TryReadQuote(node, out var quote))

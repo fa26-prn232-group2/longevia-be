@@ -237,3 +237,24 @@ tách khỏi **re-index** để môi trường mới không phải gọi provide
   (`load --work /seed --skip-if-loaded --verify`). Chỉ sau đó `recommendation` mới khởi động.
 - Nạp seed **không cần** `GOOGLE_AI__API_KEY`; re-index vẫn cần và vẫn thủ công.
 - Runtime service vẫn **read-only**; `kb-init` là bước deploy, không phải runtime.
+
+### Bổ sung (2026-10-23) — .NET bootstrap thay `kb-schema` + Python `kb-init`
+
+Deploy load chuyển từ hai container one-shot (`kb-schema`, `kb-init`) sang **một job
+.NET** trong chính image Recommendation:
+
+- `SeedLoader` đọc `build.json`, `chunks.jsonl.gz`, `page_flags.jsonl.gz` và upsert
+  `kb.corpus/chapter/chunk/page_flag` trong một transaction; idempotent theo
+  `(corpus_key, version)`.
+- `dotnet Recommendation.Api.dll --bootstrap --seed /seed --skip-if-loaded --verify`
+  chạy EF migration rồi nạp seed, không mở Kestrel/gRPC và không cần
+  `GOOGLE_AI__API_KEY`.
+- Compose giữ một service `kb-bootstrap` sau profile `bootstrap`; `make up`/
+  `make bootstrap` chạy bằng `docker compose run --rm --no-deps kb-bootstrap` nên
+  container job bị xoá sau khi xong. `docker compose up -d` một mình không nạp seed.
+- Pipeline Python `scripts/book-kb` vẫn là công cụ **offline** cho re-index, xuất seed
+  và eval; không còn dùng để load lúc deploy.
+- Runtime service vẫn **read-only**; migration + seed chỉ chạy trong job bootstrap.
+
+Lý do: một image, một job, không còn container `kb-*` exit mặc định; schema vẫn do
+EF Core Code First quản lý và seed vẫn nạp được khi không có API key.

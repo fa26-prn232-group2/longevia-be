@@ -158,21 +158,32 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
-### Frontend handoff decision *(required)*
+### Integration handoff decision *(required)*
 
-Giữ đúng nhánh phù hợp và xóa nhánh còn lại khi sinh `tasks.md`:
+Giữ đúng một nhánh phù hợp và xóa các nhánh còn lại khi sinh `tasks.md`:
 
-- [ ] TXXX **Không đổi client surface**: xác nhận feature không thêm, sửa hoặc
-      xóa HTTP endpoint, event payload hay DTO client-facing; không tạo
-      `frontend-guide.md`.
+- [ ] TXXX **Không đổi integration surface**: xác nhận feature không thêm, sửa
+      hoặc xóa HTTP endpoint, event payload, DTO client-facing, gRPC
+      method/message hay event contract service-to-service; không tạo guide.
 - [ ] TXXX **Có đổi client surface**: tạo hoặc cập nhật
       `specs/<feature>/frontend-guide.md` từ
       `.specify/templates/frontend-guide-template.md`; ghi delta before → after,
       contract canonical, auth, error, idempotency, pagination, realtime,
       compatibility và test evidence.
+- [ ] TXXX **Có đổi backend integration surface**: tạo hoặc cập nhật
+      `specs/<feature>/backend-integration-guide.md` từ
+      `.specify/templates/backend-integration-guide-template.md`; ghi delta
+      before → after cho gRPC/event/internal HTTP, deadline, retry/idempotency,
+      error/trailer, topology, compatibility và test evidence.
+- [ ] TXXX **Có đổi cả hai surface**: tạo hoặc cập nhật cả
+      `frontend-guide.md` và `backend-integration-guide.md` theo hai mục trên.
 - [ ] TXXX **Đồng bộ frontend guide ở close-out**: đối chiếu contract/source,
       điền số route, field, enum và status/error đã kiểm; chỉ đặt
       `READY_FOR_FRONTEND` khi mọi evidence và sync checkbox hoàn tất.
+- [ ] TXXX **Đồng bộ backend integration guide ở close-out**: đối chiếu
+      contract/source, điền số RPC, message/field, enum, error code/trailer,
+      deadline, event/routing key và test evidence; chỉ đặt
+      `READY_FOR_BACKEND` khi mọi evidence và sync checkbox hoàn tất.
 
 ### Phát hiện ngoài phạm vi *(required when applicable)*
 

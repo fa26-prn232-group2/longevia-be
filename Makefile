@@ -15,6 +15,7 @@ PROJECTS ?=
 TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
+	up bootstrap down \
 	infra-up infra-down docker-up docker-down docker-stop docker-logs \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
 	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
@@ -33,6 +34,7 @@ SERVICE ?=
 # Book OCR toolchain (scripts/book-ocr). Docker-only, writes to artifacts/book-ocr.
 # Never part of the .NET gate.
 BOOK_OCR := $(DOCKER) compose -f scripts/book-ocr/compose.yml
+COMPOSE := $(DOCKER) compose --env-file .env -f deployments/docker-compose.yml
 PAGES ?=
 BOOK_OCR_PAGES := $(if $(PAGES),--pages $(PAGES),)
 WORKERS ?=
@@ -89,8 +91,12 @@ help:
 	@echo   kb-verify        verify chapters, chunks and page ranges
 	@echo   kb-eval          run the golden-set evaluation
 	@echo   kb-seed          export the compressed seed under resources/knowledge
-	@echo   kb-ensure        load the committed seed into recommendation_db (no API key)
-	@echo   kb-smoke         prove an empty database is loaded by kb-init (isolated project)
+	@echo   kb-ensure        load the committed seed via the .NET bootstrap job (no API key)
+	@echo   kb-smoke         prove an empty database is loaded by kb-bootstrap
+	@echo.
+	@echo   bootstrap        create schema + load seed, remove the one-shot container
+	@echo   up               bootstrap then start all services (canonical first boot)
+	@echo   down             stop services and remove orphan containers
 
 restore:
 	$(DOTNET) restore $(SLN_OR_DIR)
@@ -230,7 +236,19 @@ kb-seed:
 	$(BOOK_KB) run --rm book-kb seed
 
 kb-ensure:
-	$(DOCKER) compose --env-file .env -f deployments/docker-compose.yml run --rm kb-init
+	$(COMPOSE) --profile bootstrap run --rm kb-bootstrap
 
 kb-smoke:
 	$(PWSH) -NoProfile -File scripts/book-kb/smoke-seed.ps1
+
+# Canonical first boot: start Postgres, run the one-shot schema+seed job, then
+# start the services. `docker compose up -d` alone does NOT load the seed.
+bootstrap:
+	$(COMPOSE) up -d --wait postgres
+	$(COMPOSE) --profile bootstrap run --rm --no-deps kb-bootstrap
+
+up: bootstrap
+	$(COMPOSE) up -d
+
+down:
+	$(COMPOSE) down --remove-orphans

@@ -82,18 +82,18 @@ UI gộp chạy bằng container `swagger-ui` (xem `deployments/docker-compose.y
 
 ## 4. Recommendation (gRPC-only)
 
-Recommendation không có REST/Swagger. Test bằng gRPC:
+Recommendation không có REST/Swagger. Service nghe gRPC trong mạng nội bộ
+`internal_net` ở cổng `50051`, không publish ra host và **không bật gRPC
+reflection**. Khi test bằng `grpcurl`, phải truyền contract:
 
 ```bash
-# nếu bật gRPC reflection
-grpcurl -plaintext localhost:5001 list
-grpcurl -plaintext -d '{...}' localhost:5001 longevia.recommendation.v1.RecommendationService/GetMealRecommendations
-grpcurl -plaintext -d '{...}' localhost:5001 longevia.recommendation.v1.RecommendationService/AskLongevityQuestion
+grpcurl -plaintext -import-path . \
+  -proto contracts/recommendation/v1/recommendation.proto \
+  describe longevia.recommendation.v1.RecommendationService
 ```
 
-> Port `5001` trong ví dụ là port **host** dùng để test tay; trong Docker,
-> Recommendation chỉ nghe trong mạng nội bộ `internal_net` và không expose ra
-> host.
+Hướng dẫn đầy đủ 7 RPC, cách chạy trong compose và ví dụ request:
+[`specs/duck-002-recommendation-plan-rpcs/backend-integration-guide.md`](../../specs/duck-002-recommendation-plan-rpcs/backend-integration-guide.md).
 
 ## 5. Sinh client từ OpenAPI (tùy chọn)
 

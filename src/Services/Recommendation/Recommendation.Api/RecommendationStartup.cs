@@ -2,6 +2,7 @@ using Google.GenAI;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using Recommendation.Api.Deadlines;
 using Recommendation.Api.Endpoints;
 using Recommendation.Api.Extensions;
 using Recommendation.Api.HealthChecks;
@@ -9,9 +10,12 @@ using Recommendation.Api.Middlewares;
 using Recommendation.Application.Abstractions;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.LongevityHabits;
+using Recommendation.Application.Features.MealPlans;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
+using Recommendation.Application.Features.Plans;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
 
@@ -30,17 +34,24 @@ public static class RecommendationStartup
 
     /// <summary>Đăng ký toàn bộ cấu hình, dịch vụ và gRPC server.</summary>
     /// <param name="migrateOnly">
-    /// Chế độ deploy <c>kb-schema</c>: chỉ chạy migration nên không bind, không
+    /// Chế độ deploy cũ <c>kb-schema</c>: chỉ chạy migration nên không bind, không
     /// validate cấu hình provider (tránh đòi API key ở bước tạo schema).
     /// </param>
-    public static void Configure(WebApplicationBuilder builder, bool migrateOnly = false)
+    /// <param name="bootstrap">
+    /// Chế độ nạp seed: chạy migration + <c>ISeedLoader</c> rồi thoát, không mở
+    /// Kestrel/gRPC và không cần <c>GOOGLE_AI__API_KEY</c>.
+    /// </param>
+    public static void Configure(
+        WebApplicationBuilder builder,
+        bool migrateOnly = false,
+        bool bootstrap = false)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Services.AddRecommendationTelemetry();
-        ConfigureOptions(builder, migrateOnly);
+        ConfigureOptions(builder, migrateOnly || bootstrap);
 
-        if (migrateOnly)
+        if (migrateOnly || bootstrap)
         {
             ConfigureKnowledgeStoreOnly(builder);
             return;
@@ -60,9 +71,69 @@ public static class RecommendationStartup
         app.Logger.LogInformation("Knowledge store schema is up to date.");
     }
 
-    // Chế độ migrate-only chỉ cần knowledge store, không cần provider/gRPC.
+    /// <summary>
+    /// Chạy migration rồi nạp seed đã xuất (<c>--bootstrap</c>), không mở cổng.
+    /// Trả exit code 0 khi thành công hoặc bỏ qua, 1 khi lỗi. Log chỉ chứa
+    /// metadata corpus công khai, không chứa dữ liệu người dùng.
+    /// </summary>
+    public static async Task<int> BootstrapAsync(
+        WebApplication app,
+        SeedLoadOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(options);
+
+        try
+        {
+            await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+
+            await using var scope = app.Services.CreateAsyncScope();
+            var loader = scope.ServiceProvider.GetRequiredService<ISeedLoader>();
+            var result = await loader.LoadAsync(options, cancellationToken).ConfigureAwait(false);
+
+            if (result.Skipped)
+            {
+                app.Logger.LogInformation(
+                    "Knowledge corpus already active ('{CorpusKey}' {Version}); nothing to load.",
+                    result.CorpusKey,
+                    result.Version);
+            }
+            else
+            {
+                app.Logger.LogInformation(
+                    "Knowledge corpus loaded ('{CorpusKey}' {Version}): {Chapters} chapters, {Chunks} chunks, {PageFlags} page flags.",
+                    result.CorpusKey,
+                    result.Version,
+                    result.Chapters,
+                    result.Chunks,
+                    result.PageFlags);
+            }
+
+            if (result.Verification is { Ok: true } verification)
+            {
+                app.Logger.LogInformation(
+                    "Knowledge store verification passed: {Chapters} chapters, {Chunks} chunks, {PageFlags} page flags.",
+                    verification.Chapters,
+                    verification.Chunks,
+                    verification.PageFlags);
+            }
+
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogError(
+                exception,
+                "Knowledge corpus bootstrap failed for seed '{SeedPath}'.",
+                options.SeedPath);
+            return 1;
+        }
+    }
+
+    // Chế độ migrate-only/bootstrap chỉ cần knowledge store, không cần provider/gRPC.
     private static void ConfigureKnowledgeStoreOnly(WebApplicationBuilder builder) =>
-        builder.Services.AddKnowledgeStore();
+        builder.Services.AddKnowledgeDbContext();
 
     /// <summary>Chạy migration và map endpoint trước khi server phục vụ request.</summary>
     public static async Task RunAsync(WebApplication app, CancellationToken cancellationToken = default)
@@ -132,9 +203,9 @@ public static class RecommendationStartup
     }
 
     // Bind và kiểm tra ngay lúc khởi động (fail fast).
-    private static void ConfigureOptions(WebApplicationBuilder builder, bool migrateOnly)
+    private static void ConfigureOptions(WebApplicationBuilder builder, bool skipProviderOptions)
     {
-        if (!migrateOnly)
+        if (!skipProviderOptions)
         {
             ConfigureProviderOptions(builder);
         }
@@ -175,8 +246,11 @@ public static class RecommendationStartup
         builder.Services.AddOptions<RecommendationOptions>()
             .BindEnvSection(builder.Configuration, RecommendationOptions.SectionName)
             .Validate(
-                o => o.DeadlineSeconds is >= 5 and <= 120,
+                o => RecommendationOptions.IsValidDeadlineSeconds(o.DeadlineSeconds),
                 "RECOMMENDATION__DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
+            .Validate(
+                o => RecommendationOptions.IsValidDeadlineSeconds(o.PlanDeadlineSeconds),
+                "RECOMMENDATION__PLAN_DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
             .ValidateOnStart();
     }
 
@@ -237,6 +311,35 @@ public static class RecommendationStartup
         // cũng phải scoped.
         builder.Services.AddScoped<SearchLongevityKnowledgeUseCase>();
 
+        // Thành phần dùng chung của hai RPC plan (Phase 2): đều thuần, không I/O
+        // nên đăng ký singleton; use case plan (scoped) sẽ được thêm ở US1/US2.
+        builder.Services.AddSingleton<PlanRequestValidator>();
+        builder.Services.AddSingleton<PlanDateRange>();
+        builder.Services.AddSingleton<PlanPromptFormatter>();
+        builder.Services.AddSingleton<PlanRationaleBuilder>();
+
+        // Kế hoạch ăn uống (US1): filter/splitter/parser/validator/fallback thuần
+        // nên singleton; use case phụ thuộc IKnowledgeStore (scoped) nên scoped.
+        builder.Services.AddSingleton<PlanAllergenFilter>();
+        builder.Services.AddSingleton<MealPlanCandidateFilter>();
+        builder.Services.AddSingleton<WeeklyBudgetSplitter>();
+        builder.Services.AddSingleton<MealPlanPromptBuilder>();
+        builder.Services.AddSingleton<MealPlanSelectionParser>();
+        builder.Services.AddSingleton<MealPlanValidator>();
+        builder.Services.AddSingleton<MealPlanFallbackSelector>();
+        builder.Services.AddSingleton<MealPlanSuggestionBuilder>();
+        builder.Services.AddScoped<GenerateMealPlanUseCase>();
+
+        // Kế hoạch tập luyện (US2): catalog/skeleton/prompt/parser/validator thuần
+        // nên singleton; use case phụ thuộc IKnowledgeStore (scoped) nên scoped.
+        builder.Services.AddSingleton<WorkoutLimitationRules>();
+        builder.Services.AddSingleton<WorkoutActivityCatalogBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanSkeletonBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanPromptBuilder>();
+        builder.Services.AddSingleton<WorkoutPlanSelectionParser>();
+        builder.Services.AddSingleton<WorkoutPlanValidator>();
+        builder.Services.AddScoped<GenerateWorkoutPlanUseCase>();
+
         builder.Services.AddHealthChecks()
             .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."))
             .AddCheck<KnowledgeCorpusHealthCheck>("kb-corpus");
@@ -244,10 +347,13 @@ public static class RecommendationStartup
 
     private static void ConfigureGrpc(WebApplicationBuilder builder)
     {
+        // Policy thuần đọc IOptions nên đăng ký singleton; interceptor scoped để
+        // giữ nguyên vòng đời hiện có.
+        builder.Services.AddSingleton<RpcDeadlinePolicy>();
         builder.Services.AddScoped<GrpcExceptionInterceptor>();
         builder.Services.AddScoped(sp => new ServerDeadlineInterceptor(
             sp.GetRequiredService<ILogger<ServerDeadlineInterceptor>>(),
-            TimeSpan.FromSeconds(sp.GetRequiredService<IOptions<RecommendationOptions>>().Value.DeadlineSeconds)));
+            sp.GetRequiredService<RpcDeadlinePolicy>()));
 
         // gRPC service được resolve qua DI để tôn trọng constructor injection.
         builder.Services.AddScoped<RecommendationGrpcService>();

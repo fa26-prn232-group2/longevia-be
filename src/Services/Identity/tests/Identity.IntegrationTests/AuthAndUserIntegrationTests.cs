@@ -17,6 +17,48 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
     private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
+    public async Task Startup_AppliesMigrationsIdempotently_AndCreatesExpectedSchema()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+        var appliedMigrations = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
+        Assert.Contains("20261021212343_InitialIdentityDb", appliedMigrations);
+        Assert.Contains("20261023193116_ReconcileMassTransitOutboxModel", appliedMigrations);
+
+        await db.Database.MigrateAsync();
+
+        var appliedAfterRepeat = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
+        Assert.Equal(appliedMigrations, appliedAfterRepeat);
+
+        var tables = await db.Database.SqlQueryRaw<string>(
+                """SELECT table_name AS "Value" FROM information_schema.tables WHERE table_schema = 'public'""")
+            .ToListAsync();
+        Assert.Contains("users", tables);
+        Assert.Contains("user_profiles", tables);
+        Assert.Contains("refresh_tokens", tables);
+        Assert.Contains("InboxState", tables);
+        Assert.Contains("OutboxMessage", tables);
+        Assert.Contains("OutboxState", tables);
+
+        var indexDefinitions = await db.Database.SqlQueryRaw<string>(
+                """SELECT indexdef AS "Value" FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('IX_users_Email', 'IX_user_profiles_UserId', 'IX_refresh_tokens_Token')""")
+            .ToListAsync();
+        Assert.Equal(3, indexDefinitions.Count);
+        Assert.All(indexDefinitions, index => Assert.Contains("UNIQUE INDEX", index.ToUpperInvariant()));
+
+        var outboxIndexes = await db.Database.SqlQueryRaw<string>(
+                """SELECT indexname AS "Value" FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('IX_OutboxState_Created', 'IX_OutboxMessage_EnqueueTime', 'IX_OutboxMessage_ExpirationTime')""")
+            .ToListAsync();
+        Assert.Equal(3, outboxIndexes.Count);
+
+        var legacyBusNameColumn = await db.Database.SqlQueryRaw<string>(
+                """SELECT column_name AS "Value" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'OutboxState' AND column_name = 'BusName'""")
+            .ToListAsync();
+        Assert.Empty(legacyBusNameColumn);
+    }
+
+    [Fact]
     public async Task FullUserLifecycle_Register_Login_GetMe_UpdateProfile_Refresh_Logout()
     {
         var email = $"user_{Guid.NewGuid():N}@example.com";

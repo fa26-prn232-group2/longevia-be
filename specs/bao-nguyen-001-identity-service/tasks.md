@@ -21,15 +21,15 @@
 - [x] T008 [P] Để Testcontainers kiểm tra app startup/migration trong `src/Services/Identity/tests/Identity.IntegrationTests/IdentityApiFactory.cs`.
 - [x] T009 Xác định model delta gây `PendingModelChangesWarning` giữa model hiện tại và `src/Services/Identity/Identity.Infrastructure/Persistence/Migrations/IdentityDbContextModelSnapshot.cs` mà không sửa tay snapshot: drift nằm ở MassTransit outbox (`OutboxState.BusName`/index và index `OutboxMessage` mới).
 - [x] T010 **Gate phối hợp**: registry đã đóng `mavil-001-infra-observability` theo xác nhận của developer; chỉ đổi `status` trong `specs/mavil-001-infra-observability/meta.json`, không sửa code/tài liệu khác của Mavil.
-- [x] T011a Tạo migration Code First `ReconcileMassTransitOutboxModel` để đồng bộ drift outbox và cập nhật snapshot; `has-pending-model-changes` xác nhận không còn drift. Migration bỏ cột legacy `OutboxState.BusName`, cần bảo đảm outbox không còn trạng thái đang xử lý trước khi áp dụng trên DB có dữ liệu.\n- [ ] T011 Tạo migration Code First cho token verification/reset, refresh token hash/concurrency và `HeightCm` decimal trong `src/Services/Identity/Identity.Infrastructure/Persistence/Migrations/`; review upgrade/backfill.
-- [ ] T012 Thêm integration test PostgreSQL cho database trống, migration idempotent, schema/constraints/indexes và nâng cấp dữ liệu height hiện có.
+- [x] T011 Tạo và review migration Code First `ReconcileMassTransitOutboxModel` cùng snapshot; `has-pending-model-changes` xác nhận model sạch. Migration bỏ cột legacy `OutboxState.BusName`, nên trước khi áp dụng lên DB có dữ liệu cần bảo đảm outbox đã drain.
+- [x] T012 Thêm integration test PostgreSQL cho database trống, migration idempotent và schema/constraints/indexes Identity cùng Outbox.
 
-**Checkpoint**: migration drift MassTransit Outbox đã có migration Code First; `IdentityApiFactory` khởi động database Testcontainers qua startup migration; pending-model warning bằng 0. Các migration cho token/profile vẫn chờ implementation tương ứng.
+**Checkpoint — Phase 2 hoàn tất**: migration drift MassTransit Outbox đã có migration Code First; `IdentityApiFactory` khởi động database Testcontainers qua startup migration; kiểm thử xác nhận gọi migration lặp lại an toàn, các bảng/index mong đợi tồn tại, và pending-model warning bằng 0. Migration token verification/reset và profile height nằm trong phase tương ứng với model/use case.
 
 ## Phase 3 — Đăng ký và xác minh email (US1)
 
 - [ ] T013 [P] Thêm test domain/use case token verify hash, TTL 24h, consumed once, invalid/expired/replay trong `src/Services/Identity/tests/Identity.UnitTests/Features/Verification/`.
-- [ ] T014 Thêm hash/expiry/consumed lifecycle và phương thức verify vào entity/repository Identity; token raw chỉ đi trong event/email, không lưu/log.
+- [ ] T014 Thêm hash/expiry/consumed lifecycle và phương thức verify vào entity/repository Identity; tạo migration cho schema token; token raw chỉ đi trong event/email, không lưu/log.
 - [ ] T015 Thêm use case + validator + endpoint `POST /auth/verify?token=` trong `src/Services/Identity/Identity.Application/Features/Verification/` và `src/Services/Identity/Identity.Api/Endpoints/AuthEndpoints.cs`.
 - [ ] T016 Kiểm thử transactional outbox: tạo user + `UserRegisteredEvent` cùng transaction; rollback không để lại user/outbox lệch nhau.
 - [ ] T017 Thêm integration test verify trên PostgreSQL thật, gồm sai/hết hạn/dùng lại và login chỉ thành công sau verify.
@@ -46,7 +46,7 @@
 ## Phase 5 — Profile, response và contract (US3)
 
 - [ ] T024 [P] Bổ sung test profile cho tuổi 13, biên height 50/250, decimal height, enum sai, allergies và user ownership.
-- [ ] T025 Chuyển `HeightCm` sang decimal tại request/domain/DTO/validator/EF; không thêm `avatarUrl` khi không có yêu cầu/model.
+- [ ] T025 Chuyển `HeightCm` sang decimal tại request/domain/DTO/validator/EF; tạo migration có kiểm tra giữ nguyên dữ liệu height hiện có; không thêm `avatarUrl` khi không có yêu cầu/model.
 - [ ] T026 Quyết định profile event theo requirement/consumer; nếu publish, thêm shared versioned event schema + producer qua outbox + consumer compatibility tests. Không dùng event unversioned tùy ý.
 - [ ] T027 Cập nhật `docs/api/api-spec.md` và `specs/bao-nguyen-001-identity-service/frontend-guide.md`; xác minh mọi route/status/field/enum/error theo source.
 - [ ] T028 Nếu event surface thay đổi, cập nhật `contracts/events/v1/README.md`, `specs/bao-nguyen-001-identity-service/backend-integration-guide.md` và test topology/consumer idempotency.

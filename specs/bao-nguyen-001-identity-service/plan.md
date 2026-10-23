@@ -75,7 +75,7 @@ specs/bao-nguyen-001-identity-service/         # plan, tasks, guides, evidence
 ## Trình tự phase và cổng
 
 1. **Auth policy (đã hoàn thành)**: login/refresh chỉ Active; logout owner-check; unit negative control; scoped unit tests.
-2. **Bootstrap + schema reconciliation**: auto-migration mặc định và fail-fast; xác nhận model diff/snapshot; migration drift đã được xử lý sau khi registry được đóng.
+2. **Bootstrap + schema reconciliation (đã hoàn thành)**: auto-migration mặc định và fail-fast; migration drift MassTransit đã được xử lý; PostgreSQL Testcontainers xác nhận startup trên database mới, migration idempotent, schema/indexes và không còn pending-model warning.
 3. **Registration + verification**: token hash/TTL, verify endpoint khớp email, transactional outbox; PostgreSQL + RabbitMQ + Worker + Mailpit E2E.
 4. **Credential lifecycle**: change/forgot/reset endpoint + contract; hashed reset token, single-use, revoke sessions, non-enumeration.
 5. **Profile + response contract**: decimal height migration/backfill, response/avatar contract, validation, event contract decision.

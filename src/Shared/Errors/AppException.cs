@@ -6,11 +6,6 @@ namespace Longevia.Shared.Errors;
 /// Lỗi nghiệp vụ có kiểu: mang mã ổn định để client xử lý theo hợp đồng.
 /// Theo <c>docs/system-design/design-pattern.md</c> §III.
 /// </summary>
-/// <remarks>
-/// Không dùng <c>record</c> vì C# không cho record kế thừa <see cref="Exception"/>
-/// (CS8864). Mỗi feature tạo lỗi riêng bằng
-/// <c>AppException.NotFound("...").WithCode("recommendation.xxx")</c>.
-/// </remarks>
 public sealed class AppException : Exception
 {
     public AppException(
@@ -58,27 +53,45 @@ public sealed class AppException : Exception
     /// <summary>Trả về bản sao của lỗi kèm danh sách lỗi theo field.</summary>
     public AppException WithErrors(IReadOnlyList<FieldError> errors) => new(Detail, Status, Title, Code, errors);
 
-    public static AppException BadRequest(string detail, IReadOnlyList<FieldError>? errors = null) =>
-        new(detail, (int)HttpStatusCode.BadRequest, "Yêu cầu không hợp lệ.", "system.bad_request", errors);
+    public static AppException BadRequest(
+        string detail,
+        string code = "system.bad_request",
+        IReadOnlyList<FieldError>? errors = null) =>
+        new(detail, (int)HttpStatusCode.BadRequest, "Yêu cầu không hợp lệ.", code, errors);
 
-    public static AppException Unauthorized(string detail) =>
-        new(detail, (int)HttpStatusCode.Unauthorized, "Chưa xác thực.", "system.unauthorized");
+    public static AppException Unauthorized(
+        string detail,
+        string code = "system.unauthorized") =>
+        new(detail, (int)HttpStatusCode.Unauthorized, "Chưa xác thực.", code);
 
-    public static AppException Forbidden(string detail) =>
-        new(detail, (int)HttpStatusCode.Forbidden, "Không có quyền truy cập.", "system.forbidden");
+    public static AppException Forbidden(
+        string detail,
+        string code = "system.forbidden") =>
+        new(detail, (int)HttpStatusCode.Forbidden, "Không có quyền truy cập.", code);
 
-    public static AppException NotFound(string detail) =>
-        new(detail, (int)HttpStatusCode.NotFound, "Không tìm thấy dữ liệu.", "system.not_found");
+    public static AppException NotFound(
+        string detail,
+        string code = "system.not_found") =>
+        new(detail, (int)HttpStatusCode.NotFound, "Không tìm thấy dữ liệu.", code);
 
-    public static AppException Conflict(string detail) =>
-        new(detail, (int)HttpStatusCode.Conflict, "Xung đột dữ liệu.", "system.conflict");
+    public static AppException Conflict(
+        string detail,
+        string code = "system.conflict") =>
+        new(detail, (int)HttpStatusCode.Conflict, "Xung đột dữ liệu.", code);
 
-    public static AppException Unprocessable(string detail, IReadOnlyList<FieldError>? errors = null) =>
-        new(detail, (int)HttpStatusCode.UnprocessableEntity, "Không thể xử lý yêu cầu.", "system.unprocessable", errors);
+    public static AppException Unprocessable(
+        string detail,
+        string code = "system.unprocessable",
+        IReadOnlyList<FieldError>? errors = null) =>
+        new(detail, (int)HttpStatusCode.UnprocessableEntity, "Không thể xử lý yêu cầu.", code, errors);
 
-    public static AppException Internal(string detail) =>
-        new(detail, (int)HttpStatusCode.InternalServerError, "Lỗi hệ thống.", "system.internal");
+    public static AppException Internal(
+        string detail = "Đã xảy ra lỗi hệ thống không mong muốn.",
+        string code = "system.internal") =>
+        new(detail, (int)HttpStatusCode.InternalServerError, "Lỗi hệ thống.", code);
 
-    public static AppException ServiceUnavailable(string detail) =>
-        new(detail, (int)HttpStatusCode.ServiceUnavailable, "Dịch vụ tạm thời không khả dụng.", "system.service_unavailable");
+    public static AppException ServiceUnavailable(
+        string detail,
+        string code = "system.service_unavailable") =>
+        new(detail, (int)HttpStatusCode.ServiceUnavailable, "Dịch vụ tạm thời không khả dụng.", code);
 }

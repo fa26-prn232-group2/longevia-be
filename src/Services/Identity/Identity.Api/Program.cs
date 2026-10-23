@@ -1,7 +1,19 @@
+using Identity.Api.Endpoints;
+using Identity.Api.Middlewares;
+using Identity.Application;
+using Identity.Infrastructure;
+using Identity.Infrastructure.Persistence;
+using Longevia.Shared.Auth;
 using Longevia.Shared.Observability;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddIdentityApplication();
+builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -10,6 +22,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Longevia Identity API",
         Version = "v1",
+        Description = "Identity Service API - Authentication, Profiles, Tokens",
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -19,7 +32,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nhap JWT (khong can tien to 'Bearer ').",
+        Description = "Nhập Access Token JWT (không cần tiền tố 'Bearer ').",
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
@@ -28,11 +41,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Observability: the two standard lines (AGENTS.md §3). Ports come from
-// compose/Dockerfile (ASPNETCORE_HTTP_PORTS), never from code.
 builder.Services.AddObservability("IdentityService");
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -40,8 +53,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
+app.MapAuthEndpoints();
+app.MapUserEndpoints();
 app.MapPrometheusScrapingEndpoint();
 
+if (app.Configuration.GetValue("Database:AutoMigrate", true))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 app.Run();
+
+public partial class Program;

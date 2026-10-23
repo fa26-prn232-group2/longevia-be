@@ -1,0 +1,14 @@
+{
+  "owner": "bao-nguyen",
+  "number": 1,
+  "slug": "identity-service",
+  "branch": "feat/identity-service",
+  "status": "open",
+  "services": [
+    "Identity",
+    "Shared",
+    "Worker"
+  ],
+  "description": "Hoàn thiện Identity Service theo requirements và architecture",
+  "opened_at": "2026-10-24"
+}

@@ -35,6 +35,15 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.UpdatedAt);
 
+        builder.Property(u => u.VerificationTokenHash)
+            .HasMaxLength(64);
+
+        builder.HasIndex(u => u.VerificationTokenHash)
+            .IsUnique();
+
+        builder.Property(u => u.VerificationTokenExpiresAt);
+        builder.Property(u => u.VerificationTokenConsumedAt);
+
         builder.HasOne(u => u.Profile)
             .WithOne()
             .HasForeignKey<UserProfile>(p => p.UserId)

@@ -3,6 +3,7 @@ using Identity.Application.Abstractions;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Common.Errors;
 using Identity.Application.Common.Mappers;
+using Identity.Application.Features.Verification;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
 using Longevia.Shared.Events;
@@ -28,6 +29,7 @@ public sealed class RegisterUserUseCase(
         var passwordHash = passwordHasher.Hash(request.Password);
         var verificationToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var now = DateTimeOffset.UtcNow;
+        var verificationTokenHash = VerificationTokenHasher.Hash(verificationToken);
 
         var user = User.Create(
             Guid.NewGuid(),
@@ -35,7 +37,8 @@ public sealed class RegisterUserUseCase(
             passwordHash,
             request.FullName,
             now,
-            verificationToken);
+            verificationTokenHash,
+            now.AddHours(24));
 
         await userRepository.AddAsync(user, ct);
 

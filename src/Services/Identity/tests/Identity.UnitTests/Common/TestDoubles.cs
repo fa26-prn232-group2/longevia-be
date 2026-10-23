@@ -8,6 +8,7 @@ namespace Identity.UnitTests.Common;
 internal sealed class InMemoryUserRepository : IUserRepository
 {
     private readonly List<User> _users = [];
+    public IReadOnlyList<User> Users => _users;
 
     public Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         Task.FromResult(_users.FirstOrDefault(u => u.Id == id));
@@ -20,6 +21,12 @@ internal sealed class InMemoryUserRepository : IUserRepository
 
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default) =>
         Task.FromResult(_users.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)));
+
+    public Task<bool> TryVerifyTokenAsync(string tokenHash, DateTimeOffset verifiedAt, CancellationToken ct = default)
+    {
+        var user = _users.FirstOrDefault(candidate => candidate.TryVerify(tokenHash, verifiedAt));
+        return Task.FromResult(user is not null);
+    }
 
     public Task AddAsync(User user, CancellationToken ct = default)
     {

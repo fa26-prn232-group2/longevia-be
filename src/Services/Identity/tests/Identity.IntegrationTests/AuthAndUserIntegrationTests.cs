@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Features.Auth;
 using Identity.Application.Features.Registration;
@@ -25,6 +27,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var appliedMigrations = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
         Assert.Contains("20261021212343_InitialIdentityDb", appliedMigrations);
         Assert.Contains("20261023193116_ReconcileMassTransitOutboxModel", appliedMigrations);
+        Assert.Contains(appliedMigrations, migration => migration.Contains("VerificationToken", StringComparison.Ordinal));
 
         await db.Database.MigrateAsync();
 
@@ -40,6 +43,11 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Contains("InboxState", tables);
         Assert.Contains("OutboxMessage", tables);
         Assert.Contains("OutboxState", tables);
+
+        var verificationColumns = await db.Database.SqlQueryRaw<string>(
+                """SELECT column_name AS "Value" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name IN ('VerificationTokenHash', 'VerificationTokenExpiresAt', 'VerificationTokenConsumedAt')""")
+            .ToListAsync();
+        Assert.Equal(3, verificationColumns.Count);
 
         var indexDefinitions = await db.Database.SqlQueryRaw<string>(
                 """SELECT indexdef AS "Value" FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('IX_users_Email', 'IX_user_profiles_UserId', 'IX_refresh_tokens_Token')""")
@@ -83,15 +91,14 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var pendingLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
         Assert.Equal(HttpStatusCode.Unauthorized, pendingLogin.StatusCode);
 
-        // The verification endpoint is implemented in a later Identity phase.
-        // Activate through the domain model here so this test can cover the remaining lifecycle.
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
-            user.Verify(DateTimeOffset.UtcNow);
-            await db.SaveChangesAsync();
-        }
+        var verificationToken = Assert.Single(factory.RegisteredEvents, registeredEvent => registeredEvent.Email == email).VerificationToken;
+        var invalidVerify = await _client.GetAsync("/auth/verify?token=" + Uri.EscapeDataString(new string('0', 64)));
+        Assert.Equal(HttpStatusCode.BadRequest, invalidVerify.StatusCode);
+
+        var verifyResponse = await _client.GetAsync("/auth/verify?token=" + Uri.EscapeDataString(verificationToken));
+        Assert.Equal(HttpStatusCode.NoContent, verifyResponse.StatusCode);
+        var replayResponse = await _client.GetAsync("/auth/verify?token=" + Uri.EscapeDataString(verificationToken));
+        Assert.Equal(HttpStatusCode.BadRequest, replayResponse.StatusCode);
 
         // 4. Login after verification
         var loginRequest = new LoginRequest(email, password);
@@ -146,4 +153,55 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var logoutResponse = await _client.PostAsJsonAsync("/auth/logout", new LogoutRequest(newTokens.RefreshToken));
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task Registration_ShouldPersistUserAndOutboxMessageInSameTransaction()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var email = $"rollback_{Guid.NewGuid():N}@example.com";
+
+        await using (var transaction = await db.Database.BeginTransactionAsync())
+        {
+            var useCase = scope.ServiceProvider.GetRequiredService<Identity.Application.Features.Registration.RegisterUserUseCase>();
+            await useCase.ExecuteAsync(new RegisterUserRequest(email, "SecurePassword123!", "Rollback User"));
+
+            Assert.True(await db.Users.AnyAsync(user => user.Email == email));
+            var outboxBodies = await db.Database.SqlQueryRaw<string>("SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"").ToListAsync();
+            Assert.Contains(outboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
+
+            await transaction.RollbackAsync();
+        }
+
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        Assert.False(await verificationDb.Users.AnyAsync(user => user.Email == email));
+        var remainingOutboxBodies = await verificationDb.Database.SqlQueryRaw<string>("SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"").ToListAsync();
+        Assert.DoesNotContain(remainingOutboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Verify_ShouldRejectExpiredTokenStoredInPostgres()
+    {
+        const string rawToken = "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            db.Users.Add(Identity.Domain.Entities.User.Create(
+                Guid.NewGuid(),
+                $"expired_{Guid.NewGuid():N}@example.com",
+                "password-hash",
+                "Expired User",
+                DateTimeOffset.UtcNow.AddDays(-2),
+                tokenHash,
+                DateTimeOffset.UtcNow.AddHours(-1)));
+            await db.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync("/auth/verify?token=" + Uri.EscapeDataString(rawToken));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
 }

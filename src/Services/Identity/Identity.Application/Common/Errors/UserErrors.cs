@@ -19,6 +19,11 @@ public static class UserErrors
             $"Email '{email}' đã được sử dụng.",
             "identity.email_taken");
 
+    public static AppException InvalidVerificationToken() =>
+        AppException.BadRequest(
+            "Token xác minh không hợp lệ, đã hết hạn hoặc đã được sử dụng.",
+            "identity.invalid_verification_token");
+
     public static AppException Suspended() =>
         AppException.Forbidden(
             "Tài khoản của bạn đã bị khóa.",

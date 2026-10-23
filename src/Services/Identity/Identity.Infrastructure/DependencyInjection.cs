@@ -4,6 +4,7 @@ using Identity.Infrastructure.Messaging;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Persistence.Repositories;
 using Identity.Infrastructure.Security;
+using Longevia.Shared.Events;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -55,6 +56,17 @@ public static class DependencyInjection
                         h.Username(user);
                         h.Password(pass);
                     });
+
+                    cfg.ConfigureJsonSerializerOptions(options =>
+                    {
+                        EventJsonOptions.Configure(options);
+                        return options;
+                    });
+
+                    cfg.Message<UserRegisteredEvent>(message => message.SetEntityName(IdentityEventTopology.EventsExchange));
+                    cfg.Publish<UserRegisteredEvent>(publish => publish.ExchangeType = "topic");
+                    cfg.Send<UserRegisteredEvent>(send =>
+                        send.UseRoutingKeyFormatter(_ => IdentityEventTopology.UserRegisteredRoutingKey));
 
                     cfg.ConfigureEndpoints(ctx);
                 });

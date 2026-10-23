@@ -22,6 +22,20 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default) =>
         await dbContext.Users.AnyAsync(u => u.Email == email, ct);
 
+    public async Task<bool> TryVerifyTokenAsync(
+        string tokenHash,
+        DateTimeOffset verifiedAt,
+        CancellationToken ct = default) =>
+        await dbContext.Users
+            .Where(u => u.VerificationTokenHash == tokenHash
+                && u.Status == Identity.Domain.Constants.UserStatus.PendingVerification
+                && u.VerificationTokenExpiresAt > verifiedAt
+                && u.VerificationTokenConsumedAt == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.Status, Identity.Domain.Constants.UserStatus.Active)
+                .SetProperty(u => u.VerificationTokenConsumedAt, (DateTimeOffset?)verifiedAt)
+                .SetProperty(u => u.UpdatedAt, (DateTimeOffset?)verifiedAt), ct) == 1;
+
     public async Task AddAsync(User user, CancellationToken ct = default) =>
         await dbContext.Users.AddAsync(user, ct);
 

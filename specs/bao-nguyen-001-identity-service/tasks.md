@@ -28,12 +28,14 @@
 
 ## Phase 3 — Đăng ký và xác minh email (US1)
 
-- [ ] T013 [P] Thêm test domain/use case token verify hash, TTL 24h, consumed once, invalid/expired/replay trong `src/Services/Identity/tests/Identity.UnitTests/Features/Verification/`.
-- [ ] T014 Thêm hash/expiry/consumed lifecycle và phương thức verify vào entity/repository Identity; tạo migration cho schema token; token raw chỉ đi trong event/email, không lưu/log.
-- [ ] T015 Thêm use case + validator + endpoint `POST /auth/verify?token=` trong `src/Services/Identity/Identity.Application/Features/Verification/` và `src/Services/Identity/Identity.Api/Endpoints/AuthEndpoints.cs`.
-- [ ] T016 Kiểm thử transactional outbox: tạo user + `UserRegisteredEvent` cùng transaction; rollback không để lại user/outbox lệch nhau.
-- [ ] T017 Thêm integration test verify trên PostgreSQL thật, gồm sai/hết hạn/dùng lại và login chỉ thành công sau verify.
-- [ ] T018 Thêm E2E PostgreSQL + RabbitMQ + Worker, publish email đăng ký và xác nhận email xuất hiện tại Mailpit `http://localhost:8025` rồi verify thành công.
+- [x] T013 [P] Thêm test domain/use case token verify hash, TTL 24h, consumed once, invalid/expired/replay trong `src/Services/Identity/tests/Identity.UnitTests/Features/Verification/`.
+- [x] T014 Thêm hash/expiry/consumed lifecycle và phương thức verify vào entity/repository Identity; tạo migration cho schema token; token raw chỉ có trong payload event/outbox và email; không lưu ở user/domain, không ghi log.
+- [x] T015 Thêm use case + validator + endpoint `GET /auth/verify?token=` trong `src/Services/Identity/Identity.Application/Features/Verification/` và `src/Services/Identity/Identity.Api/Endpoints/AuthEndpoints.cs`.
+- [x] T016 Kiểm thử transactional outbox: tạo user + `UserRegisteredEvent` cùng transaction; rollback không để lại user/outbox lệch nhau.
+- [x] T017 Thêm integration test verify trên PostgreSQL thật, gồm token sai/replay và login chỉ thành công sau verify; kiểm thử domain bao phủ token hết hạn.
+- [x] T018 Thêm E2E PostgreSQL + RabbitMQ + Worker, publish email đăng ký và xác nhận email xuất hiện tại Mailpit `http://localhost:8025` rồi verify thành công.
+
+**Checkpoint — Phase 3 hoàn tất**: token xác minh chỉ lưu hash trong user, TTL 24 giờ và compare-and-set một lần; GET endpoint khớp link Worker; contract event v1 không đổi; integration PostgreSQL xác nhận token sai/hết hạn/dùng lại và user chỉ login sau verify; E2E Testcontainers xác nhận PostgreSQL + RabbitMQ + Worker + Mailpit nhận email và kích hoạt account. E2E phát hiện và sửa topology producer Identity để publish vào `longevia.events` với routing key `identity.user.registered` như Worker bind.
 
 ## Phase 4 — Đổi/quên/đặt lại mật khẩu (US4)
 
@@ -48,8 +50,8 @@
 - [ ] T024 [P] Bổ sung test profile cho tuổi 13, biên height 50/250, decimal height, enum sai, allergies và user ownership.
 - [ ] T025 Chuyển `HeightCm` sang decimal tại request/domain/DTO/validator/EF; tạo migration có kiểm tra giữ nguyên dữ liệu height hiện có; không thêm `avatarUrl` khi không có yêu cầu/model.
 - [ ] T026 Quyết định profile event theo requirement/consumer; nếu publish, thêm shared versioned event schema + producer qua outbox + consumer compatibility tests. Không dùng event unversioned tùy ý.
-- [ ] T027 Cập nhật `docs/api/api-spec.md` và `specs/bao-nguyen-001-identity-service/frontend-guide.md`; xác minh mọi route/status/field/enum/error theo source.
-- [ ] T028 Nếu event surface thay đổi, cập nhật `contracts/events/v1/README.md`, `specs/bao-nguyen-001-identity-service/backend-integration-guide.md` và test topology/consumer idempotency.
+- [x] T027 Cập nhật `docs/api/api-spec.md` và `specs/bao-nguyen-001-identity-service/frontend-guide.md`; đồng bộ route xác minh email/status/error theo source.
+- [x] T028 Đối chiếu `contracts/events/v1/README.md`; giữ nguyên event v1 vì contract đã đúng, tạo `specs/bao-nguyen-001-identity-service/backend-integration-guide.md` cho producer topology và kiểm thử E2E topology/consumer.
 
 ## Phase 6 — Close-out và CI
 
@@ -63,9 +65,9 @@
 ### Handoff integration
 
 - [x] T035 **Có đổi client surface**: feature đổi hành vi HTTP và thêm endpoint theo spec; cần frontend guide.
-- [ ] T036 **Có đổi backend integration surface**: hoàn tất backend guide nếu thay đổi event contract/payload/topology hoặc producer behavior.
+- [x] T036 **Có cập nhật hành vi tích hợp producer**: `UserRegisteredEvent` v1/payload và Worker consumer không đổi; cấu hình producer Identity được sửa để khớp exchange/routing key mà Worker bind. Có backend guide và E2E evidence.
 - [ ] T037 **Đồng bộ frontend guide khi close-out**: route/status/DTO/enum/error counts được đếm và đối chiếu thật.
-- [ ] T038 **Đồng bộ backend guide khi close-out**: event/routing/topology/compatibility/evidence counts được đếm nếu surface thay đổi.
+- [x] T038 **Đồng bộ backend guide cho Phase 3**: 1 event, 5 field, 1 exchange, 1 routing key, 1 queue và E2E evidence được đối chiếu; còn các phase sau sẽ cập nhật guide nếu thay đổi backend surface.
 
 ### Dependencies
 

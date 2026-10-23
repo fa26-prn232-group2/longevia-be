@@ -15,6 +15,9 @@ public sealed class User
     public string Status { get; private set; } = UserStatus.PendingVerification;
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
+    public string? VerificationTokenHash { get; private set; }
+    public DateTimeOffset? VerificationTokenExpiresAt { get; private set; }
+    public DateTimeOffset? VerificationTokenConsumedAt { get; private set; }
 
     public UserProfile? Profile { get; private set; }
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
@@ -30,11 +33,13 @@ public sealed class User
         string passwordHash,
         string fullName,
         DateTimeOffset createdAt,
-        string verificationToken)
+        string verificationTokenHash,
+        DateTimeOffset verificationTokenExpiresAt)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(verificationTokenHash);
 
         var user = new User
         {
@@ -44,13 +49,14 @@ public sealed class User
             FullName = fullName.Trim(),
             Status = UserStatus.PendingVerification,
             CreatedAt = createdAt,
+            VerificationTokenHash = verificationTokenHash,
+            VerificationTokenExpiresAt = verificationTokenExpiresAt,
         };
 
         user._domainEvents.Add(new UserRegisteredDomainEvent(
             user.Id,
             user.Email,
             user.FullName,
-            verificationToken,
             createdAt));
 
         return user;
@@ -75,10 +81,21 @@ public sealed class User
         UpdatedAt = updatedAt;
     }
 
-    public void Verify(DateTimeOffset updatedAt)
+    public bool TryVerify(string verificationTokenHash, DateTimeOffset verifiedAt)
     {
+        if (Status != UserStatus.PendingVerification
+            || VerificationTokenConsumedAt is not null
+            || VerificationTokenExpiresAt is null
+            || VerificationTokenExpiresAt <= verifiedAt
+            || !string.Equals(VerificationTokenHash, verificationTokenHash, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         Status = UserStatus.Active;
-        UpdatedAt = updatedAt;
+        VerificationTokenConsumedAt = verifiedAt;
+        UpdatedAt = verifiedAt;
+        return true;
     }
 
     public void ClearDomainEvents()

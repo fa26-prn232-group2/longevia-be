@@ -1,5 +1,6 @@
 using Identity.Application.Features.Auth;
 using Identity.Application.Features.Registration;
+using Identity.Application.Features.Verification;
 using Longevia.Shared.Validation;
 
 namespace Identity.Api.Endpoints;
@@ -21,6 +22,19 @@ public static class AuthEndpoints
         .AddEndpointFilter<ValidationFilter<RegisterUserRequest>>()
         .WithName("RegisterUser")
         .WithSummary("Đăng ký tài khoản người dùng mới")
+        .AllowAnonymous();
+
+        group.MapGet("/verify", async (
+            [AsParameters] VerifyUserRequest request,
+            VerifyUserUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.NoContent();
+        })
+        .AddEndpointFilter<ValidationFilter<VerifyUserRequest>>()
+        .WithName("VerifyUser")
+        .WithSummary("Xác minh địa chỉ email và kích hoạt tài khoản")
         .AllowAnonymous();
 
         group.MapPost("/login", async (

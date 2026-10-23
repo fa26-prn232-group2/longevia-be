@@ -28,13 +28,14 @@ Hoàn thiện vòng đời tài khoản Identity: xác minh email, chỉ cho `Ac
 
 1. **Trạng thái truy cập**: chỉ `UserStatus.Active` được cấp access/refresh token. Login pending trả `identity.invalid_credentials`; refresh cho non-active trả `identity.invalid_refresh_token`; suspended tiếp tục trả forbidden ở login.
 2. **Token xác minh/reset**: sinh bằng CSPRNG; chỉ lưu hash + expiry + consumed/invalidated state; consume nguyên tử. Verification TTL 24h theo email template; reset TTL 15 phút theo PRD/event contract.
-3. **Outbox**: `UserRegisteredEvent` và `PasswordResetRequestedEvent` giữ nguyên schema v1 hiện có; ghi bằng EF outbox cùng transaction với thay đổi user/token. Không publish trực tiếp sau commit.
-4. **Refresh token**: plan yêu cầu hash-at-rest và rotation concurrency an toàn. Cần migration nếu phải đổi cấu trúc hiện tại; xác định chính xác cùng schema phase.
-5. **Profile height**: API spec mô tả decimal và ví dụ `175.5`; chuyển application/domain/storage sang kiểu decimal, migration integer→numeric với backfill giữ giá trị cũ.
-6. **Avatar**: không đưa `avatarUrl` vào response vì PRD không yêu cầu, entity không có field/lifecycle quản lý avatar; API example hiện chưa có nguồn dữ liệu.
-7. **Password flows**: MVP liệt kê change password; PRD/Worker đã có reset event/template nhưng API chưa có endpoint. Bổ sung API contract trước implementation; forgot-password không tiết lộ account tồn tại.
-8. **Profile event**: event nội bộ hiện chưa có versioned shared contract/consumer. Không đổi payload hoặc thêm event mới nếu chưa xác định consumer; đối chiếu PRD traceability trước khi đóng feature.
-9. **Migrations lúc start**: mặc định bật theo `migration.md`; `Database:AutoMigrate=false` là override production có kiểm soát; migrate fail thì startup fail. Model drift MassTransit Outbox đã được giải quyết bằng migration Code First; kiểm thử startup Testcontainers đã xác nhận áp dụng được. Migration bỏ cột legacy `OutboxState.BusName`; trước khi áp dụng lên DB có dữ liệu, cần xác nhận outbox đã drain để không mất trạng thái xử lý đang hoạt động.
+3. **Outbox**: `UserRegisteredEvent` và `PasswordResetRequestedEvent` giữ nguyên schema v1 hiện có; ghi bằng EF outbox cùng transaction với thay đổi user/token. `UserRegisteredEvent` phải publish qua topic exchange `longevia.events` với routing key `identity.user.registered` để khớp Worker binding. Không publish trực tiếp sau commit.
+4. **Xác minh email**: dùng GET query token để khớp link Worker hiện tại; link GET kích hoạt trực tiếp nên trình quét email có thể xác minh sớm. Token ngẫu nhiên một lần, DB chỉ lưu SHA-256, hết hạn sau 24 giờ.
+5. **Refresh token**: plan yêu cầu hash-at-rest và rotation concurrency an toàn. Cần migration nếu phải đổi cấu trúc hiện tại; xác định chính xác cùng schema phase.
+6. **Profile height**: API spec mô tả decimal và ví dụ `175.5`; chuyển application/domain/storage sang kiểu decimal, migration integer→numeric với backfill giữ giá trị cũ.
+7. **Avatar**: không đưa `avatarUrl` vào response vì PRD không yêu cầu, entity không có field/lifecycle quản lý avatar; API example hiện chưa có nguồn dữ liệu.
+8. **Password flows**: MVP liệt kê change password; PRD/Worker đã có reset event/template nhưng API chưa có endpoint. Bổ sung API contract trước implementation; forgot-password không tiết lộ account tồn tại.
+9. **Profile event**: event nội bộ hiện chưa có versioned shared contract/consumer. Không đổi payload hoặc thêm event mới nếu chưa xác định consumer; đối chiếu PRD traceability trước khi đóng feature.
+10. **Migrations lúc start**: mặc định bật theo `migration.md`; `Database:AutoMigrate=false` là override production có kiểm soát; migrate fail thì startup fail. Model drift MassTransit Outbox đã được giải quyết bằng migration Code First; kiểm thử startup Testcontainers đã xác nhận áp dụng được. Migration bỏ cột legacy `OutboxState.BusName`; trước khi áp dụng lên DB có dữ liệu, cần xác nhận outbox đã drain để không mất trạng thái xử lý đang hoạt động.
 
 ## Model dữ liệu dự kiến
 

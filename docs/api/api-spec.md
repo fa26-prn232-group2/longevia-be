@@ -77,7 +77,15 @@
 
 ---
 
-### 2.2 `POST /api/identity/auth/login` — Đăng nhập
+### 2.2 `GET /api/identity/auth/verify?token={token}` — Xác minh email
+- **Xác thực**: Public; token là bí mật dùng một lần.
+- **Mô tả**: Kích hoạt tài khoản `PendingVerification` nếu token khớp và chưa hết hạn. Link email hiện tại mở endpoint này bằng GET.
+- **Thời hạn**: 24 giờ từ lúc đăng ký. Token đã dùng, sai hoặc hết hạn đều không kích hoạt tài khoản.
+- **Response `204 No Content`**: Xác minh thành công.
+- **Lỗi `400 Bad Request`**: `code = "identity.invalid_verification_token"` khi token sai, hết hạn hoặc đã dùng.
+- **Lưu ý**: GET xác minh trực tiếp theo quyết định sản phẩm; trình quét link trong email có thể tự mở link và kích hoạt tài khoản.
+
+### 2.3 `POST /api/identity/auth/login` — Đăng nhập
 - **Xác thực**: Public
 - **Mô tả**: Xác thực thông tin đăng nhập, ký phát hành Access Token (ES256) và cấp Refresh Token.
 - **Request Body**:
@@ -101,7 +109,7 @@
 
 ---
 
-### 2.3 `POST /api/identity/auth/refresh` — Làm mới Access Token
+### 2.4 `POST /api/identity/auth/refresh` — Làm mới Access Token
 - **Xác thực**: Public
 - **Mô tả**: Sử dụng Refresh Token để đổi lấy cặp Access Token + Refresh Token mới (Rotation).
 - **Request Body**:
@@ -124,7 +132,7 @@
 
 ---
 
-### 2.4 `POST /api/identity/auth/logout` — Đăng xuất
+### 2.5 `POST /api/identity/auth/logout` — Đăng xuất
 - **Xác thực**: Bearer JWT
 - **Request Body**:
   ```json
@@ -136,7 +144,7 @@
 
 ---
 
-### 2.5 `GET /api/identity/users/me` — Lấy thông tin cá nhân
+### 2.6 `GET /api/identity/users/me` — Lấy thông tin cá nhân
 - **Xác thực**: Bearer JWT
 - **Response `200 OK`**:
   ```json
@@ -158,7 +166,7 @@
 
 ---
 
-### 2.6 `PUT /api/identity/users/me/profile` — Cập nhật hồ sơ thể trạng cơ sở
+### 2.7 `PUT /api/identity/users/me/profile` — Cập nhật hồ sơ thể trạng cơ sở
 - **Xác thực**: Bearer JWT
 - **Request Body**:
   ```json
@@ -930,7 +938,8 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 > **Nền tảng**: RabbitMQ + MassTransit Consumer | **Database**: Không sở hữu DB nghiệp vụ
 
 ### 6.1 `UserRegisteredEvent`
-- **Exchange**: `identity.user-registered`
+- **Exchange**: `longevia.events` (`topic`)
+- **Routing key**: `identity.user.registered`
 - **Producer**: Identity Service (qua Transactional Outbox)
 - **Consumer**: `UserRegisteredConsumer` (Background Worker)
 - **Schema**:
@@ -943,7 +952,7 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
     "occurredOn": "2026-10-21T14:30:00Z"
   }
   ```
-- **Hành động**: Gọi Brevo API gửi email kích hoạt tài khoản kèm verification link:
+- **Hành động**: Worker gửi email qua SMTP relay được cấu hình (Mailpit local, Brevo production), kèm verification link dùng GET trực tiếp:
   `http://localhost:8080/api/identity/auth/verify?token=abc123token...`
 
 ### 6.2 `PasswordResetRequestedEvent`

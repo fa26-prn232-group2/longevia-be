@@ -34,8 +34,9 @@ public sealed class LoginUseCaseTests
             _passwordHasher.Hash(password),
             "Test User",
             DateTimeOffset.UtcNow,
-            "token");
-        user.Verify(DateTimeOffset.UtcNow);
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
+        Assert.True(user.TryVerify("hash", DateTimeOffset.UtcNow));
         await _userRepository.AddAsync(user);
 
         var request = new LoginRequest("test@example.com", password);
@@ -58,7 +59,8 @@ public sealed class LoginUseCaseTests
             _passwordHasher.Hash("CorrectPassword123!"),
             "Test User",
             DateTimeOffset.UtcNow,
-            "token");
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
         await _userRepository.AddAsync(user);
 
         var request = new LoginRequest("test@example.com", "WrongPassword123!");
@@ -88,7 +90,8 @@ public sealed class LoginUseCaseTests
             _passwordHasher.Hash(password),
             "Pending User",
             DateTimeOffset.UtcNow,
-            "token");
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
         await _userRepository.AddAsync(user);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>

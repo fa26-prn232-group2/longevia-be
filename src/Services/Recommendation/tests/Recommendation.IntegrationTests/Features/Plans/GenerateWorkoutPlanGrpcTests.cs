@@ -85,7 +85,7 @@ public sealed class GenerateWorkoutPlanGrpcTests(RecommendationApiFixture fixtur
         Assert.Contains(response.Warnings, warning => warning.Code == "corpus_not_loaded");
         Assert.Contains(response.Warnings, warning => warning.Code == "activity_source_unverified");
         Assert.Contains(response.Warnings, warning => warning.Code == "intensity_unverified");
-        Assert.False(response.UsedFallback);
+        Assert.True(response.UsedFallback);
         Assert.All(response.Days.Where(day => !day.RestDay), day => Assert.Empty(day.Citations));
     }
 
@@ -152,6 +152,7 @@ public sealed class GenerateWorkoutPlanGrpcTests(RecommendationApiFixture fixtur
 
         Assert.Contains(response.Warnings, warning => warning.Code == "unsupported_activity_preference");
         Assert.Contains(response.Warnings, warning => warning.Code == "no_safe_activity");
+        Assert.True(response.UsedFallback);
         Assert.Equal(0, response.SessionsScheduled);
         Assert.All(response.Days, day => Assert.True(day.RestDay));
     }

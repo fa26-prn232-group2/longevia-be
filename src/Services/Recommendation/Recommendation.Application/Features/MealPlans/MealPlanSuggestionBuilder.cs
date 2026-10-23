@@ -22,21 +22,39 @@ public sealed partial class MealPlanSuggestionBuilder
 
     private const int MaxWords = 40;
 
-    // FR-017: suggestion chỉ dành cho đồ uống 0 calo/thói quen thư giãn. Chunk
-    // chương 4/Phụ lục A chỉ được dùng khi nội dung thực sự chạm một trong các
-    // chủ đề này; so khớp sau khi bỏ dấu và không phân biệt hoa thường.
+    // FR-017: suggestion chỉ dành cho đồ uống 0 calo/thói quen thư giãn. Không
+    // dùng từ khoá chung "nước"/"uống" một mình vì chúng xuất hiện cả trong
+    // ngữ cảnh nấu ăn. So khớp sau khi bỏ dấu, không phân biệt hoa thường.
     private static readonly string[] SuggestionKeywords =
     [
-        "nước",
         "trà",
         "thảo mộc",
-        "uống",
-        "không calo",
+        "nước lọc",
+        "nước không calo",
+        "đồ uống không calo",
         "0 calo",
         "thư giãn",
         "giấc ngủ",
-        "ngủ",
+        "ngủ đủ",
         "nghỉ ngơi",
+    ];
+
+    // Ngữ cảnh nấu ăn/bổ sung: nếu cửa sổ excerpt quanh keyword rơi vào các
+    // ngữ cảnh này thì bỏ chunk để suggestion không bị hiểu thành công thức
+    // hoặc hướng dẫn bổ sung.
+    private static readonly string[] ExcludedContextKeywords =
+    [
+        "nồi",
+        "dun sôi",
+        "nấu",
+        "nguyên liệu",
+        "muỗng",
+        "thìa",
+        "gram",
+        "ml",
+        "vitamin",
+        "viên",
+        "bổ sung",
     ];
 
     /// <summary>Dựng suggestion cho một ngày chạm trần; warning mang scope của ngày.</summary>
@@ -148,7 +166,48 @@ public sealed partial class MealPlanSuggestionBuilder
             start = Math.Max(0, end - MaxWords);
 
             excerpt = string.Join(' ', words[start..end]);
-            return true;
+            return !ContainsExcludedContext(excerpt);
+        }
+
+        return false;
+    }
+
+    private static bool ContainsExcludedContext(string excerpt)
+    {
+        var tokens = Tokenize(excerpt);
+
+        foreach (var keyword in ExcludedContextKeywords)
+        {
+            var needle = Tokenize(keyword);
+            if (needle.Count > 0 && ContainsSequence(tokens, needle))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsSequence(
+        IReadOnlyList<string> tokens,
+        IReadOnlyList<string> needle)
+    {
+        for (var start = 0; start + needle.Count <= tokens.Count; start++)
+        {
+            var matched = true;
+            for (var offset = 0; offset < needle.Count; offset++)
+            {
+                if (!string.Equals(tokens[start + offset], needle[offset], StringComparison.Ordinal))
+                {
+                    matched = false;
+                    break;
+                }
+            }
+
+            if (matched)
+            {
+                return true;
+            }
         }
 
         return false;

@@ -21,7 +21,7 @@ public sealed class MealPlanSuggestionBuilderTests
             [
                 Chunk(4, 72, "Ưu tiên rau xanh và nước lọc trong ngày."),
                 Chunk(12, 238, "Uống trà thảo mộc không đường để thư giãn."),
-                Chunk(12, 239, "Đi bộ nhẹ sau bữa tối giúp dễ ngủ."),
+                Chunk(12, 239, "Đi bộ nhẹ sau bữa tối giúp có giấc ngủ tốt."),
                 Chunk(12, 240, "Giữ nhịp sinh hoạt đều đặn."),
             ]);
 
@@ -80,11 +80,39 @@ public sealed class MealPlanSuggestionBuilderTests
     }
 
     [Fact]
+    public void RejectsAppendixChunksWithCookingOrSupplementContext()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [
+                Chunk(12, 238, "Nước (240 ml)"),
+                Chunk(12, 239, "Dun sôi một nồi nước lớn"),
+                Chunk(12, 240, "uống một viên vitamin tổng hợp"),
+            ]);
+
+        Assert.Empty(result.Suggestions);
+        var warning = Assert.Single(result.Warnings);
+        Assert.Equal(PlanWarningCodes.SuggestionSourceMissing, warning.Code);
+        Assert.Equal("2026-10-28", warning.Scope);
+    }
+
+    [Fact]
+    public void RejectsSuggestionKeywordThatFallsInCookingContext()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [Chunk(12, 238, "Nước lọc (240 ml) dùng trong nồi nấu ăn.")]);
+
+        Assert.Empty(result.Suggestions);
+        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.SuggestionSourceMissing);
+    }
+
+    [Fact]
     public void SuggestionHasNoFoodIdentifier()
     {
         Assert.Null(typeof(PlanSuggestion).GetProperty("FoodId"));
 
-        var result = _builder.Build("2026-10-28", [Chunk(4, 72, "Uống đủ nước.")]);
+        var result = _builder.Build("2026-10-28", [Chunk(4, 72, "Nước lọc là lựa chọn tốt.")]);
 
         var suggestion = Assert.Single(result.Suggestions);
         Assert.DoesNotContain("f-", suggestion.Text, StringComparison.OrdinalIgnoreCase);

@@ -104,7 +104,9 @@ public sealed class GenerateWorkoutPlanUseCase(
         else
         {
             // Corpus rỗng hoặc không còn hoạt động an toàn: không gọi provider,
-            // trả đúng khung xác định đã dựng (FR-031/FR-033).
+            // trả đúng khung xác định đã dựng (FR-031/FR-033). Đây vẫn là
+            // phương án dự phòng nên cờ used_fallback phải bật.
+            usedFallback = true;
             days = BuildSkeletonDays(skeleton, catalogResult.AppliedLimitations);
         }
 

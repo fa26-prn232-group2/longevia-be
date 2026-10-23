@@ -115,6 +115,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
         Assert.Equal(0, result.SessionsScheduled);
+        Assert.True(result.UsedFallback);
         Assert.All(result.Days, day => Assert.True(day.RestDay));
         Assert.DoesNotContain(result.Days, day => day.Activity == "running");
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.NoSafeActivity);
@@ -142,6 +143,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.Equal(3, result.SessionsScheduled);
+        Assert.True(result.UsedFallback);
         Assert.Empty(result.Citations);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.CorpusNotLoaded);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.ActivitySourceUnverified);

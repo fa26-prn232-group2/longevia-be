@@ -229,7 +229,7 @@ public sealed class GenerateMealPlanUseCaseTests
             new MealPlanSelectionParser(new CitationResolver(), new PlanRationaleBuilder(new SafetyGuard())),
             new MealPlanValidator(new PlanAllergenFilter()),
             new MealPlanFallbackSelector(new PlanRationaleBuilder(new SafetyGuard())),
-            new MealPlanSuggestionBuilder(),
+            new MealPlanSuggestionBuilder(new SafetyGuard()),
             knowledgeStore,
             chatModel);
 

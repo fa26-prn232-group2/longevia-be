@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Recommendation.Application.Features.Ask;
 using Recommendation.Domain.Constants;
 using Recommendation.Domain.Models;
 
@@ -12,7 +13,7 @@ namespace Recommendation.Application.Features.MealPlans;
 /// (Phụ lục A), tối đa 3 gợi ý. Không có nguồn thì trả rỗng kèm warning
 /// <c>suggestion_source_missing</c>; suggestion không mang <c>food_id</c>.
 /// </summary>
-public sealed partial class MealPlanSuggestionBuilder
+public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
 {
     /// <summary>Chương chứa Phụ lục A (thực đơn hai tuần).</summary>
     public const int AppendixChapterNumber = 12;
@@ -22,13 +23,12 @@ public sealed partial class MealPlanSuggestionBuilder
 
     private const int MaxWords = 40;
 
-    // FR-017: suggestion chỉ dành cho đồ uống 0 calo/thói quen thư giãn. Không
-    // dùng từ khoá chung "nước"/"uống" một mình vì chúng xuất hiện cả trong
-    // ngữ cảnh nấu ăn. So khớp sau khi bỏ dấu, không phân biệt hoa thường.
+    // FR-017: suggestion chỉ dành cho đồ uống 0 calo/thói quen thư giãn. Từ khoá
+    // phải đủ hẹp để không bắt nhầm công thức/món ăn; so khớp sau khi bỏ dấu,
+    // không phân biệt hoa thường.
     private static readonly string[] SuggestionKeywords =
     [
-        "trà",
-        "thảo mộc",
+        "trà thảo mộc",
         "nước lọc",
         "nước không calo",
         "đồ uống không calo",
@@ -39,14 +39,19 @@ public sealed partial class MealPlanSuggestionBuilder
         "nghỉ ngơi",
     ];
 
-    // Ngữ cảnh nấu ăn/bổ sung: nếu cửa sổ excerpt quanh keyword rơi vào các
-    // ngữ cảnh này thì bỏ chunk để suggestion không bị hiểu thành công thức
-    // hoặc hướng dẫn bổ sung.
+    // Ngữ cảnh nấu ăn/món ăn/bổ sung: nếu cửa sổ excerpt quanh keyword rơi vào
+    // các ngữ cảnh này thì bỏ chunk để suggestion không bị hiểu thành công thức,
+    // thực đơn hoặc hướng dẫn bổ sung.
     private static readonly string[] ExcludedContextKeywords =
     [
         "nồi",
         "dun sôi",
         "nấu",
+        "nướng",
+        "bánh",
+        "pizza",
+        "gia vị",
+        "salad",
         "nguyên liệu",
         "muỗng",
         "thìa",
@@ -55,6 +60,13 @@ public sealed partial class MealPlanSuggestionBuilder
         "vitamin",
         "viên",
         "bổ sung",
+        "cà phê",
+        "bữa sáng",
+        "bữa trưa",
+        "bữa tối",
+        "món",
+        "công thức",
+        "thực đơn",
     ];
 
     /// <summary>Dựng suggestion cho một ngày chạm trần; warning mang scope của ngày.</summary>
@@ -74,6 +86,13 @@ public sealed partial class MealPlanSuggestionBuilder
 
             var chunk = retrieved.Chunk;
             if (!IsAllowedSource(chunk) || !TryBuildExcerpt(chunk.Content, out var excerpt))
+            {
+                continue;
+            }
+
+            // FR-011/FR-035: suggestion cũng không được chứa khuyến nghị thuốc,
+            // chẩn đoán hoặc thay thế điều trị.
+            if (safetyGuard.FindRefusal(excerpt) is not null)
             {
                 continue;
             }

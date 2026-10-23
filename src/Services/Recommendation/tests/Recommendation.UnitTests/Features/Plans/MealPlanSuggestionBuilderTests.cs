@@ -1,3 +1,4 @@
+using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.MealPlans;
 using Recommendation.Domain.Constants;
 using Recommendation.Domain.Models;
@@ -11,7 +12,7 @@ namespace Recommendation.UnitTests.Features.Plans;
 /// </summary>
 public sealed class MealPlanSuggestionBuilderTests
 {
-    private readonly MealPlanSuggestionBuilder _builder = new();
+    private readonly MealPlanSuggestionBuilder _builder = new(new SafetyGuard());
 
     [Fact]
     public void BuildsAtMostThreeSuggestionsFromAllowedSources()
@@ -21,7 +22,7 @@ public sealed class MealPlanSuggestionBuilderTests
             [
                 Chunk(4, 72, "Ưu tiên rau xanh và nước lọc trong ngày."),
                 Chunk(12, 238, "Uống trà thảo mộc không đường để thư giãn."),
-                Chunk(12, 239, "Đi bộ nhẹ sau bữa tối giúp có giấc ngủ tốt."),
+                Chunk(12, 239, "Đi bộ nhẹ buổi tối giúp có giấc ngủ tốt."),
                 Chunk(12, 240, "Giữ nhịp sinh hoạt đều đặn."),
             ]);
 
@@ -80,6 +81,44 @@ public sealed class MealPlanSuggestionBuilderTests
     }
 
     [Fact]
+    public void KeepsPlainRelaxationGuidanceWithoutFoodContext()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [Chunk(4, 72, "Thư giãn và ngủ đủ giấc vào buổi tối.")]);
+
+        var suggestion = Assert.Single(result.Suggestions);
+        Assert.Contains("Thư giãn", suggestion.Text, StringComparison.Ordinal);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void RejectsSuggestionWithMedicalAdvice()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [Chunk(12, 238, "Thư giãn và ngủ đủ giấc, nhưng không tự ý uống thuốc khi chưa có chẩn đoán.")]);
+
+        Assert.Empty(result.Suggestions);
+        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.SuggestionSourceMissing);
+    }
+
+    [Fact]
+    public void ContinuesToNextChunkWhenOneSuggestionHasMedicalAdvice()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [
+                Chunk(12, 238, "Thư giãn và ngủ đủ giấc, nhưng không tự ý uống thuốc."),
+                Chunk(12, 239, "Thư giãn và ngủ đủ giấc vào buổi tối."),
+            ]);
+
+        var suggestion = Assert.Single(result.Suggestions);
+        Assert.Contains("Thư giãn", suggestion.Text, StringComparison.Ordinal);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
     public void RejectsAppendixChunksWithCookingOrSupplementContext()
     {
         var result = _builder.Build(
@@ -88,6 +127,11 @@ public sealed class MealPlanSuggestionBuilderTests
                 Chunk(12, 238, "Nước (240 ml)"),
                 Chunk(12, 239, "Dun sôi một nồi nước lớn"),
                 Chunk(12, 240, "uống một viên vitamin tổng hợp"),
+                Chunk(
+                    12,
+                    241,
+                    "Trà thảo mộc: bất kỳ loại thảo mộc và gia vị nào bạn thích. Nướng theo hướng dẫn."),
+                Chunk(12, 242, "bữa sáng cà phê hoặc trà bánh mì"),
             ]);
 
         Assert.Empty(result.Suggestions);

@@ -24,7 +24,8 @@ Mở rộng Recommendation Service bằng 2 RPC gRPC **additive**:
   xác định khi AI lỗi.
 
 Service **chỉ trả kế hoạch**, không lưu dữ liệu người dùng, không thêm bảng,
-không migration, không REST/Nginx, không tạo `frontend-guide.md`. Caller
+không migration, không REST/Nginx, không tạo `frontend-guide.md`; tạo
+`backend-integration-guide.md` cho 2 RPC gRPC mới. Caller
 (Diet/Progress) chịu trách nhiệm tính target, gửi candidate và lưu kế hoạch;
 “kế hoạch tháng” là 4–5 lần gọi theo tuần.
 
@@ -88,7 +89,8 @@ hiện có của Recommendation + 2 test project.
   `days` 1..7; `meals_per_day` 1..4; tối đa 5 món/bữa.
 - `sessions_per_week` 0 → `min(3, days)`, giá trị khác 1..7 và <= `days`;
   `minutes_per_session` 0 → 30, giá trị khác 10..120.
-- Không expose REST/Nginx; không tạo `frontend-guide.md`.
+- Không expose REST/Nginx; không tạo `frontend-guide.md`; tạo
+  `backend-integration-guide.md` cho gRPC.
 - Text do code dựng là tiếng Việt; locale khác fallback `vi-VN` + warning.
 
 **Scale/Scope**:
@@ -150,8 +152,14 @@ src/Services/Recommendation/
 │   │   └── WorkoutPlanMapper.cs                 # mới
 │   ├── Middlewares/
 │   │   └── ServerDeadlineInterceptor.cs         # sửa: dùng policy
-│   └── RecommendationStartup.cs                 # sửa: DI + options + health
+│   ├── Program.cs                               # sửa: --bootstrap mode
+│   └── RecommendationStartup.cs                 # sửa: DI + options + bootstrap
 ├── Recommendation.Application/
+│   ├── Abstractions/
+│   │   ├── ISeedLoader.cs                       # mới: seed loader port
+│   │   ├── SeedLoadOptions.cs
+│   │   ├── SeedLoadResult.cs
+│   │   └── SeedVerification.cs
 │   ├── Common/Errors/
 │   │   └── RecommendationErrors.cs              # sửa: thêm mã plan
 │   ├── Features/Ask/
@@ -196,6 +204,8 @@ src/Services/Recommendation/
 ├── Recommendation.Infrastructure/
 │   ├── Adapters/GoogleAi/
 │   │   └── SchemaFactory.cs                       # sửa: thêm 2 schema
+│   ├── Adapters/Knowledge/
+│   │   └── SeedLoader.cs                          # mới: .NET seed bootstrap
 │   └── Options/
 │       └── RecommendationOptions.cs               # sửa: PlanDeadlineSeconds
 └── tests/
@@ -225,12 +235,14 @@ src/Services/Recommendation/
     │       └── WorkoutPromptTests.cs
     └── Recommendation.IntegrationTests/
         ├── Features/Meals/RecommendationApiFixture.cs   # sửa: double cho plan
-        └── Features/Plans/
-            ├── GenerateMealPlanGrpcTests.cs
-            ├── MealPlanCitationGrpcTests.cs
-            ├── GenerateWorkoutPlanGrpcTests.cs
-            ├── WorkoutPlanCitationGrpcTests.cs
-            └── PlanNoUserDataTests.cs
+        ├── Features/Plans/
+        │   ├── GenerateMealPlanGrpcTests.cs
+        │   ├── MealPlanCitationGrpcTests.cs
+        │   ├── GenerateWorkoutPlanGrpcTests.cs
+        │   ├── WorkoutPlanCitationGrpcTests.cs
+        │   └── PlanNoUserDataTests.cs
+        └── Persistence/
+            └── SeedLoaderTests.cs                       # mới: bootstrap seed
 ```
 
 **Structure Decision**: Giữ nguyên 4 project + 2 test project hiện có. Hai RPC
@@ -260,7 +272,14 @@ toàn bộ nghiệp vụ; `Infrastructure` chỉ thêm option/schema. Không s�
 | `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/GoogleAi/SchemaFactory.cs` | Thêm 2 schema | Không | Trước PR |
 | `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Meals/RecommendationApiFixture.cs` | Double cho 2 kind mới | Không | Trước PR |
 | `.env.example` | Thêm `RECOMMENDATION__PLAN_DEADLINE_SECONDS` | Không | Sớm, cùng PR |
-| `deployments/docker-compose.yml` | Truyền env plan deadline | Không | Sớm, cùng PR |
+| `deployments/docker-compose.yml` | Truyền env plan deadline; thay `kb-schema`/`kb-init` bằng `kb-bootstrap` | Không | Sớm, cùng PR |
+| `Makefile` | Thêm `bootstrap`, `up`, `down`; đổi `kb-ensure` sang `kb-bootstrap` | Không | Cùng PR bootstrap |
+| `scripts/book-kb/smoke-seed.ps1` | Smoke test dùng `kb-bootstrap` thay `kb-schema`/`kb-init` | Không | Cùng PR bootstrap |
+| `docs/development/local-setup.md`, `docs/development/rag-ingestion.md` | Hướng dẫn chạy mới | Không | Trước PR |
+| `README.md`, `resources/knowledge/README.md` | Lệnh `make up`/`make bootstrap` | Không | Trước PR |
+| `docs/decisions/002-recommendation-knowledge-base.md` | Addendum .NET bootstrap | Không | Trước PR |
+| `src/Services/Recommendation/Recommendation.Api/Program.cs` | Thêm `--bootstrap` mode | Không | Trước PR |
+| `src/Services/Recommendation/Recommendation.Infrastructure/Adapters/Knowledge/SeedLoader.cs` | Loader seed .NET mới | Không | Trước PR |
 | `resources/knowledge/**` | **Không sửa** | duck-001 | — |
 | `src/Services/Recommendation/Recommendation.Infrastructure/Migrations/**` | **Không sửa** | — | — |
 | `src/Services/Diet/**`, `src/Services/Progress/**` | **Không sửa** — tích hợp caller thuộc owner khác | Diet/Progress owner | — |
@@ -378,6 +397,7 @@ validate
   → nếu rỗng: all_candidates_excluded
   → split budgets + dates
   → retrieve chapter 4 + chapter 12 (chỉ giữ chunk chương 12 có `book_page_from >= 238` = Phụ lục A)
+  → retrieve chapter 11 riêng cho suggestions (chỉ đoạn nước/trà thảo mộc không đường)
   → build cap day (nếu consumed_date trong tuần và >=105%)
   → AI selection cho các ngày còn lại (một call)
   → parse + verify citations + validate cấu trúc/±10%
@@ -398,7 +418,8 @@ validate
   - Chỉ gửi candidate đã lọc, đánh số.
   - Gửi ngân sách từng ngày/bữa.
   - Gửi chunk chương 4 + chunk chương 12 có `book_page_from >= 238` (Phụ lục A)
-    trong khối `[BEGIN CORPUS DATA]`.
+    trong khối `[BEGIN CORPUS DATA]`; chapter 11 **không** đưa vào prompt chọn món,
+    chỉ dùng cho `suggestions`.
   - System instruction: chỉ chọn `food_index` trong danh sách; không bịa món/
     số liệu; citation chỉ từ chunk; code sẽ viết rationale.
 - `SchemaFactory` thêm `MealPlanSelection`:
@@ -438,7 +459,8 @@ validate
   - Trả cờ nội bộ `targetNotMet` để use case ghi warning `target_not_met`.
 - `MealPlanSuggestionBuilder`:
   - Khi cap: retrieve chương 4 + chunk chương 12 có `book_page_from >= 238`
-    (Phụ lục A), dựng suggestion từ quote đã verify.
+    (Phụ lục A) + chunk chương 11 chỉ đoạn nước/trà thảo mộc không đường; dựng
+    suggestion từ quote đã verify.
   - Không có quote → suggestions rỗng + `suggestion_source_missing`.
 
 ### 4. Workout plan
@@ -534,7 +556,9 @@ validate
   allergen.
 - `MealPlanFallbackSelectorTests`: provider-down; không lặp khi còn lựa chọn;
   giữ đủ bữa khi candidate khan hiếm; `target_not_met`.
-- `MealPlanSuggestionBuilderTests`: có/không corpus; suggestion không food_id.
+- `MealPlanSuggestionBuilderTests`: có/không corpus; suggestion không food_id;
+  chapter 11 đúng cụm nước/trà thảo mộc → có suggestion; chapter 11 ngữ cảnh
+  bệnh nhân/FMD/điều trị → rỗng + `suggestion_source_missing`.
 - `WorkoutActivityCatalogTests`: alias chương 5; preference; equipment;
   limitations.
 - `WorkoutPlanSkeletonBuilderTests`: đúng số buổi; sessions > days; rest day.
@@ -573,8 +597,33 @@ validate
 - Cập nhật `docs/api/api-spec.md` §5: 2 RPC, message, mã lỗi, warning, deadline.
 - Cập nhật `docs/requirements/prd.md` §2.4: US-REC-07 (meal plan) và
   US-REC-08 (workout plan) hoặc ghi chú 2 RPC.
-- Không tạo `frontend-guide.md`; ghi kết luận vào `tasks.md`.
+- Không tạo `frontend-guide.md`; tạo `backend-integration-guide.md`; ghi kết luận
+  vào `tasks.md`.
 - Không sửa `docs/system-design/` vì không đổi ranh giới/kiến trúc.
+
+### 8. Bootstrap deploy bằng .NET (phương án B)
+
+- Thêm `ISeedLoader` + `SeedLoader` trong `Recommendation.Infrastructure/Adapters/Knowledge/`:
+  đọc `build.json`, `chunks.jsonl.gz`, `page_flags.jsonl.gz`; upsert
+  `kb.corpus/chapter/chunk/page_flag` trong một transaction; `--skip-if-loaded`;
+  `--verify` kiểm tra count, embedding dimension, content hash, page range,
+  page flags.
+- `Recommendation.Api` thêm mode `--bootstrap --seed /seed --skip-if-loaded --verify`:
+  chạy EF migration rồi seed loader, không mở Kestrel/gRPC, không cần
+  `GOOGLE_AI__API_KEY`, exit code 0/1.
+- `deployments/docker-compose.yml`: bỏ `kb-schema` và Python `kb-init`; thêm
+  `kb-bootstrap` dùng chính image `longevia/recommendation:local`, profile
+  `bootstrap`, volume seed read-only, `restart: "no"`; `recommendation` chỉ
+  `depends_on` postgres. `make up` chạy bootstrap bằng
+  `docker compose --profile bootstrap run --rm --no-deps kb-bootstrap` để không
+  để lại container one-shot.
+- `scripts/book-kb` vẫn là pipeline offline cho re-index/seed/eval; không còn
+  dùng Python để load lúc deploy.
+- Docs/Makefile: `make bootstrap`, `make up`, `make down`, `make kb-ensure`;
+  cập nhật `local-setup.md`, `rag-ingestion.md`, `README.md`,
+  `resources/knowledge/README.md`, ADR 002 addendum.
+- Tests: `SeedLoaderTests` (Testcontainers) cho empty load, idempotent skip,
+  verify pass/fail; `make kb-smoke` end-to-end; `make check`.
 
 ---
 
@@ -607,18 +656,24 @@ validate
       corpus rỗng; limitations rỗng → warning, provider-down skeleton.
 - [ ] Safety: 0 khuyến nghị thuốc/chẩn đoán/điều trị trong rationale/disclaimer
       (PlanSafetyTests + negative control).
-- [ ] Citation meal plan chỉ thuộc chương 4 hoặc chunk Phụ lục A; workout chỉ
-      thuộc chương 5.
+- [ ] Citation meal plan: món/bữa chỉ chương 4/Phụ lục A; suggestions cap-day
+      có thể chương 11 cho đoạn nước/trà thảo mộc; workout chỉ chương 5.
 - [ ] Response có `week_start_date`, `days_requested`; meal có `weekly_target_*`;
       workout có `sessions_scheduled`, `minutes_per_session`.
 - [ ] Citation: 100% quote trả về khớp chunk; quote sai bị loại.
 - [ ] Không migration/bảng/dữ liệu người dùng; `kb.chunk` không đổi sau khi gọi.
-- [ ] Không REST/Nginx; không `frontend-guide.md`; kết luận ghi trong `tasks.md`.
+- [ ] Không REST/Nginx; không `frontend-guide.md`; có `backend-integration-guide.md`; kết luận ghi trong `tasks.md`.
 - [ ] Unit + integration + E2E Postgres thật xanh; negative control đã chạy đỏ
       đúng lý do.
-- [ ] `make test PROJECTS=src/Services/Recommendation` xanh.
+- [ ] `make test PROJECTS=src/Services/Recommendation/tests/Recommendation.UnitTests` và
+      `make test PROJECTS=src/Services/Recommendation/tests/Recommendation.IntegrationTests` xanh.
 - [ ] `make check` xanh trước push/tag.
 - [ ] `pwsh scripts/speckit/team-feature.ps1 check` xanh.
+- [ ] Bootstrap: `make kb-smoke` xanh (DB rỗng → 188 chunk, chạy lại skip); `kb-bootstrap`
+      là job .NET duy nhất, không còn `kb-schema`/Python `kb-init` trong deploy.
+- [ ] Docs: `make up`, `make bootstrap`, `make down`, `make kb-ensure` và ADR 002
+      addendum đã cập nhật; không còn hướng dẫn cũ dùng `docker compose up -d`
+      cho first boot.
 - [ ] `docs/api/api-spec.md` và `docs/requirements/prd.md` §2.4 cập nhật.
-- [ ] `specs/duck-002-recommendation-plan-rpcs/tasks.md` tick đủ task và ghi
-      kết luận không có client surface.
+- [ ] `specs/duck-002-recommendation-plan-rpcs/tasks.md` tick đủ task, ghi kết
+      luận không có client surface và có `backend-integration-guide.md` cho gRPC.

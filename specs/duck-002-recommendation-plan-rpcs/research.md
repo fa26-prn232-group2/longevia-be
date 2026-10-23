@@ -155,7 +155,8 @@ Tie-break ordinal bảo đảm deterministic (SC-014).
 
 - Prompt meal plan cung cấp danh sách candidate đã lọc (đánh số), ngân sách
   từng ngày/bữa và chunk chương 4 + chunk chương 12 thuộc Phụ lục A
-  (`book_page_from >= 238`).
+  (`book_page_from >= 238`). Chương 11 chỉ được truy xuất riêng cho
+  `suggestions` cap-day, đoạn nước/trà thảo mộc không đường.
 - Schema phản hồi chỉ có `days[].meals[].food_indices[]` và
   `days[].meals[].citations[]`; **không** có rationale tự do, không có số liệu
   dinh dưỡng.
@@ -399,6 +400,38 @@ project hiện có.
 
 ---
 
+## D-15 — Bootstrap deploy bằng .NET, bỏ `kb-schema`/Python `kb-init`
+
+**Decision**:
+
+- Thêm `ISeedLoader`/`SeedLoader` trong .NET: đọc seed gzip JSONL, upsert
+  `kb.corpus/chapter/chunk/page_flag` trong một transaction, hỗ trợ
+  `--skip-if-loaded` và `--verify`.
+- `Recommendation.Api` thêm mode `--bootstrap --seed /seed --skip-if-loaded --verify`:
+  chạy EF migration rồi load seed, không mở Kestrel/gRPC, không cần
+  `GOOGLE_AI__API_KEY`, exit code 0/1.
+- `deployments/docker-compose.yml` bỏ `kb-schema` và Python `kb-init`; thêm một
+  service `kb-bootstrap` dùng chính image Recommendation, profile `bootstrap`.
+  `make up` chạy `docker compose --profile bootstrap run --rm --no-deps kb-bootstrap`
+  để container one-shot bị xoá sau khi xong.
+- `scripts/book-kb` vẫn giữ cho re-index/seed/eval offline; không dùng Python để
+  load deploy nữa.
+- `RecommendationStartup.RunAsync` giữ migration như safety net; bootstrap cũng
+  chạy migration nên idempotent.
+
+**Rationale**: Một image, một job bootstrap, không còn container one-shot mặc
+định; vẫn giữ EF Core Code First và seed không cần API key. Ít lệch giữa local
+và production hơn; dev chỉ cần `make up`.
+
+**Alternatives considered**:
+
+- Giữ `kb-schema`/`kb-init`: vẫn để lại container exit và Python trong deploy.
+- Auto-load seed trong startup service: vi phạm runtime read-only, race nhiều
+  replica.
+- Postgres init SQL: phá Code First và migration.
+
+---
+
 ## Tóm tắt câu hỏi kỹ thuật đã giải quyết
 
 | Câu hỏi | Quyết định |
@@ -416,3 +449,4 @@ project hiện có.
 | Có lưu gì không? | D-12: không, không migration |
 | Locale xử lý sao? | D-13: mặc định vi-VN + warning |
 | Có thêm package/project? | D-14: không |
+| Bootstrap seed khi deploy thế nào? | D-15: .NET `--bootstrap`, bỏ `kb-schema`/`kb-init` |

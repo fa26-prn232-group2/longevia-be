@@ -124,7 +124,7 @@ Là service Progress, tôi muốn gọi Recommendation để nhận kế hoạch
 - **FR-020**: Nếu kết quả AI không đạt kiểm tra hoặc provider lỗi/timeout, hệ thống MUST chọn phương án dự phòng xác định từ chính candidate đã lọc (ưu tiên khớp macro; ưu tiên không lặp món trong cùng ngày, chỉ lặp khi không đủ candidate để giữ đủ bữa; hạn chế lặp trong tuần khi còn lựa chọn) và MUST vẫn trả kế hoạch hợp lệ, không abstain, kèm `warnings` mã `ai_fallback_used`.
 - **FR-021**: Nếu chính candidate không đủ để đạt ±10%, hệ thống MUST trả kế hoạch gần nhất có thể từ candidate, kèm `warnings` mã `target_not_met`; MUST NOT bịa món, calo hoặc macro để đạt mục tiêu.
 - **FR-022**: `rationale` của mỗi bữa MUST chỉ dựa trên dữ liệu request (mục tiêu, hồ sơ, sở thích, allergen, món đã chọn) hoặc trích dẫn sách; MUST NOT là diễn giải dinh dưỡng tự do ngoài hai nguồn.
-- **FR-023**: `citations` của kế hoạch ăn uống MUST lấy từ chương 4 và Phụ lục A (thực đơn hai tuần, nằm trong tệp `docs/reference/che-do-an-truong-tho/12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md`). Khi corpus rỗng, `citations` MUST rỗng và `warnings` có `corpus_not_loaded`.
+- **FR-023**: `citations` của món/bữa trong kế hoạch ăn uống MUST lấy từ chương 4 và Phụ lục A (thực đơn hai tuần, nằm trong tệp `docs/reference/che-do-an-truong-tho/12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md`). Riêng `suggestions` của ngày chạm trần 105%, citation MAY lấy thêm chương 11 nhưng MUST chỉ là đoạn nói về nước/trà thảo mộc không đường (ví dụ câu “uống 2 đến 3 lít chất lỏng không đường (nước và trà thảo mộc)”); MUST NOT lấy ngữ cảnh bệnh nhân, FMD, nhịn ăn hoặc điều trị. Khi không có đoạn phù hợp, `suggestions` MUST rỗng và có warning `suggestion_source_missing`. Khi corpus rỗng, `citations` MUST rỗng và `warnings` có `corpus_not_loaded`.
 - **FR-024**: Response MUST có `disclaimer`, `week_start_date`, `days_requested` (số ngày), tổng mục tiêu tuần (`weekly_target_*`), danh sách `days` (mỗi ngày có `meals` và `suggestions`), `warnings` và cờ cho biết có dùng phương án dự phòng.
 - **FR-025**: Khi `candidate_foods` vượt 120 món, code MUST cắt theo độ khớp macro với mục tiêu trước khi lọc/gọi AI, giữ tối đa 120 món và ghi `warnings`.
 
@@ -230,8 +230,9 @@ Là service Progress, tôi muốn gọi Recommendation để nhận kế hoạch
 - `activity_preference` rỗng nghĩa là không có ưu tiên; service dùng hướng dẫn chung của chương 5 và không thêm thiết bị.
 - `sessions_per_week = 0` dùng `min(3, days)`; `minutes_per_session = 0` dùng mặc định 30.
 - Corpus sách là bản OCR đã đối chiếu một phần; citation có `verified = false` vẫn được trả nhưng service không khẳng định số liệu y tế từ trang chưa đối chiếu.
-- Thực đơn hai tuần nằm trong Phụ lục A của tệp chương 12 (`docs/reference/che-do-an-truong-tho/12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md`); hướng dẫn tập luyện nằm ở chương 5.
+- Thực đơn hai tuần nằm trong Phụ lục A của tệp chương 12 (`docs/reference/che-do-an-truong-tho/12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md`); hướng dẫn tập luyện nằm ở chương 5; đoạn nước/trà thảo mộc không đường dùng cho `suggestions` nằm ở chương 11.
 - `target_calories` và target protein/carbs/fat caller gửi là **mục tiêu ngày**; service nhân với `days` để có tổng tuần rồi chia ngân sách theo ngày/bữa.
 - Các tỷ lệ chia ngân sách calo theo bữa là quy tắc tính toán nội bộ; spec chỉ ràng buộc tổng các bữa bằng ngân sách ngày và tổng các ngày bằng mục tiêu ngày × `days`. Tỷ lệ cụ thể sẽ chốt ở `plan.md`.
 - Phạm vi ngoài feature: lưu trữ kế hoạch, API REST, rollup tháng, nhắc lịch/thông báo, thiết bị đeo, thanh toán và tích hợp thực tế phía Diet/Progress (owner khác).
-- Không tạo `frontend-guide.md` vì feature không đổi bề mặt client; kết luận được ghi trong `tasks.md`.
+- Không tạo `frontend-guide.md` vì feature không đổi bề mặt client; tạo
+  `backend-integration-guide.md` cho gRPC; kết luận được ghi trong `tasks.md`.

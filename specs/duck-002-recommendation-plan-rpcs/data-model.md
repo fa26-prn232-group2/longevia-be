@@ -105,7 +105,7 @@ Nguồn: FR-040.
 | `weekly_target_carbs_grams` | `double` | Tổng mục tiêu carbs tuần |
 | `weekly_target_fat_grams` | `double` | Tổng mục tiêu fat tuần |
 | `weekly_target_fiber_grams` | `double` | Tổng mục tiêu fiber tuần; 0 nếu không gửi |
-| `citations` | `repeated Citation` | Hợp nhất citation đã verify từ chương 4 + chương 12 có `book_page_from >= 238` (Phụ lục A); rỗng nếu corpus rỗng |
+| `citations` | `repeated Citation` | Hợp nhất citation đã verify từ chương 4 + chương 12 có `book_page_from >= 238` (Phụ lục A); `suggestions` cap-day có thể thêm chương 11 cho đoạn nước/trà thảo mộc không đường; rỗng nếu corpus rỗng |
 | `warnings` | `repeated PlanWarning` | Cảnh báo cấp plan/ngày |
 | `disclaimer` | `Disclaimer` | Luôn có |
 | `used_fallback` | `bool` | `true` nếu đã dùng fallback xác định |

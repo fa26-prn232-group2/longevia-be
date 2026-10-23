@@ -375,3 +375,35 @@ task chưa tick của feature.
 
 - [x] T085 [US1] Siết `MealPlanSuggestionBuilder` trong `src/Services/Recommendation/Recommendation.Application/Features/MealPlans/MealPlanSuggestionBuilder.cs` để chỉ chấp nhận excerpt là câu khuyên dùng đồ uống 0 calo/thói quen thư giãn: mở rộng bộ lọc ngữ cảnh/từ khoá để loại câu công thức/món ăn (corpus thật: chunk Phụ lục A trang 263 `... bất kỳ loại thảo mộc và gia vị nào bạn thích. Nướng theo hướng dẫn trên bao bì ...` hiện được nhận; các cửa sổ quanh `bữa sáng cà phê hoặc trà bánh mì...` cũng lẫn dòng món ăn); khi không còn đoạn phù hợp trả `suggestions` rỗng + `suggestion_source_missing`; bổ sung test âm trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Plans/MealPlanSuggestionBuilderTests.cs` bằng fixture lấy từ corpus thật (pizza/thảo mộc trang 263, menu sáng) kỳ vọng rỗng + warning per FR-017/US1-AC4 (partial)
 - [x] T086 [US1] Áp `SafetyGuard` cho từng excerpt trước khi dựng `PlanSuggestion` trong `src/Services/Recommendation/Recommendation.Application/Features/MealPlans/MealPlanSuggestionBuilder.cs`: nếu quote khớp cụm y tế bị chặn thì bỏ chunk và tiếp tục tìm nguồn khác, không echo vào `suggestions`; giữ `suggestions` rỗng + `suggestion_source_missing` khi không còn nguồn; bổ sung test trong `src/Services/Recommendation/tests/Recommendation.UnitTests/Features/Plans/MealPlanSuggestionBuilderTests.cs` với excerpt chứa `uống thuốc`/`chẩn đoán` kỳ vọng không xuất hiện per FR-011/SC-011 (missing)
+
+---
+
+## Phase 9: Citation expansion & .NET bootstrap
+
+- [x] T087 [US1] Mở rộng nguồn citation cho `suggestions` ngày chạm trần sang chương 11, chỉ đoạn nước/trà thảo mộc không đường; cập nhật `spec.md` FR-023, `plan.md` §3, `data-model.md` §4/§7, `research.md` D-06/D-08, `quickstart.md`, `docs/api/api-spec.md` §5; sửa `MealPlanSuggestionBuilder` + `GenerateMealPlanUseCase` retrieval và test unit/integration (meal citations vẫn chỉ chương 4/Phụ lục A).
+- [x] T088 [Infra] Implement `ISeedLoader` + `SeedLoader` trong Recommendation.Application/Infrastructure: đọc `build.json` + `chunks.jsonl.gz` + `page_flags.jsonl.gz`, upsert `kb.corpus/chapter/chunk/page_flag` trong transaction, `--skip-if-loaded`, verify counts/embedding/hash/page range; integration test với PostgreSQL Testcontainers.
+- [x] T089 [Api] Thêm run mode `--bootstrap` cho `Recommendation.Api` trong `Program.cs`/`RecommendationStartup.cs`: chạy migration + seed loader, skip provider/Kestrel, nhận `--seed`, `--skip-if-loaded`, `--verify`, exit code đúng; không yêu cầu `GOOGLE_AI__API_KEY`.
+- [x] T090 [Deploy] Cập nhật `deployments/docker-compose.yml`: bỏ `kb-schema` và Python `kb-init`, thêm `kb-bootstrap` dùng image recommendation + profile bootstrap + volume seed; `recommendation` chỉ depends_on postgres; không còn container one-shot mặc định.
+- [x] T091 [Deploy] Thêm Makefile target `bootstrap`, `up`, `down`, cập nhật `kb-ensure` dùng `docker compose run --rm --no-deps kb-bootstrap`; cập nhật `scripts/book-kb/smoke-seed.ps1` chạy bootstrap và kiểm tra idempotency.
+- [x] T092 [Docs] Cập nhật `docs/development/local-setup.md`, `docs/development/rag-ingestion.md`, `README.md`, `resources/knowledge/README.md`, `docs/decisions/002-recommendation-knowledge-base.md` (addendum): flow `make up`/`make bootstrap`, bỏ mô tả `kb-schema`/`kb-init`, Python chỉ còn cho re-index/seed/eval offline.
+- [x] T093 [Verify] Chạy `make kb-smoke`, unit/integration scoped, `make lint`, `make check`; xác nhận không còn container `kb-*` mặc định, không migration mới, không đổi contract/user data; ghi evidence vào tasks.md.
+
+### Completion Notes — Phase 9 (2026-10-23)
+
+- **T087**: `suggestions` cap-day dùng thêm chương 11 đúng clause nước/trà thảo mộc không đường; meal rationale vẫn chỉ chương 4/Phụ lục A. Unit 372 pass, integration 64 pass.
+- **T088/T089**: `ISeedLoader`/`SeedLoader` + `--bootstrap` chạy migration + seed, không cần `GOOGLE_AI__API_KEY`; `AddKnowledgeDbContext` tách khỏi provider AI để bootstrap không resolve `Google.GenAI.Client`. `SeedLoaderTests` 7 test pass; idempotent skip + verify.
+- **T090/T091**: compose bỏ `kb-schema`/Python `kb-init`, thêm `kb-bootstrap` profile; Makefile có `make up`, `make bootstrap`, `make down`, `make kb-ensure`; smoke script dùng `kb-bootstrap` và `--wait postgres`.
+- **T092**: cập nhật local-setup, rag-ingestion, README, resources README, api-spec và ADR 002 addendum. `make up` là entrypoint first boot; raw `docker compose up -d` không nạp seed.
+- **T093 evidence**: `make kb-smoke` PASS (188 chunk, chạy lần hai skip, container được xoá); `make lint` xanh; `make check` xanh — Release build 0 warning/0 error, 372 unit + 64 integration, vulnerability scan sạch. Không migration mới, không đổi contract, không lưu user data.
+
+---
+
+## Phase 10: Backend integration handoff
+
+- [x] T094 [Docs] Tạo `specs/duck-002-recommendation-plan-rpcs/backend-integration-guide.md` từ `.specify/templates/backend-integration-guide-template.md`: bảng 7 RPC, cách gọi `recommendation:50051` trong `internal_net`, `grpcurl` không reflection (`-import-path`/`-proto`), ví dụ 2 RPC plan, deadline, error/warning, compatibility và test evidence; không tạo `frontend-guide.md` vì không đổi client surface.
+- [x] T095 [Docs] Đồng bộ guide ở close-out: đối chiếu 7 RPC/30 message/204 field/3 enum/13 value/14 error code/15 warning code với `contracts/recommendation/v1/recommendation.proto` + `docs/api/api-spec.md` §5; cập nhật `quickstart.md` link sang guide và sửa lệnh `grpcurl`; đặt `READY_FOR_BACKEND` sau khi verify.
+
+### Completion Notes — Phase 10 (2026-10-23)
+
+- **T094**: guide nằm trong `specs/duck-002-recommendation-plan-rpcs/backend-integration-guide.md`; `frontend-guide.md` vẫn không tạo.
+- **T095**: đã đối chiếu contract và cập nhật quickstart; các lệnh `grpcurl` dùng `-import-path . -proto contracts/recommendation/v1/recommendation.proto`; guide đặt `READY_FOR_BACKEND`.

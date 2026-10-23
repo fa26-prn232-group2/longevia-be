@@ -9,6 +9,10 @@ Tham chiếu: [spec.md](./spec.md) · [plan.md](./plan.md) ·
 [data-model.md](./data-model.md) ·
 [contracts/recommendation-plan.proto](./contracts/recommendation-plan.proto).
 
+> Cách gọi gRPC đầy đủ (7 RPC, network nội bộ, `grpcurl` không reflection):
+> xem [backend-integration-guide.md](./backend-integration-guide.md). Quickstart
+> này chỉ dùng để kiểm chứng feature.
+
 ---
 
 ## 0. Điều kiện tiên quyết
@@ -19,7 +23,7 @@ Tham chiếu: [spec.md](./spec.md) · [plan.md](./plan.md) ·
 | Docker + Docker Compose | PostgreSQL `pgvector/pgvector:pg17` |
 | Corpus | `make kb-ensure` nạp seed đã commit; không cần `GOOGLE_AI__API_KEY` |
 | Provider AI | `GOOGLE_AI__API_KEY` cho happy path có gọi Gemini; test double không cần key |
-| `grpcurl` | gọi gRPC nội bộ `localhost:50051` (nếu chạy ngoài compose) |
+| `grpcurl` | cần `-import-path . -proto contracts/recommendation/v1/recommendation.proto`; xem [backend-integration-guide.md](./backend-integration-guide.md) |
 
 ```powershell
 Copy-Item .env.example .env    # điền GOOGLE_AI__API_KEY nếu muốn gọi provider thật
@@ -35,6 +39,11 @@ $env:KNOWLEDGE_DB__CORPUS_KEY = "che-do-an-truong-tho"
 $env:KNOWLEDGE_DB__SCHEMA = "kb"
 dotnet run --project src/Services/Recommendation/Recommendation.Api
 ```
+
+Các lệnh `grpcurl` bên dưới dùng `localhost:50051`, tức service chạy ngoài
+compose. Trong compose cổng 50051 không publish ra host; dùng container
+`--network container:longevia-recommendation-1` như hướng dẫn trong
+[backend-integration-guide.md](./backend-integration-guide.md).
 
 Cấu hình deadline:
 
@@ -135,7 +144,9 @@ Gửi request với `week_start_date = 2026-10-26` (thứ Hai), `days = 7`,
     }
   ]
 }
-'@ | grpcurl -plaintext -d @ localhost:50051 `
+'@ | grpcurl -plaintext -import-path . `
+  -proto contracts/recommendation/v1/recommendation.proto `
+  -d @ localhost:50051 `
   longevia.recommendation.v1.RecommendationService/GenerateMealPlan
 ```
 
@@ -169,7 +180,8 @@ Dùng lại request trên, thêm:
 - Ngày `2026-10-28` có `calorieCapReached = true`.
 - `meals` của ngày đó **rỗng**; `totalCalories = 0`.
 - `suggestions` chứa đồ uống 0 calo/thói quen **nếu** corpus có căn cứ; nếu
-  không, `suggestions` rỗng + warning `suggestion_source_missing`.
+  không, `suggestions` rỗng + warning `suggestion_source_missing`. Citation
+  suggestion có thể lấy từ chương 11 cho đúng clause nước/trà thảo mộc không đường.
 - Không có `foodId` rỗng trong `meals`.
 - Các ngày khác vẫn đủ bữa và bám mục tiêu.
 
@@ -235,7 +247,9 @@ dotnet test src/Services/Recommendation/tests/Recommendation.IntegrationTests `
 Kiểm tra trailer:
 
 ```powershell
-grpcurl -plaintext -v -d @ localhost:50051 `
+grpcurl -plaintext -import-path . `
+  -proto contracts/recommendation/v1/recommendation.proto `
+  -v -d @ localhost:50051 `
   longevia.recommendation.v1.RecommendationService/GenerateMealPlan
 ```
 
@@ -267,7 +281,9 @@ grpcurl -plaintext -v -d @ localhost:50051 `
   "equipmentAvailable": [],
   "limitations": []
 }
-'@ | grpcurl -plaintext -d @ localhost:50051 `
+'@ | grpcurl -plaintext -import-path . `
+  -proto contracts/recommendation/v1/recommendation.proto `
+  -d @ localhost:50051 `
   longevia.recommendation.v1.RecommendationService/GenerateWorkoutPlan
 ```
 

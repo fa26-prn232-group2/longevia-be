@@ -18,13 +18,22 @@ Mọi comment trong file `.env*` phải viết bằng tiếng Anh.
 ## 2. Bật hạ tầng
 
 ```bash
-docker compose --env-file .env -f deployments/docker-compose.yml up -d
+make up
 ```
 
-> `--env-file .env` là **bắt buộc**: file compose nằm ở `deployments/` nên Compose
-> mặc định chỉ đọc `deployments/.env`, không đọc `.env` ở thư mục gốc. Thiếu cờ
-> này thì các biến từ `.env` (khoá provider, cổng, mật khẩu) sẽ rỗng và các
-> service có kiểm tra cấu hình sẽ **fail fast** lúc khởi động.
+`make up` chạy tuần tự: dựng PostgreSQL → chạy job một lần `kb-bootstrap`
+(EF migration + nạp seed, container tự xoá) → dựng các service còn lại.
+Không dùng `docker compose up -d` cho lần chạy đầu vì lệnh đó không nạp corpus.
+
+Nếu muốn chỉ tạo schema/nạp seed mà không dựng service:
+
+```bash
+make bootstrap
+```
+
+> `--env-file .env` là **bắt buộc** khi gọi Compose trực tiếp: file compose nằm ở
+> `deployments/` nên Compose mặc định chỉ đọc `deployments/.env`, không đọc `.env`
+> ở thư mục gốc. Makefile đã thêm cờ này; nếu gọi tay phải tự thêm.
 
 Khởi động:
 - **PostgreSQL** (`localhost:5432`) — tạo sẵn `identity_db`, `diet_db`,
@@ -43,25 +52,25 @@ DB: `docker compose --env-file .env -f deployments/docker-compose.yml down -v` r
 ## 3. Tri thức sách cho Recommendation
 
 `recommendation_db` **bắt đầu rỗng**; service vẫn khởi động bình thường nhưng mọi
-câu hỏi sẽ trả `abstained = true` cho tới khi corpus được nạp. Lệnh `up -d` ở mục 2
-đã tự chạy hai bước deploy:
+câu hỏi sẽ trả `abstained = true` cho tới khi corpus được nạp. `make up` đã tự
+chạy job một lần:
 
 | Service | Việc |
 | --- | --- |
-| `kb-schema` | tạo schema `kb` bằng đúng migration của service (EF Core Code First) |
-| `kb-init` | nạp corpus từ seed đã commit ở `resources/knowledge/` (`--skip-if-loaded --verify`) |
+| `kb-bootstrap` | chạy EF migration tạo schema `kb` rồi nạp corpus từ seed đã commit (`--skip-if-loaded --verify`); container bị xoá sau khi xong |
 
 Nạp corpus **không cần `GOOGLE_AI__API_KEY`** — seed đã chứa embedding.
 
 ```bash
-make kb-ensure     # nạp tay từ seed (bỏ qua nếu đã active)
-make kb-verify     # đối chiếu chương/chunk/trang/embedding
-make kb-smoke      # chứng minh "DB rỗng -> tự nạp" trong compose project riêng
+make kb-ensure     # nạp/cập nhật seed bằng .NET bootstrap (bỏ qua nếu đã active)
+make kb-verify     # đối chiếu chương/chunk/trang/embedding (pipeline Python)
+make kb-smoke      # chứng minh "DB rỗng -> kb-bootstrap tự nạp" trong project riêng
+make down          # dừng service + xoá container orphan
 ```
 
 Xử lý sự cố:
 
-- `docker compose --env-file .env -f deployments/docker-compose.yml logs kb-init` —
+- `docker compose --env-file .env -f deployments/docker-compose.yml --profile bootstrap logs kb-bootstrap` —
   xem lý do nạp lỗi (ví dụ seed lệch số chiều so với cột `vector(n)`).
 - `GET /health` của service có check `kb-corpus`: `Degraded` nghĩa là corpus rỗng.
 - Chỉ nạp lại **khi sửa nội dung sách hoặc đổi model/số chiều embedding**:

@@ -9,9 +9,12 @@ namespace Recommendation.Application.Features.MealPlans;
 
 /// <summary>
 /// Dựng <c>suggestions</c> cho ngày chạm trần 105% (FR-017/FR-023): chỉ dùng quote
-/// nguyên văn từ chương 4 hoặc chunk chương 12 có <c>book_page_from &gt;= 238</c>
-/// (Phụ lục A), tối đa 3 gợi ý. Không có nguồn thì trả rỗng kèm warning
-/// <c>suggestion_source_missing</c>; suggestion không mang <c>food_id</c>.
+/// nguyên văn từ chương 4, chunk chương 12 có <c>book_page_from &gt;= 238</c>
+/// (Phụ lục A) hoặc đoạn nước/trà thảo mộc không đường của chương 11, tối đa 3
+/// gợi ý. Chương 11 chỉ được dẫn khi câu thực sự nói về nước/trà thảo mộc không
+/// đường và clause trích ra không mang ngữ cảnh bệnh nhân/FMD/điều trị. Không có
+/// nguồn thì trả rỗng kèm warning <c>suggestion_source_missing</c>; suggestion
+/// không mang <c>food_id</c>.
 /// </summary>
 public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
 {
@@ -21,7 +24,13 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
     /// <summary>Trang bản in bắt đầu của Phụ lục A.</summary>
     public const int AppendixMinBookPage = 238;
 
+    /// <summary>Chương 11 — nguồn bổ sung cho <c>suggestions</c> ngày chạm trần.</summary>
+    public const int SuggestionChapterNumber = 11;
+
     private const int MaxWords = 40;
+
+    /// <summary>Từ bắt đầu clause đồ uống khi trích chương 11.</summary>
+    private const string DrinkClauseAnchor = "uống";
 
     // FR-017: suggestion chỉ dành cho đồ uống 0 calo/thói quen thư giãn. Từ khoá
     // phải đủ hẹp để không bắt nhầm công thức/món ăn; so khớp sau khi bỏ dấu,
@@ -69,6 +78,25 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
         "thực đơn",
     ];
 
+    // Chương 11 chỉ được dùng cho suggestions khi đoạn văn nói về nước/trà thảo
+    // mộc không đường (FR-023). Các cụm còn lại của chương 11 (bệnh nhân, FMD,
+    // nhịn ăn, điều trị, chu kỳ, bệnh lý) không được dẫn lại.
+    private static readonly string[] ChapterElevenTopicPhrases =
+    [
+        "nước và trà thảo mộc",
+        "chất lỏng không đường",
+    ];
+
+    private static readonly string[] ChapterElevenExcludedPhrases =
+    [
+        "bệnh nhân",
+        "fmd",
+        "nhịn ăn",
+        "điều trị",
+        "chu kỳ",
+        "bệnh lý",
+    ];
+
     /// <summary>Dựng suggestion cho một ngày chạm trần; warning mang scope của ngày.</summary>
     public MealPlanSuggestionBuildResult Build(string date, IReadOnlyList<RetrievedChunk> chunks)
     {
@@ -85,7 +113,7 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
             }
 
             var chunk = retrieved.Chunk;
-            if (!IsAllowedSource(chunk) || !TryBuildExcerpt(chunk.Content, out var excerpt))
+            if (!IsAllowedSuggestionSource(chunk) || !TryBuildExcerpt(chunk, out var excerpt))
             {
                 continue;
             }
@@ -145,7 +173,153 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
             || (chunk.ChapterNumber == AppendixChapterNumber && chunk.BookPageFrom >= AppendixMinBookPage);
     }
 
-    private static bool TryBuildExcerpt(string content, out string excerpt)
+    /// <summary>
+    /// <c>true</c> khi chunk được phép làm nguồn cho <c>suggestions</c>: chương 4,
+    /// chương 11 (chỉ đoạn nước/trà thảo mộc không đường) hoặc Phụ lục A.
+    /// </summary>
+    public static bool IsAllowedSuggestionSource(KnowledgeChunk chunk)
+    {
+        ArgumentNullException.ThrowIfNull(chunk);
+
+        return IsAllowedSource(chunk) || chunk.ChapterNumber == SuggestionChapterNumber;
+    }
+
+    /// <summary>
+    /// <c>true</c> khi nội dung chương 11 thực sự nói về nước/trà thảo mộc không
+    /// đường nên có thể dùng cho <c>suggestions</c>.
+    /// </summary>
+    public static bool IsSuggestionTopic(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return false;
+        }
+
+        var collapsed = Whitespace().Replace(content, " ").Trim();
+        var words = collapsed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return FindChapterElevenPhrase(BuildFlatTokens(words)) is not null;
+    }
+
+    private static bool TryBuildExcerpt(KnowledgeChunk chunk, out string excerpt)
+    {
+        if (chunk.ChapterNumber == SuggestionChapterNumber)
+        {
+            return TryBuildChapterElevenExcerpt(chunk.Content, out excerpt);
+        }
+
+        return TryBuildGenericExcerpt(chunk.Content, out excerpt);
+    }
+
+    // Chương 11 là hướng dẫn cho bệnh nhân nên câu chứa chủ đề nước/trà thảo mộc
+    // thường có tiền tố "Bệnh nhân được khuyên nên...". Chỉ giữ clause từ "uống"
+    // đến hết cụm chủ đề để excerpt không mang ngữ cảnh bệnh nhân/điều trị.
+    private static bool TryBuildChapterElevenExcerpt(string content, out string excerpt)
+    {
+        excerpt = string.Empty;
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return false;
+        }
+
+        var collapsed = Whitespace().Replace(content, " ").Trim();
+        foreach (var sentence in SentenceSeparator().Split(collapsed))
+        {
+            var words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+            {
+                continue;
+            }
+
+            var flatTokens = BuildFlatTokens(words);
+            if (FindChapterElevenPhrase(flatTokens) is not { } phrase)
+            {
+                continue;
+            }
+
+            var startWord = FindDrinkClauseStart(flatTokens, phrase.StartToken)
+                ?? flatTokens[phrase.StartToken].WordIndex;
+            var endWord = flatTokens[phrase.EndToken].WordIndex;
+            if (endWord < startWord || endWord - startWord + 1 > MaxWords)
+            {
+                continue;
+            }
+
+            var candidate = string.Join(' ', words[startWord..(endWord + 1)]);
+            if (ContainsChapterElevenExcludedContext(candidate))
+            {
+                continue;
+            }
+
+            excerpt = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static (int StartToken, int EndToken)? FindChapterElevenPhrase(
+        IReadOnlyList<(string Token, int WordIndex, string Original)> flatTokens)
+    {
+        (int StartToken, int EndToken)? match = null;
+
+        foreach (var phrase in ChapterElevenTopicPhrases)
+        {
+            var needle = Tokenize(phrase);
+            if (needle.Count == 0 || FindSequence(flatTokens, needle) is not { } start)
+            {
+                continue;
+            }
+
+            // Giữ cụm xa nhất để excerpt bao trùm cả "chất lỏng không đường" và
+            // phần "(nước và trà thảo mộc)" đi kèm.
+            var end = start + needle.Count - 1;
+            if (match is null || end > match.Value.EndToken)
+            {
+                match = (start, end);
+            }
+        }
+
+        return match;
+    }
+
+    private static int? FindDrinkClauseStart(
+        IReadOnlyList<(string Token, int WordIndex, string Original)> flatTokens,
+        int beforeToken)
+    {
+        var anchor = Tokenize(DrinkClauseAnchor);
+        if (anchor.Count != 1)
+        {
+            return null;
+        }
+
+        for (var index = beforeToken - 1; index >= 0; index--)
+        {
+            if (string.Equals(flatTokens[index].Token, anchor[0], StringComparison.Ordinal))
+            {
+                return flatTokens[index].WordIndex;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ContainsChapterElevenExcludedContext(string excerpt)
+    {
+        var tokens = Tokenize(excerpt);
+
+        foreach (var phrase in ChapterElevenExcludedPhrases)
+        {
+            var needle = Tokenize(phrase);
+            if (needle.Count > 0 && ContainsSequence(tokens, needle))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryBuildGenericExcerpt(string content, out string excerpt)
     {
         excerpt = string.Empty;
         if (string.IsNullOrWhiteSpace(content))
@@ -160,14 +334,7 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
             return false;
         }
 
-        var flatTokens = new List<(string Token, int WordIndex, string Original)>();
-        for (var wordIndex = 0; wordIndex < words.Length; wordIndex++)
-        {
-            foreach (var token in Tokenize(words[wordIndex]))
-            {
-                flatTokens.Add((token, wordIndex, words[wordIndex]));
-            }
-        }
+        var flatTokens = BuildFlatTokens(words);
 
         foreach (var keyword in SuggestionKeywords)
         {
@@ -189,6 +356,21 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
         }
 
         return false;
+    }
+
+    private static List<(string Token, int WordIndex, string Original)> BuildFlatTokens(
+        IReadOnlyList<string> words)
+    {
+        var flatTokens = new List<(string Token, int WordIndex, string Original)>();
+        for (var wordIndex = 0; wordIndex < words.Count; wordIndex++)
+        {
+            foreach (var token in Tokenize(words[wordIndex]))
+            {
+                flatTokens.Add((token, wordIndex, words[wordIndex]));
+            }
+        }
+
+        return flatTokens;
     }
 
     private static bool ContainsExcludedContext(string excerpt)
@@ -289,6 +471,9 @@ public sealed partial class MealPlanSuggestionBuilder(SafetyGuard safetyGuard)
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex Whitespace();
+
+    [GeneratedRegex(@"(?<=[.!?;])\s+", RegexOptions.CultureInvariant)]
+    private static partial Regex SentenceSeparator();
 
     [GeneratedRegex(@"[^\p{L}\p{Nd}]+", RegexOptions.CultureInvariant)]
     private static partial Regex WordSeparator();

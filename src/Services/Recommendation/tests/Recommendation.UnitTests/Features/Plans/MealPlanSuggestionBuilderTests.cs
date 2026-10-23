@@ -6,9 +6,10 @@ using Recommendation.Domain.Models;
 namespace Recommendation.UnitTests.Features.Plans;
 
 /// <summary>
-/// T028 — FR-017/FR-023: suggestion của ngày chạm trần chỉ lấy từ chương 4 hoặc
-/// chương 12 có <c>book_page_from &gt;= 238</c> (Phụ lục A), tối đa 3, không có
-/// <c>food_id</c>; không có nguồn thì rỗng + <c>suggestion_source_missing</c>.
+/// T028/T087 — FR-017/FR-023: suggestion của ngày chạm trần chỉ lấy từ chương 4,
+/// chương 12 có <c>book_page_from &gt;= 238</c> (Phụ lục A) hoặc đoạn nước/trà
+/// thảo mộc không đường của chương 11, tối đa 3, không có <c>food_id</c>; không có
+/// nguồn thì rỗng + <c>suggestion_source_missing</c>.
 /// </summary>
 public sealed class MealPlanSuggestionBuilderTests
 {
@@ -90,6 +91,62 @@ public sealed class MealPlanSuggestionBuilderTests
         var suggestion = Assert.Single(result.Suggestions);
         Assert.Contains("Thư giãn", suggestion.Text, StringComparison.Ordinal);
         Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void KeepsChapterElevenFluidClauseWithoutPatientContext()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [
+                Chunk(
+                    MealPlanSuggestionBuilder.SuggestionChapterNumber,
+                    210,
+                    "Bệnh nhân được khuyên nên uống 2 đến 3 lít chất lỏng không đường (nước và trà thảo mộc)."),
+            ]);
+
+        var suggestion = Assert.Single(result.Suggestions);
+        var citation = Assert.Single(suggestion.Citations);
+        Assert.Equal(MealPlanSuggestionBuilder.SuggestionChapterNumber, citation.ChapterNumber);
+        Assert.Contains("uống 2 đến 3 lít", citation.Quote, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("nước và trà thảo mộc", citation.Quote, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("bệnh nhân", citation.Quote, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("bệnh nhân", suggestion.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void RejectsChapterElevenFluidClauseWithTreatmentContext()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [
+                Chunk(
+                    MealPlanSuggestionBuilder.SuggestionChapterNumber,
+                    210,
+                    "Bệnh nhân được khuyên nên uống theo chu kỳ điều trị bệnh lý 2 lít chất lỏng không đường (nước và trà thảo mộc)."),
+            ]);
+
+        Assert.Empty(result.Suggestions);
+        var warning = Assert.Single(result.Warnings);
+        Assert.Equal(PlanWarningCodes.SuggestionSourceMissing, warning.Code);
+        Assert.Equal("2026-10-28", warning.Scope);
+    }
+
+    [Fact]
+    public void RejectsChapterElevenChunkWithoutFluidTopic()
+    {
+        var result = _builder.Build(
+            "2026-10-28",
+            [
+                Chunk(
+                    MealPlanSuggestionBuilder.SuggestionChapterNumber,
+                    210,
+                    "Bệnh nhân FMD cần nhịn ăn và theo dõi điều trị theo chu kỳ."),
+            ]);
+
+        Assert.Empty(result.Suggestions);
+        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.SuggestionSourceMissing);
     }
 
     [Fact]

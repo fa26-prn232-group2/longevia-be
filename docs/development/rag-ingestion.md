@@ -149,22 +149,28 @@ phần **re-index**:
 | --- | --- | --- |
 | Re-index (chunk + embed) | **Có** | thủ công, hiếm: chỉ khi sửa sách hoặc đổi model |
 | Xuất seed (`make kb-seed`) | Không | thủ công, sau mỗi lần re-index |
-| Load seed (deploy) | **Không** | **tự động**: `kb-schema` → `kb-init` khi `compose up` |
+| Load seed (deploy) | **Không** | **tự động**: `kb-bootstrap` khi `make up`/`make bootstrap` |
 
 Seed đã commit tại `resources/knowledge/<corpus_key>/` gồm `build.json`,
-`chunks.jsonl.gz` (embedding có sẵn) và `page_flags.jsonl.gz`. `kb-init` chạy
-`python -m src.cli load --work /seed --skip-if-loaded --verify`:
+`chunks.jsonl.gz` (embedding có sẵn) và `page_flags.jsonl.gz`. Job deploy
+`kb-bootstrap` chạy chính image Recommendation với:
+
+```text
+dotnet Recommendation.Api.dll --bootstrap --seed /seed --skip-if-loaded --verify
+```
 
 - `--skip-if-loaded`: nếu đúng `(corpus_key, version)` đang active thì thoát ngay;
-- `--verify`: đối chiếu lại chương/chunk/số chiều sau khi nạp, lệch là **lỗi**.
+- `--verify`: đối chiếu lại chương/chunk/số chiều/khoảng trang/page flag; lệch là **lỗi**.
+- Migration schema `kb` vẫn do EF Core Code First thực hiện trong cùng job.
 
-`kb-schema` chạy chính image của service với `--migrate-only` để tạo schema `kb`
-bằng đúng migration EF Core (không viết SQL tay, không lặp schema).
+Job này nằm sau profile `bootstrap`; `make up`/`make bootstrap` chạy bằng
+`docker compose run --rm --no-deps kb-bootstrap` nên container bị xoá sau khi xong.
+`docker compose up -d` một mình **không** nạp seed.
 
 Kiểm chứng toàn bộ đường deploy trên một compose project **riêng** (không đụng DB dev):
 
 ```powershell
-make kb-smoke   # DB rỗng -> kb-schema -> kb-init -> 188 chunk; chạy lại thì skip
+make kb-smoke   # DB rỗng -> kb-bootstrap -> 188 chunk; chạy lại thì skip
 ```
 
 ---

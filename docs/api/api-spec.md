@@ -865,6 +865,7 @@ Hai RPC chỉ **đọc** corpus qua `IKnowledgeStore`, không ghi DB, không t�
 - `GenerateMealPlan`: dựng kế hoạch `days` ngày × `meals_per_day` bữa; chỉ chọn `food_id` trong `candidate_foods`; lọc dị ứng + dietary preference + `excluded_food_ids` **bằng code**; dinh dưỡng sao chép nguyên từ candidate. Ngày đã ăn ≥ 105% mục tiêu (`consumed_calories` + `consumed_date` trong tuần) có `calorie_cap_reached = true`, `meals` rỗng và tối đa 3 `suggestions`.
 - `GenerateWorkoutPlan`: `days` ngày liên tiếp, đúng `sessions_per_week` buổi khi còn hoạt động an toàn; ngày còn lại là `rest_day` (không `activity`, `duration_minutes = 0`). `activity` là khoá catalog (`walking`, `cycling`, …), không phải tên hiển thị; `intensity` chỉ có khi tìm được căn cứ chương 5.
 - Cả hai RPC luôn trả `disclaimer`; `rationale` do code dựng từ request + citation, không để LLM viết tự do.
+- Citation meal plan: món/bữa chỉ chương 4 + Phụ lục A; riêng `suggestions` ngày chạm trần có thể dùng chương 11 cho đoạn nước/trà thảo mộc không đường, không lấy ngữ cảnh bệnh nhân/FMD/điều trị.
 
 ### 5.2 Mã lỗi nghiệp vụ
 

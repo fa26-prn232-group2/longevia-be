@@ -34,17 +34,24 @@ public static class RecommendationStartup
 
     /// <summary>Đăng ký toàn bộ cấu hình, dịch vụ và gRPC server.</summary>
     /// <param name="migrateOnly">
-    /// Chế độ deploy <c>kb-schema</c>: chỉ chạy migration nên không bind, không
+    /// Chế độ deploy cũ <c>kb-schema</c>: chỉ chạy migration nên không bind, không
     /// validate cấu hình provider (tránh đòi API key ở bước tạo schema).
     /// </param>
-    public static void Configure(WebApplicationBuilder builder, bool migrateOnly = false)
+    /// <param name="bootstrap">
+    /// Chế độ nạp seed: chạy migration + <c>ISeedLoader</c> rồi thoát, không mở
+    /// Kestrel/gRPC và không cần <c>GOOGLE_AI__API_KEY</c>.
+    /// </param>
+    public static void Configure(
+        WebApplicationBuilder builder,
+        bool migrateOnly = false,
+        bool bootstrap = false)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Services.AddRecommendationTelemetry();
-        ConfigureOptions(builder, migrateOnly);
+        ConfigureOptions(builder, migrateOnly || bootstrap);
 
-        if (migrateOnly)
+        if (migrateOnly || bootstrap)
         {
             ConfigureKnowledgeStoreOnly(builder);
             return;
@@ -64,9 +71,69 @@ public static class RecommendationStartup
         app.Logger.LogInformation("Knowledge store schema is up to date.");
     }
 
-    // Chế độ migrate-only chỉ cần knowledge store, không cần provider/gRPC.
+    /// <summary>
+    /// Chạy migration rồi nạp seed đã xuất (<c>--bootstrap</c>), không mở cổng.
+    /// Trả exit code 0 khi thành công hoặc bỏ qua, 1 khi lỗi. Log chỉ chứa
+    /// metadata corpus công khai, không chứa dữ liệu người dùng.
+    /// </summary>
+    public static async Task<int> BootstrapAsync(
+        WebApplication app,
+        SeedLoadOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(options);
+
+        try
+        {
+            await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+
+            await using var scope = app.Services.CreateAsyncScope();
+            var loader = scope.ServiceProvider.GetRequiredService<ISeedLoader>();
+            var result = await loader.LoadAsync(options, cancellationToken).ConfigureAwait(false);
+
+            if (result.Skipped)
+            {
+                app.Logger.LogInformation(
+                    "Knowledge corpus already active ('{CorpusKey}' {Version}); nothing to load.",
+                    result.CorpusKey,
+                    result.Version);
+            }
+            else
+            {
+                app.Logger.LogInformation(
+                    "Knowledge corpus loaded ('{CorpusKey}' {Version}): {Chapters} chapters, {Chunks} chunks, {PageFlags} page flags.",
+                    result.CorpusKey,
+                    result.Version,
+                    result.Chapters,
+                    result.Chunks,
+                    result.PageFlags);
+            }
+
+            if (result.Verification is { Ok: true } verification)
+            {
+                app.Logger.LogInformation(
+                    "Knowledge store verification passed: {Chapters} chapters, {Chunks} chunks, {PageFlags} page flags.",
+                    verification.Chapters,
+                    verification.Chunks,
+                    verification.PageFlags);
+            }
+
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogError(
+                exception,
+                "Knowledge corpus bootstrap failed for seed '{SeedPath}'.",
+                options.SeedPath);
+            return 1;
+        }
+    }
+
+    // Chế độ migrate-only/bootstrap chỉ cần knowledge store, không cần provider/gRPC.
     private static void ConfigureKnowledgeStoreOnly(WebApplicationBuilder builder) =>
-        builder.Services.AddKnowledgeStore();
+        builder.Services.AddKnowledgeDbContext();
 
     /// <summary>Chạy migration và map endpoint trước khi server phục vụ request.</summary>
     public static async Task RunAsync(WebApplication app, CancellationToken cancellationToken = default)
@@ -136,9 +203,9 @@ public static class RecommendationStartup
     }
 
     // Bind và kiểm tra ngay lúc khởi động (fail fast).
-    private static void ConfigureOptions(WebApplicationBuilder builder, bool migrateOnly)
+    private static void ConfigureOptions(WebApplicationBuilder builder, bool skipProviderOptions)
     {
-        if (!migrateOnly)
+        if (!skipProviderOptions)
         {
             ConfigureProviderOptions(builder);
         }

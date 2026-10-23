@@ -18,8 +18,11 @@ namespace Recommendation.Infrastructure.DependencyInjection;
 /// </summary>
 public static class KnowledgeStoreRegistration
 {
-    /// <summary>Đăng ký <see cref="KnowledgeDbContext"/> và các adapter truy xuất/sinh câu trả lời.</summary>
-    public static IServiceCollection AddKnowledgeStore(this IServiceCollection services)
+    /// <summary>
+    /// Đăng ký <see cref="KnowledgeDbContext"/> và seed loader mà không cần
+    /// provider AI. Dùng cho chế độ deploy <c>--migrate-only</c>/<c>--bootstrap</c>.
+    /// </summary>
+    public static IServiceCollection AddKnowledgeDbContext(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -28,6 +31,17 @@ public static class KnowledgeStoreRegistration
             var knowledgeDb = sp.GetRequiredService<IOptions<KnowledgeDbOptions>>().Value;
             options.UseNpgsql(knowledgeDb.ConnectionString, npgsql => npgsql.UseVector());
         });
+
+        services.AddScoped<ISeedLoader, SeedLoader>();
+        return services;
+    }
+
+    /// <summary>Đăng ký <see cref="KnowledgeDbContext"/> và các adapter truy xuất/sinh câu trả lời.</summary>
+    public static IServiceCollection AddKnowledgeStore(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddKnowledgeDbContext();
 
         services.AddSingleton<IEmbeddingProvider, GoogleAiEmbeddingProvider>();
         services.AddSingleton<IChatModel, GoogleAiChatModel>();

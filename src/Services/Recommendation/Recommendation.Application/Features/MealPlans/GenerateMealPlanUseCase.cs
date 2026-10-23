@@ -9,9 +9,10 @@ namespace Recommendation.Application.Features.MealPlans;
 
 /// <summary>
 /// Pipeline của <c>GenerateMealPlan</c> (FR-013..FR-025): validate → lọc candidate
-/// → chia ngân sách → truy xuất chương 4 + Phụ lục A → áp rule 105% → AI chọn
-/// <c>food_index</c> → parse/validate ±10% → fallback xác định → suggestions và
-/// metadata. Service chỉ trả kế hoạch, không lưu dữ liệu người dùng.
+/// → chia ngân sách → truy xuất chương 4 + Phụ lục A (+ chương 11 cho suggestions)
+/// → áp rule 105% → AI chọn <c>food_index</c> → parse/validate ±10% → fallback xác
+/// định → suggestions và metadata. Service chỉ trả kế hoạch, không lưu dữ liệu
+/// người dùng.
 /// </summary>
 public sealed class GenerateMealPlanUseCase(
     PlanRequestValidator requestValidator,
@@ -26,6 +27,10 @@ public sealed class GenerateMealPlanUseCase(
     IChatModel chatModel)
 {
     private const int ContextTopK = 8;
+
+    // Truy vấn hẹp, chỉ nhắm đoạn nước/trà thảo mộc không đường của chương 11
+    // dùng cho suggestions ngày chạm trần (FR-023).
+    private const string SuggestionQuery = "nước trà thảo mộc không đường";
 
     /// <summary>Chạy toàn bộ pipeline cho một lời gọi.</summary>
     public async Task<GenerateMealPlanResult> ExecuteAsync(
@@ -137,7 +142,8 @@ public sealed class GenerateMealPlanUseCase(
             return [];
         }
 
-        var prompt = promptBuilder.Build(request, candidates, budget, chunks);
+        var mealChunks = MealChunks(chunks);
+        var prompt = promptBuilder.Build(request, candidates, budget, mealChunks);
 
         ChatCompletion completion;
         try
@@ -159,7 +165,7 @@ public sealed class GenerateMealPlanUseCase(
             return null;
         }
 
-        var parsed = parser.Parse(completion.Payload, candidates, chunks, budget, cappedDates);
+        var parsed = parser.Parse(completion.Payload, candidates, mealChunks, budget, cappedDates);
         return validator.Validate(request, budget, parsed, candidates, cappedDates).IsValid
             ? parsed
             : null;
@@ -212,14 +218,37 @@ public sealed class GenerateMealPlanUseCase(
                 cancellationToken)
             .ConfigureAwait(false);
 
-        var allowed = new List<RetrievedChunk>(chapterFour.Count + chapterTwelve.Count);
+        var chapterEleven = await knowledgeStore.SearchAsync(
+                new KnowledgeQuery
+                {
+                    Query = SuggestionQuery,
+                    ChapterNumber = MealPlanSuggestionBuilder.SuggestionChapterNumber,
+                    TopK = ContextTopK,
+                },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var allowed = new List<RetrievedChunk>(
+            chapterFour.Count + chapterTwelve.Count + chapterEleven.Count);
         allowed.AddRange(chapterFour.Where(chunk => chunk.Chunk.ChapterNumber == 4));
         allowed.AddRange(chapterTwelve.Where(
             chunk => chunk.Chunk.ChapterNumber == MealPlanSuggestionBuilder.AppendixChapterNumber
                 && chunk.Chunk.BookPageFrom >= MealPlanSuggestionBuilder.AppendixMinBookPage));
 
+        // Chương 11 chỉ bổ sung nguồn cho suggestions, và chỉ khi đoạn văn nói về
+        // nước/trà thảo mộc không đường; phần này nằm sau các chunk chọn món để
+        // chunk_index trong prompt không đổi.
+        allowed.AddRange(chapterEleven.Where(
+            chunk => chunk.Chunk.ChapterNumber == MealPlanSuggestionBuilder.SuggestionChapterNumber
+                && MealPlanSuggestionBuilder.IsSuggestionTopic(chunk.Chunk.Content)));
+
         return allowed;
     }
+
+    private static IReadOnlyList<RetrievedChunk> MealChunks(IReadOnlyList<RetrievedChunk> chunks) =>
+        chunks
+            .Where(chunk => MealPlanSuggestionBuilder.IsAllowedSource(chunk.Chunk))
+            .ToList();
 
     private static string BuildQuery(GenerateMealPlanRequest request) =>
         string.Create(

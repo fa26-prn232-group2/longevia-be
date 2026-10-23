@@ -15,9 +15,11 @@ using UserProfile = Longevia.Recommendation.Contracts.V1.UserProfile;
 namespace Recommendation.IntegrationTests.Features.Plans;
 
 /// <summary>
-/// T032 — FR-002/FR-003/FR-023: citation trả về chỉ thuộc chương 4 hoặc chương 12
-/// có <c>book_page_from &gt;= 238</c> (Phụ lục A); quote khớp chunk được giữ, quote
-/// sai bị loại; corpus rỗng thì citations rỗng + <c>corpus_not_loaded</c>.
+/// T032/T087 — FR-002/FR-003/FR-023: citation của món/bữa chỉ thuộc chương 4 hoặc
+/// chương 12 có <c>book_page_from &gt;= 238</c> (Phụ lục A); quote khớp chunk được
+/// giữ, quote sai bị loại; riêng <c>suggestions</c> của ngày chạm trần được dẫn
+/// thêm chương 11 khi đoạn văn nói về nước/trà thảo mộc không đường; corpus rỗng
+/// thì citations rỗng + <c>corpus_not_loaded</c>.
 /// </summary>
 public sealed class MealPlanCitationGrpcTests(RecommendationApiFixture fixture)
     : IClassFixture<RecommendationApiFixture>
@@ -29,6 +31,8 @@ public sealed class MealPlanCitationGrpcTests(RecommendationApiFixture fixture)
         "Phụ lục A gợi ý uống trà thảo mộc không đường vào buổi tối.";
     private const string BeforeAppendixContent =
         "Nội dung trước Phụ lục A không được dùng làm căn cứ cho kế hoạch.";
+    private const string Chapter11Content =
+        "Bệnh nhân được khuyên nên uống 2 đến 3 lít chất lỏng không đường (nước và trà thảo mộc).";
 
     [Fact]
     public async Task KeepsVerifiedCitationWhenQuoteMatchesTheChunk()
@@ -69,6 +73,32 @@ public sealed class MealPlanCitationGrpcTests(RecommendationApiFixture fixture)
                 allowed,
                 $"Citation ngoài chương 4/Phụ lục A: chapter={citation.ChapterNumber}, page={citation.BookPage}.");
         });
+    }
+
+    [Fact]
+    public async Task AllowsChapterElevenFluidSuggestionCitationForCappedDay()
+    {
+        await EnsureCorpusAsync(fixture);
+
+        var request = ExactRequest();
+        request.ConsumedCalories = 2100;
+        request.ConsumedDate = "2026-10-26";
+
+        var response = await fixture.Client.GenerateMealPlanAsync(request);
+
+        var capped = Assert.Single(response.Days, day => day.CalorieCapReached);
+        Assert.NotEmpty(capped.Suggestions);
+
+        var suggestionCitations = capped.Suggestions
+            .SelectMany(suggestion => suggestion.Citations)
+            .ToList();
+        Assert.Contains(suggestionCitations, citation => citation.ChapterNumber == 11);
+        Assert.All(
+            suggestionCitations.Where(citation => citation.ChapterNumber == 11),
+            citation => Assert.DoesNotContain(
+                "bệnh nhân",
+                citation.Quote,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -174,11 +204,34 @@ public sealed class MealPlanCitationGrpcTests(RecommendationApiFixture fixture)
             await db.SaveChangesAsync(CancellationToken.None);
         }
 
+        var chapterEleven = await db.Chapter
+            .FirstOrDefaultAsync(entity => entity.CorpusId == corpus.Id && entity.ChapterNumber == 11);
+
+        if (chapterEleven is null)
+        {
+            chapterEleven = new Chapter
+            {
+                Id = Guid.NewGuid(),
+                CorpusId = corpus.Id,
+                ChapterNumber = 11,
+                Title = "HƯỚNG DẪN CHO BỆNH NHÂN",
+                SourceFile = "11-chuong-11-huong-dan-cho-benh-nhan.md",
+                BookPageFrom = 200,
+                BookPageTo = 229,
+                PdfPageFrom = 190,
+                PdfPageTo = 219,
+            };
+
+            db.Chapter.Add(chapterEleven);
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
         var store = scope.ServiceProvider.GetRequiredService<IKnowledgeStore>();
         await store.UpsertAsync(
             [
-                KnowledgeChunk(corpus.Id, chapter.Id, 0, AppendixContent, 238),
-                KnowledgeChunk(corpus.Id, chapter.Id, 1, BeforeAppendixContent, 237),
+                KnowledgeChunk(corpus.Id, chapter.Id, 12, 0, AppendixContent, 238),
+                KnowledgeChunk(corpus.Id, chapter.Id, 12, 1, BeforeAppendixContent, 237),
+                KnowledgeChunk(corpus.Id, chapterEleven.Id, 11, 0, Chapter11Content, 210),
             ],
             CancellationToken.None);
     }
@@ -186,13 +239,14 @@ public sealed class MealPlanCitationGrpcTests(RecommendationApiFixture fixture)
     private static KnowledgeChunk KnowledgeChunk(
         Guid corpusId,
         Guid chapterId,
+        int chapterNumber,
         int chunkIndex,
         string content,
         int bookPage) => new()
         {
             CorpusId = corpusId,
             ChapterId = chapterId,
-            ChapterNumber = 12,
+            ChapterNumber = chapterNumber,
             ChunkIndex = chunkIndex,
             Content = content,
             TokenCount = content.Length / 4,

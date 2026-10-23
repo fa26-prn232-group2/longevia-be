@@ -1,4 +1,4 @@
-# Longevia Backend - Make targets wrap the .NET CLI.
+﻿# Longevia Backend - Make targets wrap the .NET CLI.
 # The gate ladder these targets form is the single source of truth in AGENTS.md §2.
 #
 #   make lint    fast gate   -> format-check + build (warnings as errors)
@@ -17,7 +17,7 @@ TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
 	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
-	kb-build kb-load kb-verify kb-eval
+	kb-build kb-load kb-verify kb-eval kb-seed
 
 # Book OCR toolchain (scripts/book-ocr). Docker-only, writes to artifacts/book-ocr.
 # Never part of the .NET gate.
@@ -71,6 +71,7 @@ help:
 	@echo   kb-load          load the corpus into recommendation_db
 	@echo   kb-verify        verify chapters, chunks and page ranges
 	@echo   kb-eval          run the golden-set evaluation
+	@echo   kb-seed          export the compressed seed under resources/knowledge
 
 restore:
 	$(DOTNET) restore $(SLN_OR_DIR)
@@ -177,3 +178,6 @@ kb-verify:
 
 kb-eval:
 	$(BOOK_KB) run --rm book-kb eval
+
+kb-seed:
+	$(BOOK_KB) run --rm book-kb seed

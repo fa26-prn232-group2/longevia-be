@@ -17,6 +17,8 @@ services:
     environment:
       BOOK_KB_WORK: /work
       BOOK_KB_CORPUS: /corpus
+      # `seed` ghi seed đã nén vào đây để commit (không cần provider/key).
+      BOOK_KB_SEED_ROOT: /seed-out
       KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
       # Inside the compose network PostgreSQL is `postgres:5432`, not the
       # host-published port in `.env` (localhost:5433).
@@ -35,6 +37,8 @@ services:
     volumes:
       - ../../artifacts/book-kb:/work
       - ../../docs/reference/che-do-an-truong-tho:/corpus:ro
+      # Seed đã nén, commit vào repo để môi trường mới nạp mà không cần key.
+      - ../../resources/knowledge:/seed-out
       # Single source of truth for the contract: mounted read-only, stubs are
       # generated at eval time (never committed).
       - ../../contracts/recommendation/v1:/contracts:ro

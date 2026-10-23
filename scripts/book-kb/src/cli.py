@@ -22,6 +22,7 @@ from .embed import (
 from .eval import run_eval as run_golden_set_eval
 from .loader import connect, load_build, verify_database
 from .review import flag_summary, load_page_flags
+from .seed_export import DEFAULT_SEED_ROOT, export_seed
 
 DEFAULT_CORPUS_DIR = "docs/reference/che-do-an-truong-tho"
 DEFAULT_WORK_DIR = "artifacts/book-kb"
@@ -176,10 +177,27 @@ def run_load(args: argparse.Namespace) -> int:
     _, work_dir = _paths(args)
     connection = connect()
     try:
-        result = load_build(work_dir, connection)
+        result = load_build(
+            work_dir,
+            connection,
+            skip_if_loaded=bool(getattr(args, "skip_if_loaded", False)),
+            verify_after_load=bool(getattr(args, "verify", False)),
+        )
     finally:
         connection.close()
     print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
+def run_seed(args: argparse.Namespace) -> int:
+    _, work_dir = _paths(args)
+    seed_root = Path(
+        getattr(args, "seed_root", None)
+        or os.getenv("BOOK_KB_SEED_ROOT")
+        or DEFAULT_SEED_ROOT
+    )
+    report = export_seed(work_dir, seed_root)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -239,7 +257,28 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[common],
         help="Nạp artifacts vào kb.* (idempotent).",
     )
+    load.add_argument(
+        "--skip-if-loaded",
+        action="store_true",
+        help="Bỏ qua nếu đúng corpus_key + version đang active (dùng cho deploy).",
+    )
+    load.add_argument(
+        "--verify",
+        action="store_true",
+        help="Chạy verify sau khi nạp; lệch metadata là lỗi.",
+    )
     load.set_defaults(handler=run_load)
+
+    seed = subparsers.add_parser(
+        "seed",
+        parents=[common],
+        help="Xuất seed đã nén từ artifacts để commit (không cần API key).",
+    )
+    seed.add_argument(
+        "--seed-root",
+        help=f"Thư mục đích của seed (mặc định: {DEFAULT_SEED_ROOT}).",
+    )
+    seed.set_defaults(handler=run_seed)
 
     verify = subparsers.add_parser(
         "verify",

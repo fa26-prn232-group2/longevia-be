@@ -1,4 +1,4 @@
-# Normalize line endings in the repository.
+﻿# Normalize line endings in the repository.
 * text=auto
 
 *.cs      text diff=csharp
@@ -23,3 +23,4 @@ Dockerfile text eol=lf
 *.jpeg    binary
 *.pdf     binary
 *.webp    binary
+*.jsonl.gz binary

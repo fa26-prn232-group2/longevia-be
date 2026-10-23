@@ -15,6 +15,7 @@ Cột ``content_tsv`` **không** được ghi: trigger trong migration tự tín
 
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import os
@@ -124,27 +125,64 @@ def _vector_literal(values: Iterable[float]) -> str:
     return "[" + ",".join(repr(value) for value in vector) + "]"
 
 
+def _resolve_artifact(path: Path) -> Path:
+    """Trả file tồn tại; chấp nhận bản nén ``<name>.gz`` của seed."""
+
+    if path.is_file():
+        return path
+    compressed = path.with_name(path.name + ".gz")
+    if compressed.is_file():
+        return compressed
+    raise LoadError(f"Không tìm thấy file build: {path}.")
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.is_file():
-        raise LoadError(f"Không tìm thấy file build: {path}.")
+    resolved = _resolve_artifact(path)
     rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
+    opener = gzip.open if resolved.suffix == ".gz" else open
+    with opener(resolved, "rt", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
                 continue
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError as exc:
-                raise LoadError(f"{path.name} dòng {line_number} không phải JSON.") from exc
+                raise LoadError(f"{resolved.name} dòng {line_number} không phải JSON.") from exc
     return rows
 
 
-def _load_payload(work_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+def _read_build(work_dir: Path) -> dict[str, Any]:
     build_path = work_dir / "build.json"
     if not build_path.is_file():
         raise LoadError(f"Không tìm thấy build.json trong {work_dir}.")
+    try:
+        build = json.loads(build_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise LoadError("build.json không phải JSON hợp lệ.") from exc
+    if not isinstance(build, dict):
+        raise LoadError("build.json phải là một JSON object.")
+    return build
 
-    build = json.loads(build_path.read_text(encoding="utf-8"))
+
+def is_loaded(connection: Any, corpus_key: str, version: str) -> bool:
+    """True khi đúng ``corpus_key`` + ``version`` đang là corpus active."""
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "SELECT 1 FROM kb.corpus WHERE corpus_key = %s AND version = %s AND is_active",
+            (corpus_key, version),
+        )
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+
+
+def _load_payload(
+    work_dir: Path,
+    build: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    build = build if build is not None else _read_build(work_dir)
     chunks = _read_jsonl(work_dir / "chunks.jsonl")
     flags = _read_jsonl(work_dir / "page_flags.jsonl")
 
@@ -176,12 +214,35 @@ def _corpus_id(corpus_key: str, version: str) -> uuid.UUID:
     return uuid.uuid5(NAMESPACE, f"{corpus_key}:{version}")
 
 
-def load_build(work_dir: Path, connection: Any) -> dict[str, Any]:
-    """Nạp một thư mục artifact vào database trong một transaction."""
+def load_build(
+    work_dir: Path,
+    connection: Any,
+    *,
+    skip_if_loaded: bool = False,
+    verify_after_load: bool = False,
+) -> dict[str, Any]:
+    """Nạp một thư mục artifact vào database trong một transaction.
 
-    build, chunks, flags = _load_payload(Path(work_dir))
+    ``skip_if_loaded`` dùng cho bước deploy (service ``kb-init``): nếu đúng
+    ``corpus_key`` + ``version`` đang active thì trả về ngay, không ghi lại.
+    ``verify_after_load`` chạy ``verify_database`` sau khi commit để seed lệch
+    metadata bị phát hiện thay vì âm thầm nằm trong database.
+    """
+
+    work_dir = Path(work_dir)
+    build = _read_build(work_dir)
     corpus_key = str(build["corpus_key"])
     version = str(build["version"])
+
+    if skip_if_loaded and is_loaded(connection, corpus_key, version):
+        return {
+            "skipped": True,
+            "reason": f"corpus '{corpus_key}' version {version[:12]}… đã active.",
+            "corpus_key": corpus_key,
+            "version": version,
+        }
+
+    build, chunks, flags = _load_payload(work_dir, build)
     embedded_at = datetime.fromisoformat(str(build["embedded_at"]))
     if embedded_at.tzinfo is None:
         embedded_at = embedded_at.replace(tzinfo=timezone.utc)
@@ -386,7 +447,7 @@ def load_build(work_dir: Path, connection: Any) -> dict[str, Any]:
     finally:
         cursor.close()
 
-    return {
+    result = {
         "corpus_id": str(corpus_id),
         "corpus_key": corpus_key,
         "version": version,
@@ -395,6 +456,20 @@ def load_build(work_dir: Path, connection: Any) -> dict[str, Any]:
         "page_flags": len(flags),
         "is_active": True,
     }
+
+    if verify_after_load:
+        report = verify_database(
+            connection,
+            corpus_key,
+            {"chapter_count": len(chapter_ids), "chunk_count": len(chunks)},
+        )
+        result["verify"] = report
+        if not report.get("ok"):
+            raise LoadError(
+                "Nạp xong nhưng verify không khớp: " + json.dumps(report, ensure_ascii=False)
+            )
+
+    return result
 
 
 def _scalar(cursor: Any, sql: str, parameters: tuple[Any, ...]) -> Any:

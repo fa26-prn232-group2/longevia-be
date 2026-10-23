@@ -23,8 +23,21 @@
 
   <ItemGroup Label="gRPC">
     <PackageVersion Include="Grpc.AspNetCore" Version="2.84.0" />
+    <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="2.84.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.84.0" />
     <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
+  </ItemGroup>
+
+  <!--
+    Recommendation knowledge store (pgvector) and the Gemini provider.
+    Npgsql 10 has no built-in `vector` type, so the pgvector provider is
+    required (research.md D-11).
+  -->
+  <ItemGroup Label="Vector store and AI provider">
+    <PackageVersion Include="Pgvector" Version="0.3.2" />
+    <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+    <PackageVersion Include="Google.GenAI" Version="1.26.1" />
+    <PackageVersion Include="Polly" Version="8.8.0" />
   </ItemGroup>
 
   <ItemGroup Label="API and validation">

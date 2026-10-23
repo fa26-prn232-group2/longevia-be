@@ -1,0 +1,139 @@
+{
+  "corpus_key": "che-do-an-truong-tho",
+  "version": "3885fa962c35730b52c2bf792b1127b8dbce062a011c480baa485d6879b98735",
+  "title": "Chế độ ăn trường thọ",
+  "source_path": "docs/reference/che-do-an-truong-tho",
+  "chapter_count": 13,
+  "chunk_count": 188,
+  "embedding_model": "gemini-embedding-001",
+  "embedding_dim": 768,
+  "chunker_params": {
+    "tokens": 1000,
+    "overlap": 150
+  },
+  "embedded_at": "2026-10-22T17:38:04.622342+00:00",
+  "built_at": "2026-10-22T17:38:04.622342+00:00",
+  "page_count": 273,
+  "page_flag_count": 67,
+  "needs_review_chunks": 58,
+  "verified_chunks": 130,
+  "chapters": [
+    {
+      "number": 0,
+      "title": "Phần đầu sách",
+      "source_file": "00-front-matter.md",
+      "book_page_from": 9,
+      "book_page_to": 22,
+      "pdf_page_from": 1,
+      "pdf_page_to": 14
+    },
+    {
+      "number": 1,
+      "title": "CHƯƠNG 1 - ĐÀI PHUN NƯỚC CỦA CARUSO",
+      "source_file": "01-chuong-1-dai-phun-nuoc-cua-caruso.md",
+      "book_page_from": 22,
+      "book_page_to": 36,
+      "pdf_page_from": 14,
+      "pdf_page_to": 28
+    },
+    {
+      "number": 2,
+      "title": "CHƯƠNG 2 - LÃO HÓA, TUỔI THỌ ĐƯỢC LẬP TRÌNH VÀ NGHIÊN CỨU VỀ TUỔI TRẺ",
+      "source_file": "02-chuong-2-lao-hoa-tuoi-tho-duoc-lap-trinh-va-nghien-cuu-ve-tu.md",
+      "book_page_from": 36,
+      "book_page_to": 56,
+      "pdf_page_from": 28,
+      "pdf_page_to": 48
+    },
+    {
+      "number": 3,
+      "title": "CHƯƠNG 3 - NĂM TRỤ CỘT",
+      "source_file": "03-chuong-3-nam-tru-cot.md",
+      "book_page_from": 56,
+      "book_page_to": 69,
+      "pdf_page_from": 48,
+      "pdf_page_to": 61
+    },
+    {
+      "number": 4,
+      "title": "CHƯƠNG 4 - CHẾ ĐỘ ĂN TRƯỜNG THỌ",
+      "source_file": "04-chuong-4-che-do-an-truong-tho.md",
+      "book_page_from": 69,
+      "book_page_to": 105,
+      "pdf_page_from": 61,
+      "pdf_page_to": 98
+    },
+    {
+      "number": 5,
+      "title": "CHƯƠNG 5 - TẬP THỂ DỤC VÀ SỐNG LÂU KHỎE MẠNH",
+      "source_file": "05-chuong-5-tap-the-duc-va-song-lau-khoe-manh.md",
+      "book_page_from": 105,
+      "book_page_to": 113,
+      "pdf_page_from": 98,
+      "pdf_page_to": 106
+    },
+    {
+      "number": 6,
+      "title": "CHƯƠNG 6 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN, KIỂM SOÁT CÂN NẶNG VÀ TUỔI THỌ KHỎE MẠNH",
+      "source_file": "06-chuong-6-che-do-nhin-an-khong-hoan-toan-kiem-soat-can-nang-v.md",
+      "book_page_from": 113,
+      "book_page_to": 135,
+      "pdf_page_from": 106,
+      "pdf_page_to": 128
+    },
+    {
+      "number": 7,
+      "title": "CHƯƠNG 7 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ UNG THƯ",
+      "source_file": "07-chuong-7-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
+      "book_page_from": 135,
+      "book_page_to": 158,
+      "pdf_page_from": 128,
+      "pdf_page_to": 151
+    },
+    {
+      "number": 8,
+      "title": "CHƯƠNG 8 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIỂU ĐƯỜNG",
+      "source_file": "08-chuong-8-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
+      "book_page_from": 158,
+      "book_page_to": 179,
+      "pdf_page_from": 151,
+      "pdf_page_to": 172
+    },
+    {
+      "number": 9,
+      "title": "CHƯƠNG 9 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH TIM MẠCH",
+      "source_file": "09-chuong-9-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
+      "book_page_from": 179,
+      "book_page_to": 195,
+      "pdf_page_from": 172,
+      "pdf_page_to": 188
+    },
+    {
+      "number": 10,
+      "title": "CHƯƠNG 10 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA VÀ ĐIỀU TRỊ ALZHEIMER CÙNG CÁC BỆNH LÝ THOÁI HÓA THẦN KINH KHÁC",
+      "source_file": "10-chuong-10-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
+      "book_page_from": 195,
+      "book_page_to": 213,
+      "pdf_page_from": 188,
+      "pdf_page_to": 206
+    },
+    {
+      "number": 11,
+      "title": "CHƯƠNG 11 - CHẾ ĐỘ NHỊN ĂN KHÔNG HOÀN TOÀN VÀ DINH DƯỠNG TRONG PHÒNG NGỪA, ĐIỀU TRỊ BỆNH LÝ VIÊM CŨNG NHƯ BỆNH TỰ MIỄN",
+      "source_file": "11-chuong-11-che-do-nhin-an-khong-hoan-toan-va-dinh-duong-trong.md",
+      "book_page_from": 213,
+      "book_page_to": 230,
+      "pdf_page_from": 206,
+      "pdf_page_to": 223
+    },
+    {
+      "number": 12,
+      "title": "CHƯƠNG 12 - CÁCH ĐỂ GIỮ MÃI TUỔI THANH XUÂN",
+      "source_file": "12-chuong-12-cach-de-giu-mai-tuoi-thanh-xuan.md",
+      "book_page_from": 230,
+      "book_page_to": 281,
+      "pdf_page_from": 223,
+      "pdf_page_to": 274
+    }
+  ]
+}

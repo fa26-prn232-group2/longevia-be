@@ -12,6 +12,11 @@ Theo dõi thay đổi đáng kể ở mức dự án. Chi tiết code xem git hi
   (pgvector) làm knowledge store cho RAG trên tri thức sách *Chế độ ăn trường
   thọ*, kèm trích dẫn chương + trang bản in.
 
+- Recommendation Service (RAG): knowledge store `recommendation_db` (pgvector,
+  schema `kb`), pipeline nạp corpus offline `scripts/book-kb`, 5 RPC gRPC
+  (gợi ý bữa ăn, thiếu hụt vi chất, điểm thói quen, hỏi sách, tra cứu đoạn) với
+  trích dẫn chương + trang bản in + trang scan, và bộ eval 50 câu.
+- Tri thức sách được đóng gói thành **seed** (`resources/knowledge/`) và nạp tự động khi deploy qua `kb-schema` → `kb-init`; môi trường mới không cần API key để nạp corpus.`n
 ### Changed
 - Database: SQL Server → PostgreSQL; chuyển sang EF Core Code First.
 - Hiến pháp `1.0.0` → `2.0.0` (MAJOR): nguyên tắc I có **ngoại lệ duy nhất** —

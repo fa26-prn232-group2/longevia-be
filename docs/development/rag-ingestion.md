@@ -139,7 +139,37 @@ cùng version (nếu chunker đổi số đoạn) bị xoá theo `chunk_index >=
 
 ---
 
-## 5. Rebuild / chạy lại
+## 5. Seed cho môi trường mới (không cần API key)
+
+`artifacts/book-kb` không được commit, nên môi trường mới (máy dev khác, VPS) không
+thể nạp tri thức nếu chỉ `docker compose up`. Vì vậy phần **load** được tách khỏi
+phần **re-index**:
+
+| Việc | Cần API key? | Ai chạy |
+| --- | --- | --- |
+| Re-index (chunk + embed) | **Có** | thủ công, hiếm: chỉ khi sửa sách hoặc đổi model |
+| Xuất seed (`make kb-seed`) | Không | thủ công, sau mỗi lần re-index |
+| Load seed (deploy) | **Không** | **tự động**: `kb-schema` → `kb-init` khi `compose up` |
+
+Seed đã commit tại `resources/knowledge/<corpus_key>/` gồm `build.json`,
+`chunks.jsonl.gz` (embedding có sẵn) và `page_flags.jsonl.gz`. `kb-init` chạy
+`python -m src.cli load --work /seed --skip-if-loaded --verify`:
+
+- `--skip-if-loaded`: nếu đúng `(corpus_key, version)` đang active thì thoát ngay;
+- `--verify`: đối chiếu lại chương/chunk/số chiều sau khi nạp, lệch là **lỗi**.
+
+`kb-schema` chạy chính image của service với `--migrate-only` để tạo schema `kb`
+bằng đúng migration EF Core (không viết SQL tay, không lặp schema).
+
+Kiểm chứng toàn bộ đường deploy trên một compose project **riêng** (không đụng DB dev):
+
+```powershell
+make kb-smoke   # DB rỗng -> kb-schema -> kb-init -> 188 chunk; chạy lại thì skip
+```
+
+---
+
+## 6. Rebuild / chạy lại
 
 Chuẩn bị:
 
@@ -152,6 +182,7 @@ Chạy:
 
 ```powershell
 make kb-build    # build image + chunk + embed -> artifacts/book-kb
+make kb-seed     # xuất seed đã nén vào resources/knowledge (commit)
 make kb-load     # upsert vào recommendation_db (idempotent)
 make kb-verify   # đối chiếu chương/chunk/page range/embedding/cờ
 ```

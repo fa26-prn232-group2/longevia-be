@@ -17,4 +17,10 @@ public interface IKnowledgeStore
 
     /// <summary>Đếm số đoạn của corpus đang hoạt động.</summary>
     Task<int> CountAsync(string corpusKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đếm số đoạn của corpus đang active theo cấu hình của service. Dùng để phân
+    /// biệt "kho tri thức chưa được nạp" với "không tìm thấy đoạn phù hợp".
+    /// </summary>
+    Task<int> CountActiveAsync(CancellationToken cancellationToken);
 }

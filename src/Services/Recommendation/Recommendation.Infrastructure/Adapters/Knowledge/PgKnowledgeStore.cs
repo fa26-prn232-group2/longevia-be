@@ -161,6 +161,10 @@ public sealed class PgKnowledgeStore : IKnowledgeStore
                 cancellationToken);
     }
 
+    /// <inheritdoc />
+    public Task<int> CountActiveAsync(CancellationToken cancellationToken) =>
+        CountAsync(_knowledgeDbOptions.CorpusKey, cancellationToken);
+
     private Task<Guid?> ResolveActiveCorpusIdAsync(CancellationToken cancellationToken) =>
         _db.Corpus
             .AsNoTracking()

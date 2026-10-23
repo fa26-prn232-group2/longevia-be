@@ -22,6 +22,10 @@ public sealed class AskLongevityQuestionUseCase(
     private const string NoChunkAnswer =
         "Không tìm thấy nội dung liên quan trong sách để trả lời câu hỏi này.";
 
+    private const string CorpusNotLoadedAnswer =
+        "Kho tri thức chưa được nạp nên chưa thể trả lời; hãy nạp corpus "
+        + "(service kb-init hoặc make kb-ensure).";
+
     private const string ProviderAnswer =
         "Dịch vụ AI tạm thời không phản hồi nên chưa thể trả lời; hệ thống không tạo nội dung "
         + "ngoài sách.";
@@ -51,7 +55,14 @@ public sealed class AskLongevityQuestionUseCase(
         var chunks = await RetrieveAsync(question, request.ChapterFilter, cancellationToken).ConfigureAwait(false);
         if (chunks.Count == 0)
         {
-            return Abstain(NoChunkAnswer, "no_matching_chunk");
+            // Phân biệt "chưa nạp corpus" với "có corpus nhưng không khớp câu hỏi":
+            // người đọc cần biết phải chạy kb-init/kb-load, không phải đổi câu hỏi.
+            var loaded = await knowledgeStore
+                .CountActiveAsync(cancellationToken)
+                .ConfigureAwait(false) > 0;
+            return loaded
+                ? Abstain(NoChunkAnswer, "no_matching_chunk")
+                : Abstain(CorpusNotLoadedAnswer, "corpus_not_loaded");
         }
 
         return await AnswerFromChunksAsync(question, chunks, cancellationToken).ConfigureAwait(false);

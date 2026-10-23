@@ -54,6 +54,7 @@ docs/
 - [development/code-hygiene.md](development/code-hygiene.md) — ngưỡng cấu trúc code.
 - [development/git-workflow.md](development/git-workflow.md) — git & commit.
 - [development/local-setup.md](development/local-setup.md) — chạy local bằng Docker.
+- [development/rag-ingestion.md](development/rag-ingestion.md) — pipeline tri thức sách: chunk, embedding, seed và tự động nạp khi deploy.
 - [development/testing.md](development/testing.md) — chiến lược test & gate.
 - [development/migration.md](development/migration.md) — EF Core Code First migrations.
 - [development/api-testing.md](development/api-testing.md) — test API bằng Swagger.

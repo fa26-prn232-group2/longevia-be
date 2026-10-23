@@ -218,5 +218,8 @@ public sealed class GetMealRecommendationsUseCaseTests
 
         public Task<int> CountAsync(string corpusKey, CancellationToken cancellationToken) =>
             Task.FromResult(0);
+
+        public Task<int> CountActiveAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(0);
     }
 }

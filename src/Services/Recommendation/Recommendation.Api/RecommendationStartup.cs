@@ -4,7 +4,9 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Recommendation.Api.Endpoints;
 using Recommendation.Api.Extensions;
+using Recommendation.Api.HealthChecks;
 using Recommendation.Api.Middlewares;
+using Recommendation.Application.Abstractions;
 using Recommendation.Application.Features.Ask;
 using Recommendation.Application.Features.LongevityHabits;
 using Recommendation.Application.Features.Meals;
@@ -27,16 +29,40 @@ public static class RecommendationStartup
     private const int DefaultHttpPort = 8080;
 
     /// <summary>Đăng ký toàn bộ cấu hình, dịch vụ và gRPC server.</summary>
-    public static void Configure(WebApplicationBuilder builder)
+    /// <param name="migrateOnly">
+    /// Chế độ deploy <c>kb-schema</c>: chỉ chạy migration nên không bind, không
+    /// validate cấu hình provider (tránh đòi API key ở bước tạo schema).
+    /// </param>
+    public static void Configure(WebApplicationBuilder builder, bool migrateOnly = false)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Services.AddRecommendationTelemetry();
+        ConfigureOptions(builder, migrateOnly);
+
+        if (migrateOnly)
+        {
+            ConfigureKnowledgeStoreOnly(builder);
+            return;
+        }
+
         ConfigureKestrel(builder);
-        ConfigureOptions(builder);
         ConfigureServices(builder);
         ConfigureGrpc(builder);
     }
+
+    /// <summary>Chạy migration rồi thoát, không mở cổng phục vụ request.</summary>
+    public static async Task MigrateOnlyAsync(WebApplication app, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+
+        await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+        app.Logger.LogInformation("Knowledge store schema is up to date.");
+    }
+
+    // Chế độ migrate-only chỉ cần knowledge store, không cần provider/gRPC.
+    private static void ConfigureKnowledgeStoreOnly(WebApplicationBuilder builder) =>
+        builder.Services.AddKnowledgeStore();
 
     /// <summary>Chạy migration và map endpoint trước khi server phục vụ request.</summary>
     public static async Task RunAsync(WebApplication app, CancellationToken cancellationToken = default)
@@ -44,10 +70,42 @@ public static class RecommendationStartup
         ArgumentNullException.ThrowIfNull(app);
 
         await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+        await LogKnowledgeCorpusStateAsync(app, cancellationToken).ConfigureAwait(false);
 
         app.MapGrpcService<RecommendationGrpcService>();
         app.MapGrpcHealthChecksService();
         app.MapHealthChecks("/health");
+    }
+
+    // Kho tri thức rỗng là trạng thái hợp lệ của database nhưng làm mọi câu trả lời
+    // abstain; ghi log rõ để người vận hành biết phải chạy kb-init/kb-ensure.
+    private static async Task LogKnowledgeCorpusStateAsync(
+        WebApplication app,
+        CancellationToken cancellationToken)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<IKnowledgeStore>();
+
+        int chunks;
+        try
+        {
+            chunks = await store.CountActiveAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogError(exception, "Could not read the knowledge corpus state at startup.");
+            return;
+        }
+
+        if (chunks == 0)
+        {
+            app.Logger.LogWarning(
+                "Knowledge corpus is empty. Run the kb-init service ('docker compose up -d') "
+                + "or 'make kb-ensure'; until then grounded answers will abstain.");
+            return;
+        }
+
+        app.Logger.LogInformation("Knowledge corpus loaded: {Chunks} chunks.", chunks);
     }
 
     // Cổng lắng nghe đọc từ biến môi trường, không hard-code:
@@ -74,7 +132,19 @@ public static class RecommendationStartup
     }
 
     // Bind và kiểm tra ngay lúc khởi động (fail fast).
-    private static void ConfigureOptions(WebApplicationBuilder builder)
+    private static void ConfigureOptions(WebApplicationBuilder builder, bool migrateOnly)
+    {
+        if (!migrateOnly)
+        {
+            ConfigureProviderOptions(builder);
+        }
+
+        ConfigureRagOptions(builder);
+        ConfigureRecommendationOptions(builder);
+        ConfigureKnowledgeDbOptions(builder);
+    }
+
+    private static void ConfigureProviderOptions(WebApplicationBuilder builder)
     {
         builder.Services.AddOptions<GoogleAiOptions>()
             .BindEnvSection(builder.Configuration, GoogleAiOptions.SectionName)
@@ -82,7 +152,10 @@ public static class RecommendationStartup
             .Validate(o => !string.IsNullOrWhiteSpace(o.ChatModel), "GOOGLE_AI__CHAT_MODEL chưa được cấu hình.")
             .Validate(o => o.TimeoutMs is > 0 and <= 600_000, "GOOGLE_AI__TIMEOUT_MS không hợp lệ.")
             .ValidateOnStart();
+    }
 
+    private static void ConfigureRagOptions(WebApplicationBuilder builder)
+    {
         builder.Services.AddOptions<RagOptions>()
             .BindEnvSection(builder.Configuration, RagOptions.SectionName)
             .Validate(o => o.TopK is > 0 and <= 20, "RAG__TOP_K phải nằm trong khoảng 1..20.")
@@ -92,7 +165,10 @@ public static class RecommendationStartup
             .Validate(o => o.MinCitationSimilarity is >= 0 and <= 1, "RAG__MIN_CITATION_SIMILARITY không hợp lệ.")
             .Validate(o => o.EmbeddingDim is > 0 and <= 3072, "RAG__EMBEDDING_DIM không hợp lệ.")
             .ValidateOnStart();
+    }
 
+    private static void ConfigureRecommendationOptions(WebApplicationBuilder builder)
+    {
         // Deadline của server phải lớn hơn độ trễ sinh văn bản thực tế của
         // provider (Gemini chat đo được tới ~16s), nếu không response dài sẽ
         // rơi vào DEADLINE_EXCEEDED. Kiểm tra ngay lúc khởi động (fail fast).
@@ -102,7 +178,10 @@ public static class RecommendationStartup
                 o => o.DeadlineSeconds is >= 5 and <= 120,
                 "RECOMMENDATION__DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
             .ValidateOnStart();
+    }
 
+    private static void ConfigureKnowledgeDbOptions(WebApplicationBuilder builder)
+    {
         builder.Services.AddOptions<KnowledgeDbOptions>()
             .BindEnvSection(builder.Configuration, KnowledgeDbOptions.SectionName)
             .Configure(o =>
@@ -159,7 +238,8 @@ public static class RecommendationStartup
         builder.Services.AddScoped<SearchLongevityKnowledgeUseCase>();
 
         builder.Services.AddHealthChecks()
-            .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."));
+            .AddCheck("recommendation", () => HealthCheckResult.Healthy("Recommendation service is running."))
+            .AddCheck<KnowledgeCorpusHealthCheck>("kb-corpus");
     }
 
     private static void ConfigureGrpc(WebApplicationBuilder builder)

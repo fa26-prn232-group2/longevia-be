@@ -159,5 +159,8 @@ public sealed class SearchLongevityKnowledgeUseCaseTests
 
         public Task<int> CountAsync(string corpusKey, CancellationToken cancellationToken) =>
             Task.FromResult(chunks.Count);
+
+        public Task<int> CountActiveAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(chunks.Count);
     }
 }

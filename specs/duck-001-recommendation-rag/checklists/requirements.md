@@ -78,3 +78,19 @@ Chạy `make kb-build` → `make kb-load` → `make kb-verify` trên corpus th�
 **Chưa kiểm chứng bằng provider thật**: luồng gợi ý bữa ăn, gap vi chất và điểm thói quen chỉ
 chạy với provider double trong test (đúng thiết kế để test tất định). Riêng luồng hỏi sách
 đã chạy provider thật qua bộ eval.
+
+## Ghi nhận Phase 10 — nạp tri thức tự động khi deploy (2026-10-23)
+
+| Kiểm chứng | Kết quả |
+| --- | --- |
+| Seed export tất định | chạy `make kb-seed` hai lần → `chunks.jsonl.gz` **SHA-256 giống nhau** |
+| Seed kích thước | `build.json` 4,8 KB · `chunks.jsonl.gz` **1.601.881 B** · `page_flags.jsonl.gz` 791 B |
+| `make kb-smoke` (DB **rỗng**, project + volume riêng) | ✅ `kb-schema` tạo schema → `kb-init` nạp **188 chunk**, `verify.ok = true` (13 chương, 67 page flag) |
+| Idempotent | chạy `kb-init` lần 2 → `{"skipped": true}`, `kb.chunk` vẫn **188** |
+| Không cần API key để nạp | ✅ bước `kb-schema` + `kb-init` không nhận `GOOGLE_AI__API_KEY` |
+| DB dev không bị ảnh hưởng | ✅ smoke dùng `longevia-seedtest` + volume riêng, `down -v` sau khi xong; DB dev vẫn 188 chunk |
+| Log khởi động | `Knowledge corpus loaded: 188 chunks.` |
+| Health check `kb-corpus` | chạy đúng truy vấn `count(*) ... is_active`; unit test phủ `Healthy` / `Degraded` (0 chunk) / `Unhealthy` (store lỗi) |
+| `abstain_reason` | `corpus_not_loaded` khi kho rỗng, `no_matching_chunk` khi có corpus nhưng không khớp |
+| Pipeline tests | `pytest` **28 passed** (6 test mới cho seed/gzip/skip) |
+| Unit tests | **132 passed** |

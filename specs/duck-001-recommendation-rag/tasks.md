@@ -1,4 +1,4 @@
-﻿---
+---
 
 description: "Task list for feature duck/001/recommendation-rag"
 
@@ -299,12 +299,12 @@ API key** và **không thủ công**. Runtime vẫn read-only (D-02); đây là 
 - [x] T121 Tạo `scripts/book-kb/src/seed_export.py` — xuất seed tất định (`mtime=0`, gzip level 9) từ `artifacts/book-kb/` sang `resources/knowledge/<corpus_key>/`; kiểm tra `chunk_count`/`embedding_dim` khớp `build.json` trước khi ghi; thêm subcommand `seed` vào `scripts/book-kb/src/cli.py` và target `make kb-seed`
 - [x] T122 Commit seed vào `resources/knowledge/che-do-an-truong-tho/` (`build.json`, `chunks.jsonl.gz` ~1,6 MB, `page_flags.jsonl.gz`) + `resources/knowledge/README.md` + `.gitattributes` đánh dấu `*.jsonl.gz binary`
 - [x] T123 `scripts/book-kb/src/loader.py` đọc được `.jsonl.gz`, thêm `is_loaded()`; `load` nhận `--skip-if-loaded` và `--verify` (verify lệch → lỗi); test `scripts/book-kb/tests/test_seed.py`
-- [ ] T124 `deployments/docker-compose.yml`: service `kb-init` (`command: load --work /seed --skip-if-loaded --verify`, mount seed read-only, `depends_on: postgres healthy`, `data_net`, `restart: "no"`), `recommendation.depends_on` chờ `kb-init` hoàn tất; thêm `make kb-ensure`
-- [ ] T125 Service báo rõ trạng thái kho: log lúc khởi động (số chunk), health check `kb-corpus` (`Degraded` khi 0 chunk) gắn vào `/health` + gRPC health, và `abstain_reason` phân biệt "kho tri thức chưa được nạp" với "không tìm thấy đoạn phù hợp"
-- [ ] T126 `make kb-smoke`: chạy compose với **project + volume riêng** (`longevia-seedtest`), chỉ `postgres` + `kb-init`, assert 188 chunk + `verify ok`, rồi `down -v`; chạy thật và ghi kết quả
-- [ ] T127 Tài liệu: README §Bắt đầu (tự nạp, không cần key), `docs/development/local-setup.md` (mục tri thức + troubleshooting + khi nào re-index), `docs/development/rag-ingestion.md` (seed/deploy/re-index), `docs/README.md` (link còn thiếu), `NOTICE.md` §3 (đường dẫn seed), `docs/overview/changelog.md`, `docs/decisions/002-…` mục "Bổ sung"
-- [ ] T128 Đồng bộ artifact: ghi quyết định I-15 (seed + `kb-init`) và shared path mới `resources/knowledge/**` vào `plan.md`; `meta.json` giữ `services: ["recommendation"]`; chạy `make team-check`
-- [ ] T129 Gate: `make lint` + test scoped; `make check` một lần trước khi báo xong; ghi kết quả smoke + gate vào `checklists/requirements.md`
+- [x] T124 `deployments/docker-compose.yml`: service `kb-init` (`command: load --work /seed --skip-if-loaded --verify`, mount seed read-only, `depends_on: postgres healthy`, `data_net`, `restart: "no"`), `recommendation.depends_on` chờ `kb-init` hoàn tất; thêm `make kb-ensure`
+- [x] T125 Service báo rõ trạng thái kho: log lúc khởi động (số chunk), health check `kb-corpus` (`Degraded` khi 0 chunk) gắn vào `/health` + gRPC health, và `abstain_reason` phân biệt "kho tri thức chưa được nạp" với "không tìm thấy đoạn phù hợp"
+- [x] T126 `make kb-smoke`: chạy compose với **project + volume riêng** (`longevia-seedtest`), chỉ `postgres` + `kb-init`, assert 188 chunk + `verify ok`, rồi `down -v`; chạy thật và ghi kết quả
+- [x] T127 Tài liệu: README §Bắt đầu (tự nạp, không cần key), `docs/development/local-setup.md` (mục tri thức + troubleshooting + khi nào re-index), `docs/development/rag-ingestion.md` (seed/deploy/re-index), `docs/README.md` (link còn thiếu), `NOTICE.md` §3 (đường dẫn seed), `docs/overview/changelog.md`, `docs/decisions/002-…` mục "Bổ sung"
+- [x] T128 Đồng bộ artifact: ghi quyết định I-15 (seed + `kb-init`) và shared path mới `resources/knowledge/**` vào `plan.md`; `meta.json` giữ `services: ["recommendation"]`; chạy `make team-check`
+- [x] T129 Gate: `make lint` + test scoped; `make check` một lần trước khi báo xong; ghi kết quả smoke + gate vào `checklists/requirements.md`
 
 ## Dependencies & Execution Order
 

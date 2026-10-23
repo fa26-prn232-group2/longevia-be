@@ -1,4 +1,4 @@
-﻿# Implementation Plan: Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
+# Implementation Plan: Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
 
 **Branch**: `feat/recommendation-rag` | **Date**: 2026-10-22 | **Spec**: [spec.md](./spec.md)
 **Feature ID**: `duck/001/recommendation-rag` | **Owner**: `duck`
@@ -243,3 +243,8 @@ Ghi lại các quyết định orchestrator tự chốt khi triển khai (theo s
 | I-12 | Từ chối câu hỏi về thuốc/chẩn đoán trả `answer` hướng dẫn gặp bác sĩ, `citations` rỗng, `abstained = false` | Proto không có trường "refused"; `abstained` theo định nghĩa là "corpus không đủ căn cứ". Ghi nhận đây là **lỗ hổng contract** cần bổ sung ở `duck/002` (client hiện phải suy ra từ việc không có citation) |
 | I-13 | `SafetyGuard` so khớp **cụm từ chỉ định y tế** (bỏ dấu) thay vì token "thuốc" | Token đơn chặn oan câu lối sống như "hút thuốc lá có hại gì"; danh sách cụm ở `Domain/Constants/MedicalAdvicePhrases.cs` |
 | I-14 | Nội suy điểm nhánh: `floor(value/threshold*100)`, clamp 0..100; tổng = trung bình có trọng số, làm tròn `AwayFromZero` | Bảo đảm mọi giá trị dưới ngưỡng đều **< 100** (15,9h → 99) và kết quả tất định, dễ kiểm thử biên |
+| I-15 | Tri thức được phân phối bằng **seed commit sẵn** (`resources/knowledge/`) + 2 bước deploy `kb-schema` → `kb-init`; runtime vẫn read-only | Môi trường mới nạp được corpus mà **không cần API key**, không thủ công, và schema vẫn do migration EF Core tạo (không viết SQL tay). Re-index vẫn offline/thủ công |
+
+**Bổ sung — shared path mới**: `resources/knowledge/**` là dữ liệu sinh tự động (seed) nên
+được commit như artifact, không ai sửa tay; `deployments/docker-compose.yml` đã nằm trong
+danh sách shared file ở trên.

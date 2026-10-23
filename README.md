@@ -132,6 +132,14 @@ make lint
 make check
 ```
 
+> **Tri thức sách là tự động.** Lệnh `up -d` ở trên cũng chạy hai bước deploy:
+> `kb-schema` (tạo schema `kb` bằng migration của service) và `kb-init` (nạp corpus
+> từ seed đã commit ở `resources/knowledge/`). Bước nạp **không cần API key**;
+> nếu corpus đã nạp đúng phiên bản thì nó bỏ qua trong vài giây. Máy khác hoặc VPS
+> cũng chỉ cần đúng lệnh đó. Muốn nạp tay: `make kb-ensure`; muốn kiểm tra:
+> `make kb-verify`; muốn chứng minh từ DB rỗng: `make kb-smoke`. Chi tiết:
+> [`docs/development/rag-ingestion.md`](docs/development/rag-ingestion.md).
+
 Test API nhanh bằng Swagger: xem [`docs/development/api-testing.md`](docs/development/api-testing.md).
 
 ## Gate

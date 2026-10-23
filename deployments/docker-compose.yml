@@ -101,6 +101,7 @@ services:
     build:
       context: ..
       dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
     # Secrets are injected explicitly and minimally: only the variables this
     # service actually needs are listed under `environment:`. Do NOT use
     # `env_file:` here - it would load the WHOLE root .env into the container,
@@ -125,11 +126,57 @@ services:
       RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
       RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
     depends_on:
-      postgres:
-        condition: service_healthy
+      kb-init:
+        condition: service_completed_successfully
     networks:
       - internal_net
       - data_net
+
+  # -------------------------------------------------------------------------
+  # Deploy-time schema step. Reuses the service image so the schema still comes
+  # from the EF Core migration (Code First) instead of a hand-written SQL file.
+  # ---------
+  kb-schema:
+    build:
+      context: ..
+      dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+    image: longevia/recommendation:local
+    command: ["--migrate-only"]
+    environment:
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+    restart: "no"
+
+  # -------------------------------------------------------------------------
+  # Deploy-time seed loader. Runs the offline pipeline image against the seed
+  # committed in resources/knowledge so a fresh volume gets the corpus without
+  # an API key and without anyone remembering to run the ingest.
+  #
+  # `--skip-if-loaded` makes it a no-op once the same corpus version is active.
+  # `--verify` fails loudly if the seed and the database disagree.
+  # -------------------------------------------------------------------------
+  kb-init:
+    build:
+      context: ../scripts/book-kb
+    image: longevia/book-kb:local
+    init: true
+    command: ["load", "--work", "/seed", "--skip-if-loaded", "--verify"]
+    environment:
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+    volumes:
+      - ../resources/knowledge/che-do-an-truong-tho:/seed:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kb-schema:
+        condition: service_completed_successfully
+    networks:
+      - data_net
+    restart: "no"
 
   # -------------------------------------------------------------------------
   # .NET services - uncomment as each Dockerfile is added.

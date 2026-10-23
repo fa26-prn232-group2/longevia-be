@@ -19,7 +19,7 @@ public sealed class AskLongevityQuestionUseCaseTests
     private const string Question = "Chất béo không bão hòa đơn có trong thực phẩm nào?";
 
     [Fact]
-    public async Task AbstainsWithoutCallingProviderWhenNoChunkMatches()
+    public async Task AbstainsWithCorpusNotLoadedReasonWhenStoreIsEmpty()
     {
         var chat = new StubChatModel(Grounded("câu trả lời", (0, "Chất béo")));
         var knowledge = new StubKnowledgeStore([]);
@@ -27,10 +27,23 @@ public sealed class AskLongevityQuestionUseCaseTests
         var result = await CreateUseCase(chat, knowledge).ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.Abstained);
-        Assert.False(string.IsNullOrWhiteSpace(result.AbstainReason));
+        Assert.Equal("corpus_not_loaded", result.AbstainReason);
         Assert.Empty(result.Citations);
         Assert.Empty(chat.Prompts);
         Assert.False(string.IsNullOrWhiteSpace(result.Disclaimer));
+    }
+
+    [Fact]
+    public async Task DistinguishesNoMatchingChunkFromAnEmptyCorpus()
+    {
+        var chat = new StubChatModel(Grounded("câu trả lời", (0, "Chất béo")));
+        var knowledge = new StubKnowledgeStore([], activeChunks: 188);
+
+        var result = await CreateUseCase(chat, knowledge).ExecuteAsync(Request(), CancellationToken.None);
+
+        Assert.True(result.Abstained);
+        Assert.Equal("no_matching_chunk", result.AbstainReason);
+        Assert.Empty(chat.Prompts);
     }
 
     [Fact]
@@ -195,7 +208,7 @@ public sealed class AskLongevityQuestionUseCaseTests
         }
     }
 
-    private sealed class StubKnowledgeStore(IReadOnlyList<RetrievedChunk> chunks) : IKnowledgeStore
+    private sealed class StubKnowledgeStore(IReadOnlyList<RetrievedChunk> chunks, int? activeChunks = null) : IKnowledgeStore
     {
         public int SearchCount { get; private set; }
 
@@ -212,5 +225,8 @@ public sealed class AskLongevityQuestionUseCaseTests
 
         public Task<int> CountAsync(string corpusKey, CancellationToken cancellationToken) =>
             Task.FromResult(chunks.Count);
+
+        public Task<int> CountActiveAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(activeChunks ?? chunks.Count);
     }
 }

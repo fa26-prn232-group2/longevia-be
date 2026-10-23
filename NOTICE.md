@@ -31,7 +31,7 @@ Hà Nội, 2020).
 
 ## 3. Dữ liệu phái sinh
 
-Seed và vector nhúng (embeddings) trong `recommendation_db` được sinh ra từ nội dung
+Seed và vector nhúng (embeddings) trong `recommendation_db` và trong `resources/knowledge/` được sinh ra từ nội dung
 nêu tại mục 2. Dữ liệu phái sinh này:
 
 - chỉ dùng cho mục đích học tập của đồ án;

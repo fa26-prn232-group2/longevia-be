@@ -17,7 +17,7 @@ TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
 	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
-	kb-build kb-load kb-verify kb-eval kb-seed
+	kb-build kb-load kb-verify kb-eval kb-seed kb-ensure kb-smoke
 
 # Book OCR toolchain (scripts/book-ocr). Docker-only, writes to artifacts/book-ocr.
 # Never part of the .NET gate.
@@ -72,6 +72,8 @@ help:
 	@echo   kb-verify        verify chapters, chunks and page ranges
 	@echo   kb-eval          run the golden-set evaluation
 	@echo   kb-seed          export the compressed seed under resources/knowledge
+	@echo   kb-ensure        load the committed seed into recommendation_db (no API key)
+	@echo   kb-smoke         prove an empty database is loaded by kb-init (isolated project)
 
 restore:
 	$(DOTNET) restore $(SLN_OR_DIR)
@@ -181,3 +183,9 @@ kb-eval:
 
 kb-seed:
 	$(BOOK_KB) run --rm book-kb seed
+
+kb-ensure:
+	$(DOCKER) compose --env-file .env -f deployments/docker-compose.yml run --rm kb-init
+
+kb-smoke:
+	$(PWSH) -NoProfile -File scripts/book-kb/smoke-seed.ps1

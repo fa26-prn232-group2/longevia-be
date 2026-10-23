@@ -1,0 +1,10 @@
+{
+  "owner": "duck",
+  "number": 2,
+  "slug": "recommendation-plan-rpcs",
+  "branch": "feat/recommendation-plan-rpcs",
+  "status": "open",
+  "services": ["recommendation"],
+  "description": "Mo rong Recommendation Service voi 2 RPC gRPC GenerateMealPlan va GenerateWorkoutPlan de sinh ke hoach tuan, chi dung corpus sach + du lieu caller gui, khong luu du lieu nguoi dung.",
+  "opened_at": "2026-10-23"
+}

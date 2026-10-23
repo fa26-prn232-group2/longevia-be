@@ -14,6 +14,7 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
     : IClassFixture<RecommendationApiFixture>
 {
     private const string PeanutDishId = "f-peanut";
+    private const string PeanutDishName = "Chè đậu phộng";
     private const string WeekStart = "2026-10-26";
     private const string CappedDate = "2026-10-28";
 
@@ -50,6 +51,12 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
             Assert.Equal(catalog[food.FoodId].CarbsGrams, food.CarbsGrams, 3);
             Assert.Equal(catalog[food.FoodId].FatGrams, food.FatGrams, 3);
         });
+
+        // Negative control T071: món chứa allergen không được xuất hiện cả trong
+        // prompt gửi AI, không chỉ bị loại khỏi response.
+        Assert.DoesNotContain(
+            fixture.CapturedPrompts,
+            prompt => prompt.UserPrompt.Contains(PeanutDishName, StringComparison.Ordinal));
     }
 
     [Fact]

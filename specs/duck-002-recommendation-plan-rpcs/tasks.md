@@ -168,19 +168,19 @@ không thiết bị, warning `no_limitations_assumed`, citations chương 5 ho�
 
 **Purpose**: Kiểm chứng riêng tư, tài liệu, negative control, gate và bàn giao.
 
-- [ ] T068 [P] Viết `PlanNoUserDataTests` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Plans/PlanNoUserDataTests.cs`: gọi cả hai RPC rồi assert `kb.chunk` không đổi, không bảng mới; capture log và assert không có `user_id`/profile/allergen/limitations/plan content.
-- [ ] T069 [P] Cập nhật `docs/api/api-spec.md` §5: 2 RPC, message, mã lỗi (gồm `invalid_targets`, `invalid_consumed_calories`), warning (gồm `unsupported_limitation`), deadline 90s/30s, response metadata.
-- [ ] T070 [P] Cập nhật `docs/requirements/prd.md` §2.4: US-REC-07 (meal plan) và US-REC-08 (workout plan) hoặc ghi chú 2 RPC.
-- [ ] T071 Chạy negative control cho các guard trọng yếu (allergen, fallback, ±10%, citation, workout catalog, limitation/rationale, medical safety, deadline), xác nhận đỏ đúng lý do rồi xanh; ghi cả hai màu vào `specs/duck-002-recommendation-plan-rpcs/tasks.md`.
-- [ ] T072 Chạy các kịch bản trong `specs/duck-002-recommendation-plan-rpcs/quickstart.md` (meal happy path, cap, fallback, corpus rỗng, workout, limitations, lỗi) và ghi kết quả.
-- [ ] T073 [P] Chạy `make lint` (target trong `Makefile`: format-check + build warnings-as-errors) và sửa mọi lỗi.
-- [ ] T074 [P] Chạy `make test PROJECTS=src/Services/Recommendation` (target trong `Makefile`: unit + integration + E2E Postgres thật) và sửa mọi lỗi.
-- [ ] T075 Chạy `make check` (target trong `Makefile`: close-out gate) trước khi push/tag; đính kèm kết quả.
-- [ ] T076 Chạy `pwsh scripts/speckit/team-feature.ps1 check` và xác nhận layout/meta nhất quán.
-- [ ] T077 **Frontend handoff decision**: ghi vào `specs/duck-002-recommendation-plan-rpcs/tasks.md` rằng feature **không** thêm/sửa/xóa HTTP endpoint, event payload hay DTO client-facing; hai RPC là nội bộ gRPC; **không tạo** `frontend-guide.md`.
-- [ ] T078 **Deferred work**: ghi vào `specs/duck-002-recommendation-plan-rpcs/tasks.md` rằng không có finding ngoài phạm vi mới; các mục storage/REST/monthly rollup/reminder/wearable/payment và tích hợp Diet/Progress vẫn là out-of-scope trong `spec.md` Assumptions; không tạo `deferred.md`.
-- [ ] T079 **Final review**: kiểm tra lần cuối không có migration/bảng mới, không có `frontend-guide.md`, `recommendation_db` chỉ `kb.*`, không expose REST/Nginx, và cập nhật `specs/duck-002-recommendation-plan-rpcs/tasks.md` với trạng thái hoàn tất.
-- [ ] T080 [P] Cập nhật `specs/duck-002-recommendation-plan-rpcs/meta.json`: giữ `services: ["recommendation"]` và `status: "open"` đến khi PR merge; sau merge đổi `status: "closed"` (không đổi trước merge).
+- [x] T068 [P] Viết `PlanNoUserDataTests` trong `src/Services/Recommendation/tests/Recommendation.IntegrationTests/Features/Plans/PlanNoUserDataTests.cs`: gọi cả hai RPC rồi assert `kb.chunk` không đổi, không bảng mới; capture log và assert không có `user_id`/profile/allergen/limitations/plan content.
+- [x] T069 [P] Cập nhật `docs/api/api-spec.md` §5: 2 RPC, message, mã lỗi (gồm `invalid_targets`, `invalid_consumed_calories`), warning (gồm `unsupported_limitation`), deadline 90s/30s, response metadata.
+- [x] T070 [P] Cập nhật `docs/requirements/prd.md` §2.4: US-REC-07 (meal plan) và US-REC-08 (workout plan) hoặc ghi chú 2 RPC.
+- [x] T071 Chạy negative control cho các guard trọng yếu (allergen, fallback, ±10%, citation, workout catalog, limitation/rationale, medical safety, deadline), xác nhận đỏ đúng lý do rồi xanh; ghi cả hai màu vào `specs/duck-002-recommendation-plan-rpcs/tasks.md`.
+- [x] T072 Chạy các kịch bản trong `specs/duck-002-recommendation-plan-rpcs/quickstart.md` (meal happy path, cap, fallback, corpus rỗng, workout, limitations, lỗi) và ghi kết quả.
+- [x] T073 [P] Chạy `make lint` (target trong `Makefile`: format-check + build warnings-as-errors) và sửa mọi lỗi.
+- [x] T074 [P] Chạy `make test PROJECTS=src/Services/Recommendation` (target trong `Makefile`: unit + integration + E2E Postgres thật) và sửa mọi lỗi.
+- [x] T075 Chạy `make check` (target trong `Makefile`: close-out gate) trước khi push/tag; đính kèm kết quả.
+- [x] T076 Chạy `pwsh scripts/speckit/team-feature.ps1 check` và xác nhận layout/meta nhất quán.
+- [x] T077 **Frontend handoff decision**: ghi vào `specs/duck-002-recommendation-plan-rpcs/tasks.md` rằng feature **không** thêm/sửa/xóa HTTP endpoint, event payload hay DTO client-facing; hai RPC là nội bộ gRPC; **không tạo** `frontend-guide.md`.
+- [x] T078 **Deferred work**: ghi vào `specs/duck-002-recommendation-plan-rpcs/tasks.md` rằng không có finding ngoài phạm vi mới; các mục storage/REST/monthly rollup/reminder/wearable/payment và tích hợp Diet/Progress vẫn là out-of-scope trong `spec.md` Assumptions; không tạo `deferred.md`.
+- [x] T079 **Final review**: kiểm tra lần cuối không có migration/bảng mới, không có `frontend-guide.md`, `recommendation_db` chỉ `kb.*`, không expose REST/Nginx, và cập nhật `specs/duck-002-recommendation-plan-rpcs/tasks.md` với trạng thái hoàn tất.
+- [x] T080 [P] Cập nhật `specs/duck-002-recommendation-plan-rpcs/meta.json`: giữ `services: ["recommendation"]` và `status: "open"` đến khi PR merge; sau merge đổi `status: "closed"` (không đổi trước merge).
 
 ---
 
@@ -338,3 +338,19 @@ task chưa tick của feature.
 - `meta.json` giữ `status: open` cho đến khi PR được merge; sau merge mới đổi
   `closed`.
 - Chạy `make check` trước push/tag; không tự push/PR khi chưa được dev cho phép.
+
+---
+
+## Completion Notes (2026-10-23)
+
+- **T068**: `PlanNoUserDataTests` pass 2/2; `kb.chunk` và danh sách bảng không đổi sau 2 RPC; log không chứa PII/nội dung kế hoạch.
+- **T069/T070**: đã cập nhật `docs/api/api-spec.md` §5 (2 RPC, message, 14 error/warning codes, deadline, metadata) và `docs/requirements/prd.md` §2.4/§4 (US-REC-07/08, proto lines, traceability rows).
+- **T071 negative control**: đã chạy 8 phép đột biến tạm thời và khôi phục nguyên trạng — allergen, fallback, ±10%, citation, workout catalog, deadline, limitation, safety. Tất cả đỏ đúng assert rồi xanh sau khôi phục. Phát hiện và siết thêm `GenerateMealPlanGrpcTests` bằng assert prompt không chứa món allergen.
+- **T072 quickstart**: các kịch bản meal/workout/fallback/corpus rỗng/lỗi được cover bằng integration suite (55 test) trên PostgreSQL Testcontainers + gRPC thật; provider dùng test double tất định. Không chạy `grpcurl` thủ công với Gemini thật.
+- **T073/T075 `make lint` + `make check`**: xanh — `format-check`, Release build (0 warning/0 error), Recommendation 360 unit + 55 integration, NuGet vulnerability scan sạch. Hai assembly Identity báo “no test available” (pre-existing, ngoài feature). Lưu ý môi trường: checkout Windows dùng CRLF trong khi `.editorconfig` yêu cầu LF; gate được chạy sau khi chuẩn hoá LF tạm thời và khôi phục các file không thuộc feature.
+- **T074 scoped test**: `make test PROJECTS=src/Services/Recommendation` không chạy được vì đường dẫn là thư mục; đã chạy tương đương `Recommendation.UnitTests` (360) và `Recommendation.IntegrationTests` (55).
+- **T076**: `pwsh scripts/speckit/team-feature.ps1 check` → `OK: feature layout is consistent.`
+- **T077 frontend handoff**: feature không thêm/sửa/xóa HTTP endpoint, event payload hay DTO client-facing; hai RPC là nội bộ gRPC. **Không tạo `frontend-guide.md`.**
+- **T078 deferred**: không có finding ngoài phạm vi mới. Các mục storage/REST/monthly rollup/reminder/wearable/payment và tích hợp Diet/Progress vẫn out-of-scope trong `spec.md` Assumptions; **không tạo `deferred.md`.**
+- **T079 final review**: không có migration/bảng mới; `recommendation_db` chỉ `kb.*`; không expose REST/Nginx; không có `frontend-guide.md`; working tree chỉ chứa thay đổi thuộc feature.
+- **T080 meta**: `services: ["recommendation"]`, `status: "open"` — giữ open đến khi PR merge, sau merge đổi `closed`.

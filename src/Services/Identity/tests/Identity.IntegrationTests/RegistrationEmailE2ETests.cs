@@ -115,8 +115,10 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
     private void StartWorker()
     {
         var repositoryRoot = FindRepositoryRoot();
-        var workerAssembly = Path.Combine(repositoryRoot, "src", "Services", "Worker", "bin", "Debug", "net10.0", "Worker.dll");
-        Assert.True(File.Exists(workerAssembly), $"Worker test dependency was not built: {workerAssembly}");
+        var testConfiguration = Directory.GetParent(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))?.Name
+            ?? throw new InvalidOperationException($"Could not determine the test build configuration from {AppContext.BaseDirectory}.");
+        var workerAssembly = Path.Combine(repositoryRoot, "src", "Services", "Worker", "bin", testConfiguration, "net10.0", "Worker.dll");
+        Assert.True(File.Exists(workerAssembly), $"Worker test dependency was not built for {testConfiguration}: {workerAssembly}");
 
         var startInfo = new ProcessStartInfo("dotnet")
         {

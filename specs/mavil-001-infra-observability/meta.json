@@ -1,0 +1,14 @@
+{
+  "owner": "mavil",
+  "number": 1,
+  "slug": "infra-observability",
+  "branch": "feat/infra-observability",
+  "status": "open",
+  "services": [
+    "Identity",
+    "Worker",
+    "Shared"
+  ],
+  "description": "Ha tang, Docker Compose, Nginx Gateway, Worker Service va Observability voi Prometheus va Grafana",
+  "opened_at": "2026-10-22"
+}

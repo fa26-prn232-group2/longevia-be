@@ -15,13 +15,23 @@ PROJECTS ?=
 TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
+	infra-up infra-down docker-up docker-down docker-stop docker-logs \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
 	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
 	kb-build kb-load kb-verify kb-eval kb-seed kb-ensure kb-smoke
 
+# Docker Compose for the full stack (deployments/docker-compose.yml).
+# Local == production: the same file is used in both.
+DOCKER ?= docker
+COMPOSE := $(DOCKER) compose -f deployments/docker-compose.yml
+# Core infra only (explicit list, no profiles): later phases add app/monitoring
+# services (identity/worker, prometheus/grafana) WITHOUT touching infra-up.
+INFRA_SERVICES := postgres redis rabbitmq mailpit nginx swagger-ui
+# Optional filter for docker-logs: make docker-logs SERVICE=identity
+SERVICE ?=
+
 # Book OCR toolchain (scripts/book-ocr). Docker-only, writes to artifacts/book-ocr.
 # Never part of the .NET gate.
-DOCKER ?= docker
 BOOK_OCR := $(DOCKER) compose -f scripts/book-ocr/compose.yml
 PAGES ?=
 BOOK_OCR_PAGES := $(if $(PAGES),--pages $(PAGES),)
@@ -52,6 +62,13 @@ help:
 	@echo   ef-update        PROJECT=path
 	@echo   jwt-keys         print a local ES256 JWT keypair, scope with KID=...
 	@echo   clean            remove build output
+	@echo.
+	@echo   infra-up         start core infra only (postgres redis rabbitmq mailpit nginx swagger-ui)
+	@echo   infra-down       remove core infra containers, KEEP volumes (data preserved)
+	@echo   docker-up        build + start the full stack
+	@echo   docker-down      full cleanup: remove containers AND volumes
+	@echo   docker-stop      stop all containers, keep data
+	@echo   docker-logs      follow logs, filter with SERVICE=name
 	@echo.
 	@echo   book-ocr-build   build the book OCR image
 	@echo   book-ocr-info    show input PDF metadata
@@ -121,6 +138,34 @@ jwt-keys:
 
 clean:
 	$(DOTNET) clean $(SLN_OR_DIR)
+
+# Core infra only (SC-001: ready in <= 30s). Explicit service list so Phase 4/6
+# additions (identity/worker, prometheus/grafana) never leak into infra-up.
+infra-up:
+	$(COMPOSE) up -d $(INFRA_SERVICES)
+
+# Removes infra containers but KEEPS volumes (postgres/rabbitmq data survives).
+# Full wipe (incl. volumes) is docker-down.
+infra-down:
+	-$(COMPOSE) rm -f -s $(INFRA_SERVICES)
+
+# Full stack: builds app images (identity/worker once their Dockerfiles land in
+# Phase 4) and starts everything, including monitoring (Phase 6).
+docker-up:
+	$(COMPOSE) up -d --build
+
+# Full cleanup: containers AND volumes are removed. Postgres init scripts and
+# Mailpit/Redis contents start from scratch on next up.
+docker-down:
+	$(COMPOSE) down -v
+
+# Stops containers without removing them or their volumes.
+docker-stop:
+	$(COMPOSE) stop
+
+# Follows logs; scope with SERVICE=name (e.g. make docker-logs SERVICE=mailpit).
+docker-logs:
+	$(COMPOSE) logs -f $(SERVICE)
 
 book-ocr-build:
 	$(BOOK_OCR) build

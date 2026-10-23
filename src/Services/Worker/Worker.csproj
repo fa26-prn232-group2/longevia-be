@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Phase 5 (T013): full Worker host.
+       SDK decision (recorded in Program.cs + task report): Microsoft.NET.Sdk.Web
+       instead of Microsoft.NET.Sdk.Worker. The worker MUST expose HTTP /metrics
+       on 8080 for Prometheus scraping (T018; MapPrometheusScrapingEndpoint takes
+       a WebApplication). Wiring Kestrel onto a Worker-SDK host is convoluted;
+       the Web SDK still runs IHostedServices (MassTransit registers its own),
+       so message consumption is unaffected. Published binary stays `Worker`,
+       so src/Services/Worker/Dockerfile keeps working unchanged. -->
+  <PropertyGroup>
+    <RootNamespace>Longevia.Worker</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions come from Directory.Packages.props (CPM); never pin here. -->
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MailKit" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Longevia.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Unit tests live under tests/ inside this folder (mirroring Identity's
+       tests/ layout, but Worker.csproj sits one level higher than
+       Identity.Api.csproj so the default compile cone would swallow them).
+       Exclude them from the Worker build; the test project compiles them. -->
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
+
+</Project>

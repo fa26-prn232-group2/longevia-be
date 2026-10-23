@@ -43,7 +43,7 @@ Tài liệu này ghi lại các quyết định kỹ thuật, cơ sở lập lu�
   - Tự động nạp sẵn Dashboard giám sát ASP.NET Core qua file `provisioning/dashboards/`.
 - **Lý do lựa chọn**:
   - Bảo lưu cổng `3000` cho ứng dụng Frontend (Next.js / Vite / React), tránh xung đột cổng khi dev chạy song song cả BE và FE.
-  - Zero manual setup: Lập trình viên chỉ cần gõ `make infra-up`, mở `http://localhost:3001` là có ngay dashboard trực quan, không cần đăng nhập và không cần tự cấu hình datasource.
+  - Zero manual setup: Lập trình viên chỉ cần chạy `make docker-up` (stack đầy đủ, gồm Prometheus + Grafana), mở `http://localhost:3001` là có ngay dashboard trực quan, không cần đăng nhập và không cần tự cấu hình datasource.
 - **Các phương án thay thế đã đánh giá**:
   - *Định tuyến qua Nginx `/grafana`*: Phức tạp hóa cấu hình reverse proxy subpath (`root_url`) của Grafana và làm tăng tải cho Nginx Gateway.
 
@@ -71,7 +71,7 @@ Tài liệu này ghi lại các quyết định kỹ thuật, cơ sở lập lu�
   - Thêm container Redis 7 (`redis:7-alpine`) trên mạng `data_net` chạy ở chế độ In-Memory (không dùng volume vĩnh viễn ở local dev).
 - **Lý do lựa chọn**:
   - `pgvector:pg17` hoàn toàn là PostgreSQL 17 chuẩn, tương thích 100% với EF Core Npgsql hiện tại, nhưng được kích hoạt sẵn extension `vector` cho tính năng AI Recommendation trong tương lai.
-  - Redis 7 phục vụ Caching thực đơn món ăn, rate limiting và phân tán khóa cho các microservices.
+  - Redis 7 phục vụ lưu tạm (cache) và idempotency dedup event của Worker; rate limiting ở tầng gateway là hạng mục ngoài phạm vi (`deferred.md` D-02).
   - Chế độ Ephemeral của Redis giúp reset sạch sẽ cache khi chuyển đổi nhánh phát triển.
 
 ---

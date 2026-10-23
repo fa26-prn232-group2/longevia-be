@@ -49,7 +49,7 @@ Tuân thủ `docs/system-design/event-driven-design.md` §Topology — khai báo
 | Dead-letter | `worker.email.dlx` + `worker.email.dlq`; retry 3 lần (2s, 5s, 10s) trước khi vào DLQ |
 | Prefetch | giới hạn (mặc định 10) để tránh một consumer ngốn hết |
 
-**Idempotency consumer:** Worker lưu `UserId + SchemaVersion + OccurredOn` (event id) đã xử lý vào Redis với TTL 7 ngày; nhận trùng → ack và bỏ qua (không gửi lại email). Serializer bỏ qua field lạ để tương thích ngược.
+**Idempotency consumer:** Worker lưu key dedup đã xử lý vào Redis với TTL 7 ngày; nhận trùng → ack và bỏ qua (không gửi lại email). Key theo từng event vì payload khác nhau: `UserRegisteredEvent` → `UserId + SchemaVersion + OccurredOn`; `PasswordResetRequestedEvent` (không có `UserId`) → `Email + SchemaVersion + OccurredOn`. Serializer bỏ qua field lạ để tương thích ngược.
 
 ---
 
@@ -112,3 +112,5 @@ Các chỉ số chuẩn được tự động thu thập từ endpoint `/metrics
 | `process.memory.working_set` | Gauge | Bộ nhớ RAM vật lý đang chiếm dụng (bytes) |
 | `dotnet.gc.collections` | Counter | Số lần thực hiện Garbage Collection theo Gen 0, Gen 1, Gen 2 |
 | `dotnet.threadpool.thread.count`| Gauge | Số lượng thread đang chạy trong ThreadPool |
+
+Ghi chú: bảng trên dùng tên OTel gốc (dấu chấm). Endpoint `/metrics` và dashboard Prometheus/Grafana dùng tên đã chuẩn hóa sang Prometheus (dấu gạch dưới, hậu tố đơn vị), ví dụ `http.server.request.duration` → `http_server_request_duration_seconds_bucket`, `process.cpu.utilization` → `process_cpu_utilization`. Khi assert `/metrics`, tìm theo tên Prometheus, không theo tên OTel.

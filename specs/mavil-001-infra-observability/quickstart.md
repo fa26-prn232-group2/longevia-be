@@ -28,15 +28,15 @@ Sử dụng Makefile để khởi chạy tất cả các dịch vụ phụ trợ
 ```powershell
 make infra-up
 ```
-Lệnh này sẽ khởi động:
+Lệnh này chỉ khởi động **hạ tầng lõi** (`INFRA_SERVICES` trong `Makefile`):
 - **PostgreSQL 17 (pgvector)** tại `localhost:5432`
 - **Redis 7** tại `localhost:6379`
 - **RabbitMQ 4** tại `localhost:5672` (Giao diện quản lý: `http://localhost:15672`)
 - **Mailpit** tại `localhost:1025` (Giao diện hòm thư: `http://localhost:8025`)
-- **Prometheus** tại `http://localhost:9090`
-- **Grafana Dashboard** tại `http://localhost:3001`
 - **Nginx Gateway** tại `http://localhost:8080`
 - **Swagger UI gộp** tại `http://localhost:8080/swagger`
+
+**Prometheus** (`http://localhost:9090`) và **Grafana** (`http://localhost:3001`) nằm trong stack đầy đủ: chạy `make docker-up` (build + start cả `identity`, `worker`, `prometheus`, `grafana`). SC-001 chỉ đo `make infra-up` trên hạ tầng lõi.
 
 ---
 
@@ -61,6 +61,11 @@ Lệnh này sẽ khởi động:
      "detail": "Đường dẫn API không tồn tại hoặc phương thức không được hỗ trợ."
    }
    ```
+3. Kiểm tra lỗi 502 khi backend không chạy (chạy `make docker-stop`, giữ Nginx bằng `docker compose -f deployments/docker-compose.yml up -d nginx`):
+   ```powershell
+   curl http://localhost:8080/api/identity/health
+   ```
+   *Kết quả mong đợi*: HTTP 502 với body ProblemDetails JSON UTF-8 (`"status":502`), không phải trang HTML mặc định của Nginx.
 
 ### Kịch bản 2: Kiểm tra Hộp thư Mailpit
 1. Mở trình duyệt truy cập: `http://localhost:8025`.
@@ -68,10 +73,17 @@ Lệnh này sẽ khởi động:
 3. Khi Worker gửi email kích hoạt tài khoản hoặc đặt lại mật khẩu, email sẽ lập tức xuất hiện tại đây để kiểm tra nội dung HTML.
 
 ### Kịch bản 3: Kiểm tra Grafana Dashboard & Prometheus
-1. Mở trình duyệt truy cập: `http://localhost:3001`.
-2. Không cần đăng nhập (Anonymous `Viewer` — chỉ xem, không sửa được cấu hình).
-3. Kiểm tra mục **Connections -> Data sources**: Thấy `Prometheus` (URL `http://prometheus:9090`) đã được kết nối tự động.
-4. Kiểm tra mục **Dashboards**: Dashboard `ASP.NET Core - Overview` đã có sẵn, hiển thị các biểu đồ CPU, RAM, Throughput.
+1. Khởi chạy stack đầy đủ: `make docker-up` (Prometheus/Grafana không nằm trong `make infra-up`).
+2. Mở trình duyệt truy cập: `http://localhost:3001`.
+3. Không cần đăng nhập (Anonymous `Viewer` — chỉ xem, không sửa được cấu hình).
+4. Kiểm tra mục **Connections -> Data sources**: Thấy `Prometheus` (URL `http://prometheus:9090`) đã được kết nối tự động.
+5. Kiểm tra mục **Dashboards**: Dashboard `ASP.NET Core - Overview` đã có sẵn, hiển thị các biểu đồ CPU, RAM, Throughput.
+6. Xác minh SC-004 không cần thao tác tay, bằng API (anonymous Viewer):
+   ```powershell
+   curl http://localhost:3001/api/datasources
+   curl "http://localhost:3001/api/search?query=ASP.NET"
+   ```
+   *Kết quả mong đợi*: datasources trả về Prometheus; search trả về dashboard đã provision.
 
 ### Kịch bản 4: Kiểm tra Khởi động Full Ứng dụng với Docker Compose
 ```powershell

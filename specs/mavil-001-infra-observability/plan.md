@@ -19,10 +19,10 @@ Thiết lập toàn bộ hạ tầng phát triển cục bộ và môi trường
 
 ## 2. Bối cảnh Kỹ thuật (Technical Context)
 
-**Language/Version**: C# / .NET 10 (ASP.NET Core, Worker Service SDK)  
+**Language/Version**: C# / .NET 10 (ASP.NET Core; `Worker` dùng `Microsoft.NET.Sdk.Web` để có HTTP host cho `/metrics` — quyết định ghi trong `src/Services/Worker/Worker.csproj`)  
 **Primary Dependencies**: 
 - `MassTransit` & `MassTransit.RabbitMQ` (v9.2.3)
-- `MailKit` (v4.11.0)
+- `MailKit` & `MimeKit` (v4.18.1 — nâng từ 4.11.0 để triệt tiêu security advisory GHSA-9j88-vvj5-vhgr và GHSA-846f-f764-76mx)
 - `StackExchange.Redis` (v2.8.24)
 - `OpenTelemetry.Exporter.Prometheus.AspNetCore` & `OpenTelemetry.Instrumentation.*` (v1.20.x — nâng từ 1.11.x: core 1.11–1.12 dính advisory GHSA-g94r-2vxg-569j, restore sạch ở 1.20.1)
 - `Npgsql.EntityFrameworkCore.PostgreSQL` (v10.0.3)  
@@ -43,7 +43,7 @@ Thiết lập toàn bộ hạ tầng phát triển cục bộ và môi trường
 
 ## 3. Constitution Check (Kiểm tra Hiến pháp Dự án)
 
-*GATE: Đạt 100% trước khi triển khai chi tiết.*
+*GATE: mục tiêu 0 vi phạm `MUST`. Dòng §III producer-outbox giữ trạng thái OPEN và được theo dõi tại `deferred.md` (D-01), không chặn feature này.*
 
 | Nguyên tắc Hiến pháp | Đánh giá Tuân thủ | Kết luận |
 | :--- | :--- | :---: |
@@ -52,7 +52,7 @@ Thiết lập toàn bộ hạ tầng phát triển cục bộ và môi trường
 | **III. Asynchronous via RabbitMQ — phía consumer (phạm vi tính năng này)** | Worker consume event qua RabbitMQ (`data_net`) với queue bền `worker.email`, retry 3 lần (2s, 5s, 10s), DLX/DLQ, idempotency qua Redis dedup, bỏ qua field lạ. Topology khai báo tường minh bằng MassTransit (`data-model.md` §1.3). | **PASS** |
 | **III. Transactional outbox — phía producer (ngoài phạm vi, chuyển cho feature Identity)** | Producer outbox (ghi outbox cùng transaction tạo user + relay nền) thuộc về service sở hữu `identity_db` và migration — KHÔNG thể làm trong tính năng hạ tầng này (1 service = 1 feature mở tạo migration). Contract event tại `data-model.md` §1.1 đã ghi nghĩa vụ outbox cho producer; consumer đã phòng thủ (durable queue + idempotent). | **OPEN → feature Identity** |
 | **IV. Contract-First Interfaces** | Event có `SchemaVersion = 1`, chỉ mục version tại `contracts/events/v1/README.md`, record C# trong `src/Shared/Events/` là nguồn chân lý khả biên dịch. Thêm field optional = tương thích ngược; phá vỡ = version mới. | **PASS** |
-| **V. Test-First & Verified Gates** | Mỗi phase chạy `make test PROJECTS=<path>` scoped + `make lint`. Tính năng bổ sung test tự động: consumer idempotency/retry (T017), template render (T016), metrics endpoint (T024) — xem tasks Phase 5/7/8. | **PASS** |
+| **V. Test-First & Verified Gates** | Mỗi phase chạy `make test PROJECTS=<path>` scoped + `make lint`. Tính năng bổ sung test tự động: consumer idempotency/retry (T017), template render (T016), wiring metrics (T024/T025) và xác minh `/metrics` end-to-end ở T031 (không có unit test riêng cho `/metrics`; đường e2e Hiến pháp §V làm bằng chứng). | **PASS** |
 
 ---
 
@@ -68,8 +68,12 @@ specs/mavil-001-infra-observability/
 ├── research.md          # Kết quả nghiên cứu kỹ thuật & quyết định kiến trúc
 ├── data-model.md        # Đặc tả mô hình dữ liệu, event, biến môi trường
 ├── quickstart.md        # Hướng dẫn kiểm thử và khởi chạy nhanh
+├── frontend-guide.md    # Hướng dẫn tích hợp client (gateway 404/502 ProblemDetails + prefix stripping)
+├── deferred.md          # Việc ngoài phạm vi (outbox producer, rate limiting, TLS/HSTS, Brevo verify)
 └── tasks.md             # Phân rã task thực thi (Phase 2 - speckit-tasks)
 ```
+
+Ngoài thư mục feature, T031 tạo script smoke e2e tại `scripts/smoke/infra-smoke.ps1`.
 
 ### Mã nguồn Triển khai (Repository Layout)
 ```text
@@ -80,7 +84,7 @@ longevia-be/
 │   ├── nginx/
 │   │   └── nginx.conf                         # Gateway reverse proxy, UTF-8 charset, 404 ProblemDetails
 │   ├── prometheus/
-│   │   └── prometheus.yml                     # Scrape targets: identity, worker, rabbitmq
+│   │   └── prometheus.yml                     # Scrape targets: identity, worker, prometheus (RabbitMQ plugin bị bỏ, xem T019)
 │   └── grafana/
 │       └── provisioning/
 │           ├── datasources/prometheus.yml     # Auto-provision Prometheus datasource
@@ -91,7 +95,7 @@ longevia-be/
 │   ├── Services/
 │   │   ├── Identity/
 │   │   │   └── Dockerfile                     # Multi-stage Chiseled build cho Identity.Api
-│   │   └── Worker/                            # Project Worker Service mới (.NET 10)
+│   │   └── Worker/                            # Project Worker mới (.NET 10, Web SDK để expose /metrics)
 │   │       ├── Worker.csproj
 │   │       ├── Program.cs
 │   │       ├── Dockerfile                     # Multi-stage Chiseled build cho Worker

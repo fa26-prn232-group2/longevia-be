@@ -3,9 +3,6 @@
   <PropertyGroup>
     <RootNamespace>Worker.UnitTests</RootNamespace>
     <IsPackable>false</IsPackable>
-    <!-- Same MailKit advisory carve-out as Worker.csproj: the CPM bump belongs
-         to the CPM owner; keep the finding visible as a warning, not an error. -->
-    <WarningsNotAsErrors>NU1902;NU1903</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

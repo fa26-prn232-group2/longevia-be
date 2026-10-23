@@ -10,12 +10,6 @@
        so src/Services/Worker/Dockerfile keeps working unchanged. -->
   <PropertyGroup>
     <RootNamespace>Longevia.Worker</RootNamespace>
-    <!-- MailKit 4.11.0 (pinned by CPM/T001) carries known advisories
-         (GHSA-9j88-vvj5-vhgr and transitive). The version bump belongs to the
-         CPM owner (Directory.Packages.props is shared infra, out of Phase 5
-         scope), so audit findings stay visible as warnings here instead of
-         breaking restore. DEFERRED: bump MailKit in CPM, then drop this. -->
-    <WarningsNotAsErrors>NU1902;NU1903</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +17,7 @@
     <PackageReference Include="MassTransit" />
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="MailKit" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feat/infra-observability`  
 **Created**: 2026-10-22  
-**Status**: Draft  
+**Status**: In Progress (Phase 1–6 đã hoàn tất; Phase 7–8 đang thực hiện)  
 **Owner**: `mavil`  
 **Input**: Triển khai kế hoạch thiết lập hạ tầng Docker Compose, Nginx Gateway, Background Worker, hệ thống giám sát Prometheus/Grafana (Port 3001) và hướng dẫn chuẩn hóa cho AGENTS.md.
 
@@ -79,7 +79,7 @@ Là một lập trình viên mới bắt đầu viết một microservice mới 
 
 **Kịch bản chấp nhận (Acceptance Scenarios)**:
 1. **Given** tài liệu `AGENTS.md`, **When** lập trình viên đọc phần quy chuẩn giám sát, **Then** tài liệu phải mô tả chính xác cách gọi hàm tiện ích đo lường từ thư viện dùng chung.
-2. **Given** service mới đã tích hợp hàm tiện ích, **When** Prometheus thực hiện cào dữ liệu, **Then** service mới phải xuất hiện trong danh sách các mục tiêu (Targets) đang hoạt động bình thường.
+2. **Given** service mới đã tích hợp hàm tiện ích, **When** service được thêm scrape job vào `deployments/prometheus/prometheus.yml` và Prometheus thực hiện cào dữ liệu, **Then** service mới phải xuất hiện trong danh sách các mục tiêu (Targets) đang hoạt động bình thường.
 
 ---
 
@@ -97,16 +97,16 @@ Là một lập trình viên mới bắt đầu viết một microservice mới 
 ### Yêu cầu Chức năng (Functional Requirements)
 
 - **FR-001**: Hệ thống PHẢI cung cấp tệp cấu hình Docker Compose phân tách 3 phân vùng mạng (`edge`, `internal_net`, `data_net`) để bảo vệ dữ liệu nội bộ theo kiến trúc dự án.
-- **FR-002**: Hệ thống PHẢI có dịch vụ Nginx đóng vai trò Cổng API duy nhất, hỗ trợ định tuyến theo tiền tố dịch vụ, loại bỏ tiền tố trước khi chuyển tiếp, và cấu hình đầy đủ hỗ trợ kết nối thời gian thực (SSE/WebSockets).
+- **FR-002**: Hệ thống PHẢI có dịch vụ Nginx đóng vai trò Cổng API duy nhất, hỗ trợ định tuyến theo tiền tố dịch vụ, loại bỏ tiền tố trước khi chuyển tiếp, và cấu hình đầy đủ hỗ trợ kết nối thời gian thực (SSE/WebSockets). WebSocket đã được hỗ trợ đầy đủ bằng `Upgrade`/`Connection` headers; phần `proxy_buffering` cho SSE chưa đặt được vì chưa có endpoint SSE để kiểm thử — theo dõi tại `deferred.md` (D-06).
 - **FR-003**: Cổng Nginx PHẢI trả về thông điệp lỗi 404 theo chuẩn cấu trúc RFC 7807 Problem Details có hỗ trợ tiếng Việt UTF-8.
 - **FR-004**: Hệ thống PHẢI cung cấp máy chủ lưu trữ cơ sở dữ liệu PostgreSQL 17 tích hợp tiện ích mở rộng pgvector và tự động khởi tạo các database riêng biệt cho từng service.
-- **FR-005**: Hệ thống PHẢI tích hợp máy chủ bộ đệm Redis 7 trên phân vùng mạng dữ liệu để phục vụ nhu cầu lưu tạm và kiểm soát tần suất truy cập.
+- **FR-005**: Hệ thống PHẢI tích hợp máy chủ bộ đệm Redis 7 trên phân vùng mạng dữ liệu để phục vụ lưu tạm (cache) và chống trùng lặp event (idempotency dedup) của Worker. Kiểm soát tần suất truy cập (rate limiting) ở tầng gateway là hạng mục **ngoài phạm vi** feature này — theo dõi tại `deferred.md`.
 - **FR-006**: Hệ thống PHẢI tích hợp máy chủ thư giả lập Mailpit cho môi trường phát triển cục bộ, cung cấp giao diện Web trực quan tại cổng `8025` và cổng nhận thư SMTP tại `1025`.
 - **FR-007**: Background Worker PHẢI hỗ trợ gửi email qua giao thức SMTP chuẩn, linh hoạt chuyển đổi giữa Mailpit (Local) và Brevo SMTP Relay (Production, `smtp-relay.brevo.com:587`, TLS) thông qua biến môi trường. Mọi service khác trong hệ thống cũng gửi email qua Brevo theo `docs/system-design/event-driven-design.md` và Hiến pháp — tính năng này không thêm nhà cung cấp thứ hai.
 - **FR-008**: Background Worker PHẢI chứa sẵn 4 mẫu thư điện tử HTML chuẩn: Xác thực tài khoản, Đặt lại mật khẩu, Chào mừng và Báo cáo tiến độ tuần. Worker CHỈ render mẫu từ payload đã đủ của event (không tự tổng hợp số liệu nghiệp vụ — mọi tính toán như calo trung bình, giờ nhịn ăn, chuỗi Streak do service producer chuẩn bị trước, xem `data-model.md` §2.2).
 - **FR-009**: Hệ thống PHẢI tích hợp Prometheus để thu thập dữ liệu định kỳ mỗi 10 giây từ các dịch vụ thành viên.
 - **FR-010**: Hệ thống PHẢI tích hợp Grafana tại cổng `3001`, tự động nạp sẵn Prometheus làm nguồn dữ liệu và nạp sẵn biểu đồ giám sát ASP.NET Core.
-- **FR-011**: Thư viện dùng chung PHẢI cung cấp hàm mở rộng OpenTelemetry để các service kích hoạt đo lường tự động (CPU, Bộ nhớ, Thông lượng request, Độ trễ) chỉ với 2 dòng code chuẩn trong `Program.cs` (`AddObservability()` + `MapPrometheusScrapingEndpoint()`), khớp quy chuẩn `AGENTS.md` §3.
+- **FR-011**: Thư viện dùng chung PHẢI cung cấp hàm mở rộng OpenTelemetry để các service kích hoạt đo lường tự động (CPU, Bộ nhớ, Thông lượng request, Độ trễ) chỉ với 2 dòng code chuẩn trong `Program.cs` (`AddObservability()` + `MapPrometheusScrapingEndpoint()`), khớp quy chuẩn `AGENTS.md` §3. Prometheus dùng `static_configs`, nên ngoài 2 dòng code service mới cần thêm một scrape job trong `deployments/prometheus/prometheus.yml` để xuất hiện trong Targets.
 - **FR-012**: Tài liệu `AGENTS.md` PHẢI được cập nhật quy chuẩn tích hợp Observability để mọi thành viên trong dự án tuân thủ khi viết service mới.
 
 ---
@@ -115,8 +115,8 @@ Là một lập trình viên mới bắt đầu viết một microservice mới 
 
 ### Kết quả Đo lường được (Measurable Outcomes)
 
-- **SC-001**: Thời gian từ khi lập trình viên gõ lệnh khởi động hạ tầng (`make infra-up`) đến khi toàn bộ hạ tầng sẵn sàng không vượt quá 30 giây.
-- **SC-002**: 100% các microservices được build trên nền tảng runtime chiseled non-root, giảm kích thước image xuống dưới 180MB mỗi container.
+- **SC-001**: Thời gian từ khi lập trình viên gõ `make infra-up` đến khi **hạ tầng lõi** sẵn sàng không vượt quá 30 giây. Hạ tầng lõi là đúng danh sách `INFRA_SERVICES` trong `Makefile`: PostgreSQL, Redis, RabbitMQ, Mailpit, Nginx, Swagger-UI. Prometheus/Grafana thuộc `make docker-up` nên không tính vào SC-001.
+- **SC-002**: 100% các microservice **hiện có trong giải pháp** (`Identity.Api`, `Worker`) được build trên nền tảng runtime chiseled non-root, giảm kích thước image xuống dưới 180MB mỗi container. Service thêm sau này kế thừa tiêu chuẩn qua `AGENTS.md` §3.
 - **SC-003**: 100% email gửi đi từ Worker trong môi trường phát triển hiển thị tức thì trên giao diện Mailpit trong vòng dưới 1 giây.
 - **SC-004**: Grafana hiển thị trực quan biểu đồ hiệu năng ngay sau khi bật mà không đòi hỏi bất kỳ thao tác cấu hình thủ công nào từ phía người dùng.
 - **SC-005**: Toàn bộ giải pháp vượt qua cổng kiểm tra chất lượng `make lint` với 0 lỗi và 0 cảnh báo.

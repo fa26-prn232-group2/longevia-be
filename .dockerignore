@@ -1,22 +1,7 @@
+# Keep the repo-root build context lean for service Dockerfiles.
 **/bin/
 **/obj/
-**/artifacts/
-.vs/
-.vscode/
-.idea/
 .git/
-.gitignore
-.github/
-.opencode/
-.specify/
-docs/
-specs/
-deployments/
-Makefile
-**/*.user
-**/*.md
-**/Dockerfile
-**/.dockerignore
-.env
-.env.*
-!.env.example
+.vs/
+artifacts/
+TestResults/

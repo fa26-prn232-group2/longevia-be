@@ -31,10 +31,6 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
     public async Task InitializeAsync()
     {
         await _postgresContainer.StartAsync();
-
-        using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        await db.Database.MigrateAsync();
     }
 
     public new async Task DisposeAsync()
@@ -55,8 +51,6 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Jwt:SigningPublicKey", _publicKeyB64);
         builder.UseSetting("Jwt:AccessTokenExpiryMinutes", "15");
         builder.UseSetting("Jwt:RefreshTokenExpiryDays", "7");
-        builder.UseSetting("Database:AutoMigrate", "false");
-
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));

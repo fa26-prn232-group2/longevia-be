@@ -23,7 +23,7 @@ public sealed class RefreshTokenUseCase(
         }
 
         var user = await userRepository.GetByIdAsync(existingToken.UserId, ct);
-        if (user is null || user.Status == UserStatus.Suspended)
+        if (user is null || user.Status != UserStatus.Active)
         {
             throw AuthErrors.InvalidRefreshToken();
         }

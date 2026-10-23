@@ -32,6 +32,7 @@ public sealed class RefreshTokenUseCaseTests
             "Alex",
             DateTimeOffset.UtcNow,
             "token");
+        user.Verify(DateTimeOffset.UtcNow);
         await _userRepository.AddAsync(user);
 
         var existingToken = RefreshToken.Create(
@@ -74,5 +75,31 @@ public sealed class RefreshTokenUseCaseTests
 
         Assert.Equal(401, ex.Status);
         Assert.Equal("identity.invalid_refresh_token", ex.Code);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowUnauthorized_WhenUserIsPendingVerification()
+    {
+        var user = User.Create(
+            Guid.NewGuid(),
+            "pending@example.com",
+            "hashed",
+            "Pending User",
+            DateTimeOffset.UtcNow,
+            "token");
+        await _userRepository.AddAsync(user);
+        await _refreshTokenRepository.AddAsync(RefreshToken.Create(
+            Guid.NewGuid(),
+            user.Id,
+            "valid_refresh_token",
+            DateTimeOffset.UtcNow.AddDays(7),
+            DateTimeOffset.UtcNow));
+
+        var ex = await Assert.ThrowsAsync<AppException>(() =>
+            _sut.ExecuteAsync(new RefreshTokenRequest("valid_refresh_token")));
+
+        Assert.Equal(401, ex.Status);
+        Assert.Equal("identity.invalid_refresh_token", ex.Code);
+        Assert.Equal(0, _unitOfWork.SaveChangesCalls);
     }
 }

@@ -34,6 +34,11 @@ public sealed class LoginUseCase(
             throw UserErrors.Suspended();
         }
 
+        if (user.Status != UserStatus.Active)
+        {
+            throw AuthErrors.InvalidCredentials();
+        }
+
         var accessToken = jwtTokenGenerator.GenerateAccessToken(user);
         var refreshToken = jwtTokenGenerator.GenerateRefreshToken(user.Id);
 

@@ -35,6 +35,7 @@ public sealed class LoginUseCaseTests
             "Test User",
             DateTimeOffset.UtcNow,
             "token");
+        user.Verify(DateTimeOffset.UtcNow);
         await _userRepository.AddAsync(user);
 
         var request = new LoginRequest("test@example.com", password);
@@ -75,5 +76,26 @@ public sealed class LoginUseCaseTests
 
         Assert.Equal(401, ex.Status);
         Assert.Equal("identity.invalid_credentials", ex.Code);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowUnauthorized_WhenUserIsPendingVerification()
+    {
+        var password = "ValidPassword123!";
+        var user = User.Create(
+            Guid.NewGuid(),
+            "pending@example.com",
+            _passwordHasher.Hash(password),
+            "Pending User",
+            DateTimeOffset.UtcNow,
+            "token");
+        await _userRepository.AddAsync(user);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() =>
+            _sut.ExecuteAsync(new LoginRequest(user.Email, password)));
+
+        Assert.Equal(401, ex.Status);
+        Assert.Equal("identity.invalid_credentials", ex.Code);
+        Assert.Equal(0, _unitOfWork.SaveChangesCalls);
     }
 }

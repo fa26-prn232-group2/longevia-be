@@ -62,7 +62,7 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapPrometheusScrapingEndpoint();
 
-if (app.Configuration.GetValue("Database:AutoMigrate", false) && !app.Environment.IsEnvironment("Testing"))
+if (app.Configuration.GetValue("Database:AutoMigrate", true))
 {
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();

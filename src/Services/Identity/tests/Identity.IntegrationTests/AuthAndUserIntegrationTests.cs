@@ -6,6 +6,9 @@ using Identity.Application.Features.Auth;
 using Identity.Application.Features.Registration;
 using Identity.Application.Features.Users;
 using Identity.Domain.Constants;
+using Identity.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Identity.IntegrationTests;
 
@@ -34,7 +37,21 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var duplicateResponse = await _client.PostAsJsonAsync("/auth/register", registerRequest);
         Assert.Equal(HttpStatusCode.Conflict, duplicateResponse.StatusCode);
 
-        // 3. Login
+        // 3. A newly registered account cannot log in before email verification.
+        var pendingLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
+        Assert.Equal(HttpStatusCode.Unauthorized, pendingLogin.StatusCode);
+
+        // The verification endpoint is implemented in a later Identity phase.
+        // Activate through the domain model here so this test can cover the remaining lifecycle.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
+            user.Verify(DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync();
+        }
+
+        // 4. Login after verification
         var loginRequest = new LoginRequest(email, password);
         var loginResponse = await _client.PostAsJsonAsync("/auth/login", loginRequest);
 
@@ -44,11 +61,11 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.False(string.IsNullOrWhiteSpace(tokenResult.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(tokenResult.RefreshToken));
 
-        // 4. Invalid Password Login
+        // 5. Invalid Password Login
         var badLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, "WrongPassword123!"));
         Assert.Equal(HttpStatusCode.Unauthorized, badLogin.StatusCode);
 
-        // 5. Get Current User (/users/me)
+        // 6. Get Current User (/users/me)
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
         var meResponse = await _client.GetAsync("/users/me");
 
@@ -57,7 +74,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.NotNull(meUser);
         Assert.Equal(createdUser.Id, meUser.Id);
 
-        // 6. Update Profile (/users/me/profile)
+        // 7. Update Profile (/users/me/profile)
         var updateProfileRequest = new UpdateProfileRequest(
             new DateOnly(1995, 6, 15),
             BiologicalSex.Male,
@@ -74,7 +91,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Equal(BiologicalSex.Male, updatedProfile.BiologicalSex);
         Assert.Contains("Seafood", updatedProfile.Allergies);
 
-        // 7. Refresh Token
+        // 8. Refresh Token
         var refreshRequest = new RefreshTokenRequest(tokenResult.RefreshToken);
         var refreshResponse = await _client.PostAsJsonAsync("/auth/refresh", refreshRequest);
         Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
@@ -82,7 +99,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.NotNull(newTokens);
         Assert.NotEqual(tokenResult.RefreshToken, newTokens.RefreshToken);
 
-        // 8. Logout
+        // 9. Logout
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newTokens.AccessToken);
         var logoutResponse = await _client.PostAsJsonAsync("/auth/logout", new LogoutRequest(newTokens.RefreshToken));
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);

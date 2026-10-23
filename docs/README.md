@@ -60,4 +60,6 @@ docs/
 
 ### Khác
 - [decisions/README.md](decisions/README.md) — danh mục ADR.
-- [reference/che-do-an-truong-tho/00-index.md](reference/che-do-an-truong-tho/00-index.md) — số hoá tự động sách *Chế độ ăn trường thọ* (Markdown theo chương).
+- [reference/che-do-an-truong-tho/00-index.md](reference/che-do-an-truong-tho/00-index.md) — số hoá tự động sách *Chế độ ăn trường thọ* (Markdown theo chương); **chỉ dùng cho mục đích học tập**.
+- [../NOTICE.md](../NOTICE.md) — mục đích sử dụng, nội dung bên thứ ba có bản quyền và giấy phép các thành phần.
+- [../LICENSE](../LICENSE) — giấy phép MIT cho mã nguồn (không áp dụng cho nội dung sách).

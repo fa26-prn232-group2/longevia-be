@@ -30,18 +30,18 @@ và FR-038/FR-039.
 
 | Trường | Kiểu | Bắt buộc | Quy tắc |
 | --- | --- | --- | --- |
-| `profile` | `UserProfile` | Có | `age` 1..120; `sex` khác `SEX_UNSPECIFIED`; `height_cm` > 0; `weight_kg` > 0; `activity_level` thuộc `Sedentary/LightlyActive/ModeratelyActive/VeryActive`; `dietary_preference` thuộc `None/Keto/Vegan/Mediterranean/LowCarb`; `allergies` có thể rỗng |
+| `profile` | `UserProfile` | Có | `age` 1..120; `sex` khác `SEX_UNSPECIFIED`; `height_cm` > 0; `weight_kg` > 0; `activity_level` thuộc tập chuỗi `Sedentary/LightlyActive/ModeratelyActive/VeryActive`; `dietary_preference` thuộc tập chuỗi `None/Keto/Vegan/Mediterranean/LowCarb`; `allergies` có thể rỗng |
 | `target_calories` | `int32` | Có | > 0; là **mục tiêu ngày** |
 | `target_protein_grams` | `double` | Có | >= 0; là **mục tiêu ngày** |
 | `target_carbs_grams` | `double` | Có | >= 0; là **mục tiêu ngày** |
 | `target_fat_grams` | `double` | Có | >= 0; là **mục tiêu ngày** |
-| `target_fiber_grams` | `double` | Không | 0 = không gửi; > 0 là mục tiêu ngày |
+| `target_fiber_grams` | `double` | Không | 0 = không gửi; > 0 là mục tiêu ngày; âm → `invalid_targets` |
 | `week_start_date` | `string` | Có | ISO `YYYY-MM-DD`, phải là thứ Hai |
 | `days` | `int32` | Có | 1..7 |
 | `meals_per_day` | `int32` | Có | 1..4 |
-| `candidate_foods` | `repeated CandidateFood` | Có | 1..120; mỗi món có `food_id`/`name` khác rỗng; calo/macro/fiber >= 0 |
+| `candidate_foods` | `repeated CandidateFood` | Có | >= 1; nếu > 120 thì cắt theo FR-025, không phải lỗi; mỗi món có `food_id`/`name` khác rỗng; calo/macro/fiber >= 0 |
 | `excluded_food_ids` | `repeated string` | Không | Món trùng bị loại khỏi mọi ngày |
-| `consumed_calories` | `int32` | Không | >= 0; > 0 thì bắt buộc có `consumed_date` |
+| `consumed_calories` | `int32` | Không | >= 0; > 0 thì bắt buộc có `consumed_date`; âm → `invalid_consumed_calories` |
 | `consumed_date` | `string` | Không | ISO `YYYY-MM-DD`; nếu có phải hợp lệ; rule 105% chỉ áp nếu nằm trong tuần |
 | `locale` | `string` | Không | Rỗng → `vi-VN`; không hỗ trợ → `vi-VN` + warning |
 
@@ -54,11 +54,14 @@ và FR-038/FR-039.
 - `consumed_date` sai định dạng → lỗi `recommendation.invalid_consumed_date`.
 - `consumed_date` ngoài `[week_start_date, week_start_date + days - 1]` → bỏ
   qua rule 105%, warning `consumed_date_outside_plan`.
+- `target_fiber_grams` âm → lỗi `recommendation.invalid_targets`;
+  `consumed_calories` âm → lỗi `recommendation.invalid_consumed_calories`.
 
 **CandidateFood tái sử dụng**: `food_id`, `name`, `serving_size`,
 `serving_unit`, `calories`, `protein_grams`, `carbs_grams`, `fat_grams`,
 `fiber_grams`, `allergens` (danh sách đã chuẩn hoá lowercase theo contract hiện
-có). `allergens` rỗng = caller khai không có allergen đã biết.
+có; service vẫn chuẩn hoá lại trim/lowercase/NFC trước khi so khớp). `allergens`
+rỗng = caller khai không có allergen đã biết.
 
 ---
 
@@ -72,8 +75,8 @@ Nguồn: FR-040.
 | `goal` | `UserGoal` | Có | Khác `GOAL_UNSPECIFIED` |
 | `week_start_date` | `string` | Có | ISO `YYYY-MM-DD`, thứ Hai |
 | `days` | `int32` | Có | 1..7 |
-| `sessions_per_week` | `int32` | Có | 0 → mặc định 3; 1..7; không lớn hơn `days` |
-| `minutes_per_session` | `int32` | Có | 0 → mặc định 30; 10..120 |
+| `sessions_per_week` | `int32` | Có | 0 → `min(3, days)`; giá trị khác 1..7; không lớn hơn `days` |
+| `minutes_per_session` | `int32` | Có | 0 → mặc định 30; giá trị khác 10..120 |
 | `activity_preference` | `repeated string` | Có (có thể rỗng) | Chuẩn hoá lowercase; giá trị lạ bị bỏ + warning |
 | `equipment_available` | `repeated string` | Có (có thể rỗng) | Rỗng = không có thiết bị; chỉ dùng hoạt động không cần thiết bị |
 | `limitations` | `repeated string` | Không | Rỗng = caller chưa cung cấp; không giả định khỏe mạnh/chấn thương |
@@ -82,8 +85,8 @@ Nguồn: FR-040.
 **Ràng buộc chéo**:
 
 - `sessions_per_week > days` → `recommendation.invalid_workout_params`.
-- `sessions_per_week` ngoài 0..7 hoặc `minutes_per_session` ngoài 0..120 →
-  cùng mã lỗi trên.
+- `sessions_per_week` ngoài 0..7 hoặc `minutes_per_session` khác 0 và ngoài
+  `10..120` → cùng mã lỗi trên.
 - `activity_preference` rỗng là hợp lệ: service dùng hướng dẫn chung chương 5.
 - `limitations` rỗng là hợp lệ: chỉ dùng hướng dẫn chung + warning
   `no_limitations_assumed`.
@@ -95,7 +98,14 @@ Nguồn: FR-040.
 | Trường | Kiểu | Ý nghĩa |
 | --- | --- | --- |
 | `days` | `repeated MealPlanDay` | Đúng `days` ngày, ngày liên tiếp từ `week_start_date` |
-| `citations` | `repeated Citation` | Hợp nhất citation đã verify từ chương 4 + Phụ lục A; rỗng nếu corpus rỗng |
+| `week_start_date` | `string` | Ngày bắt đầu tuần (ISO) |
+| `days_requested` | `int32` | Số ngày caller yêu cầu |
+| `weekly_target_calories` | `int32` | Tổng mục tiêu calo tuần = target ngày × `days` |
+| `weekly_target_protein_grams` | `double` | Tổng mục tiêu protein tuần |
+| `weekly_target_carbs_grams` | `double` | Tổng mục tiêu carbs tuần |
+| `weekly_target_fat_grams` | `double` | Tổng mục tiêu fat tuần |
+| `weekly_target_fiber_grams` | `double` | Tổng mục tiêu fiber tuần; 0 nếu không gửi |
+| `citations` | `repeated Citation` | Hợp nhất citation đã verify từ chương 4 + chương 12 có `book_page_from >= 238` (Phụ lục A); rỗng nếu corpus rỗng |
 | `warnings` | `repeated PlanWarning` | Cảnh báo cấp plan/ngày |
 | `disclaimer` | `Disclaimer` | Luôn có |
 | `used_fallback` | `bool` | `true` nếu đã dùng fallback xác định |
@@ -116,7 +126,7 @@ Nguồn: FR-040.
 | `total_fat_grams` | `double` | Tổng từ các món |
 | `total_fiber_grams` | `double` | Tổng từ các món |
 | `meals` | `repeated PlannedMeal` | Rỗng nếu ngày chạm trần 105% |
-| `suggestions` | `repeated PlanSuggestion` | Đồ uống 0 calo/thói quen khi chạm trần |
+| `suggestions` | `repeated PlanSuggestion` | Đồ uống 0 calo/thói quen khi chạm trần; tối đa 3 |
 | `calorie_cap_reached` | `bool` | `true` nếu ngày bị rule 105% |
 
 ### 4.2 `PlannedMeal`
@@ -159,6 +169,10 @@ Sao chép **nguyên giá trị** từ `CandidateFood`: `food_id`, `name`,
 | Trường | Kiểu | Ý nghĩa |
 | --- | --- | --- |
 | `days` | `repeated WorkoutPlanDay` | Đúng `days` ngày, liên tiếp từ `week_start_date` |
+| `week_start_date` | `string` | Ngày bắt đầu tuần (ISO) |
+| `days_requested` | `int32` | Số ngày caller yêu cầu |
+| `sessions_scheduled` | `int32` | Số buổi thực tế sau khi áp mặc định/giới hạn an toàn |
+| `minutes_per_session` | `int32` | Thời lượng mỗi buổi |
 | `citations` | `repeated Citation` | Hợp nhất citation đã verify từ chương 5; rỗng nếu corpus rỗng |
 | `warnings` | `repeated PlanWarning` | Cảnh báo cấp plan/ngày |
 | `disclaimer` | `Disclaimer` | Luôn có |
@@ -170,7 +184,7 @@ Sao chép **nguyên giá trị** từ `CandidateFood`: `food_id`, `name`,
 | --- | --- | --- |
 | `date` | `string` | ISO `YYYY-MM-DD` |
 | `rest_day` | `bool` | `true` = ngày nghỉ |
-| `activity` | `string` | Tên hoạt động từ catalog/request; rỗng nếu `rest_day` |
+| `activity` | `string` | Key ổn định từ catalog (`walking`, `cycling`, ...), không phải tên hiển thị; rỗng nếu `rest_day` |
 | `duration_minutes` | `int32` | Bằng `minutes_per_session`; 0 nếu `rest_day` |
 | `intensity` | `string` | Cường độ có căn cứ chương 5; rỗng nếu không có căn cứ |
 | `equipment_used` | `repeated string` | Thiết bị đã dùng; rỗng nếu không cần |
@@ -191,20 +205,20 @@ Sao chép **nguyên giá trị** từ `CandidateFood`: `food_id`, `name`,
 
 | Model | Vai trò | Có lưu? |
 | --- | --- | --- |
-| `MealPlanRequest` | DTO Application của `GenerateMealPlan` | Không |
-| `MealPlanResult` | Kết quả use case | Không |
-| `PlanDay` | Ngày + ngân sách + bữa + suggestion | Không |
+| `GenerateMealPlanRequest` | DTO Application của `GenerateMealPlan` | Không |
+| `GenerateMealPlanResult` | Kết quả use case | Không |
+| `MealPlanDay` | Ngày + ngân sách + bữa + suggestion | Không |
 | `PlannedMeal` | Bữa + món + rationale + citation | Không |
 | `PlannedFood` | Món sao chép từ candidate | Không |
 | `PlanSuggestion` | Gợi ý thay thế 0 calo/thói quen | Không |
 | `PlanWarning` | Mã + message + scope | Không |
 | `WeeklyTargets` | Mục tiêu ngày + tổng tuần đã tính | Không |
-| `WeeklyBudget` | Ngân sách calo/macro/fiber đã chia cho từng ngày và bữa | Không |
-| `DayBudget` | Ngân sách một ngày + danh sách `MealBudget` | Không |
-| `MealBudget` | Ngân sách một bữa + loại bữa | Không |
-| `WorkoutPlanRequest` | DTO Application của `GenerateWorkoutPlan` | Không |
-| `WorkoutPlanResult` | Kết quả use case | Không |
-| `WorkoutDay` | Ngày tập/nghỉ | Không |
+| `WeeklyBudget` | Ngân sách calo/macro/fiber đã chia cho từng ngày và bữa (chứa nested `DayBudget`/`MealBudget`) | Không |
+| `DayBudget` | Ngân sách một ngày + danh sách `MealBudget` (nested trong `WeeklyBudget`) | Không |
+| `MealBudget` | Ngân sách một bữa + loại bữa (nested trong `WeeklyBudget`) | Không |
+| `GenerateWorkoutPlanRequest` | DTO Application của `GenerateWorkoutPlan` | Không |
+| `GenerateWorkoutPlanResult` | Kết quả use case | Không |
+| `WorkoutPlanDay` | Ngày tập/nghỉ | Không |
 | `WorkoutActivity` | Hoạt động trong catalog đóng | Không (constant/catalog) |
 | `Citation` | Trích dẫn đã verify | Không (response) |
 | `UserProfile`, `CandidateFood` | Dữ liệu caller | Không |
@@ -226,6 +240,8 @@ Sao chép **nguyên giá trị** từ `CandidateFood`: `food_id`, `name`,
 | `no_limitations_assumed` | `limitations` rỗng | `plan` |
 | `unsupported_activity_preference` | Preference không có trong catalog/không khả thi | `plan` |
 | `no_safe_activity` | Limitations/thiết bị loại hết hoạt động của một ngày | ngày |
+| `unsupported_limitation` | Limitation không khớp bảng ánh xạ đóng | `plan` |
+| `intensity_unverified` | Không có câu chương 5 hỗ trợ cường độ | ngày |
 | `activity_source_unverified` | Corpus rỗng, dùng hoạt động caller gửi | `plan`/ngày |
 
 ---
@@ -236,7 +252,9 @@ Chi tiết mapping gRPC ở [research.md](./research.md) D-11.
 
 | Mã | Điều kiện |
 | --- | --- |
-| `recommendation.missing_targets` | Thiếu `target_calories` hoặc cả 3 macro bằng 0/âm |
+| `recommendation.missing_targets` | Thiếu `target_calories` hoặc thiếu target protein/carbs/fat |
+| `recommendation.invalid_targets` | Target calo/macro/fiber âm hoặc không hợp lệ |
+| `recommendation.invalid_consumed_calories` | `consumed_calories` âm |
 | `recommendation.no_candidate_food` | `candidate_foods` rỗng |
 | `recommendation.invalid_week_start` | Sai định dạng hoặc không phải thứ Hai |
 | `recommendation.invalid_days` | `days` ngoài 1..7 |
@@ -261,7 +279,7 @@ Chi tiết mapping gRPC ở [research.md](./research.md) D-11.
 | R4 | Lọc dietary preference trước khi gọi AI | `DietaryPreferenceFilter` hiện có |
 | R5 | Loại `excluded_food_ids` khỏi mọi ngày | `MealPlanCandidateFilter` |
 | R6 | Tổng ngân sách ngày = mục tiêu ngày; tổng bữa = ngân sách ngày | `WeeklyBudgetSplitter` |
-| R7 | Ngày chạm trần 105% có `meals` rỗng, `suggestions` riêng | `MealPlanDayBuilder` |
+| R7 | Ngày chạm trần 105% có `meals` rỗng, `suggestions` riêng | `GenerateMealPlanUseCase` + `MealPlanSuggestionBuilder` |
 | R8 | Ngày thường có đúng `meals_per_day` bữa, mỗi bữa <= 5 món | Parser + fallback |
 | R9 | Calo/macro ngày trong ±10% ngân sách ngày khi khả thi | `MealPlanValidator` |
 | R10 | Workout có đúng `sessions_per_week` buổi khi còn hoạt động an toàn; nếu không, rest day + warning | `WorkoutPlanSkeletonBuilder` |
@@ -279,9 +297,9 @@ Chi tiết mapping gRPC ở [research.md](./research.md) D-11.
 | `days` | 1..7 |
 | `meals_per_day` | 1..4 |
 | Món/bữa | 0..5 |
-| `candidate_foods` | 1..120 sau khi cắt |
-| `sessions_per_week` | 1..7, <= `days` |
-| `minutes_per_session` | 10..120 |
+| `candidate_foods` | >= 1; nếu > 120 thì cắt theo macro-fit |
+| `sessions_per_week` | 0 → `min(3, days)`; giá trị khác 1..7, <= `days` |
+| `minutes_per_session` | 0 → 30; giá trị khác 10..120 |
 | Citation/response | Hợp nhất, không giới hạn cứng; thực tế <= số chunk truy xuất |
 | Corpus | 188 chunk hiện có; không đổi |
 

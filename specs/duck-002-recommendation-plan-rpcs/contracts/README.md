@@ -45,12 +45,17 @@ service RecommendationService {
 | C10 | Mọi response thành công có `disclaimer` | Use case + mapper |
 | C11 | Lỗi nghiệp vụ dùng trailer `code` với mã `recommendation.*` | `GrpcExceptionInterceptor` |
 | C12 | Không có field nào lưu dữ liệu người dùng | Không có entity/migration |
+| C13 | `candidate_foods` > 120 bị cắt theo macro-fit, không phải lỗi | Filter |
+| C14 | Response có `week_start_date` + `days_requested`; meal có thêm `weekly_target_*` | Mapper |
+| C15 | `sessions_per_week = 0` → `min(3, days)` | Validation |
 
 ## 4. Mã lỗi (trailer `code`)
 
 | Mã | gRPC status | Khi nào |
 | --- | --- | --- |
 | `recommendation.missing_targets` | `InvalidArgument` | Thiếu target calo/macro |
+| `recommendation.invalid_targets` | `InvalidArgument` | Target âm/không hợp lệ |
+| `recommendation.invalid_consumed_calories` | `InvalidArgument` | `consumed_calories` âm |
 | `recommendation.no_candidate_food` | `FailedPrecondition` | `candidate_foods` rỗng |
 | `recommendation.invalid_week_start` | `InvalidArgument` | Không phải thứ Hai/sai ISO |
 | `recommendation.invalid_days` | `InvalidArgument` | `days` ngoài 1..7 |
@@ -68,7 +73,8 @@ service RecommendationService {
 `corpus_not_loaded`, `ai_fallback_used`, `target_not_met`,
 `candidate_foods_truncated`, `duplicate_candidate_food`, `unsupported_locale`,
 `consumed_date_outside_plan`, `suggestion_source_missing`,
-`no_limitations_assumed`, `unsupported_activity_preference`, `no_safe_activity`,
+`no_limitations_assumed`, `unsupported_activity_preference`,
+`unsupported_limitation`, `intensity_unverified`, `no_safe_activity`,
 `activity_source_unverified`.
 
 ## 6. Quy trình merge

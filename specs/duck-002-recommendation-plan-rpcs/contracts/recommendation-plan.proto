@@ -29,15 +29,15 @@ message GenerateMealPlanRequest {
   double target_protein_grams = 3;          // mục tiêu NGÀY, >= 0
   double target_carbs_grams = 4;            // mục tiêu NGÀY, >= 0
   double target_fat_grams = 5;              // mục tiêu NGÀY, >= 0
-  double target_fiber_grams = 6;            // tuỳ chọn; 0 = không gửi
+  double target_fiber_grams = 6;            // tuỳ chọn; >= 0; 0 = không gửi
   string week_start_date = 7;               // ISO YYYY-MM-DD, phải là thứ Hai
   int32 days = 8;                           // 1..7
   int32 meals_per_day = 9;                  // 1..4
-  repeated CandidateFood candidate_foods = 10; // 1..120
+  repeated CandidateFood candidate_foods = 10; // >= 1; nếu > 120 cắt theo FR-025
   repeated string excluded_food_ids = 11;   // tuỳ chọn
-  int32 consumed_calories = 12;             // tuỳ chọn; 0 = không gửi
+  int32 consumed_calories = 12;             // tuỳ chọn; >= 0; 0 = không gửi
   string consumed_date = 13;                // ISO; bắt buộc nếu consumed_calories > 0
-  string locale = 14;                       // mặc định vi-VN
+  string locale = 14;                       // chỉ hỗ trợ vi-VN
 }
 
 message GenerateMealPlanResponse {
@@ -46,6 +46,13 @@ message GenerateMealPlanResponse {
   repeated PlanWarning warnings = 3;
   Disclaimer disclaimer = 4;
   bool used_fallback = 5;
+  string week_start_date = 6;               // ISO
+  int32 days_requested = 7;                 // số ngày caller yêu cầu
+  int32 weekly_target_calories = 8;         // target ngày × days_requested
+  double weekly_target_protein_grams = 9;
+  double weekly_target_carbs_grams = 10;
+  double weekly_target_fat_grams = 11;
+  double weekly_target_fiber_grams = 12;    // 0 nếu không gửi
 }
 
 message MealPlanDay {
@@ -61,7 +68,7 @@ message MealPlanDay {
   double total_fat_grams = 10;
   double total_fiber_grams = 11;
   repeated PlannedMeal meals = 12;          // rỗng nếu calorie_cap_reached
-  repeated PlanSuggestion suggestions = 13; // đồ uống 0 calo/thói quen
+  repeated PlanSuggestion suggestions = 13; // tối đa 3/ngày; đồ uống 0 calo/thói quen
   bool calorie_cap_reached = 14;
 }
 
@@ -104,12 +111,12 @@ message GenerateWorkoutPlanRequest {
   UserGoal goal = 2;                        // bắt buộc, khác GOAL_UNSPECIFIED
   string week_start_date = 3;               // ISO YYYY-MM-DD, thứ Hai
   int32 days = 4;                           // 1..7
-  int32 sessions_per_week = 5;              // 0 = mặc định 3; 1..7; <= days
-  int32 minutes_per_session = 6;            // 0 = mặc định 30; 10..120
+  int32 sessions_per_week = 5;              // 0 = min(3, days); khác 1..7; <= days
+  int32 minutes_per_session = 6;            // 0 = mặc định 30; khác 10..120
   repeated string activity_preference = 7;  // có thể rỗng
   repeated string equipment_available = 8;  // rỗng = không có thiết bị
   repeated string limitations = 9;          // tuỳ chọn
-  string locale = 10;                       // mặc định vi-VN
+  string locale = 10;                       // chỉ hỗ trợ vi-VN
 }
 
 message GenerateWorkoutPlanResponse {
@@ -118,6 +125,10 @@ message GenerateWorkoutPlanResponse {
   repeated PlanWarning warnings = 3;
   Disclaimer disclaimer = 4;
   bool used_fallback = 5;
+  string week_start_date = 6;               // ISO
+  int32 days_requested = 7;                 // số ngày caller yêu cầu
+  int32 sessions_scheduled = 8;             // số buổi thực tế sau mặc định/giới hạn
+  int32 minutes_per_session = 9;
 }
 
 message WorkoutPlanDay {

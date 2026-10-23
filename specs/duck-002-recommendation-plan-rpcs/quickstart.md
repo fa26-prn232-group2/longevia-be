@@ -141,7 +141,8 @@ Gửi request với `week_start_date = 2026-10-26` (thứ Hai), `days = 7`,
 
 **Kỳ vọng**:
 
-- `days` có đúng **7** phần tử, ngày từ `2026-10-26` đến `2026-11-01`.
+- `days` có đúng **7** phần tử, ngày từ `2026-10-26` đến `2026-11-01`;
+  `weekStartDate = 2026-10-26`, `daysRequested = 7`, `weeklyTargetCalories = 14000`.
 - Mỗi ngày có đúng **4** bữa (trừ ngày chạm trần), mỗi bữa **<= 5 món**.
 - Không món nào có `food_id = f-peanut` hoặc allergen `đậu phộng`.
 - Mọi `foods[].foodId` thuộc 4 candidate gửi lên.
@@ -221,7 +222,9 @@ dotnet test src/Services/Recommendation/tests/Recommendation.IntegrationTests `
 
 | Request | Mã mong đợi |
 | --- | --- |
-| Thiếu `targetCalories`/cả 3 macro bằng 0 | `recommendation.missing_targets` |
+| Thiếu `targetCalories` | `recommendation.missing_targets` |
+| Target/fiber âm | `recommendation.invalid_targets` |
+| `consumedCalories` âm | `recommendation.invalid_consumed_calories` |
 | `candidateFoods` rỗng | `recommendation.no_candidate_food` |
 | `weekStartDate = "2026-10-27"` (thứ Ba) | `recommendation.invalid_week_start` |
 | `days = 8` | `recommendation.invalid_days` |
@@ -270,7 +273,8 @@ grpcurl -plaintext -v -d @ localhost:50051 `
 
 **Kỳ vọng**:
 
-- Đúng 7 ngày, ngày từ `2026-10-26` đến `2026-11-01`.
+- Đúng 7 ngày, ngày từ `2026-10-26` đến `2026-11-01`; `weekStartDate = 2026-10-26`,
+  `daysRequested = 7`, `sessionsScheduled = 3`, `minutesPerSession = 30`.
 - Đúng **3** ngày `restDay = false`, **4** ngày `restDay = true`.
 - Mỗi buổi có `durationMinutes = 30`.
 - Hoạt động chỉ là `walking` (hoặc hoạt động không thiết bị có trong chương 5).
@@ -296,6 +300,8 @@ grpcurl -plaintext -v -d @ localhost:50051 `
 - Không có buổi `running`.
 - Nếu không còn hoạt động an toàn, ngày đó `restDay = true` + warning
   `no_safe_activity`; không tự thay bằng bài tập ngoài sách.
+- Limitation không khớp bảng ánh xạ đóng → warning `unsupported_limitation`,
+  không suy diễn y tế.
 
 **Provider lỗi/timeout**:
 

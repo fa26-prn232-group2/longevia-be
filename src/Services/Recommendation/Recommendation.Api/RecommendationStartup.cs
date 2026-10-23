@@ -2,6 +2,7 @@ using Google.GenAI;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using Recommendation.Api.Deadlines;
 using Recommendation.Api.Endpoints;
 using Recommendation.Api.Extensions;
 using Recommendation.Api.HealthChecks;
@@ -175,8 +176,11 @@ public static class RecommendationStartup
         builder.Services.AddOptions<RecommendationOptions>()
             .BindEnvSection(builder.Configuration, RecommendationOptions.SectionName)
             .Validate(
-                o => o.DeadlineSeconds is >= 5 and <= 120,
+                o => RecommendationOptions.IsValidDeadlineSeconds(o.DeadlineSeconds),
                 "RECOMMENDATION__DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
+            .Validate(
+                o => RecommendationOptions.IsValidDeadlineSeconds(o.PlanDeadlineSeconds),
+                "RECOMMENDATION__PLAN_DEADLINE_SECONDS phải nằm trong khoảng 5..120 giây.")
             .ValidateOnStart();
     }
 
@@ -244,10 +248,13 @@ public static class RecommendationStartup
 
     private static void ConfigureGrpc(WebApplicationBuilder builder)
     {
+        // Policy thuần đọc IOptions nên đăng ký singleton; interceptor scoped để
+        // giữ nguyên vòng đời hiện có.
+        builder.Services.AddSingleton<RpcDeadlinePolicy>();
         builder.Services.AddScoped<GrpcExceptionInterceptor>();
         builder.Services.AddScoped(sp => new ServerDeadlineInterceptor(
             sp.GetRequiredService<ILogger<ServerDeadlineInterceptor>>(),
-            TimeSpan.FromSeconds(sp.GetRequiredService<IOptions<RecommendationOptions>>().Value.DeadlineSeconds)));
+            sp.GetRequiredService<RpcDeadlinePolicy>()));
 
         // gRPC service được resolve qua DI để tôn trọng constructor injection.
         builder.Services.AddScoped<RecommendationGrpcService>();

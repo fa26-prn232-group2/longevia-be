@@ -109,8 +109,8 @@ bữa cố định:
 - Tổng ngân sách các ngày = mục tiêu ngày × `days`.
 - Tổng ngân sách các bữa trong ngày = ngân sách ngày.
 - Mục tiêu fiber (nếu caller gửi > 0) chia cùng tỷ lệ; fiber được báo cáo và
-  cảnh báo nếu thiếu, **không** nằm trong gate cứng ±10% (spec chỉ gate calo và
-  macro).
+  cảnh báo nếu thiếu, **không** nằm trong gate cứng ±10% (gate cứng gồm calo,
+  protein, carbs và fat).
 - Làm tròn calo về `int` bằng `MidpointRounding.AwayFromZero`; phần dư/thiếu do
   làm tròn được bù vào bữa cuối để tổng khớp ngân sách ngày.
 
@@ -127,7 +127,8 @@ Mapping bữa rõ ràng khi caller chỉ yêu cầu 1–3 bữa.
 
 ## D-05 — Cắt `candidate_foods` về tối đa 120
 
-**Decision**: Khi `candidate_foods` > 120, trước khi lọc/gọi AI:
+**Decision**: Khi `candidate_foods` > 120, trước khi lọc/gọi AI (đây là cắt
+theo FR-025, **không phải lỗi validation**; validation chỉ yêu cầu >= 1):
 
 1. Loại món trùng `food_id` (giữ bản ghi đầu tiên), ghi warning
    `duplicate_candidate_food`.
@@ -153,7 +154,8 @@ Tie-break ordinal bảo đảm deterministic (SC-014).
 **Decision**:
 
 - Prompt meal plan cung cấp danh sách candidate đã lọc (đánh số), ngân sách
-  từng ngày/bữa và chunk chương 4 + Phụ lục A.
+  từng ngày/bữa và chunk chương 4 + chunk chương 12 thuộc Phụ lục A
+  (`book_page_from >= 238`).
 - Schema phản hồi chỉ có `days[].meals[].food_indices[]` và
   `days[].meals[].citations[]`; **không** có rationale tự do, không có số liệu
   dinh dưỡng.
@@ -184,8 +186,9 @@ request là cách duy nhất bảo đảm 100% có nguồn.
 5 món/bữa, hoặc lệch calo/macro > ±10%, chạy `MealPlanFallbackSelector`:
 
 1. Với từng ngày/bữa, duyệt candidate an toàn theo `MacroFitScore` tăng dần.
-2. Thêm món nếu không trùng món đã dùng trong ngày (và ưu tiên không trùng
-   trong tuần khi còn lựa chọn), tối đa 5 món.
+2. Thêm món nếu không trùng món đã dùng **trong cùng ngày** (bắt buộc); ưu tiên
+   không trùng trong tuần khi còn lựa chọn; tie-break lặp tuần = ít lần dùng
+   nhất, rồi `food_id` ordinal; tối đa 5 món.
 3. Ưu tiên tổ hợp đưa tổng bữa gần ngân sách bữa nhất; nếu không thể đạt ±10%
    ngày, trả tổ hợp gần nhất.
 4. Nếu không đạt ±10% vì candidate không đủ, ghi `target_not_met`; không bịa
@@ -213,7 +216,8 @@ IReadOnlyList<RetrievedChunk>)`:
 - Parser gọi resolver cho từng bữa/buổi tập; citation không khớp bị loại.
 - Citation cấp plan là hợp nhất (distinct) các citation đã verify.
 - Với workout, nếu một hoạt động không có citation verify thì không dùng hoạt
-  động đó; ngày đó thành ngày nghỉ + warning `no_safe_activity`.
+  động đó; ngày đó thành ngày nghỉ + warning `no_safe_activity`. Ngoại lệ:
+  degraded mode khi corpus rỗng theo D-09 mục 7.
 
 **Rationale**: Hành vi cũ của `Resolve` (abstain khi rỗng) vẫn cần cho RPC hỏi
 sách. Plan cho phép citation rỗng khi corpus rỗng, nên cần biến thể không
@@ -238,15 +242,20 @@ abstain. Dùng lại normalize tránh hai chuẩn so khớp khác nhau.
    `walking`, `cycling`, `running`, `swimming`, `strength`, `tai_chi`,
    `dancing`, `gardening` (kèm alias tiếng Việt/Anh).
    - Mỗi hoạt động có `Intensity` khai báo từ câu hướng dẫn chương 5 tương ứng;
-     nếu chunk không hỗ trợ cường độ, `intensity` để rỗng và ghi warning.
+     nếu chunk không hỗ trợ cường độ, `intensity` để rỗng và ghi warning
+     `intensity_unverified`.
    - Chỉ đưa vào catalog hoạt động có alias xuất hiện trong chunk chương 5 đã
-     truy xuất.
+     truy xuất. Khi corpus rỗng, seed catalog từ `WorkoutActivities` để degraded
+     mode vẫn dùng được preference caller.
    - Nếu `activity_preference` không rỗng, chỉ giữ hoạt động khớp preference.
    - Loại hoạt động cần thiết bị mà `equipment_available` không có.
-   - Loại hoạt động xung đột với `limitations` theo bảng ánh xạ hạn chế.
-3. Code rải đúng `sessions_per_week` buổi trên `days` ngày, mỗi ngày tối đa
-   một buổi, dùng công thức chia đều xác định. Nếu `sessions_per_week > days`
-   → lỗi `recommendation.invalid_workout_params`.
+   - Loại hoạt động xung đột với `limitations` theo bảng ánh xạ đóng trong
+     `WorkoutLimitationRules`; token không khớp bị bỏ qua + warning
+     `unsupported_limitation`, không suy diễn y tế.
+3. Code rải đúng `sessions_per_week` buổi (sau khi áp mặc định
+   `min(3, days)`) trên `days` ngày, mỗi ngày tối đa một buổi, dùng công thức
+   chia đều xác định. Nếu `sessions_per_week > days` → lỗi
+   `recommendation.invalid_workout_params`.
 4. AI (nếu gọi) chỉ được chọn một hoạt động trong catalog cho mỗi buổi và trả
    citation; code validate và viết rationale từ hoạt động + giới hạn caller +
    quote đã verify.
@@ -255,9 +264,10 @@ abstain. Dùng lại normalize tránh hai chuẩn so khớp khác nhau.
 6. Không còn hoạt động an toàn → ngày đó là `rest_day` + `no_safe_activity`.
    Đây là ngoại lệ của “đúng số buổi”: an toàn thắng số lượng, theo FR-031.
 7. Corpus rỗng:
-   - Nếu caller có `activity_preference`, dùng đúng tên hoạt động caller gửi,
-     thời lượng caller gửi, không tự thêm cường độ, citation rỗng, warning
-     `corpus_not_loaded` + `activity_source_unverified`.
+   - Nếu caller có `activity_preference`, seed catalog từ `WorkoutActivities`,
+     dùng đúng tên hoạt động caller gửi, thời lượng caller gửi, không tự thêm
+     cường độ, citation rỗng, warning `corpus_not_loaded` +
+     `activity_source_unverified`.
    - Nếu không có preference, trả ngày nghỉ + warning; không bịa bài tập.
 
 **Rationale**: Đóng danh mục hoạt động vào chương 5 và giới hạn caller là cách
@@ -304,6 +314,8 @@ input thiếu/sai hoặc mọi candidate bị loại.
 | Mã | HTTP nội bộ | gRPC status |
 | --- | --- | --- |
 | `recommendation.missing_targets` | 400 | InvalidArgument |
+| `recommendation.invalid_targets` | 400 | InvalidArgument |
+| `recommendation.invalid_consumed_calories` | 400 | InvalidArgument |
 | `recommendation.no_candidate_food` | 422 | FailedPrecondition |
 | `recommendation.invalid_week_start` | 400 | InvalidArgument |
 | `recommendation.invalid_days` | 400 | InvalidArgument |
@@ -351,9 +363,10 @@ phân biệt lỗi input với lỗi nghiệp vụ.
 
 ## D-13 — Locale
 
-**Decision**: `locale` mặc định `vi-VN`. Locale khác không được hỗ trợ → dùng
-`vi-VN`, ghi warning `unsupported_locale`, không đổi số liệu hay cấu trúc kế
-hoạch. Toàn bộ text do code dựng (rationale, warning, disclaimer) là tiếng Việt.
+**Decision**: Chỉ hỗ trợ `locale = "vi-VN"`. `locale` rỗng hoặc khác `vi-VN`
+→ dùng `vi-VN`, ghi warning `unsupported_locale`, không đổi số liệu hay cấu
+trúc kế hoạch. Toàn bộ text do code dựng (rationale, warning, disclaimer) là
+tiếng Việt.
 
 **Rationale**: Spec không yêu cầu đa ngôn ngữ; tránh dịch máy làm sai nội dung.
 

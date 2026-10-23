@@ -74,7 +74,9 @@ hiện có của Recommendation + 2 test project.
   5 RPC cũ giữ 30s.
 - Một lời gọi `IChatModel` cho mỗi plan (meal hoặc workout); retrieval top-K 8
   cho mỗi truy vấn.
-- 95% lượt gọi plan hoàn tất trong deadline cấu hình (SC-012).
+- 95% lượt gọi plan hoàn tất trong deadline cấu hình (SC-012). SC-012 là SLO
+  vận hành: feature verify bằng deadline config + integration smoke, không xây
+  load harness riêng trong phạm vi này.
 - Fallback không gọi provider lần hai; tổng thời gian fallback < 1s sau khi
   provider lỗi/timeout.
 
@@ -82,9 +84,10 @@ hiện có của Recommendation + 2 test project.
 
 - Contract additive; 5 RPC/message hiện có không đổi.
 - Không lưu dữ liệu người dùng; không log PII; không migration.
-- `candidate_foods` tối đa 120 sau khi cắt; `days` 1..7; `meals_per_day` 1..4;
-  tối đa 5 món/bữa.
-- `sessions_per_week` 1..7 và <= `days`; `minutes_per_session` 10..120.
+- `candidate_foods` >= 1; nếu > 120 thì cắt theo macro-fit (không phải lỗi);
+  `days` 1..7; `meals_per_day` 1..4; tối đa 5 món/bữa.
+- `sessions_per_week` 0 → `min(3, days)`, giá trị khác 1..7 và <= `days`;
+  `minutes_per_session` 0 → 30, giá trị khác 10..120.
 - Không expose REST/Nginx; không tạo `frontend-guide.md`.
 - Text do code dựng là tiếng Việt; locale khác fallback `vi-VN` + warning.
 
@@ -199,6 +202,9 @@ src/Services/Recommendation/
     ├── Recommendation.UnitTests/
     │   ├── Features/Plans/
     │   │   ├── PlanRequestValidatorTests.cs
+    │   │   ├── PlanPromptFormatterTests.cs
+    │   │   ├── PlanRationaleBuilderTests.cs
+    │   │   ├── PlanSafetyTests.cs
     │   │   ├── WeeklyBudgetSplitterTests.cs
     │   │   ├── PlanDateRangeTests.cs
     │   │   ├── PlanAllergenFilterTests.cs
@@ -207,6 +213,7 @@ src/Services/Recommendation/
     │   │   ├── MealPlanFallbackSelectorTests.cs
     │   │   ├── MealPlanSuggestionBuilderTests.cs
     │   │   ├── WorkoutActivityCatalogTests.cs
+    │   │   ├── WorkoutLimitationRulesTests.cs
     │   │   ├── WorkoutPlanSkeletonBuilderTests.cs
     │   │   ├── WorkoutPlanValidatorTests.cs
     │   │   └── RpcDeadlinePolicyTests.cs
@@ -370,7 +377,7 @@ validate
   → PlanAllergenFilter (exact) + DietaryPreferenceFilter + excluded
   → nếu rỗng: all_candidates_excluded
   → split budgets + dates
-  → retrieve chapter 4 + chapter 12 (top-K)
+  → retrieve chapter 4 + chapter 12 (chỉ giữ chunk chương 12 có `book_page_from >= 238` = Phụ lục A)
   → build cap day (nếu consumed_date trong tuần và >=105%)
   → AI selection cho các ngày còn lại (một call)
   → parse + verify citations + validate cấu trúc/±10%
@@ -390,7 +397,8 @@ validate
 - `MealPlanPromptBuilder` (mới, dùng `PlanPromptFormatter` để bọc corpus):
   - Chỉ gửi candidate đã lọc, đánh số.
   - Gửi ngân sách từng ngày/bữa.
-  - Gửi chunk chương 4 + Phụ lục A trong khối `[BEGIN CORPUS DATA]`.
+  - Gửi chunk chương 4 + chunk chương 12 có `book_page_from >= 238` (Phụ lục A)
+    trong khối `[BEGIN CORPUS DATA]`.
   - System instruction: chỉ chọn `food_index` trong danh sách; không bịa món/
     số liệu; citation chỉ từ chunk; code sẽ viết rationale.
 - `SchemaFactory` thêm `MealPlanSelection`:
@@ -421,13 +429,16 @@ validate
   - Mỗi bữa <= 5 món.
   - Mọi `food_id` thuộc candidate.
   - Không allergen (đã lọc; kiểm tra lại).
-  - Tổng calo/macro ngày trong ±10% ngân sách ngày; nếu candidate không đủ,
-    đánh dấu `targetMet = false`.
+  - Tổng calo/protein/carbs/fat ngày trong ±10% ngân sách ngày; fiber chỉ báo
+    cáo; nếu candidate không đủ, đánh dấu nội bộ để use case ghi warning
+    `target_not_met` (không thêm field contract).
 - `MealPlanFallbackSelector`:
-  - Greedy theo D-07, deterministic, ưu tiên không lặp.
-  - Trả cờ `targetNotMet` nếu không đạt ±10%.
+  - Greedy theo D-07, deterministic, ưu tiên không lặp trong ngày; hạn chế lặp
+    trong tuần khi còn lựa chọn.
+  - Trả cờ nội bộ `targetNotMet` để use case ghi warning `target_not_met`.
 - `MealPlanSuggestionBuilder`:
-  - Khi cap: retrieve chương 4/12, dựng suggestion từ quote đã verify.
+  - Khi cap: retrieve chương 4 + chunk chương 12 có `book_page_from >= 238`
+    (Phụ lục A), dựng suggestion từ quote đã verify.
   - Không có quote → suggestions rỗng + `suggestion_source_missing`.
 
 ### 4. Workout plan
@@ -453,10 +464,13 @@ validate
   - Thiết bị tối thiểu cho từng hoạt động (none/bike/pool/gym...).
   - `WorkoutActivityCatalogBuilder` chỉ giữ hoạt động có alias trong chunk
     chương 5; lọc theo `activity_preference`, `equipment_available`,
-    `limitations`.
+    `limitations`. Khi corpus rỗng, seed catalog từ `WorkoutActivities` và chỉ
+    dùng preference caller (degraded mode D-09).
+  - `WorkoutLimitationRules` dùng bảng ánh xạ đóng (limitation token → activity
+    key); token không khớp bị bỏ qua + warning `unsupported_limitation`.
 - `WorkoutPlanSkeletonBuilder`:
-  - Rải đúng `sessions_per_week` buổi trên `days` ngày, mỗi ngày tối đa một
-    buổi, dùng công thức chia đều cố định.
+  - Rải đúng `sessions_per_week` buổi (sau khi áp mặc định `min(3, days)`) trên
+    `days` ngày, mỗi ngày tối đa một buổi, dùng công thức chia đều cố định.
   - Nếu `sessions_per_week > days` → `invalid_workout_params`.
   - Nếu không đủ hoạt động an toàn → ngày nghỉ + `no_safe_activity`.
 - `WorkoutPlanPromptBuilder` (mới, dùng `PlanPromptFormatter`) +
@@ -466,15 +480,18 @@ validate
     bài tập mới.
 - `WorkoutPlanSelectionParser` + `WorkoutPlanValidator`:
   - Activity phải thuộc catalog; duration = caller; intensity chỉ nhận giá trị
-    có căn cứ trong chunk.
+    có căn cứ trong chunk; nếu không có căn cứ, intensity rỗng + warning
+    `intensity_unverified`.
   - Citation verify; nếu không có citation cho activity → không dùng activity
     đó, ngày đó rest day + `no_safe_activity`.
-- `WorkoutPlanRationaleBuilder`: rationale từ activity + caller constraints +
-  quote đã verify; code dựng, không dùng free text AI.
+- `PlanRationaleBuilder` (dùng chung): rationale từ activity + caller constraints
+  + quote đã verify; code dựng, không dùng free text AI.
 - Degraded mode (corpus rỗng):
   - Có preference → dùng đúng activity caller gửi + duration caller, không
     intensity, citation rỗng, `corpus_not_loaded` + `activity_source_unverified`.
   - Không preference → rest day + `no_safe_activity`.
+  - Limitation không khớp bảng ánh xạ đóng → `unsupported_limitation`, không
+    suy diễn y tế.
 
 ### 5. API mapping và DI
 
@@ -493,7 +510,17 @@ validate
 
 **Unit**:
 
-- `PlanRequestValidatorTests`: từng mã lỗi; thứ Hai; days/meals/sessions.
+- `PlanRequestValidatorTests`: từng mã lỗi; thứ Hai; days/meals/sessions;
+  `goal`/`invalid_candidate_food`; locale; target/consumed âm; sessions = 0 với
+  `days < 3` → `min(3, days)`.
+- `PlanPromptFormatterTests`: corpus-as-data, VERIFIED/NEEDS_REVIEW, không rò
+  nội dung ngoài chunk.
+- `PlanRationaleBuilderTests`: rationale chỉ từ request + quote verify; không
+  chứa khuyến nghị thuốc/chẩn đoán/điều trị.
+- `PlanSafetyTests`: SC-011/FR-011/FR-035 — không có medical advice trong
+  rationale/disclaimer.
+- `WorkoutLimitationRulesTests`: bảng ánh xạ đóng; token lạ bị bỏ qua +
+  `unsupported_limitation`; không suy diễn y tế.
 - `WeeklyBudgetSplitterTests`: tổng ngày/bữa; mapping 1–4 bữa; làm tròn.
 - `PlanDateRangeTests`: 7 ngày liên tiếp; tháng/năm; days = 1.
 - `PlanAllergenFilterTests`: exact sau trim/lowercase/NFC; rỗng; không khớp
@@ -502,7 +529,9 @@ validate
   `Features/Ask/CitationResolverTests.cs`: quote khớp/không khớp, rỗng không
   abstain.
 - `MealPlanCandidateFilterTests`: dedupe; trim 120; dietary; excluded.
-- `MealPlanValidatorTests`: sai số ngày/bữa; món ngoài; >5 món; ±10%.
+- `MealPlanValidatorTests`: sai số ngày/bữa; món ngoài; >5 món; ±10%; fixture
+  "đủ đa dạng" = >= 12 món, có món giàu protein/carbs/fat, món 0 calo, không
+  allergen.
 - `MealPlanFallbackSelectorTests`: provider-down; không lặp; target_not_met.
 - `MealPlanSuggestionBuilderTests`: có/không corpus; suggestion không food_id.
 - `WorkoutActivityCatalogTests`: alias chương 5; preference; equipment;
@@ -516,12 +545,16 @@ validate
 **Integration** (Postgres thật + test double):
 
 - `GenerateMealPlanGrpcTests`: 7 ngày, allergen, food_id, target, disclaimer,
-  cap, fallback, corpus rỗng.
+  cap, fallback, corpus rỗng, response metadata `week_start_date`/
+  `days_requested`/`weekly_target_*`.
 - `GenerateWorkoutPlanGrpcTests`: 7 ngày, đúng sessions, rest day, limitations
-  rỗng/có, corpus rỗng, fallback.
-- `PlanCitationGrpcTests`: quote khớp chunk; quote sai bị loại.
+  rỗng/có, corpus rỗng, fallback, response metadata.
+- `MealPlanCitationGrpcTests`: quote khớp chunk; quote sai bị loại; citation
+  chỉ thuộc chương 4 hoặc chunk Phụ lục A.
+- `WorkoutPlanCitationGrpcTests`: activity chỉ dùng khi có citation verify;
+  quote sai bị loại; corpus rỗng → degraded + `activity_source_unverified`.
 - `PlanNoUserDataTests`: gọi 2 RPC rồi assert `kb.chunk` không đổi; không bảng
-  mới.
+  mới; capture log và assert không có PII.
 - Cập nhật `RecommendationApiFixture` để double trả 2 kind mới.
 
 **Negative control**:
@@ -531,6 +564,7 @@ validate
 - Bỏ validator ±10% → test lệch target đỏ.
 - Bỏ verify quote → test citation sai đỏ.
 - Cho activity ngoài catalog → test workout no-invent đỏ.
+- Bỏ `WorkoutLimitationRules`/rationale guard → test limitation/medical advice đỏ.
 - Dùng deadline chung → test `RpcDeadlinePolicy` đỏ.
 
 ### 7. Tài liệu
@@ -570,6 +604,12 @@ validate
 - [ ] Workout plan: 7 ngày, đúng sessions khi an toàn, activity/duration/
       intensity từ chương 5 + caller khi corpus có; degraded mode theo FR-033 khi
       corpus rỗng; limitations rỗng → warning, provider-down skeleton.
+- [ ] Safety: 0 khuyến nghị thuốc/chẩn đoán/điều trị trong rationale/disclaimer
+      (PlanSafetyTests + negative control).
+- [ ] Citation meal plan chỉ thuộc chương 4 hoặc chunk Phụ lục A; workout chỉ
+      thuộc chương 5.
+- [ ] Response có `week_start_date`, `days_requested`; meal có `weekly_target_*`;
+      workout có `sessions_scheduled`, `minutes_per_session`.
 - [ ] Citation: 100% quote trả về khớp chunk; quote sai bị loại.
 - [ ] Không migration/bảng/dữ liệu người dùng; `kb.chunk` không đổi sau khi gọi.
 - [ ] Không REST/Nginx; không `frontend-guide.md`; kết luận ghi trong `tasks.md`.

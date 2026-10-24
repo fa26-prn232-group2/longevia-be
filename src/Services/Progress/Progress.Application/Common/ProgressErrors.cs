@@ -13,6 +13,9 @@ public static class ProgressErrors
     public static AppException FastingSessionNotFound() =>
         AppException.NotFound("Phiên nhịn ăn không tồn tại.", "progress.fasting_not_found");
 
+    public static AppException FastingEndConflict() =>
+        AppException.Conflict("Phiên nhịn ăn đã kết thúc với thời điểm khác.", "progress.fasting_end_conflict");
+
     public static AppException FastingEndedBeforeStarted() =>
         AppException.BadRequest("Thời điểm kết thúc không được trước thời điểm bắt đầu.", "progress.fasting_invalid_time");
 
@@ -57,4 +60,10 @@ public static class ProgressErrors
 
     public static AppException HeightUnavailable() =>
         AppException.Unprocessable("Không thể tính BMI do chưa có thông tin chiều cao trong hồ sơ.", "progress.height_unavailable");
+
+    public static AppException IdentityServiceUnavailable() =>
+        AppException.ServiceUnavailable("Dịch vụ hồ sơ người dùng (Identity) hiện không khả dụng để xác thực chiều cao.", "progress.identity_unavailable");
+
+    public static AppException ProfileNotFound() =>
+        AppException.NotFound("Không tìm thấy hồ sơ người dùng trong hệ thống Identity.", "progress.profile_not_found");
 }

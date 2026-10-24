@@ -14,10 +14,10 @@ public sealed class MetricsTests(ProgressFixture fixture)
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    private sealed class StubBodyProfileProvider(decimal? stubHeight) : IBodyProfileProvider
+    private sealed class StubBodyProfileProvider(ProfileHeightResult result) : IBodyProfileProvider
     {
-        public Task<decimal?> GetUserHeightCmAsync(Guid userId, CancellationToken ct) =>
-            Task.FromResult(stubHeight);
+        public Task<ProfileHeightResult> GetUserHeightCmAsync(Guid userId, CancellationToken ct) =>
+            Task.FromResult(result);
     }
 
     [Fact]
@@ -28,7 +28,8 @@ public sealed class MetricsTests(ProgressFixture fixture)
         {
             builder.ConfigureServices(services =>
             {
-                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ => new StubBodyProfileProvider(175.0m)));
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.Success, 175.0m))));
             });
         });
 
@@ -60,14 +61,15 @@ public sealed class MetricsTests(ProgressFixture fixture)
     }
 
     [Fact]
-    public async Task Metrics_Log_WhenHeightUnavailable_Returns422Unprocessable()
+    public async Task Metrics_Log_WhenHeightNotRecorded_Returns422Unprocessable()
     {
         var userId = Guid.NewGuid();
         using var factory = fixture.Factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
-                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ => new StubBodyProfileProvider(null)));
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.HeightNotRecorded))));
             });
         });
 
@@ -84,6 +86,56 @@ public sealed class MetricsTests(ProgressFixture fixture)
     }
 
     [Fact]
+    public async Task Metrics_Log_WhenProfileNotFound_Returns404NotFound()
+    {
+        var userId = Guid.NewGuid();
+        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.ProfileNotFound))));
+            });
+        });
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
+
+        var request = new LogBodyMetricRequest(
+            DateTimeOffset.UtcNow,
+            70.0m,
+            null, null, null, null, null);
+
+        var response = await client.PostAsJsonAsync("/metrics", request);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Metrics_Log_WhenIdentityUnavailable_Returns503ServiceUnavailable()
+    {
+        var userId = Guid.NewGuid();
+        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.ServiceUnavailable))));
+            });
+        });
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
+
+        var request = new LogBodyMetricRequest(
+            DateTimeOffset.UtcNow,
+            70.0m,
+            null, null, null, null, null);
+
+        var response = await client.PostAsJsonAsync("/metrics", request);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Metrics_History_PaginationAndUserIsolation()
     {
         var userA = Guid.NewGuid();
@@ -93,7 +145,8 @@ public sealed class MetricsTests(ProgressFixture fixture)
         {
             builder.ConfigureServices(services =>
             {
-                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ => new StubBodyProfileProvider(170.0m)));
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.Success, 170.0m))));
             });
         });
 

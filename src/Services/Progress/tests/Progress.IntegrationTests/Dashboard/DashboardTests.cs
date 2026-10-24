@@ -20,10 +20,10 @@ public sealed class DashboardTests(ProgressFixture fixture)
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    private sealed class StubBodyProfileProvider(decimal? stubHeight) : IBodyProfileProvider
+    private sealed class StubBodyProfileProvider(ProfileHeightResult result) : IBodyProfileProvider
     {
-        public Task<decimal?> GetUserHeightCmAsync(Guid userId, CancellationToken ct) =>
-            Task.FromResult(stubHeight);
+        public Task<ProfileHeightResult> GetUserHeightCmAsync(Guid userId, CancellationToken ct) =>
+            Task.FromResult(result);
     }
 
     [Fact]
@@ -34,7 +34,8 @@ public sealed class DashboardTests(ProgressFixture fixture)
         {
             builder.ConfigureServices(services =>
             {
-                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ => new StubBodyProfileProvider(175.0m)));
+                services.Replace(ServiceDescriptor.Scoped<IBodyProfileProvider>(_ =>
+                    new StubBodyProfileProvider(new ProfileHeightResult(ProfileHeightStatus.Success, 175.0m))));
             });
         });
 

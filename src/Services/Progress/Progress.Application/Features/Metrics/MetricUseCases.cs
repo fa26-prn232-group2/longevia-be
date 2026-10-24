@@ -15,9 +15,17 @@ public sealed class MetricUseCases(
     {
         var userId = currentUser.RequiredId();
 
-        // Lấy chiều cao từ Identity
-        var heightCm = await profileProvider.GetUserHeightCmAsync(userId, ct);
-        if (!heightCm.HasValue || heightCm.Value <= 0)
+        // Lấy chiều cao từ Identity với phân loại trạng thái chính xác
+        var heightResult = await profileProvider.GetUserHeightCmAsync(userId, ct);
+        if (heightResult.Status == ProfileHeightStatus.ServiceUnavailable)
+        {
+            throw ProgressErrors.IdentityServiceUnavailable();
+        }
+        if (heightResult.Status == ProfileHeightStatus.ProfileNotFound)
+        {
+            throw ProgressErrors.ProfileNotFound();
+        }
+        if (heightResult.Status == ProfileHeightStatus.HeightNotRecorded || !heightResult.HeightCm.HasValue || heightResult.HeightCm.Value <= 0)
         {
             throw ProgressErrors.HeightUnavailable();
         }
@@ -26,7 +34,7 @@ public sealed class MetricUseCases(
             userId,
             request.LoggedAt,
             request.WeightKg,
-            heightCm.Value,
+            heightResult.HeightCm.Value,
             request.BodyFatPercent,
             request.WaistCircumferenceCm,
             request.SystolicBloodPressure,

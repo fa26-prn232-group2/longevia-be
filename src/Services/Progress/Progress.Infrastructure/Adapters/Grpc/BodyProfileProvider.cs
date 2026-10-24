@@ -4,10 +4,10 @@ namespace Progress.Infrastructure.Adapters.Grpc;
 
 public sealed class BodyProfileProvider : IBodyProfileProvider
 {
-    public Task<decimal?> GetUserHeightCmAsync(Guid userId, CancellationToken ct)
+    public Task<ProfileHeightResult> GetUserHeightCmAsync(Guid userId, CancellationToken ct)
     {
-        // Integration note: Identity canonical gRPC height RPC is pending in contracts/identity/v1/identity.proto.
-        // Default adapter returns null (no height recorded yet). In integration tests, a mock or stub can be injected.
-        return Task.FromResult<decimal?>(null);
+        // Integration note: Identity canonical gRPC height RPC is pending in contracts/identity/v1/identity.proto from Dev 1 (Nguyên).
+        // Default adapter returns ServiceUnavailable to distinguish external dependency unavailability from missing height.
+        return Task.FromResult(new ProfileHeightResult(ProfileHeightStatus.ServiceUnavailable));
     }
 }

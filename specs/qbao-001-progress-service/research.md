@@ -1,5 +1,41 @@
 # Nghiên cứu và sổ quyết định
 
+## Cập nhật Phase 2 — 2026-10-25
+
+PR #9 MERGED, merge commit và origin/main lúc bắt đầu là
+`2addfea063cbe5753dcf0ea4b925e0edfcda3acc`. Nhánh cũ là ancestor, đã fast-forward
+an toàn; checkout sạch trước sửa. Đã bind/resolve đúng qbao-001-progress-service.
+Diet hiện có trong checkout. Phần mô tả corrective bên dưới là evidence lịch sử.
+
+Developer giao T001–T008 và cho phép xuất bản Draft khi dependency thực còn chặn.
+Steer cùng ngày xác nhận Bảo được tích hợp Progress vào solution, Compose,
+Prometheus và routing/env khi cần; không có Technical Lead, không chờ Duy.
+Nginx route hiện đã đúng nên không sửa; .env.example đã đủ DB/JWT nên không sửa.
+Không có business entity/contract mới; không RabbitMQ ở foundation.
+
+Q08 vẫn **PENDING Bảo + Nguyên**, không tự phê duyệt hoặc sửa Shared/Identity.
+Đã kiểm tra Shared hiện tại: resolver fallback current key khi kid thiếu;
+SigningPublicKey thiếu vẫn đăng ký AddJwtBearer mà không fail-start.
+Progress-local guard dựa ADR 001 yêu cầu SPKI PEM P-256 public key, kid hiện tại/
+previous hợp lệ, subject Guid khác rỗng; reject private key config và options sai.
+Các guard không thay contract ownership 404/403, không chứng minh remediation
+Shared đã hoàn tất. Test probe hai user chỉ chứng minh current-user claim mapping
+và query userId không chọn owner, chưa có resource business để test persistence.
+Negative control bỏ guard kid đã tái hiện token thiếu kid trả 200 (test mong 401 đỏ);
+khôi phục rồi chạy xanh. Security acceptance T004/T005/T008 vẫn PARTIAL.
+
+Q01 còn PENDING; Phase 2 dùng TimeProvider cho UTC instant, không quyết business
+date/zone. Không dùng ngày giờ máy làm policy. Q02–Q10 khác giữ điều kiện hiện có.
+DB foundation không cần migration rỗng: DbContext chưa entity, init xác minh kết
+nối DB đã provision, chỉ gọi MigrateAsync khi có migration; không EnsureCreated,
+không tạo missing DB hay schema business. EF-generated migration thật sẽ bắt đầu
+khi phase có schema được duyệt; không claim đã kiểm chứng future business migration.
+
+Nguồn runtime của foundation được mô tả ở
+[progress-service.md](../../docs/system-design/progress-service.md).
+
+## Lịch sử Phase 1 / corrective
+
 Ngày: 2026-10-24. Corrective đã fetch và đối chiếu remote HEAD/main:
 `418d41b82c4eca846995ed3d505736f0ba7b0c5e` (PR #8 đã merge) tại
 [repository](https://github.com/fa26-prn232-group2/longevia-be).

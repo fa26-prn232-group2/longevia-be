@@ -1,4 +1,111 @@
-# Báo cáo kiểm chứng Phase 1 và corrective PR #9
+# Báo cáo kiểm chứng Phase 2: Foundation & Persistence (2026-10-25)
+
+## 1. Trạng thái repository và Handoff
+
+- Repository: `fa26-prn232-group2/longevia-be`
+- Branch: `feat/progress-service`
+- Base commit: `2addfea063cbe5753dcf0ea4b925e0edfcda3acc` (Merge pull request #9)
+- Head commit: `7e58d6c`
+- Pull Request: [#11 (Draft)](https://github.com/fa26-prn232-group2/longevia-be/pull/11)
+- Owner: Bảo (`qbao`), Dev 3
+- Feature: `qbao-001-progress-service`
+- Phiên tiếp quản: Handoff từ Codex sau khi đạt giới hạn quota. Toàn bộ mã nguồn, cấu hình và kịch bản kiểm thử của Codex được bảo tồn nguyên vẹn và kiểm chứng độc lập bởi Antigravity.
+
+## 2. Kiến trúc Clean Architecture và Solution Integration
+
+Đã triển khai 4 dự án production theo Clean Architecture và 2 dự án kiểm thử:
+- `src/Services/Progress/Progress.Domain/Progress.Domain.csproj` (Domain layer, POCO, không framework)
+- `src/Services/Progress/Progress.Application/Progress.Application.csproj` (Application abstractions, DI, IUnitOfWork, TimeProvider)
+- `src/Services/Progress/Progress.Infrastructure/Progress.Infrastructure.csproj` (EF Core Npgsql, ProgressDbContext, ProgressDatabaseInitializer)
+- `src/Services/Progress/Progress.Api/Progress.Api.csproj` (Host, JWT validation, Problem Details, Observability, Health/Swagger)
+- `src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj` (xUnit, FoundationOptionsTests)
+- `src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj` (xUnit, WebApplicationFactory, PostgreSQL Testcontainers)
+
+Đăng ký giải pháp trong `longevia-be.slnx` dưới `/src/Services/Progress/` và `/src/Services/Progress/tests/` theo Explicit Developer Authorization từ Bảo. Không vi phạm package trung tâm (`Directory.Packages.props`).
+
+## 3. Xác thực (Authentication) & Trạng thái Q08
+
+- Shared Authentication: ES256, chỉ sử dụng public key SPKI PEM P-256 (`Jwt__SigningPublicKey`), hỗ trợ rotation với cặp `Jwt__PreviousKeyId` / `Jwt__PreviousPublicKey`.
+- Tuyệt đối không cung cấp hoặc chấp nhận `Jwt__SigningPrivateKey` trong Progress Service (fail-start nếu cấu hình).
+- Guard kiểm tra chặt chẽ: `ProgressJwtOptionsValidator` từ chối cấu hình thiếu Issuer/Audience/KeyId, PEM sai curve (P-384), PEM không hợp lệ, hoặc private key.
+- Token validation tại runtime từ chối: token không có chữ ký, thuật toán sai, expired, missing kid, unknown kid, missing sub, sub không phải Guid hợp lệ hoặc Guid rỗng, sub xung đột với NameIdentifier claim.
+- Trạng thái Q08 (Identity / Shared JWT cross-owner agreement): **PENDING** giữa Bảo và Nguyên. Không tự ý phê duyệt, không sửa mã nguồn của Identity hay Shared. Mức chấp nhận bảo mật (Security Acceptance) được ghi nhận là **PARTIAL**.
+
+## 4. Cơ sở dữ liệu và Persistence
+
+- DbContext: `ProgressDbContext` kế thừa `DbContext` và trực tiếp thực thi `IUnitOfWork`.
+- Kết nối tới database riêng `progress_db` với quyền `progress_user` (do deployment init script cấp). Không truy cập cơ sở dữ liệu của dịch vụ khác.
+- Chiến lập khởi tạo: `ProgressDatabaseInitializer` mở kết nối kiểm tra (`OpenConnectionAsync` có retry cho lỗi tạm thời của PostgreSQL) trước khi phục vụ traffic; chỉ gọi `MigrateAsync` khi có migration.
+- Không sử dụng `EnsureCreated`, không tự động tạo missing database, không sinh migration rỗng hay bảng giả khi chưa có schema nghiệp vụ được phê duyệt.
+- Kiểm thử thực tế trên PostgreSQL thật qua Testcontainers xác nhận: schema rỗng, khởi tạo lặp không lỗi, xử lý hủy qua CancellationToken và dừng khởi động nếu DB không khả dụng.
+
+## 5. Hạ tầng và Observability (Docker / Gateway / Prometheus / Grafana)
+
+- Dockerfile: `src/Services/Progress/Dockerfile` sử dụng runtime chiseled (`nightly/runtime-deps:10.0-noble-chiseled`), tích hợp probe liveness/readiness native `--health-check`.
+- Docker Compose: Dịch vụ `progress` trong `deployments/docker-compose.yml` kết nối networks `edge` và `data_net`, không expose port ra host bên ngoài.
+- Nginx Gateway: Route `/api/progress/` (strip prefix) hoạt động chính xác. Prefix lặp trả về 404.
+- Endpoints hoạt động:
+  - `GET /api/progress/alive`: 200 `{ "status": "ok" }` (liveness, độc lập DB)
+  - `GET /api/progress/health`: 200 `{ "status": "ok" }` khi DB sẵn sàng, 503 khi DB mất kết nối.
+  - `GET /api/progress/metrics`: Expose Prometheus metrics chuẩn.
+- Swagger UI: Hoạt động trong môi trường Development tại `/api/progress/swagger/index.html` với server base `/api/progress` và Bearer JWT definition; tắt ở Production.
+- Prometheus: Scrape job `progress` trong `deployments/prometheus/prometheus.yml` thu thập từ `progress:8080/metrics`. Target hiển thị UP.
+- Metrics thực tế: Metric `http_server_request_duration_seconds_count{job="progress"}` tăng thực tế (kiểm chứng từ 32 lên 45 requests).
+- Grafana: Datasource Prometheus query `up{job="progress"} = 1`, dashboard provisioned `aspnetcore-overview` đã tải thành công.
+- Kịch bản smoke test độc lập `scripts/smoke/progress-smoke.ps1` chạy pass 100%.
+
+## 6. Bằng chứng thực thi Gates & Kiểm thử
+
+| Kiểm tra / Gate | Lệnh thực tế | Kết quả |
+| --- | --- | --- |
+| Định dạng mã nguồn (Fast Gate) | `dotnet format longevia-be.slnx --verify-no-changes` | Pass (Exit 0, không có vi phạm định dạng) |
+| Debug Build | `dotnet build longevia-be.slnx --no-restore -warnaserror` | Pass (0 Warning, 0 Error, 5.71s) |
+| Release Build (Close-out Gate) | `dotnet build longevia-be.slnx -c Release --no-restore -warnaserror` | Pass (0 Warning, 0 Error, 13.01s) |
+| Progress Unit Tests | `dotnet test src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj` | Pass (21 passed, 0 failed, 0 skipped, 96ms) |
+| Progress Integration Tests | `dotnet test src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj` | Pass (34 passed, 0 failed, 0 skipped, PostgreSQL Testcontainers, 13s) |
+| Full Test Suite (Release) | `dotnet test longevia-be.slnx -c Release -m:1` | Pass (592 passed, 0 failed, 0 skipped across 9 assemblies) |
+| Quét lỗ hổng bảo mật NuGet | `dotnet list longevia-be.slnx package --vulnerable --include-transitive` | Pass (27 projects không có gói có lỗ hổng) |
+| Team Feature Check | `pwsh scripts/speckit/team-feature.ps1 check` | Pass (Features: 6, Owner: qbao, layout consistent) |
+| Git Whitespace Check | `git diff --check` | Pass (Exit 0) |
+| Runtime Smoke Tests | `pwsh scripts/smoke/progress-smoke.ps1` | Pass 100% (16/16 assertions pass) |
+| CI Workflow GitHub Actions (PR #11) | [Run 40120146939](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40120146939) | Pass (build-test 3m24s, 592 tests passed) |
+
+### Chi tiết phân bổ 592 Tests toàn hệ thống (Release)
+
+| Test Assembly | Passed | Failed | Skipped | Thời gian |
+| --- | --- | --- | --- | --- |
+| `Diet.UnitTests` | 11 | 0 | 0 | 263 ms |
+| `Diet.IntegrationTests` | 16 | 0 | 0 | 6 s |
+| `Identity.UnitTests` | 52 | 0 | 0 | 1 s |
+| `Identity.IntegrationTests` | 6 | 0 | 0 | 20 s |
+| `Progress.UnitTests` | 21 | 0 | 0 | 682 ms |
+| `Progress.IntegrationTests` | 34 | 0 | 0 | 16 s |
+| `Recommendation.UnitTests` | 372 | 0 | 0 | 261 ms |
+| `Recommendation.IntegrationTests` | 64 | 0 | 0 | 35 s |
+| `Worker.UnitTests` | 16 | 0 | 0 | 109 ms |
+| **Tổng cộng** | **592** | **0** | **0** | |
+
+## 7. Đánh giá trạng thái Task Phase 2 (T001–T008)
+
+| Task | Trạng thái | Bằng chứng | Phần còn lại / Blocker |
+| --- | --- | --- | --- |
+| **T001** | **PARTIAL** | Q01 ghi nhận date logic (chặn Phase 4–6); Q08 guard P-256/kid/sub implemented | Q08 PENDING thỏa thuận Bảo + Nguyên; không tự approve cross-service |
+| **T002** | **DONE** | 4 Clean Architecture projects + 2 test projects đăng ký `longevia-be.slnx` | Không còn |
+| **T003** | **DONE** | Progress.UnitTests (21 tests), Progress.IntegrationTests (34 tests) với PostgreSQL Testcontainers | Không còn |
+| **T004** | **PARTIAL** | AuthTests.cs (14 scenarios), FoundationOptionsTests.cs, HostTests.cs | Chờ Q08 cross-service; chưa có business resource để test 404 isolation |
+| **T005** | **PARTIAL** | Host Program.cs, Auth/, HostExtensions.cs, Problem Details, TimeProvider | Chờ Q08; không sửa Shared/Identity |
+| **T006** | **DONE** | ProgressDbContext (IUnitOfWork), ProgressDatabaseInitializer, HostTests | Không còn (migration EF sẽ tạo ở Phase 3 khi có schema duyệt) |
+| **T007** | **DONE** | progress-smoke.ps1 pass: Docker healthy, Nginx route, target UP, metric tăng (32->45), Grafana OK | Không còn |
+| **T008** | **PARTIAL** | Báo cáo kiểm chứng đầy đủ tại verification.md; gates xanh | Chờ Q08 để hoàn tất nghiệm thu an toàn toàn diện |
+
+## 8. Kết luận nghiệm thu Phase 2
+
+Trạng thái: **`PHASE_2_PARTIAL_DRAFT_PR`**
+Toàn bộ phần việc độc lập của Phase 2 (Clean Architecture skeleton, Persistence, Observability, Smoke test, Unit & Integration tests) đã hoàn thành và vượt qua 100% các cổng kiểm tra bắt buộc. Do Q08 vẫn đang PENDING thỏa thuận giữa Bảo và Nguyên, PR được mở dưới dạng Draft PR để đảm bảo tuân thủ nguyên tắc an toàn kiến trúc.
+
+---
+
+# Lịch sử kiểm chứng Phase 1 và corrective PR #9
 
 ## Corrective — đối chiếu 2026-10-24/25 (Asia/Saigon)
 

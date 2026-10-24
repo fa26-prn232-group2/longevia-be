@@ -31,6 +31,10 @@ process chết giữa commit và publish.
 
 - Consumer MUST xử lý trùng event mà không tạo hiệu ứng phụ lần hai (lưu event id
   đã xử lý, hoặc thao tác có tính lũy đẳng).
+- Claim dùng để khóa xử lý có thể được tạo trước side effect, nhưng chỉ được giữ
+  lại sau khi side effect thành công. Nếu xử lý lỗi và broker sẽ retry, consumer
+  MUST giải phóng claim trước khi ném lỗi; nếu không, lần retry có thể bị nhận
+  nhầm là event đã xử lý và bị bỏ qua.
 - Consumer MUST bỏ qua an toàn field lạ khi contract thêm field mới.
 
 ## Thứ tự & đồng hồ

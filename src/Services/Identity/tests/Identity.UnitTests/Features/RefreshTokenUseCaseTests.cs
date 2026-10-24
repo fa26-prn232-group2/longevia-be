@@ -31,8 +31,9 @@ public sealed class RefreshTokenUseCaseTests
             "hashed",
             "Alex",
             DateTimeOffset.UtcNow,
-            "token");
-        user.Verify(DateTimeOffset.UtcNow);
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
+        Assert.True(user.TryVerify("hash", DateTimeOffset.UtcNow));
         await _userRepository.AddAsync(user);
 
         var existingToken = RefreshToken.Create(
@@ -58,7 +59,7 @@ public sealed class RefreshTokenUseCaseTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrowUnauthorized_WhenTokenIsRevoked()
     {
-        var user = User.Create(Guid.NewGuid(), "alex@example.com", "hashed", "Alex", DateTimeOffset.UtcNow, "token");
+        var user = User.Create(Guid.NewGuid(), "alex@example.com", "hashed", "Alex", DateTimeOffset.UtcNow, "hash", DateTimeOffset.UtcNow.AddHours(24));
         await _userRepository.AddAsync(user);
 
         var revokedToken = RefreshToken.Create(
@@ -86,7 +87,8 @@ public sealed class RefreshTokenUseCaseTests
             "hashed",
             "Pending User",
             DateTimeOffset.UtcNow,
-            "token");
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
         await _userRepository.AddAsync(user);
         await _refreshTokenRepository.AddAsync(RefreshToken.Create(
             Guid.NewGuid(),

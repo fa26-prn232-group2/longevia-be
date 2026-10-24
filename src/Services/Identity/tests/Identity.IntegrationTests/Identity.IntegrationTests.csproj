@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Identity.Api\Identity.Api.csproj" />
+    <ProjectReference Include="..\..\..\Worker\Worker.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

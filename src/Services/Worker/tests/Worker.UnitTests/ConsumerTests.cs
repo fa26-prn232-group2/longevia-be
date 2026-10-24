@@ -43,6 +43,46 @@ public sealed class ConsumerTests
     }
 
     [Fact]
+    public async Task PasswordReset_SendFails_RetryCanClaimAndSend()
+    {
+        var sender = new FakeEmailSender { FailNextSend = true };
+        var consumer = CreatePasswordResetConsumer(sender, new CaptureLoggerProvider());
+        var message = new PasswordResetRequestedEvent("a@example.com", "retry-token", OccurredOn.AddMinutes(15), OccurredOn);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => consumer.HandleAsync(message));
+        await consumer.HandleAsync(message);
+
+        Assert.Single(sender.Sent);
+        Assert.Contains("retry-token", sender.Sent[0].HtmlBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UserRegistered_SendFails_RetryCanClaimAndSend()
+    {
+        var sender = new FakeEmailSender { FailNextSend = true };
+        var consumer = CreateUserRegisteredConsumer(sender, new CaptureLoggerProvider());
+        var message = new UserRegisteredEvent(Guid.NewGuid(), "a@example.com", "A", "retry-token", OccurredOn);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => consumer.HandleAsync(message));
+        await consumer.HandleAsync(message);
+
+        Assert.Single(sender.Sent);
+        Assert.Contains("retry-token", sender.Sent[0].HtmlBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PasswordReset_DistinctTokensForSameEmailAndTimestamp_SendSeparately()
+    {
+        var sender = new FakeEmailSender();
+        var consumer = CreatePasswordResetConsumer(sender, new CaptureLoggerProvider());
+
+        await consumer.HandleAsync(new PasswordResetRequestedEvent("a@example.com", "token-1", OccurredOn.AddMinutes(15), OccurredOn));
+        await consumer.HandleAsync(new PasswordResetRequestedEvent("a@example.com", "token-2", OccurredOn.AddMinutes(15), OccurredOn));
+
+        Assert.Equal(2, sender.Sent.Count);
+    }
+
+    [Fact]
     public async Task UserRegistered_DistinctEvents_SendSeparately()
     {
         var sender = new FakeEmailSender();
@@ -82,6 +122,7 @@ public sealed class ConsumerTests
         await consumer.HandleAsync(message);
 
         Assert.Contains(sender.Sent, e => e.HtmlBody.Contains(token, StringComparison.Ordinal));
+        Assert.DoesNotContain(sender.Sent, e => e.HtmlBody.Contains("/auth/reset-password?token=", StringComparison.Ordinal));
         Assert.DoesNotContain(logs.Entries, e => e.Message.Contains(token, StringComparison.Ordinal));
     }
 

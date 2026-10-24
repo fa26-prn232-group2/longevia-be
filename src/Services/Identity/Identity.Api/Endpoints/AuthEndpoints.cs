@@ -1,5 +1,7 @@
 using Identity.Application.Features.Auth;
+using Identity.Application.Features.Password;
 using Identity.Application.Features.Registration;
+using Identity.Application.Features.Verification;
 using Longevia.Shared.Validation;
 
 namespace Identity.Api.Endpoints;
@@ -21,6 +23,19 @@ public static class AuthEndpoints
         .AddEndpointFilter<ValidationFilter<RegisterUserRequest>>()
         .WithName("RegisterUser")
         .WithSummary("Đăng ký tài khoản người dùng mới")
+        .AllowAnonymous();
+
+        group.MapGet("/verify", async (
+            [AsParameters] VerifyUserRequest request,
+            VerifyUserUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.NoContent();
+        })
+        .AddEndpointFilter<ValidationFilter<VerifyUserRequest>>()
+        .WithName("VerifyUser")
+        .WithSummary("Xác minh địa chỉ email và kích hoạt tài khoản")
         .AllowAnonymous();
 
         group.MapPost("/login", async (
@@ -60,6 +75,45 @@ public static class AuthEndpoints
         .WithName("Logout")
         .WithSummary("Thu hồi Refresh Token")
         .RequireAuthorization();
+
+        group.MapPost("/change-password", async (
+            ChangePasswordRequest request,
+            ChangePasswordUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.NoContent();
+        })
+        .AddEndpointFilter<ValidationFilter<ChangePasswordRequest>>()
+        .WithName("ChangePassword")
+        .WithSummary("Đổi mật khẩu của tài khoản hiện tại")
+        .RequireAuthorization();
+
+        group.MapPost("/forgot-password", async (
+            ForgotPasswordRequest request,
+            ForgotPasswordUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.Accepted((string?)null);
+        })
+        .AddEndpointFilter<ValidationFilter<ForgotPasswordRequest>>()
+        .WithName("ForgotPassword")
+        .WithSummary("Yêu cầu gửi email đặt lại mật khẩu")
+        .AllowAnonymous();
+
+        group.MapPost("/reset-password", async (
+            ResetPasswordRequest request,
+            ResetPasswordUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.NoContent();
+        })
+        .AddEndpointFilter<ValidationFilter<ResetPasswordRequest>>()
+        .WithName("ResetPassword")
+        .WithSummary("Đặt lại mật khẩu bằng token email")
+        .AllowAnonymous();
 
         return app;
     }

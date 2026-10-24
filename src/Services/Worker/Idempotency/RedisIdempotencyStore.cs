@@ -15,4 +15,11 @@ public sealed class RedisIdempotencyStore(IConnectionMultiplexer multiplexer) : 
         var db = multiplexer.GetDatabase();
         return await db.StringSetAsync(key, "1", ttl, When.NotExists);
     }
+
+    /// <inheritdoc />
+    public async Task ReleaseAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var db = multiplexer.GetDatabase();
+        await db.KeyDeleteAsync(key);
+    }
 }

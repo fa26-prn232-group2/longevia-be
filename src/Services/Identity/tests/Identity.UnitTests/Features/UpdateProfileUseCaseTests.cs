@@ -33,7 +33,8 @@ public sealed class UpdateProfileUseCaseTests
             "hashed",
             "Profile User",
             DateTimeOffset.UtcNow,
-            "token");
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
         await _userRepository.AddAsync(user);
 
         _currentUser.UserId = user.Id;

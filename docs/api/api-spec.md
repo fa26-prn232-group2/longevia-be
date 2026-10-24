@@ -1,4 +1,4 @@
-﻿# Tài Liệu Đặc Tả API Chi Tiết (API Specification) — Longevia Backend
+# Tài Liệu Đặc Tả API Chi Tiết (API Specification) — Longevia Backend
 
 ---
 
@@ -59,7 +59,7 @@
   ```
 - **Validation**:
   - `email`: Bắt buộc, đúng định dạng RFC 5322, tối đa 255 ký tự.
-  - `password`: Tối thiểu 8 ký tự, có ít nhất 1 chữ hoa, 1 chữ số, 1 ký tự đặc biệt.
+  - `password`: Tối thiểu 8 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số, 1 ký tự đặc biệt.
   - `fullName`: Bắt buộc, độ dài 2–100 ký tự.
 - **Response `201 Created`**:
   ```json
@@ -77,7 +77,15 @@
 
 ---
 
-### 2.2 `POST /api/identity/auth/login` — Đăng nhập
+### 2.2 `GET /api/identity/auth/verify?token={token}` — Xác minh email
+- **Xác thực**: Public; token là bí mật dùng một lần.
+- **Mô tả**: Kích hoạt tài khoản `PendingVerification` nếu token khớp và chưa hết hạn. Link email hiện tại mở endpoint này bằng GET.
+- **Thời hạn**: 24 giờ từ lúc đăng ký. Token đã dùng, sai hoặc hết hạn đều không kích hoạt tài khoản.
+- **Response `204 No Content`**: Xác minh thành công.
+- **Lỗi `400 Bad Request`**: `code = "identity.invalid_verification_token"` khi token sai, hết hạn hoặc đã dùng.
+- **Lưu ý**: GET xác minh trực tiếp theo quyết định sản phẩm; trình quét link trong email có thể tự mở link và kích hoạt tài khoản.
+
+### 2.3 `POST /api/identity/auth/login` — Đăng nhập
 - **Xác thực**: Public
 - **Mô tả**: Xác thực thông tin đăng nhập, ký phát hành Access Token (ES256) và cấp Refresh Token.
 - **Request Body**:
@@ -101,7 +109,7 @@
 
 ---
 
-### 2.3 `POST /api/identity/auth/refresh` — Làm mới Access Token
+### 2.4 `POST /api/identity/auth/refresh` — Làm mới Access Token
 - **Xác thực**: Public
 - **Mô tả**: Sử dụng Refresh Token để đổi lấy cặp Access Token + Refresh Token mới (Rotation).
 - **Request Body**:
@@ -124,7 +132,7 @@
 
 ---
 
-### 2.4 `POST /api/identity/auth/logout` — Đăng xuất
+### 2.5 `POST /api/identity/auth/logout` — Đăng xuất
 - **Xác thực**: Bearer JWT
 - **Request Body**:
   ```json
@@ -134,9 +142,40 @@
   ```
 - **Response `204 No Content`**
 
----
+### 2.6 `POST /api/identity/auth/change-password` — Đổi mật khẩu
+- **Xác thực**: Bearer JWT.
+- **Request Body**:
+  ```json
+  {
+    "currentPassword": "CurrentPassword123!",
+    "newPassword": "NewPassword456!"
+  }
+  ```
+- **Validation**: mật khẩu mới tối thiểu 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt, cùng policy với đăng ký.
+- **Response `204 No Content`**: đổi mật khẩu thành công; mọi refresh token của user bị thu hồi. Access JWT hiện tại có thể dùng tới khi hết hạn (tối đa 15 phút).
+- **Lỗi**: `400 identity.invalid_current_password` nếu mật khẩu hiện tại không khớp; `401 identity.unauthorized` nếu JWT không còn được chấp nhận; lỗi validation theo `validation.failed`.
 
-### 2.5 `GET /api/identity/users/me` — Lấy thông tin cá nhân
+### 2.7 `POST /api/identity/auth/forgot-password` — Yêu cầu đặt lại mật khẩu
+- **Xác thực**: Public.
+- **Request Body**: `{ "email": "alex.minh@example.com" }`.
+- **Response `202 Accepted`** không có body trong mọi trường hợp, kể cả email không tồn tại, chưa kích hoạt hoặc không thể nhận reset; response không tiết lộ trạng thái tài khoản.
+- Với tài khoản Active, Identity ghi reset token hash (TTL 15 phút) và `PasswordResetRequestedEvent` vào transactional outbox trong cùng transaction. Reset token trước đó còn hiệu lực của user bị vô hiệu hóa.
+- Email được gửi bởi Worker; Identity không gọi SMTP/Brevo.
+
+### 2.8 `POST /api/identity/auth/reset-password` — Đặt lại mật khẩu
+- **Xác thực**: Public.
+- **Request Body**:
+  ```json
+  {
+    "token": "reset-token-from-email",
+    "newPassword": "NewPassword456!"
+  }
+  ```
+- **Validation**: policy mật khẩu giống endpoint đăng ký.
+- **Response `204 No Content`**: token được tiêu thụ nguyên tử, mật khẩu được đổi và mọi refresh token của user bị thu hồi. Access JWT đã phát hành hết hạn tự nhiên trong tối đa 15 phút.
+- **Lỗi `400 Bad Request`**: `identity.invalid_password_reset_token` nếu token sai, hết hạn, đã dùng hoặc bị thay thế.
+
+### 2.9 `GET /api/identity/users/me` — Lấy thông tin cá nhân
 - **Xác thực**: Bearer JWT
 - **Response `200 OK`**:
   ```json
@@ -144,7 +183,6 @@
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "email": "alex.minh@example.com",
     "fullName": "Alex Minh",
-    "avatarUrl": "https://res.cloudinary.com/longevia/avatar.jpg",
     "profile": {
       "birthDate": "1998-05-15",
       "biologicalSex": "Male",
@@ -158,7 +196,7 @@
 
 ---
 
-### 2.6 `PUT /api/identity/users/me/profile` — Cập nhật hồ sơ thể trạng cơ sở
+### 2.10 `PUT /api/identity/users/me/profile` — Cập nhật hồ sơ thể trạng cơ sở
 - **Xác thực**: Bearer JWT
 - **Request Body**:
   ```json
@@ -930,7 +968,8 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 > **Nền tảng**: RabbitMQ + MassTransit Consumer | **Database**: Không sở hữu DB nghiệp vụ
 
 ### 6.1 `UserRegisteredEvent`
-- **Exchange**: `identity.user-registered`
+- **Exchange**: `longevia.events` (`topic`)
+- **Routing key**: `identity.user.registered`
 - **Producer**: Identity Service (qua Transactional Outbox)
 - **Consumer**: `UserRegisteredConsumer` (Background Worker)
 - **Schema**:
@@ -943,19 +982,22 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
     "occurredOn": "2026-10-21T14:30:00Z"
   }
   ```
-- **Hành động**: Gọi Brevo API gửi email kích hoạt tài khoản kèm verification link:
+- **Hành động**: Worker gửi email qua SMTP relay được cấu hình (Mailpit local, Brevo production), kèm verification link dùng GET trực tiếp:
   `http://localhost:8080/api/identity/auth/verify?token=abc123token...`
 
 ### 6.2 `PasswordResetRequestedEvent`
-- **Exchange**: `identity.password-reset-requested`
+- **Exchange**: `longevia.events` (`topic`)
+- **Routing key**: `identity.user.password-reset-requested`
 - **Producer**: Identity Service
-- **Consumer**: `PasswordResetConsumer` (Background Worker)
+- **Consumer**: `PasswordResetRequestedConsumer` (Background Worker, queue `worker.email`)
 - **Schema**:
   ```json
   {
     "email": "alex.minh@example.com",
     "resetToken": "xyz789reset...",
-    "expiresAt": "2026-10-21T14:45:00Z"
+    "expiresAt": "2026-10-21T14:45:00Z",
+    "occurredOn": "2026-10-21T14:30:00Z"
   }
   ```
-- **Hành động**: Gọi Brevo API gửi email chứa mã bảo mật hoặc đường link đổi mật khẩu có hạn 15 phút.
+- **Schema version**: v1 (`src/Shared/Events/PasswordResetRequestedEvent.cs`).
+- **Hành động**: Worker gửi email chứa mã/link đặt lại mật khẩu có hạn 15 phút qua SMTP relay cấu hình (Mailpit local, Brevo production).

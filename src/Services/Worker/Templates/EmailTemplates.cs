@@ -9,16 +9,13 @@ namespace Longevia.Worker.Templates;
 /// payload ONLY. The Worker MUST NOT aggregate business numbers — the
 /// producer prepares every figure (calories, fasting hours, streaks) before
 /// publishing; these methods only format them into HTML.
-/// All user inputs are HTML-encoded; tokens are URL-encoded into links.
+/// All user inputs are HTML-encoded; only verification tokens appear in links.
 /// </summary>
 public static class EmailTemplates
 {
-    // Gateway base URLs owned by compose (GATEWAY_PORT). The verify path is
-    // mandated by data-model §2.2; the reset path follows the same Identity
-    // auth-route convention — reconfirm with the Identity feature if its
-    // verify/reset routes ever change.
+    // Gateway base URL owned by compose (GATEWAY_PORT); the verify path is
+    // mandated by data-model §2.2.
     private const string VerifyBaseUrl = "http://localhost:8080/api/identity/auth/verify";
-    private const string ResetBaseUrl = "http://localhost:8080/api/identity/auth/reset-password";
 
     /// <summary>Account-verification email with an activation link.</summary>
     public static EmailMessage Verification(string toEmail, string toName, string token)
@@ -38,22 +35,18 @@ public static class EmailTemplates
     }
 
     /// <summary>
-    /// Password-reset email: OTP code + reset link, valid 15 minutes.
+    /// Password-reset email: one-time code, valid 15 minutes.
     /// The event carries no display name, so the greeting stays neutral.
     /// </summary>
     public static EmailMessage PasswordReset(string toEmail, string token, DateTimeOffset expiresAt)
     {
-        var link = $"{ResetBaseUrl}?token={Uri.EscapeDataString(token)}";
         var body = Layout(
             "Đặt lại mật khẩu Longevia",
             "Chào bạn,",
             $"""
-            <p>Bạn vừa yêu cầu đặt lại mật khẩu. Mã OTP của bạn là:</p>
+            <p>Bạn vừa yêu cầu đặt lại mật khẩu. Nhập mã bảo mật sau trong ứng dụng Longevia:</p>
             <p style="text-align:center;font-size:28px;font-weight:bold;letter-spacing:6px;margin:20px 0;">{WebUtility.HtmlEncode(token)}</p>
-            <p>Hoặc nhấn nút bên dưới (liên kết hết hạn sau <strong>15 phút</strong>, lúc {expiresAt.UtcDateTime:HH:mm} UTC):</p>
-            <p style="text-align:center;margin:24px 0;">
-              <a href="{WebUtility.HtmlEncode(link)}" style="display:inline-block;padding:12px 28px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:bold;">Đặt lại mật khẩu</a>
-            </p>
+            <p>Mã hết hạn sau <strong>15 phút</strong>, lúc {expiresAt.UtcDateTime:HH:mm} UTC.</p>
             <p style="color:#6b7280;font-size:13px;">Nếu bạn không yêu cầu điều này, hãy bỏ qua email này.</p>
             """);
         return new EmailMessage(toEmail, string.Empty, "Đặt lại mật khẩu Longevia", body);

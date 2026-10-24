@@ -18,4 +18,14 @@ public static class AuthErrors
         AppException.Unauthorized(
             "Yêu cầu xác thực để thực hiện thao tác này.",
             "identity.unauthorized");
+
+    public static AppException InvalidPasswordResetToken() =>
+        AppException.BadRequest(
+            "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.",
+            "identity.invalid_password_reset_token");
+
+    public static AppException InvalidCurrentPassword() =>
+        AppException.BadRequest(
+            "Mật khẩu hiện tại không chính xác.",
+            "identity.invalid_current_password");
 }

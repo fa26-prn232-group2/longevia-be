@@ -42,7 +42,8 @@ public sealed class Es256JwtTokenGeneratorTests
             "hashed_pass",
             "Alex Minh",
             DateTimeOffset.UtcNow,
-            "token123");
+            "hash",
+            DateTimeOffset.UtcNow.AddHours(24));
 
         var tokenString = _sut.GenerateAccessToken(user);
 

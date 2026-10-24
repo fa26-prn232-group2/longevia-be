@@ -12,6 +12,13 @@ public sealed class RefreshTokenRepository(IdentityDbContext dbContext) : IRefre
     public async Task AddAsync(RefreshToken token, CancellationToken ct = default) =>
         await dbContext.RefreshTokens.AddAsync(token, ct);
 
+    public async Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
+        await dbContext.RefreshTokens
+            .Where(rt => rt.UserId == userId && !rt.IsRevoked)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(rt => rt.IsRevoked, true)
+                .SetProperty(rt => rt.RevokedAt, (DateTimeOffset?)revokedAt), ct);
+
     public void Update(RefreshToken token) =>
         dbContext.RefreshTokens.Update(token);
 }

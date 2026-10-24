@@ -1,4 +1,5 @@
 using Identity.Application.Features.Registration;
+using Identity.Application.Features.Verification;
 using Identity.Domain.Constants;
 using Identity.UnitTests.Common;
 using Longevia.Shared.Errors;
@@ -38,7 +39,12 @@ public sealed class RegisterUserUseCaseTests
         Assert.True(await _userRepository.ExistsByEmailAsync(request.Email));
         Assert.Equal(1, _unitOfWork.SaveChangesCalls);
         Assert.Single(_eventPublisher.PublishedEvents);
-        Assert.IsType<UserRegisteredEvent>(_eventPublisher.PublishedEvents[0]);
+        var registeredEvent = Assert.IsType<UserRegisteredEvent>(_eventPublisher.PublishedEvents[0]);
+        Assert.Equal(64, registeredEvent.VerificationToken.Length);
+        var user = Assert.Single(_userRepository.Users);
+        Assert.NotEqual(registeredEvent.VerificationToken, user.VerificationTokenHash);
+        Assert.Equal(64, user.VerificationTokenHash?.Length);
+        Assert.InRange(user.VerificationTokenExpiresAt!.Value - user.CreatedAt, TimeSpan.FromHours(24), TimeSpan.FromHours(24));
     }
 
     [Fact]

@@ -46,29 +46,11 @@ public sealed class FastingUseCases(
     {
         var userId = currentUser.RequiredId();
 
-        var session = await fastingRepo.GetByIdAsync(request.SessionId, userId, ct);
+        var session = await fastingRepo.EndSessionWithLockAsync(request.SessionId, userId, request.EndedAt, ct);
         if (session == null)
         {
             throw ProgressErrors.FastingSessionNotFound();
         }
-
-        if (session.Status == FastingStatus.Completed)
-        {
-            return new EndFastingResponse(
-                session.Id,
-                session.ActualHours,
-                session.TargetHours,
-                session.IsGoalReached,
-                session.Status.ToString());
-        }
-
-        if (request.EndedAt < session.StartedAt)
-        {
-            throw ProgressErrors.FastingEndedBeforeStarted();
-        }
-
-        session.End(request.EndedAt);
-        await uow.SaveChangesAsync(ct);
 
         return new EndFastingResponse(
             session.Id,

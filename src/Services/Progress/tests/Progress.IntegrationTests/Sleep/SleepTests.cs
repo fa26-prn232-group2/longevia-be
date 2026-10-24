@@ -50,6 +50,29 @@ public sealed class SleepTests(ProgressFixture fixture)
     }
 
     [Fact]
+    public async Task Sleep_Log_ConcurrentOverlappingRequests_OnlyOneSucceeds()
+    {
+        var userId = Guid.NewGuid();
+        var sleptAt = DateTimeOffset.UtcNow.AddHours(-10);
+        var wokeAt = DateTimeOffset.UtcNow.AddHours(-2);
+
+        // Bắn 5 request cùng một khoảng thời gian đồng thời
+        var tasks = Enumerable.Range(0, 5).Select(async _ =>
+        {
+            using var client = CreateClient(userId);
+            return await client.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));
+        }).ToList();
+
+        var responses = await Task.WhenAll(tasks);
+
+        var createdCount = responses.Count(r => r.StatusCode == HttpStatusCode.Created);
+        var conflictCount = responses.Count(r => r.StatusCode == HttpStatusCode.Conflict);
+
+        Assert.Equal(1, createdCount);
+        Assert.Equal(4, conflictCount);
+    }
+
+    [Fact]
     public async Task Sleep_Log_WokeBeforeSlept_Returns400BadRequest()
     {
         var userId = Guid.NewGuid();

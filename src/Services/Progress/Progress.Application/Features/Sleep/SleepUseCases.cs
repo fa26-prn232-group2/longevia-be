@@ -7,7 +7,6 @@ namespace Progress.Application.Features.Sleep;
 
 public sealed class SleepUseCases(
     ISleepRepository sleepRepo,
-    IUnitOfWork uow,
     ICurrentUser currentUser)
 {
     public async Task<SleepResponse> LogAsync(LogSleepRequest request, CancellationToken ct)
@@ -24,16 +23,7 @@ public sealed class SleepUseCases(
             throw ProgressErrors.SleepDurationExceeded();
         }
 
-        // Kiểm tra overlap
-        var hasOverlap = await sleepRepo.HasOverlapAsync(userId, request.SleptAt, request.WokeAt, ct);
-        if (hasOverlap)
-        {
-            throw ProgressErrors.SleepOverlap();
-        }
-
-        var log = SleepLog.Create(userId, request.SleptAt, request.WokeAt, request.SleepQuality);
-        sleepRepo.Add(log);
-        await uow.SaveChangesAsync(ct);
+        var log = await sleepRepo.LogWithConcurrencyCheckAsync(userId, request.SleptAt, request.WokeAt, request.SleepQuality, ct);
 
         return new SleepResponse(
             log.Id,

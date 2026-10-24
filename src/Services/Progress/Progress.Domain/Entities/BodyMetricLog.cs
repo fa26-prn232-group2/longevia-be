@@ -90,7 +90,8 @@ public sealed class BodyMetricLog
         var heightM = heightUsedCm / 100m;
         var rawBmi = weightKg / (heightM * heightM);
         var bmi = Math.Round(rawBmi, 2);
-        var category = Constants.BmiCategory.FromBmi(bmi);
+        // Q04: Phân loại theo giá trị chưa làm tròn (rawBmi), hiển thị/lưu tròn 2 chữ số (bmi)
+        var category = Constants.BmiCategory.FromBmi(rawBmi);
 
         return new BodyMetricLog
         {

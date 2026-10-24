@@ -133,6 +133,120 @@ public sealed class FastingTests(ProgressFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, endResp.StatusCode);
     }
 
+    [Fact]
+    public async Task Fasting_End_RetryWithSameEndedAt_Returns200OK()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var startedAt = DateTimeOffset.UtcNow.AddHours(-16);
+        var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
+        var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
+        Assert.NotNull(session);
+
+        var endedAt = startedAt.AddHours(16);
+        var endReq = new EndFastingRequest(session.SessionId, endedAt);
+
+        // First end
+        var endResp1 = await client.PostAsJsonAsync("/fasting/end", endReq);
+        Assert.Equal(HttpStatusCode.OK, endResp1.StatusCode);
+        var ended1 = await endResp1.Content.ReadFromJsonAsync<EndFastingResponse>(JsonOpts);
+        Assert.NotNull(ended1);
+        Assert.Equal("Completed", ended1.Status);
+
+        // Replay retry with same endedAt
+        var endResp2 = await client.PostAsJsonAsync("/fasting/end", endReq);
+        Assert.Equal(HttpStatusCode.OK, endResp2.StatusCode);
+        var ended2 = await endResp2.Content.ReadFromJsonAsync<EndFastingResponse>(JsonOpts);
+        Assert.NotNull(ended2);
+        Assert.Equal(ended1.ActualHours, ended2.ActualHours);
+        Assert.Equal(ended1.IsGoalReached, ended2.IsGoalReached);
+    }
+
+    [Fact]
+    public async Task Fasting_End_RetryWithDifferentEndedAt_Returns409Conflict()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var startedAt = DateTimeOffset.UtcNow.AddHours(-18);
+        var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
+        var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
+        Assert.NotNull(session);
+
+        var endedAt1 = startedAt.AddHours(16);
+        var endResp1 = await client.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAt1));
+        Assert.Equal(HttpStatusCode.OK, endResp1.StatusCode);
+
+        // Retry with a DIFFERENT endedAt (18 hours instead of 16)
+        var endedAt2 = startedAt.AddHours(18);
+        var endResp2 = await client.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAt2));
+        Assert.Equal(HttpStatusCode.Conflict, endResp2.StatusCode);
+    }
+
+    [Fact]
+    public async Task Fasting_End_ConcurrentDifferentEndedAt_OnlyOneSucceeds()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var startedAt = DateTimeOffset.UtcNow.AddHours(-18);
+        var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
+        var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
+        Assert.NotNull(session);
+
+        var endedAtA = startedAt.AddHours(16);
+        var endedAtB = startedAt.AddHours(17);
+
+        var taskA = Task.Run(async () =>
+        {
+            using var c = CreateClient(userId);
+            return await c.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAtA));
+        });
+        var taskB = Task.Run(async () =>
+        {
+            using var c = CreateClient(userId);
+            return await c.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAtB));
+        });
+
+        var results = await Task.WhenAll(taskA, taskB);
+
+        var okCount = results.Count(r => r.StatusCode == HttpStatusCode.OK);
+        var conflictCount = results.Count(r => r.StatusCode == HttpStatusCode.Conflict);
+
+        Assert.Equal(1, okCount);
+        Assert.Equal(1, conflictCount);
+    }
+
+    [Fact]
+    public async Task Fasting_End_ConcurrentIdenticalEndedAt_BothSucceedWith200OK()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var startedAt = DateTimeOffset.UtcNow.AddHours(-16);
+        var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
+        var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
+        Assert.NotNull(session);
+
+        var endedAt = startedAt.AddHours(16);
+
+        var taskA = Task.Run(async () =>
+        {
+            using var c = CreateClient(userId);
+            return await c.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAt));
+        });
+        var taskB = Task.Run(async () =>
+        {
+            using var c = CreateClient(userId);
+            return await c.PostAsJsonAsync("/fasting/end", new EndFastingRequest(session.SessionId, endedAt));
+        });
+
+        var results = await Task.WhenAll(taskA, taskB);
+
+        Assert.All(results, r => Assert.Equal(HttpStatusCode.OK, r.StatusCode));
+    }
+
     private HttpClient CreateClient(Guid userId)
     {
         var client = fixture.Factory.CreateClient();

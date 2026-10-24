@@ -76,4 +76,48 @@ public sealed class BmiTests
         Assert.Equal(22.86m, log.Bmi);
         Assert.Equal(175.0m, log.HeightUsedCm);
     }
+
+    [Fact]
+    public void Create_ClassifiesUsingUnroundedBmi_WhenRoundingCrossesThreshold()
+    {
+        var userId = Guid.NewGuid();
+        var loggedAt = DateTimeOffset.UtcNow;
+
+        // Dùng Height = 200 cm (2m), HeightM^2 = 4m2:
+        // Cần rawBmi = 24.996 => Weight = 24.996 * 4 = 99.984 kg
+        // rawBmi = 99.984 / 4 = 24.996 < 25.0 (NormalWeight)
+        // Math.Round(24.996, 2) = 25.00
+        var testWeight = 99.984m;
+        var testHeight = 200.0m;
+
+        var log = BodyMetricLog.Create(userId, loggedAt, testWeight, testHeight);
+
+        Assert.Equal(25.00m, log.Bmi);
+        Assert.Equal(BmiCategory.NormalWeight, log.BmiCategory);
+    }
+
+    [Theory]
+    // Ngưỡng 18.5 (Underweight / NormalWeight)
+    [InlineData(73.984, 200.0, 18.50, BmiCategory.Underweight)]  // raw = 18.496 < 18.5, round = 18.50
+    [InlineData(74.000, 200.0, 18.50, BmiCategory.NormalWeight)] // raw = 18.500 == 18.5, round = 18.50
+    [InlineData(74.016, 200.0, 18.50, BmiCategory.NormalWeight)] // raw = 18.504 > 18.5, round = 18.50
+    // Ngưỡng 25.0 (NormalWeight / Overweight)
+    [InlineData(99.984, 200.0, 25.00, BmiCategory.NormalWeight)] // raw = 24.996 < 25.0, round = 25.00
+    [InlineData(100.000, 200.0, 25.00, BmiCategory.Overweight)]  // raw = 25.000 == 25.0, round = 25.00
+    [InlineData(100.016, 200.0, 25.00, BmiCategory.Overweight)]  // raw = 25.004 > 25.0, round = 25.00
+    // Ngưỡng 30.0 (Overweight / Obese)
+    [InlineData(119.984, 200.0, 30.00, BmiCategory.Overweight)]  // raw = 29.996 < 30.0, round = 30.00
+    [InlineData(120.000, 200.0, 30.00, BmiCategory.Obese)]       // raw = 30.000 == 30.0, round = 30.00
+    [InlineData(120.016, 200.0, 30.00, BmiCategory.Obese)]       // raw = 30.004 > 30.0, round = 30.00
+    public void Create_BmiThresholdBoundaries_ClassifiesStrictlyByRawBmi(
+        double weightKg, double heightCm, double expectedDisplayBmi, string expectedCategory)
+    {
+        var userId = Guid.NewGuid();
+        var loggedAt = DateTimeOffset.UtcNow;
+
+        var log = BodyMetricLog.Create(userId, loggedAt, (decimal)weightKg, (decimal)heightCm);
+
+        Assert.Equal((decimal)expectedDisplayBmi, log.Bmi);
+        Assert.Equal(expectedCategory, log.BmiCategory);
+    }
 }

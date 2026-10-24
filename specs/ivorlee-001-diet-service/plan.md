@@ -58,6 +58,42 @@ Không tự commit/push. Workflow Spec-kit tự động chưa được yêu cầ
 
 Không sửa Shared hay contract liên service hiện hữu.
 
+## Giai đoạn cung cấp tích hợp — 2026-10-25
+
+Developer giao Huy thực hiện phần Diet cung cấp cho các service và soạn file
+Markdown riêng gửi Nguyên/Bảo/Đức/Duy. Tiếp tục feature hiện tại, không tự Git.
+Giai đoạn này thay quyết định chưa publish event ở trên: bổ sung contract mới
+MealLoggedEvent v1 (create-only), MassTransit EF bus outbox và replay có chủ đích.
+Không đổi payload event Identity, không implement code Progress/Worker.
+
+### Shared Files & Conflict Hotspots — bổ sung
+
+| Path | Thay đổi | Phối hợp |
+| --- | --- | --- |
+| src/Shared/Events/MealLoggedEvent.cs | Contract mới 6 field, EventId ổn định bằng MealLogId | Bảo consumer; không sửa event Identity |
+| contracts/events/v1/README.md | Đăng ký contract meal mới | Nguyên đang thêm profile event ở file này đã merge main |
+| src/Services/Diet/Diet.Infrastructure/DependencyInjection.cs | Producer RabbitMQ + EF bus outbox | Chỉ composition Diet |
+| src/Services/Diet/Diet.Infrastructure/Persistence/DietDbContext.cs và Migrations/** | Outbox schema của diet_db | Feature Diet duy nhất đang mở |
+| src/Services/Diet/Diet.Infrastructure/Messaging/MealActivityReplayService.cs | Replay hosted service sau migrate/bus ready, trước traffic | Không REST admin route mới |
+| deployments/docker-compose.yml | RabbitMQ config/dependency Diet, replay flag mặc định false | Duy; không chạm Progress PR #11 |
+| docs/system-design/diet-service.md | Event, replay và giới hạn completeness | Bảo/Duy |
+
+Contract-first: create-only MealLoggedEvent có EventId, UserId, MealLogId,
+BusinessDate, CreatedAt, OccurredOn. EventId = MealLogId do chỉ có một loại
+sự kiện tạo; OccurredOn là thời điểm publish/replay được enqueue, không thay ngày
+nghiệp vụ. SchemaVersion = 1. Routing key diet.meal.logged, exchange topic
+longevia.events. Không tự tạo queue Progress trong producer.
+
+Replay bật bằng Diet:ReplayMealActivitiesOnStart, trước nhận request, đọc snapshot
+RepeatableRead theo batch 100, ghi outbox cùng một transaction. Mỗi lần chạy có
+thể phát lại cùng EventId; consumer phải inbox/dedup bền vững và unique MealLogId.
+Phải bind queue trước replay. Count queued không phải count delivered hoặc chứng
+nhận Progress complete; consumer/Bảo xác minh đủ projection sau drain/reconcile.
+Chưa có update/delete meal; không hứa hỗ trợ lifecycle chưa triển khai.
+
+Constitution: chỉ diet_db; event versioned, outbox cùng transaction; không thêm
+chiều gRPC chưa có ADR; kiểm thử PostgreSQL + RabbitMQ thật và rollback/replay.
+
 ## Local và kiểm chứng
 
 .env riêng, SMTP mailpit:1025 trong compose; UI localhost:8025, Grafana
@@ -67,3 +103,46 @@ quantity lỗi. PostgreSQL thật test auth, isolation, paging, target upsert, t
 meal chính xác, atomicity và snapshot lịch sử. Smoke Nginx + Prometheus thật.
 
 Không đặt READY toàn bộ Diet khi [phần hoãn](deferred.md) chưa tích hợp thật.
+
+### Kiểm chứng token Identity thật → Diet
+
+Sửa mapping cấu hình JWT trong deployments/docker-compose.yml của Identity
+(chỉ tên key container, giữ .env bên ngoài), truyền issuer/audience và credentials
+RabbitMQ đồng nhất. Không sửa code/migration Identity hoặc Shared auth policy.
+Thêm scripts/smoke/identity-diet-smoke.ps1 (shared hotspot mới) để kiểm chứng
+register → RabbitMQ → Worker → Mailpit → verify → login → Diet, chỉ local Mailpit.
+Phối hợp Nguyên/Duy review config; không có REST liên service trong runtime.
+
+## Hoàn thiện nghĩa vụ producer — snapshot đối soát
+
+Developer yêu cầu làm hết phần Huy nợ, chỉ giữ việc bị chặn. Bổ sung export
+snapshot meal activity cho operator để Bảo có bộ ID/ngày/số lượng và checksum
+đối chiếu, không đọc diet_db hay mở gRPC/REST mới. Định dạng versioned tại
+contracts/diet/v1/meal-activity-snapshot.md (shared hotspot mới, Diet sở hữu).
+Program.cs thêm chế độ --export-meal-activities <path> chạy một lần sau migrate,
+không start HTTP/bus. Diet.Infrastructure đăng ký MealActivitySnapshotExporter.
+Snapshot JSON: schemaVersion, snapshotId, capturedAtUtc, entries (MealLogId,
+UserId, BusinessDate, CreatedAt), recordCount, entriesSha256. SHA-256 của từng
+JSON entry compact nguyên văn UTF-8 + LF theo thứ tự Id. RepeatableRead snapshot,
+stream file tạm cùng thư mục, chỉ rename sang đích sau khi hoàn tất; không ghi đè.
+Không có dữ liệu tên món, email, token. File chứa user IDs/ngày: lưu trong
+artifacts/diet (gitignored) và chỉ chuyển cho operator/consumer được phép.
+
+Shared hotspots thêm: src/Services/Diet/Diet.Api/Program.cs (CLI),
+scripts/diet/verify-meal-activity-snapshot.ps1 (verifier count/checksum/ID),
+contracts/diet/v1/meal-activity-snapshot.md. Không sửa task/source Progress.
+Kiểm chứng PostgreSQL snapshot rỗng và 101 log/nhiều user, checksum/ID chính xác,
+không overwrite; negative control sửa entry làm verifier thất bại. Completeness
+producer file không thay consumer reconciliation hoặc policy timezone của Bảo.
+
+## Metadata dị ứng do Diet sở hữu
+
+CandidateFood.allergens trong proto Recommendation đã có. Bổ sung optional
+allergens vào POST /foods và FoodResponse: null = chưa khai báo, [] = người tạo
+khai báo không có tag, không phải kiểm định an toàn. Tối đa 32 tag, mỗi tag 1..50
+ký tự, trim/lowercase/dedup/sort; không suy alias, thành phần hoặc dị ứng từ tên.
+Seed/các row cũ giữ null. EF migration AddFoodAllergenMetadata (diet_db duy nhất),
+không đổi proto hay source Đức. AI chưa mở cho đến khi profile/đầu vào và nguồn
+metadata đủ theo contract; unknown không được map ngầm thành danh sách an toàn.
+Shared hotspots bổ sung docs/api/api-spec.md (2 field optional, counts 75 thay 73),
+FoodItemConfiguration.cs/model snapshot/migration và frontend guide.

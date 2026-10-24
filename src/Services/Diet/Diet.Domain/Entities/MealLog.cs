@@ -18,6 +18,8 @@ public sealed class MealLog
             throw new ArgumentException("Loại bữa ăn không hợp lệ.", nameof(mealType));
         }
 
+        // PostgreSQL persists microseconds; keep the original and replay event timestamps identical.
+        now = now.AddTicks(-(now.Ticks % 10));
         return new() { Id = Guid.NewGuid(), UserId = userId, Date = date, MealType = mealType, CreatedAt = now };
     }
 

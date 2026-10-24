@@ -13,7 +13,7 @@ public sealed class FoodUseCases(IFoodRepository foods, IUnitOfWork unitOfWork, 
     {
         var food = FoodItem.Create(user.RequiredId(), request.Name, request.Category,
             request.ServingSize, request.ServingUnit, new NutritionValues(request.Calories,
-                request.ProteinGrams, request.CarbsGrams, request.FatGrams, request.FiberGrams));
+                request.ProteinGrams, request.CarbsGrams, request.FatGrams, request.FiberGrams), request.Allergens);
         foods.Add(food);
         await unitOfWork.SaveChangesAsync(ct);
         return FoodResponse.From(food);

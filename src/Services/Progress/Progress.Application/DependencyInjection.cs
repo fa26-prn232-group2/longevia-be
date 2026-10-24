@@ -10,6 +10,8 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<Features.Fasting.FastingUseCases>();
+        services.AddScoped<Features.Water.WaterUseCases>();
+        services.AddScoped<Features.Sleep.SleepUseCases>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

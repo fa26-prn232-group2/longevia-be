@@ -49,6 +49,8 @@ public static class HostExtensions
             await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503))
             .AllowAnonymous();
         app.MapFastingEndpoints();
+        app.MapWaterEndpoints();
+        app.MapSleepEndpoints();
         return app;
     }
 

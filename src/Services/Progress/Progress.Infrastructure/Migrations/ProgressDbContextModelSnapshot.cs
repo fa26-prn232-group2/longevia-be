@@ -60,6 +60,66 @@ namespace Progress.Infrastructure.Migrations
 
                     b.ToTable("fasting_sessions", (string)null);
                 });
+
+            modelBuilder.Entity("Progress.Domain.Entities.SleepLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<double>("DurationHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("SleepQuality")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("SleptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("WokeAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Date");
+
+                    b.HasIndex("UserId", "WokeAt");
+
+                    b.ToTable("sleep_logs", (string)null);
+                });
+
+            modelBuilder.Entity("Progress.Domain.Entities.WaterLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AmountMl")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("LoggedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Date");
+
+                    b.ToTable("water_logs", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

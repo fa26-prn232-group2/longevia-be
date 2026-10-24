@@ -20,6 +20,8 @@ public static class DependencyInjection
             provider.GetRequiredService<IOptions<ProgressDatabaseOptions>>().Value.Progress));
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ProgressDbContext>());
         services.AddScoped<IFastingRepository, Repositories.FastingRepository>();
+        services.AddScoped<IWaterRepository, Repositories.WaterRepository>();
+        services.AddScoped<ISleepRepository, Repositories.SleepRepository>();
         return services;
     }
 }

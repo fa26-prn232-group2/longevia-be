@@ -10,6 +10,7 @@ public sealed class ProgressDbContext(DbContextOptions<ProgressDbContext> option
     public DbSet<Progress.Domain.Entities.WaterLog> WaterLogs => Set<Progress.Domain.Entities.WaterLog>();
     public DbSet<Progress.Domain.Entities.SleepLog> SleepLogs => Set<Progress.Domain.Entities.SleepLog>();
     public DbSet<Progress.Domain.Entities.BodyMetricLog> BodyMetricLogs => Set<Progress.Domain.Entities.BodyMetricLog>();
+    public DbSet<Progress.Domain.Entities.ActivityContribution> ActivityContributions => Set<Progress.Domain.Entities.ActivityContribution>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

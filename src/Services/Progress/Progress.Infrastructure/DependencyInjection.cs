@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ISleepRepository, Repositories.SleepRepository>();
         services.AddScoped<IBodyMetricRepository, Repositories.BodyMetricRepository>();
         services.AddScoped<IBodyProfileProvider, Adapters.Grpc.BodyProfileProvider>();
+        services.AddScoped<IActivityContributionRepository, Repositories.ActivityContributionRepository>();
         return services;
     }
 }

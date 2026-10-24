@@ -52,6 +52,7 @@ public static class HostExtensions
         app.MapWaterEndpoints();
         app.MapSleepEndpoints();
         app.MapMetricEndpoints();
+        app.MapDashboardEndpoints();
         return app;
     }
 

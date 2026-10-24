@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<Features.Water.WaterUseCases>();
         services.AddScoped<Features.Sleep.SleepUseCases>();
         services.AddScoped<Features.Metrics.MetricUseCases>();
+        services.AddScoped<Features.Dashboard.DashboardUseCases>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

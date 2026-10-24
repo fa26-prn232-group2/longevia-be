@@ -1,0 +1,10 @@
+{
+  "owner": "qbao",
+  "number": 1,
+  "slug": "progress-service",
+  "branch": "feat/progress-service",
+  "status": "open",
+  "services": ["Progress"],
+  "description": "Phase 1: đặc tả và kế hoạch hợp đồng Progress Service; không triển khai mã ứng dụng hoặc migration",
+  "opened_at": "2026-10-24"
+}

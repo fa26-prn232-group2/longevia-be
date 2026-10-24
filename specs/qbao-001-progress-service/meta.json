@@ -1,0 +1,12 @@
+{
+  "owner": "qbao",
+  "number": 1,
+  "slug": "progress-service",
+  "branch": "feat/progress-service",
+  "status": "open",
+  "services": [
+    "Progress"
+  ],
+  "description": "Phase 2: foundation và persistence Progress Service; Q08 chờ đồng thuận Bảo + Nguyên, chưa triển khai nghiệp vụ Phase 3–6",
+  "opened_at": "2026-10-24"
+}

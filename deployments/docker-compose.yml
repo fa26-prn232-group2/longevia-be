@@ -133,6 +133,56 @@ services:
   # .NET services (Phase 4: identity + worker live; diet/progress/
   # recommendation uncomment as each Dockerfile lands).
   #
+  diet:
+    build:
+      context: ..
+      dockerfile: src/Services/Diet/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Diet: Host=postgres;Port=5432;Database=${DIET_DB:-diet_db};Username=diet_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      # Map external env names to the property names consumed by Shared auth.
+      Jwt__Issuer: ${JWT__ISSUER:-longevia}
+      Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+      Jwt__KeyId: ${JWT__KEY_ID:-longevia-dev-01}
+      Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:-}
+      Jwt__PreviousKeyId: ${JWT__PREVIOUS_KEY_ID:-}
+      Jwt__PreviousPublicKey: ${JWT__PREVIOUS_PUBLIC_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+
+  progress:
+    build:
+      context: ..
+      dockerfile: src/Services/Progress/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      # Progress verifies ES256 with public keys only; never inject a private key.
+      Jwt__Issuer: ${JWT__ISSUER:-longevia}
+      Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+      Jwt__KeyId: ${JWT__KEY_ID:-longevia-dev-01}
+      Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:-}
+      Jwt__PreviousKeyId: ${JWT__PREVIOUS_KEY_ID:-}
+      Jwt__PreviousPublicKey: ${JWT__PREVIOUS_PUBLIC_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+    healthcheck:
+      test: ["CMD", "./Progress.Api", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ulimits:
+      core: 0
+
   identity:
     build:
       context: ..

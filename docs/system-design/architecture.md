@@ -52,6 +52,7 @@ Người dùng dùng **Web App** và **Mobile App**. Hai client nói chuyện v�
 ## Liên quan
 
 - [design-pattern.md](design-pattern.md) — cấu trúc bên trong mỗi service.
+- [diet-service.md](diet-service.md) — dữ liệu, API và phạm vi Diet độc lập.
 - [microservices/01-service-boundaries.md](microservices/01-service-boundaries.md) — ranh giới và quyền gọi.
 - [contract-purity-pattern.md](contract-purity-pattern.md) — hợp đồng liên service.
 - [event-driven-design.md](event-driven-design.md) — event & RabbitMQ.

@@ -30,4 +30,24 @@
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Longevia.Shared.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Diet/">
+    <Project Path="src/Services/Diet/Diet.Api/Diet.Api.csproj" />
+    <Project Path="src/Services/Diet/Diet.Application/Diet.Application.csproj" />
+    <Project Path="src/Services/Diet/Diet.Domain/Diet.Domain.csproj" />
+    <Project Path="src/Services/Diet/Diet.Infrastructure/Diet.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Diet/tests/">
+    <Project Path="src/Services/Diet/tests/Diet.IntegrationTests/Diet.IntegrationTests.csproj" />
+    <Project Path="src/Services/Diet/tests/Diet.UnitTests/Diet.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Progress/">
+    <Project Path="src/Services/Progress/Progress.Api/Progress.Api.csproj" />
+    <Project Path="src/Services/Progress/Progress.Application/Progress.Application.csproj" />
+    <Project Path="src/Services/Progress/Progress.Domain/Progress.Domain.csproj" />
+    <Project Path="src/Services/Progress/Progress.Infrastructure/Progress.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Progress/tests/">
+    <Project Path="src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj" />
+    <Project Path="src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj" />
+  </Folder>
 </Solution>

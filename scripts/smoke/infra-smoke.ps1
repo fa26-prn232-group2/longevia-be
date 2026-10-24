@@ -29,6 +29,13 @@ $ErrorActionPreference = "Continue"
 $failedCount = 0
 $passedCount = 0
 
+function Get-ResponseText($Response) {
+    if ($Response.Content -is [byte[]]) {
+        return [Text.Encoding]::UTF8.GetString($Response.Content)
+    }
+    return [string]$Response.Content
+}
+
 function Assert-Test {
     param(
         [string]$Name,
@@ -74,16 +81,16 @@ Assert-Test -Name "Nginx unknown route returns 404 ProblemDetails with Vietnames
     $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/unknown-service/test" -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 5
     $contentType = if ($resp.Headers["Content-Type"]) { $resp.Headers["Content-Type"] } else { "" }
     $hasProblemJson = $contentType -like "*problem+json*"
-    $hasVietnamese = $resp.Content -like "*Không tìm thấy*"
+    $hasVietnamese = (Get-ResponseText $resp) -like "*Không tìm thấy*"
     return ($resp.StatusCode -eq 404 -and $hasProblemJson -and $hasVietnamese)
 }
 
-# 3. Nginx Gateway 502 ProblemDetails UTF-8 on unreachable upstream (/api/diet/health)
+# 3. Progress is not implemented yet; Diet now has its own healthy upstream.
 Assert-Test -Name "Nginx unreachable upstream returns 502 ProblemDetails with Vietnamese UTF-8" -TestBlock {
-    $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/diet/health" -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 5
+    $resp = Invoke-WebRequest -Uri "$GatewayUrl/api/progress/health" -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 5
     $contentType = if ($resp.Headers["Content-Type"]) { $resp.Headers["Content-Type"] } else { "" }
     $hasProblemJson = $contentType -like "*problem+json*"
-    $hasVietnamese = $resp.Content -like "*Dịch vụ không khả dụng*"
+    $hasVietnamese = (Get-ResponseText $resp) -like "*Dịch vụ không khả dụng*"
     return ($resp.StatusCode -eq 502 -and $hasProblemJson -and $hasVietnamese)
 }
 

@@ -45,12 +45,12 @@ Constitution. Bảng là kiểm tra thiết kế, không phải evidence runtime
 
 | Nguyên tắc | Cách đáp ứng thiết kế | Trạng thái |
 | --- | --- | --- |
-| I — ownership | Chỉ progress_db, không FK/import/DB access service khác. | Đạt ở tài liệu. |
-| II — gRPC | Height/read phụ thuộc dùng contract gRPC nếu được duyệt, deadline/error explicit, direction cần ADR. | BMI tích hợp BLOCKED Q02; không lách HTTP. |
+| I — ownership | Chỉ progress_db, không FK/import/DB access service khác. | Đạt ở tài liệu và thực tế. |
+| II — gRPC | Q02 hướng gRPC read profile/height đã APPROVED (chiều cao decimal, BMI snapshot bất biến); schema Protobuf chi tiết PENDING trước Phase 5; không lách HTTP. | Đã thống nhất hướng kiến trúc; schema PENDING trước Phase 5. |
 | III — RabbitMQ | Versioned contract trước consumer; outbox cùng transaction, inbox/projection atomic, idempotent. | Meal BLOCKED Q09. |
-| IV — contract-first | Proposal ở feature/contracts, không đổi canonical; Nguyên/Huy/lead phải approve. | Chưa cho phép code dependency. |
-| V — verified gates | Negative control, scoped tests, E2E thật và gate theo AGENTS §2; đỏ dừng commit/push. | Chưa có runtime Progress; Phase 1 gate ghi riêng. |
-| EF/config/observability | Migration Code First khi sang phase sau; fail-start; public key env, health, metrics chuẩn. | Có task foundation, không migration Phase 1. |
+| IV — contract-first | Proposal ở feature/contracts, không đổi canonical; Nguyên/Huy phải thống nhất và approve (không có role Technical Lead). | Đã thống nhất Q02 và Q08-A. |
+| V — verified gates | Negative control, scoped tests, E2E thật và gate theo AGENTS §2; đỏ dừng commit/push. | Phase 2 đã pass 100% gates. |
+| EF/config/observability | Migration Code First khi sang phase sau; fail-start; public key env, health, metrics chuẩn. | Phase 2 initializer đã kiểm chứng. |
 | Team | Owner qbao từ user, helper cấp 001, services=[Progress], status=open. | Feature chưa hoàn tất triển khai nên không closed. |
 
 E2E bắt buộc của toàn feature triển khai chưa thể có ở Phase 1 không code;
@@ -102,65 +102,103 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
   không đổi Shared. Input validation 400 theo system-design, không lấy ví dụ 422
   thấp thẩm quyền hơn làm chuẩn cho mọi lỗi.
 - Auth verify ES256/kid/issuer/audience/lifetime; current user Guid hợp lệ; filter
-  UserId ở mọi query/mutation. Không đọc HttpContext trong Application. Ownership
-  failure shape và Shared gaps Q08 phải được lead xử lý trước claim security hoàn chỉnh.
+  UserId ở mọi query/mutation. Không đọc HttpContext trong Application. Q08-A JWT policy
+  đã được Bảo + Nguyên APPROVED, Progress guard đạt chuẩn bảo mật độc lập; Shared Auth
+  remediation do Nguyên sở hữu trong PR riêng; Q08-B resource ownership và error policy
+  (403 vs 404) PENDING cho business resource endpoints (Phase 3–6).
 
 ## Phụ thuộc và điều kiện mở chặn
 
 | Owner | Cần xác nhận | Tác động |
 | --- | --- | --- |
-| Nguyên — Identity | Height int proposal vs API decimal; RPC/presence/effective-time/deadline/error hoặc event snapshot + backfill; profile missing; Shared auth strict kid/fail-start với lead. | BMI Phase 5/Q02; auth Q08. Không sửa feature Identity đang open. |
+| Nguyên — Identity | Q02 hướng gRPC read profile/height đã APPROVED (chiều cao decimal khớp PR #10 numeric(5,2)); schema protobuf cụ thể trong identity.proto PENDING trước Phase 5. Q08-A JWT policy đã APPROVED; Shared Auth remediation do Nguyên sở hữu trong PR riêng của Identity. | Q02 đã duyệt hướng kiến trúc, schema PENDING trước Phase 5; Q08-A approved, Shared Auth follow-up PR riêng. |
 | Huy — Diet | Create meal đã có; còn event/outbox hoặc gRPC active days, business date/zone, bootstrap/completeness. Future edit/delete/change-date/revision/tombstone cần contract trước endpoint mới. | Full streak Phase 6/Q09 vẫn BLOCKED/PENDING INTEGRATION. |
-| Bảo + Huy; phối hợp Nguyên/lead | Q10 provider cân nặng Progress → Diet cho BMR/TDEE; latest/asOf/effective-time, missing/future/backdate/stale/deadline/provenance và ADR Diet → Progress/Identity. | T038 theo dõi approval Phase 5; provider implementation feature riêng sau duyệt, không chặn BMI core. Bmr/Tdee hiện nullable và mapper trả null. |
-| Duy — Gateway/Worker | Compose Progress, Prometheus scrape, route/Swagger reachability, shared solution/package coordination; digest proposal feature riêng. | Host foundation Phase 2; không triển khai Worker/Gateway Phase 1. |
+| Bảo + Huy; phối hợp Nguyên | Q10 provider cân nặng Progress → Diet cho BMR/TDEE; latest/asOf/effective-time, missing/future/backdate/stale/deadline/provenance và ADR Diet → Progress/Identity. | T038 theo dõi approval Phase 5; provider implementation feature riêng sau duyệt, không chặn BMI core. Bmr/Tdee hiện nullable và mapper trả null. |
+| Duy — Gateway/Worker | Compose Progress, Prometheus scrape, route/Swagger reachability, shared solution/package coordination; digest proposal feature riêng. | Host foundation Phase 2 (đã kiểm chứng hoàn tất). |
 | Đức — Recommendation | RPC workout/habits đã tồn tại; nếu mở tích hợp tương lai cần direction ADR, profile/nutrition, deadline/limits/citation/disclaimer. | Deferred; không chặn core độc lập. |
-| Bảo/product/lead | Q01/Q03–Q08 và ADR direction mới. | Chặn task liên quan trước code; danh sách đầy đủ ở research. |
+| Bảo/product | Q01, Q03–Q07, Q08-B, Q09–Q10 và ADR direction mới giữa các affected service owners. | Chặn task liên quan trước code; danh sách đầy đủ ở research. |
 
 ## Shared Files & Conflict Hotspots
 
-Phase 1 **không sửa** hàng nào dưới đây. Đây là điều kiện phối hợp cho Phase 2–6,
-không phải quyền sửa file owner khác. Registry base: Identity feature còn open với
-Identity/Shared/Worker; Progress không nhận ownership các file đó.
+### Quyền thực thi Phase 2 — 2026-10-25
+
+Developer giao T001–T008, cho phép đồng bộ nhánh an toàn, commit/push có gate và
+mở PR Phase 2 mới. `longevia-be.slnx`: người sửa Bảo; **Explicit developer authorization**
+để đăng ký sáu project Progress (bốn production, hai test); không cần Duy duyệt
+thêm riêng file này. Giữ nguyên project/folder hiện có. Không sửa central packages.
+Composition root/DI và persistence mới dưới Progress do Bảo sở hữu, xử lý tuần tự.
+Không tạo business entity, schema hoặc migration rỗng chỉ để đủ checklist.
+
+Steer developer 2026-10-25 thay hạn chế phối hợp hạ tầng trước đó: Bảo sở hữu
+integration riêng Progress, được trực tiếp sửa Compose, Prometheus, Nginx và
+.env.example khi cần; không chờ Duy. Không có Technical Lead được chỉ định.
+Đã fetch lại: origin/main ở `2e249a29531bee383402970d2f85c279a292366e` sau PR #10,
+không có xung đột. Nginx đã có prefix stripping `/api/progress/`; giữ route hiện có.
+Q08-A JWT authentication policy đã được Bảo + Nguyên **APPROVED**: thống nhất policy
+strict như Progress guard (token ES256, kid bắt buộc hợp lệ, sub là GUID hợp lệ khác rỗng,
+fail-start khi thiếu public key hoặc cấu hình private key). Progress giữ guard hiện tại và
+đã verified 100% tests; Shared Auth alignment là external follow-up do Nguyên sở hữu trong PR
+riêng của Identity, không sửa trong PR #11.
+Q08-B resource ownership và error status policy (403 vs 404, Problem Details mapping,
+isolation tests) là **PENDING** cho các business resource endpoints (Phase 3–6); Phase 2 không có
+business resource nên không bị chặn.
+Q02 đã được Nguyên + Bảo **APPROVED hướng kiến trúc gRPC read profile/height**:
+Identity là provider, Progress là consumer; chiều cao kiểu decimal (khớp PR #10
+`numeric(5,2)`); snapshot BMI bất biến. Schema RPC cụ thể trong identity.proto
+PENDING trước Phase 5; runtime provider chưa có trong Identity; không tạo code RPC/adapter trong Phase 2.
+T003 chỉ cần PostgreSQL thật; chưa publisher/consumer nên không thêm RabbitMQ.
+Clock dùng trực tiếp TimeProvider thay interface IClock trùng chức năng.
+
+DbContext Phase 2 chưa có entity: xác minh kết nối DB đã provision trước startup,
+gọi MigrateAsync chỉ khi assembly có migration. Không EnsureCreated, không tự tạo
+DB thiếu, không DDL/bảng giả; migration đầu tiên sinh bằng EF ở phase có schema
+đã duyệt. Trước nhận traffic phải kiểm tra DB, lỗi/cancellation dừng startup.
+Chỉ ConnectionStrings:Progress trỏ progress_db và progress_user.
+
+Phase 1 không sửa hàng nào dưới đây. Đây là điều kiện phối hợp cho Phase 2–6,
+không phải quyền sửa file owner khác.
 
 | Path | Nhu cầu dự kiến | Owner / phối hợp trước sửa | Điểm hợp nhất |
 | --- | --- | --- | --- |
-| deployments/docker-compose.yml | Thêm host Progress/env/networks/health, không expose private key. | Duy; chờ xác nhận slot thay đổi. | Phase 2 host. |
-| deployments/nginx/nginx.conf | Route Progress đã có; chỉ sửa nếu kiểm tra xác nhận thiếu. | Duy. | Phase 2 routing test. |
-| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics; thiếu job thì target không xuất hiện. | Duy. | Phase 2 observability. |
-| deployments/postgres/init/01-databases.sh | Đã có progress DB/user; kiểm tra quyền, không sửa tay DB. | Duy. | Phase 2 integration. |
-| longevia-be.slnx | Thêm project Progress/tests sau khi tạo. | Bảo phối hợp Duy/lead, tránh nhiều PR sửa đồng thời. | Phase 2. |
-| Directory.Packages.props | Chỉ nếu thiếu package so với dependency hiện có; ưu tiên tái sử dụng version. | Lead + Duy; PR shared riêng nếu cần. | Trước package mới; không mặc định cần sửa. |
+| deployments/docker-compose.yml | Thêm host Progress/env/networks, không expose private key. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 host (đã hoàn tất). |
+| deployments/nginx/nginx.conf | Reuse route Progress đã có; chỉ sửa nếu có lỗi thực tế. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 routing test (đã kiểm chứng). |
+| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 observability (đã kiểm chứng). |
+| .env.example | Tái sử dụng Progress DB/JWT config; chỉ sửa nếu thiếu; comment English. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 config. |
+| deployments/postgres/init/01-databases.sh | Đã có progress DB/user; kiểm tra quyền, không sửa tay DB. | Duy. | Phase 2 integration (đã kiểm chứng). |
+| longevia-be.slnx | Đăng ký sáu project Progress/tests. | Bảo; Explicit developer authorization, không cần thêm Duy approval. | Phase 2 (đã hoàn tất). |
+| Directory.Packages.props | Chỉ nếu thiếu package so với dependency hiện có; ưu tiên tái sử dụng version. | Team owners; PR shared riêng nếu cần. | Trước package mới; không mặc định cần sửa. |
 | src/Services/Progress/Progress.Api/Program.cs | DI, auth, migrations, health/Swagger/metrics. | Bảo; mọi phase chạm composition root phải tuần tự. | Phase 2 rồi từng story. |
 | src/Services/Progress/Progress.Infrastructure/Persistence/Migrations | Migrations/snapshot chỉ Progress, một open feature sở hữu. | Bảo; resolve/registry trước tạo, đồng bộ main theo quyền. | Từng phase persistence sau approve policy. |
-| contracts/identity/v1/identity.proto | Height RPC nếu được chọn. | Nguyên; không sửa từ Progress. | Producer PR được duyệt/merge trước consumer. |
-| contracts/progress/v1/ (chưa tồn tại) | Weight read provider nếu Q10 được duyệt ở feature tiếp theo. | Bảo provider, Huy Diet consumer; Nguyên profile, lead ADR. | Phase 1 chỉ planning; không tạo proto/adapter hoặc sửa Diet. |
-| contracts/events/v1/README.md, src/Shared/Events | Meal/schema topology nếu được chọn. | Huy + lead + Duy; không sửa khi Identity đang sở hữu Shared. | Contract PR riêng trước Phase 6. |
-| src/Shared/Auth | Missing kid/fail-start khác chuẩn đề xuất strict. | Nguyên/lead; không patch Shared trong Progress. | Q08 trước claim auth hoàn chỉnh. |
+| contracts/identity/v1/identity.proto | Height RPC gRPC read profile/height đã duyệt hướng; schema chi tiết PENDING. | Nguyên sở hữu provider, Progress consumer; không sửa từ Progress. | Producer PR của Nguyên được duyệt/merge trước consumer Phase 5. |
+| contracts/progress/v1/ (chưa tồn tại) | Weight read provider nếu Q10 được duyệt ở feature tiếp theo. | Bảo provider, Huy Diet consumer; Nguyên profile. | Phase 1 chỉ planning; không tạo proto/adapter hoặc sửa Diet. |
+| contracts/events/v1/README.md, src/Shared/Events | Meal/schema topology nếu được chọn. | Huy + Duy + Bảo; không sửa khi Identity đang sở hữu Shared. | Contract PR riêng trước Phase 6. |
+| src/Shared/Auth | Remediation Shared Auth theo policy strict Q08-A đã duyệt. | Nguyên sở hữu follow-up PR riêng của Identity; Progress giữ guard local độc lập. | PR riêng của Nguyên; không sửa trong PR #11. |
 
 Không tạo `specs/registry.md`: team-workflow định nghĩa registry là view in từ helper,
 cao hơn câu hướng dẫn cũ còn trong plan template. Không đổi .agents/.specify tracked.
 
 ## Roadmap và verification
 
-1. Phase 2 — Foundation & Persistence: skeleton/test scaffolding/wiring cấu trúc
-   độc lập Q01/Q08 sau human giao phase và shared slot; auth acceptance chờ Q08,
-   business date chờ Q01. DB/config/health/metrics phối hợp, không schema PENDING.
-2. Phase 3 — Fasting: Q03/Q08 approved rồi test trước/cùng code; concurrency, retries, current.
-3. Phase 4 — Water & Sleep: Q01/Q05/Q08 approved rồi append nước, sleep qua đêm và validation.
-4. Phase 5 — Body Metrics & BMI: chờ Q01/Q02/Q04/Q07 và Identity canonical contract + ADR;
+1. Phase 2 — Foundation & Persistence: hoàn thành skeleton/persistence/observability/auth guard;
+   Q08-A JWT policy đã APPROVED, Progress guard đạt yêu cầu bảo mật độc lập, gates xanh 100%, T001–T008 DONE.
+2. Phase 3 — Fasting: Q08-A đã approved; Q03 và Q08-B (resource ownership và error policy) cần được quyết định trước/cùng khi triển khai; concurrency, retries, current.
+3. Phase 4 — Water & Sleep: Chờ Q01/Q05 và Q08-B duyệt; append nước, sleep qua đêm và validation.
+4. Phase 5 — Body Metrics & BMI: Q02 hướng gRPC read đã APPROVED (height decimal theo PR #10);
+   chờ canonical RPC schema trong identity.proto, runtime provider implementation, và Q01/Q04/Q07/Q08-B;
    T038 theo dõi Q10 độc lập, không biến BMR/TDEE thành Progress core.
 5. Phase 6 — Dashboard, Streaks & Integration: chờ Q06/Q09 và Diet contract/bootstrap,
    tests real broker/DB, load test, source/contract sync và guides.
 
 Chi tiết task và dependency ở [tasks.md](tasks.md); validation guide ở
 [quickstart.md](quickstart.md). Gates theo [AGENTS §2](../../AGENTS.md), không
-chép lại bảng gate. Progress chưa có test project ở Phase 1 nên scoped Progress
-test là không áp dụng, full repository close-out vẫn bắt buộc trước push.
+chép lại bảng gate. (Lưu ý lịch sử Phase 1: khi chưa có test project; hiện tại ở Phase 2
+đã có 2 test projects với 55 tests pass, toàn bộ close-out gate đạt 100%).
 
 ## Độ phức tạp và giới hạn
 
 Không có vi phạm Constitution cần ngoại lệ. Projection/retry receipt chỉ thêm khi
 contract được duyệt, tránh framework/dedup tầng riêng không có nhu cầu.
-Kế hoạch không chứng minh runtime đã hoạt động; tất cả Q giữ PENDING và task code
-chưa hoàn thành. Hai hướng dẫn handoff được tạo khi Phase 2–6 thực sự đổi surface;
-Phase 1 chỉ proposal nên chưa đặt trạng thái sẵn sàng tích hợp.
+Ở thời điểm hiện tại: Q08-A JWT policy và Q02 transport đã APPROVED. Các câu hỏi Q01,
+Q02 protobuf schema, Q03–Q07, Q08-B, Q09–Q10 giữ PENDING cho các phase sau tương ứng.
+Phase 2 foundation & persistence đã hoàn thành triển khai và kiểm chứng toàn diện (T001–T008 DONE).
+Hai hướng dẫn handoff được cập nhật khi các phase thực sự thay đổi surface tích hợp.

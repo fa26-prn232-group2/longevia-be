@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Progress.Application.Abstractions;
+using Progress.Infrastructure.Messaging;
 using Progress.Infrastructure.Persistence;
 
 namespace Progress.Infrastructure;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IBodyMetricRepository, Repositories.BodyMetricRepository>();
         services.AddScoped<IBodyProfileProvider, Adapters.Grpc.BodyProfileProvider>();
         services.AddScoped<IActivityContributionRepository, Repositories.ActivityContributionRepository>();
+        services.AddProgressMessaging(config);
         return services;
     }
 }

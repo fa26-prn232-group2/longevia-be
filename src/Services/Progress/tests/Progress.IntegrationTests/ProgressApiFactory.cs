@@ -23,6 +23,7 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
             ["Jwt:PreviousKeyId"] = "previous",
             ["Jwt:PreviousPublicKey"] = ProgressFixture.PublicKey(fixture.PreviousKey),
             ["Jwt:SigningPrivateKey"] = "",
+            ["Messaging:UseInMemory"] = "true",
         };
         foreach (var setting in overrides ?? new Dictionary<string, string?>())
         {

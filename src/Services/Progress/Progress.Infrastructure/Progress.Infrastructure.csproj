@@ -4,8 +4,11 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Progress.Application/Progress.Application.csproj" />
+    <ProjectReference Include="../../../Shared/Longevia.Shared.csproj" />
   </ItemGroup>
 </Project>

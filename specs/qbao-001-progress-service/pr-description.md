@@ -69,8 +69,8 @@ Toàn bộ 8/8 tasks (T001–T008) đã hoàn tất và vượt qua 100% các c�
 - **Smoke Tests**: `pwsh scripts/smoke/progress-smoke.ps1` -> 16/16 assertions passed
 
 ### Kiểm chứng Remote CI trên GitHub Actions
-- **Push CI trên feature branch** ([Run 40122303606](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40122303606)): **SUCCESS** (3m9s).
-- **PR Merge-Ref CI** ([Run 40122307276](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40122307276)): **SUCCESS** (2m50s), Release build 0 warning / 0 error.
+- **Push CI trên feature branch** ([Run 40123913733](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40123913733)): **SUCCESS** (3m26s).
+- **PR Merge-Ref CI** ([Run 40123918077](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40123918077)): **SUCCESS** (3m23s), Release build 0 warning / 0 error.
 - **Minh bạch số lượng kiểm thử**:
   - **592 tests**: Kết quả branch-only độc lập.
   - **610 tests**: Kết quả chạy trên PR Merge-Ref CI. Sau khi PR #10 của Identity (thêm 18 tests) được merge vào `main`, kết quả merge tự động đạt chính xác $592 + 18 = 610$ tests passed, 0 failed, 0 skipped.

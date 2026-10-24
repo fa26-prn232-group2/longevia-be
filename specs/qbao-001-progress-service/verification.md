@@ -5,7 +5,7 @@
 - Repository: `fa26-prn232-group2/longevia-be`
 - Branch: `feat/progress-service`
 - Base commit: `2e249a29531bee383402970d2f85c279a292366e` (origin/main sau khi merge PR #10)
-- Head commit: `22ad9b93a6c3a5aa3b60555ab25c901a296adb66`
+- Head commit: `beb1a7b29f8a10e79ff597834d368d6170e5fa0b`
 - Pull Request: [#11 (Ready for Review)](https://github.com/fa26-prn232-group2/longevia-be/pull/11)
 - Owner: Bảo (`qbao`), Dev 3
 - Feature: `qbao-001-progress-service`
@@ -97,13 +97,13 @@
 
 ### 6.2. Kiểm chứng Remote CI trên GitHub Actions & Phân biệt Test Counts
 
-- **Branch Push CI** ([Run 40122303606](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40122303606)):
-  - Head SHA: `22ad9b93a6c3a5aa3b60555ab25c901a296adb66`
-  - Kết quả: **SUCCESS** (3m9s), 0 warning, 0 error, 27 projects không có gói lỗ hổng.
+- **Branch Push CI** ([Run 40123913733](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40123913733)):
+  - Head SHA: `beb1a7b29f8a10e79ff597834d368d6170e5fa0b`
+  - Kết quả: **SUCCESS** (3m26s), 0 warning, 0 error, 27 projects không có gói lỗ hổng.
   - Phân loại: Kiểm thử trực tiếp trên nhánh `feat/progress-service`.
-- **PR Merge-Ref CI** ([Run 40122307276](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40122307276)):
-  - Base: `main` (`2e249a2`), Head: `feat/progress-service` (`22ad9b9`)
-  - Kết quả: **SUCCESS** (2m50s), Release build 0 warning / 0 error.
+- **PR Merge-Ref CI** ([Run 40123918077](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40123918077)):
+  - Base: `main` (`2e249a2`), Head: `feat/progress-service` (`beb1a7b`)
+  - Kết quả: **SUCCESS** (3m23s), Release build 0 warning / 0 error.
   - Phân loại: Kiểm thử trên merge-ref (kết quả merge tự động của GitHub giữa branch `feat/progress-service` và `main`).
 - **Giải thích minh bạch sự khác biệt giữa 592 và 610 tests**:
   - **592 tests**: Là kết quả chạy kiểm thử trên nhánh `feat/progress-service` độc lập (trước khi tích hợp các test mới từ Identity PR #10).

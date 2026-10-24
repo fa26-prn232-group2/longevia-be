@@ -23,13 +23,27 @@
 
 Đăng ký giải pháp trong `longevia-be.slnx` dưới `/src/Services/Progress/` và `/src/Services/Progress/tests/` theo Explicit Developer Authorization từ Bảo. Không vi phạm package trung tâm (`Directory.Packages.props`).
 
-## 3. Xác thực (Authentication) & Trạng thái Q08
+## 3. Xác thực (Authentication) & Quyết định Q08 Đã Duyệt
 
-- Shared Authentication: ES256, chỉ sử dụng public key SPKI PEM P-256 (`Jwt__SigningPublicKey`), hỗ trợ rotation với cặp `Jwt__PreviousKeyId` / `Jwt__PreviousPublicKey`.
-- Tuyệt đối không cung cấp hoặc chấp nhận `Jwt__SigningPrivateKey` trong Progress Service (fail-start nếu cấu hình).
-- Guard kiểm tra chặt chẽ: `ProgressJwtOptionsValidator` từ chối cấu hình thiếu Issuer/Audience/KeyId, PEM sai curve (P-384), PEM không hợp lệ, hoặc private key.
-- Token validation tại runtime từ chối: token không có chữ ký, thuật toán sai, expired, missing kid, unknown kid, missing sub, sub không phải Guid hợp lệ hoặc Guid rỗng, sub xung đột với NameIdentifier claim.
-- Trạng thái Q08 (Identity / Shared JWT cross-owner agreement): **PENDING** giữa Bảo và Nguyên. Không tự ý phê duyệt, không sửa mã nguồn của Identity hay Shared. Mức chấp nhận bảo mật (Security Acceptance) được ghi nhận là **PARTIAL**.
+- **Quyết định Q08 (Bảo + Nguyên)**: **APPROVED**. Nguyên (Identity owner) đã xác nhận chính thức: *"Đồng ý thống nhất policy strict như Progress: token phải có kid hợp lệ, sub phải là GUID và service phải fail-start nếu thiếu public key. Giữ guard hiện tại ở Progress; sửa Shared Auth trong PR riêng."*
+- **Yêu cầu an toàn đã thống nhất**:
+  - Xác thực JWT ES256, chỉ dùng public key SPKI PEM P-256 (`Jwt__SigningPublicKey`), hỗ trợ rotation với cặp `Jwt__PreviousKeyId` / `Jwt__PreviousPublicKey`.
+  - Cấm tuyệt đối cấu hình `Jwt__SigningPrivateKey` trong Progress Service (fail-start ngay nếu phát hiện).
+  - Guard kiểm tra chặt chẽ: `ProgressJwtOptionsValidator` từ chối cấu hình thiếu Issuer/Audience/KeyId, PEM sai curve (P-384), PEM không hợp lệ, hoặc private key.
+  - Token validation tại runtime từ chối: token không có chữ ký, thuật toán sai, expired, missing kid, unknown kid, missing sub, sub không phải Guid hợp lệ hoặc Guid rỗng, sub xung đột với NameIdentifier claim.
+- **Phân định triển khai và ranh giới**:
+  - Guard cục bộ của Progress đã hoàn tất và kiểm chứng 100% tests (`AuthTests.cs`, `FoundationOptionsTests.cs`).
+  - Shared Auth remediation là công việc **external follow-up** do Nguyên sở hữu trong một PR riêng; không can thiệp sửa Shared trong PR #11 này.
+  - Tương thích liên service: Token do `Es256JwtTokenGenerator` của Identity sinh ra hoàn toàn tương thích với Progress guard.
+
+## 3b. Quyết định Q02 & Đối chiếu Thay đổi Identity PR #10
+
+- **Quyết định Q02 (Nguyên + Bảo)**: **APPROVED HƯỚNG KIẾN TRÚC gRPC READ**.
+  - Nguyên xác nhận: *"Chọn hướng gRPC read profile/height từ Identity để Progress lấy chiều cao hợp lệ khi tính BMI và lưu snapshot. Identity đã hoàn thành phần của mình; có thể chốt contract này để Bảo triển khai phía liên quan."*
+  - Hướng tiếp cận: Progress sẽ lấy chiều cao hợp lệ qua gRPC read đồng bộ từ Identity khi ghi nhận body metric. Chiều cao này được dùng để tính BMI và lưu snapshot bất biến (`HeightUsedCm`, `Bmi`, `BmiCategory`) trong `BodyMetricLog`. Thay đổi chiều cao profile sau này trong Identity KHÔNG làm thay đổi BMI lịch sử (BR-05).
+  - Kiểu dữ liệu chiều cao: `decimal`, đồng bộ với PR #10 của Identity (`HeightCm` dạng `decimal`, cột DB `numeric(5,2)`, validation 50.00–250.00 cm).
+  - Schema RPC cụ thể trong `contracts/identity/v1/identity.proto` PENDING trước Phase 5 (cần định nghĩa protobuf message, deadline, xử lý profile thiếu chiều cao). Không triển khai RPC hay adapter trong Phase 2.
+  - Event `UserProfileUpdatedEvent` (PR #10) chỉ mang `UserId` và `OccurredOn`, không mang chiều cao và không thay thế cho gRPC read.
 
 ## 4. Cơ sở dữ liệu và Persistence
 
@@ -87,21 +101,21 @@
 
 ## 7. Đánh giá trạng thái Task Phase 2 (T001–T008)
 
-| Task | Trạng thái | Bằng chứng | Phần còn lại / Blocker |
+| Task | Trạng thái | Bằng chứng | Ghi chú |
 | --- | --- | --- | --- |
-| **T001** | **PARTIAL** | Q01 ghi nhận date logic (chặn Phase 4–6); Q08 guard P-256/kid/sub implemented | Q08 PENDING thỏa thuận Bảo + Nguyên; không tự approve cross-service |
+| **T001** | **DONE** | Q08 đã được Bảo + Nguyên APPROVED chính thức; Q01 ghi nhận date logic Phase 4–6 | Hoàn tất mục tiêu theo dõi kiến trúc Phase 2 |
 | **T002** | **DONE** | 4 Clean Architecture projects + 2 test projects đăng ký `longevia-be.slnx` | Không còn |
 | **T003** | **DONE** | Progress.UnitTests (21 tests), Progress.IntegrationTests (34 tests) với PostgreSQL Testcontainers | Không còn |
-| **T004** | **PARTIAL** | AuthTests.cs (14 scenarios), FoundationOptionsTests.cs, HostTests.cs | Chờ Q08 cross-service; chưa có business resource để test 404 isolation |
-| **T005** | **PARTIAL** | Host Program.cs, Auth/, HostExtensions.cs, Problem Details, TimeProvider | Chờ Q08; không sửa Shared/Identity |
+| **T004** | **DONE** | AuthTests.cs (14 scenarios), FoundationOptionsTests.cs, HostTests.cs | Đạt 100% acceptance criteria auth Phase 2 |
+| **T005** | **DONE** | Host Program.cs, Auth/, HostExtensions.cs, Problem Details, TimeProvider | Q08 đã approved; Progress guard hoàn chỉnh |
 | **T006** | **DONE** | ProgressDbContext (IUnitOfWork), ProgressDatabaseInitializer, HostTests | Không còn (migration EF sẽ tạo ở Phase 3 khi có schema duyệt) |
 | **T007** | **DONE** | progress-smoke.ps1 pass: Docker healthy, Nginx route, target UP, metric tăng (32->45), Grafana OK | Không còn |
-| **T008** | **PARTIAL** | Báo cáo kiểm chứng đầy đủ tại verification.md; gates xanh | Chờ Q08 để hoàn tất nghiệm thu an toàn toàn diện |
+| **T008** | **DONE** | Báo cáo kiểm chứng đầy đủ tại verification.md; gates xanh 100%, CI passed | Đầy đủ bằng chứng nghiệm thu Phase 2 |
 
 ## 8. Kết luận nghiệm thu Phase 2
 
-Trạng thái: **`PHASE_2_PARTIAL_DRAFT_PR`**
-Toàn bộ phần việc độc lập của Phase 2 (Clean Architecture skeleton, Persistence, Observability, Smoke test, Unit & Integration tests) đã hoàn thành và vượt qua 100% các cổng kiểm tra bắt buộc. Do Q08 vẫn đang PENDING thỏa thuận giữa Bảo và Nguyên, PR được mở dưới dạng Draft PR để đảm bảo tuân thủ nguyên tắc an toàn kiến trúc.
+Trạng thái: **`PHASE_2_READY_FOR_REVIEW`**
+Toàn bộ 8/8 tasks (T001–T008) của Phase 2 đã hoàn thành trọn vẹn và kiểm chứng thành công. Q08 policy đã được thống nhất và phê duyệt giữa hai service owners (Bảo và Nguyên). Tiến hành chuyển PR #11 từ Draft PR sang Ready for Review để tiến hành review độc lập từ thành viên trong nhóm theo quy trình repository.
 
 ---
 

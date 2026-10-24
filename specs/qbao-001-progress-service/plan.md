@@ -130,12 +130,17 @@ Không tạo business entity, schema hoặc migration rỗng chỉ để đủ c
 Steer developer 2026-10-25 thay hạn chế phối hợp hạ tầng trước đó: Bảo sở hữu
 integration riêng Progress, được trực tiếp sửa Compose, Prometheus, Nginx và
 .env.example khi cần; không chờ Duy. Không có Technical Lead được chỉ định.
-Đã fetch lại: origin/main vẫn `2addfea063cbe5753dcf0ea4b925e0edfcda3acc`,
-không thay đổi đồng thời các file này. Nginx đã có prefix stripping `/api/progress/`;
-giữ route hiện có. Q08 Bảo + Nguyên vẫn PENDING:
-Progress được thêm guard phù hợp ADR (public key SPKI/P-256, kid, subject) và
-kiểm thử, không sửa Shared/Identity hay coi guard là đồng thuận liên service.
-T002/T003 và phần host/DB độc lập được phép tiếp tục; security acceptance vẫn chặn.
+Đã fetch lại: origin/main ở `2e249a29531bee383402970d2f85c279a292366e` sau PR #10,
+không có xung đột. Nginx đã có prefix stripping `/api/progress/`; giữ route hiện có.
+Q08 đã được Bảo + Nguyên **APPROVED**: thống nhất policy strict như Progress guard
+(token ES256, kid bắt buộc hợp lệ, sub là GUID hợp lệ khác rỗng, fail-start khi thiếu
+public key hoặc cấu hình private key). Progress giữ guard hiện tại và đã verified 100%
+tests; Shared Auth alignment là external follow-up do Nguyên sở hữu trong PR riêng,
+không sửa trong PR #11.
+Q02 đã được Nguyên + Bảo **APPROVED hướng kiến trúc gRPC read profile/height**:
+Identity là provider, Progress là consumer; chiều cao kiểu decimal (khớp PR #10
+`numeric(5,2)`); snapshot BMI bất biến. Schema RPC cụ thể trong identity.proto
+PENDING trước Phase 5; không tạo code RPC/adapter trong Phase 2.
 T003 chỉ cần PostgreSQL thật; chưa publisher/consumer nên không thêm RabbitMQ.
 Clock dùng trực tiếp TimeProvider thay interface IClock trùng chức năng.
 
@@ -145,37 +150,36 @@ DB thiếu, không DDL/bảng giả; migration đầu tiên sinh bằng EF ở p
 đã duyệt. Trước nhận traffic phải kiểm tra DB, lỗi/cancellation dừng startup.
 Chỉ ConnectionStrings:Progress trỏ progress_db và progress_user.
 
-Phase 1 **không sửa** hàng nào dưới đây. Đây là điều kiện phối hợp cho Phase 2–6,
-không phải quyền sửa file owner khác. Registry base: Identity feature còn open với
-Identity/Shared/Worker; Progress không nhận ownership các file đó.
+Phase 1 không sửa hàng nào dưới đây. Đây là điều kiện phối hợp cho Phase 2–6,
+không phải quyền sửa file owner khác.
 
 | Path | Nhu cầu dự kiến | Owner / phối hợp trước sửa | Điểm hợp nhất |
 | --- | --- | --- | --- |
-| deployments/docker-compose.yml | Thêm host Progress/env/networks, không expose private key. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 host. |
-| deployments/nginx/nginx.conf | Reuse route Progress đã có; chỉ sửa nếu có lỗi thực tế. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 routing test. |
-| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 observability. |
+| deployments/docker-compose.yml | Thêm host Progress/env/networks, không expose private key. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 host (đã hoàn tất). |
+| deployments/nginx/nginx.conf | Reuse route Progress đã có; chỉ sửa nếu có lỗi thực tế. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 routing test (đã kiểm chứng). |
+| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 observability (đã kiểm chứng). |
 | .env.example | Tái sử dụng Progress DB/JWT config; chỉ sửa nếu thiếu; comment English. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 config. |
-| deployments/postgres/init/01-databases.sh | Đã có progress DB/user; kiểm tra quyền, không sửa tay DB. | Duy. | Phase 2 integration. |
-| longevia-be.slnx | Đăng ký sáu project Progress/tests. | Bảo; Explicit developer authorization, không cần thêm Duy approval. | Phase 2. |
-| Directory.Packages.props | Chỉ nếu thiếu package so với dependency hiện có; ưu tiên tái sử dụng version. | Lead + Duy; PR shared riêng nếu cần. | Trước package mới; không mặc định cần sửa. |
+| deployments/postgres/init/01-databases.sh | Đã có progress DB/user; kiểm tra quyền, không sửa tay DB. | Duy. | Phase 2 integration (đã kiểm chứng). |
+| longevia-be.slnx | Đăng ký sáu project Progress/tests. | Bảo; Explicit developer authorization, không cần thêm Duy approval. | Phase 2 (đã hoàn tất). |
+| Directory.Packages.props | Chỉ nếu thiếu package so với dependency hiện có; ưu tiên tái sử dụng version. | Team owners; PR shared riêng nếu cần. | Trước package mới; không mặc định cần sửa. |
 | src/Services/Progress/Progress.Api/Program.cs | DI, auth, migrations, health/Swagger/metrics. | Bảo; mọi phase chạm composition root phải tuần tự. | Phase 2 rồi từng story. |
 | src/Services/Progress/Progress.Infrastructure/Persistence/Migrations | Migrations/snapshot chỉ Progress, một open feature sở hữu. | Bảo; resolve/registry trước tạo, đồng bộ main theo quyền. | Từng phase persistence sau approve policy. |
-| contracts/identity/v1/identity.proto | Height RPC nếu được chọn. | Nguyên; không sửa từ Progress. | Producer PR được duyệt/merge trước consumer. |
-| contracts/progress/v1/ (chưa tồn tại) | Weight read provider nếu Q10 được duyệt ở feature tiếp theo. | Bảo provider, Huy Diet consumer; Nguyên profile, lead ADR. | Phase 1 chỉ planning; không tạo proto/adapter hoặc sửa Diet. |
-| contracts/events/v1/README.md, src/Shared/Events | Meal/schema topology nếu được chọn. | Huy + lead + Duy; không sửa khi Identity đang sở hữu Shared. | Contract PR riêng trước Phase 6. |
-| src/Shared/Auth | Missing kid/fail-start khác chuẩn đề xuất strict. | Nguyên/lead; không patch Shared trong Progress. | Q08 trước claim auth hoàn chỉnh. |
+| contracts/identity/v1/identity.proto | Height RPC gRPC read profile/height đã duyệt hướng; schema chi tiết PENDING. | Nguyên sở hữu provider, Progress consumer; không sửa từ Progress. | Producer PR của Nguyên được duyệt/merge trước consumer Phase 5. |
+| contracts/progress/v1/ (chưa tồn tại) | Weight read provider nếu Q10 được duyệt ở feature tiếp theo. | Bảo provider, Huy Diet consumer; Nguyên profile. | Phase 1 chỉ planning; không tạo proto/adapter hoặc sửa Diet. |
+| contracts/events/v1/README.md, src/Shared/Events | Meal/schema topology nếu được chọn. | Huy + Duy + Bảo; không sửa khi Identity đang sở hữu Shared. | Contract PR riêng trước Phase 6. |
+| src/Shared/Auth | Remediation Shared Auth theo policy strict Q08 đã duyệt. | Nguyên sở hữu follow-up PR riêng; Progress giữ guard local độc lập. | PR riêng của Nguyên; không sửa trong PR #11. |
 
 Không tạo `specs/registry.md`: team-workflow định nghĩa registry là view in từ helper,
 cao hơn câu hướng dẫn cũ còn trong plan template. Không đổi .agents/.specify tracked.
 
 ## Roadmap và verification
 
-1. Phase 2 — Foundation & Persistence: skeleton/test scaffolding/wiring cấu trúc
-   độc lập Q01/Q08 sau human giao phase và shared slot; auth acceptance chờ Q08,
-   business date chờ Q01. DB/config/health/metrics phối hợp, không schema PENDING.
-2. Phase 3 — Fasting: Q03/Q08 approved rồi test trước/cùng code; concurrency, retries, current.
-3. Phase 4 — Water & Sleep: Q01/Q05/Q08 approved rồi append nước, sleep qua đêm và validation.
-4. Phase 5 — Body Metrics & BMI: chờ Q01/Q02/Q04/Q07 và Identity canonical contract + ADR;
+1. Phase 2 — Foundation & Persistence: hoàn thành skeleton/persistence/observability/auth guard;
+   Q08 policy đã APPROVED, Progress guard đạt yêu cầu bảo mật, gates xanh 100%.
+2. Phase 3 — Fasting: Q08 đã approved; tiếp tục Q03 duyệt rồi test trước/cùng code; concurrency, retries, current.
+3. Phase 4 — Water & Sleep: Q08 đã approved; chờ Q01/Q05 duyệt rồi append nước, sleep qua đêm và validation.
+4. Phase 5 — Body Metrics & BMI: Q02 hướng gRPC read đã APPROVED (height decimal theo PR #10),
+   chờ canonical RPC schema trong identity.proto và Q01/Q04/Q07; T038 theo dõi Q10 độc lập.
    T038 theo dõi Q10 độc lập, không biến BMR/TDEE thành Progress core.
 5. Phase 6 — Dashboard, Streaks & Integration: chờ Q06/Q09 và Diet contract/bootstrap,
    tests real broker/DB, load test, source/contract sync và guides.

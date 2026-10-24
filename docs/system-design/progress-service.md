@@ -19,9 +19,12 @@ schema được duyệt. Cancellation truyền tới mở kết nối/migration,
 Shared xác thực ES256 với public keys. Progress-local guard yêu cầu SPKI P-256,
 issuer/audience/key id hợp lệ, previous key/id đi cặp và distinct, không nhận private
 key cấu hình, reject kid thiếu và subject thiếu/không phải Guid/Guid rỗng.
-Q08 về đồng thuận auth/ownership liên service vẫn PENDING Bảo + Nguyên; không sửa
-Shared/Identity, không coi local tests là approval. Chưa có resource business để
-nghiệm thu ownership 404. Application dùng TimeProvider, không đọc HttpContext.
+Q08 về đồng thuận auth/ownership liên service đã được THỐNG NHẤT (APPROVED) giữa Bảo và Nguyên:
+chính sách strict JWT (ES256, kid hợp lệ, sub Guid, fail-start khi thiếu key) được bảo vệ;
+Progress giữ guard cục bộ hiện tại, Nguyên cập nhật Shared Auth trong PR riêng.
+Q02 về chiều cao cho BMI (Phase 5) đã thống nhất hướng gRPC read từ Identity sang Progress,
+kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), schema RPC chi tiết chốt trước Phase 5.
+Chưa có resource business để nghiệm thu ownership 404. Application dùng TimeProvider, không đọc HttpContext.
 
 - `/alive`: liveness 200 JSON status=ok, độc lập DB.
 - `/health`: readiness 200 status=ok khi kết nối PostgreSQL được; 503 khi DB lỗi.

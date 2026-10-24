@@ -41,26 +41,19 @@ lịch sử fasting vào scope chỉ vì persistence hỗ trợ được.
   hasPreviousPage, hasNextPage. API wire hiện dùng pageNumber/totalCount.
   Q07 đề xuất DTO adapter cục bộ, không sửa Shared; Count trước Skip/Take.
 
-## Height integration — B / PENDING Nguyên
+## Height integration — Q02 APPROVED HƯỚNG gRPC READ (Nguyên + Bảo)
 
-[identity.proto](../../../contracts/identity/v1/identity.proto) chưa có method.
-REST users/me có height nhưng không được Progress gọi HTTP nội bộ.
-Event profile hiện chỉ userId/updatedAt không giải quyết nhu cầu height.
+[identity.proto](../../../contracts/identity/v1/identity.proto) hiện chưa có RPC method; schema cụ thể PENDING trước Phase 5.
+REST `/users/me` có height nhưng Progress tuyệt đối không gọi HTTP nội bộ.
+Event `UserProfileUpdatedEvent` (PR #10) chỉ có `UserId` và `OccurredOn`, không có height và không thay thế cho gRPC read.
 
-Đề xuất RPC tên làm việc `GetBodyProfile` (chưa cấp method/tag number): request userId;
-response userId, heightCm (đề xuất int theo developer), hasProfile/hasHeight hoặc
-presence tương đương, profileVersion/updatedAt. Owner phải quyết kiểu số/presence,
-not-found, lỗi transport và effective-time của height; không coi method này đã tồn tại.
-Đề xuất deadline cấu hình default 2 giây, không retry write, read retry tối đa 1
-trong cùng tổng deadline; phải được Nguyên/lead duyệt cùng ADR chiều gọi.
-Progress adapter chỉ map contract-native DTO, không reference Identity.Application.
-Metric lưu heightUsedCm, bmi snapshot, source version và thời điểm lấy để BR-05
-kiểm chứng được; không recalculate ở GET. Backdate metric không tự gán height quá khứ.
-
-Phương án event snapshot: phải có schema version, eventId, userId, height presence,
-revision, effectiveAt và processedAt (ordering timestamp đóng khi xử lý), lifecycle
-delete/profile missing và bootstrap/backfill. Ưu: đọc không phụ thuộc availability;
-nhược: chiều cao có thể stale, bootstrap/reconcile phức tạp. Chưa chọn chính thức.
+**Quyết định kiến trúc đã thống nhất**:
+- Giao thức: gRPC read nội bộ đồng bộ; Identity sở hữu provider, Progress sở hữu consumer.
+- Kiểu dữ liệu: `decimal`, đồng bộ với PR #10 của Identity (`HeightCm` dạng `decimal`, cột DB `numeric(5,2)`, validation 50.00–250.00 cm).
+- Snapshot bất biến: Chiều cao nhận được dùng để tính BMI và lưu snapshot (`HeightUsedCm`, `Bmi`, `BmiCategory`) trong `BodyMetricLog`. Thay đổi chiều cao profile sau này trong Identity KHÔNG làm thay đổi BMI lịch sử (BR-05). Không recalculate khi đọc history.
+- Tên làm việc RPC: `GetBodyProfile` (request `userId`; response `userId`, `heightCm` decimal, `hasProfile`/`hasHeight`, `profileVersion`/`updatedAt`). Cần hoàn thiện schema protobuf, deadline (đề xuất default 2s), retry policy (tối đa 1 read retry), và error handling (422 khi thiếu height, 503 khi unavailable) trước khi triển khai Phase 5.
+- Progress adapter chỉ map contract-native DTO, không reference `Identity.Application`, không đọc trực tiếp DB của Identity. Không tạo RPC giả hay adapter trong Phase 2.
+- Phương án event snapshot chiều cao: Không chọn do nguy cơ stale data và phức tạp hóa outbox/bootstrap; hướng gRPC read đã được chọn chính thức.
 
 ## Meal activity — B / BLOCKED, PENDING INTEGRATION Huy
 

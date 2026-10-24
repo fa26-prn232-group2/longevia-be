@@ -57,12 +57,12 @@
 
 ## Phase 6 — Close-out và CI
 
-- [ ] T029 [P] Cập nhật `src/Services/Identity/README.md`, cấu hình cần thiết và docs Identity để không còn mô tả stub/TODO đã lỗi thời.
+- [x] T029 [P] Cập nhật `src/Services/Identity/README.md`: bỏ mô tả stub; ghi trách nhiệm, đủ 10 route, validation/errors, migration, observability, ba event và consumer hiện có/chưa xác định, cấu trúc layer, cấu hình chạy và lệnh kiểm tra. Đã rà các liên kết tương đối trong README.
 - [x] T030 Chạy `pwsh scripts/speckit/team-feature.ps1 check`; xác nhận `meta.json` khai báo `Identity`, `Shared`, `Worker` đúng scope và không thay đổi feature khác.
 - [x] T031 Chạy gate Phase 5 tương đương `make lint` và `make test PROJECTS=src/Services/Identity`: `make lint` (solution format-check sạch + solution build 0 warning/0 error), Identity Unit 67/67 và Integration 9/9 (Linux SDK 10 container, Testcontainers thật).
 - [x] T032 Chạy đường E2E thật DB + RabbitMQ + Worker + Mailpit và ghi evidence cụ thể trong backend guide.
 - [x] T033 Hoàn tất counted sync guides; frontend handoff READY_FOR_FRONTEND sau implementation, contract, tests và counts. Backend counts/evidence đã đồng bộ, nhưng backend handoff vẫn IN_PROGRESS vì profile event consumer chưa xác định.
-- [ ] T034 Trước khi developer tự push Phase 5, chạy gate tương đương `make check` toàn repo (Release format/build/test/vulnerability scan); chưa chạy trong lượt này. Developer chạy gate close-out trước khi push; không commit/push thay developer.
+- [x] T034 Chạy full close-out tương đương `make check` trong Linux SDK 10 container: format-check sạch; Release build 0 warning/0 error; full Release tests 528/528 (Identity Integration 9, Identity Unit 67, Recommendation Integration 64, Recommendation Unit 372, Worker Unit 16); vulnerability scan không tìm thấy package dễ tổn thương. `make` không có trên máy, đã chạy chính xác các lệnh dotnet trong Makefile.
 
 ### Handoff integration
 

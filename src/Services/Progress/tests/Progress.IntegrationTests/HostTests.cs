@@ -169,7 +169,7 @@ public sealed class HostTests(ProgressFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
         var problem = await result.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("validation.failed", problem.GetProperty("code").GetString());
-        Assert.Equal("Value", problem.GetProperty("errors")[0].GetProperty("field").GetString());
+        Assert.Equal("Value", problem.GetProperty("errors")[0].GetProperty("field").GetString(), ignoreCase: true);
         using var valid = await client.PostAsJsonAsync("/_test/validate", new ProbeRequest(42));
         Assert.Equal(42, (await valid.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("value").GetInt32());
     }

@@ -85,3 +85,8 @@ workspace triển khai được kiểm soát, thấy test đỏ đúng nguyên n
 không để mutation kiểm chứng tồn tại trong commit. Test thật DB/broker không mock persistence.
 Load benchmark theo plan, report throughput/p95 và lỗi cùng cấu hình môi trường;
 chưa đo thì không claim đạt NFR. Không gọi API AI hoặc gửi digest trong core E2E.
+
+## Corrective PR #13
+
+Đối soát JSON v1 thật và test isolated producer Diet: [hướng dẫn](corrective-reconciliation.md).
+Q01 UTC MVP đã được Bảo approve nội bộ; Huy acknowledgment frontend/Diet còn PENDING.

@@ -1,3 +1,143 @@
+# Corrective PR #13 — reconciliation thật, broker và Q01 UTC (2026-10-25)
+
+## HEAD, phạm vi và môi trường
+
+- Nhánh feat/progress-service, feature qbao-001-progress-service, owner qbao;
+  working tree đầu lượt sạch. Resolve/team check: 6 feature consistent.
+- Previous PR #13 HEAD: 29522303c279d6b6bff496fc79ea6100d703574e, OPEN/Draft.
+- Diet PR #12 thực fetch: bc79173d6681ce9964b4badad6b16f5ac1d87472, OPEN/chưa merge.
+  Không merge/reset/force-push hoặc nhập source Diet vào production Progress.
+- Môi trường local: Windows/PowerShell 7, .NET SDK 10.0.203, Docker Engine 29.9.2,
+  PostgreSQL 17-alpine và RabbitMQ 4-management-alpine Testcontainers thật.
+- Kết quả dưới đây gắn với code tree của commit chứa báo cáo này. SHA xuất bản và
+  CI đúng final HEAD được cập nhật trong PR #13/bàn giao sau push; không dùng CI cũ.
+
+## Gates và số đếm hiện hành
+
+Make không cài trên máy; dùng đúng dotnet recipes trong Makefile, thêm -m:1 giới
+hạn MSBuild, không filter/bỏ test ở full gate.
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| Full solution format verify | PASS sau chuẩn hóa LF checkout; không có diff source ngoài Progress. |
+| Debug/Release build warnings-as-errors | PASS, 0 warning / 0 error. |
+| Scoped Progress unit | 75 pass / 0 fail / 0 skip. |
+| Scoped Progress integration | 103 pass / 0 fail / 0 skip trên DB/broker thật; assertion retry header được chạy lại ở full gate cuối. |
+| Full solution Release | 733 pass / 0 fail / 0 skip, đủ 9 test assemblies (Progress 178).  |
+| Vulnerability scan | 27 projects: không có vulnerable packages, kể cả transitive. |
+| Compose config --quiet / git diff --check / team check | PASS; chỉ Progress block đổi explicit broker settings/dependency. |
+| CI final HEAD | Chờ xuất bản và kiểm tra đúng SHA; không nhận local làm CI. |
+
+Một lần Release gate gặp hết ổ E do Worker Web SDK thu test bin/obj lồng nhau sau
+nhiều lượt build. Đã dọn đúng generated outputs bin/obj Worker/test, restore lại;
+không sửa Worker source, không thay recipe, không skip test. Một assertion ban đầu
+đếm consume observer thay cho retry đã đỏ: observer là một lifecycle. Đã chuyển
+sang kiểm tra MessageHeaders.FaultRetryCount=3 trong message thực ở _error.
+Không coi các lượt đỏ là PASS.
+
+## Reconciliation — 20 process integration cases
+
+[CLI](../../src/Services/Progress/Progress.Infrastructure/Reconciliation/MealSnapshotReconciler.cs)
+được gọi bởi launcher PowerShell cũ; chạy trước web host, không JWT/broker/migration.
+SHA-256 nguyên compact entry UTF-8 + LF, không reserialize. Kiểm tra version, UUID,
+UTC tường minh, DateOnly ISO, unique MealLogId, duplicate JSON property, count và hash
+uppercase trước DB. Không default credentials; từ chối DB khác progress_db.
+
+Transaction RepeatableRead READ ONLY; typed Npgsql params, batch500 ID. Contribution
+phải đúng một Diet.Meal/SourceLogId; inbox phải đúng một EventId=MealLogId và đúng
+MealLogId/UserId/BusinessDate. Query theo cả event và meal ID bắt association sai.
+Empty snapshot vẫn query schema bảng trong DB đã migrate. Không ghi/repair dữ liệu.
+Extra live records ngoài snapshot NOT EVALUATED, không buộc total DB=count snapshot.
+
+[SnapshotReconciliationTests](../../src/Services/Progress/tests/Progress.IntegrationTests/Messaging/SnapshotReconciliationTests.cs)
+spawn process dotnet thật, assert exit code + PASS/FAIL: empty snapshot/empty DB,
+matching, missing contribution, missing inbox, wrong user/date/meal association,
+duplicate ID, tampered checksum, wrong count, truncated JSON, unsupported version,
+DB unavailable, extra live meals, 1.003 entries/3 batches, backdated event, empty UUID,
+non-UTC timestamp, invalid date và wrong database. Exit 0/2/3/4 theo từng tình huống.
+
+## Broker thật — 9 test cases và audit persistence
+
+[RabbitMealTests](../../src/Services/Progress/tests/Progress.IntegrationTests/Messaging/RabbitMealTests.cs)
+dùng actual MassTransit RabbitMQ transport, MealLoggedConsumer, EF repositories và
+5 migration hiện hữu, không in-memory. Poll có timeout 45s (DB outage 60s), không
+lấy sleep làm tiêu chí thành công.
+
+- Canonical event: actual topic longevia.events, binding diet.meal.logged, queue
+  progress.meal-activity durable; kiểm tra management API và receive context key/exchange.
+- Wrong key không ghi; sentinel đúng key kiểm chứng publisher đã chạy.
+- 12 duplicate concurrent + consumer restart giữ một inbox/contribution.
+- Backdated BusinessDate, hai meal một ngày và user isolation được assert trong DB.
+- Kill process Progress host khi broker còn unacked/DB pause: broker redelivery flag
+  thực, restart consumer ghi đúng một hiệu ứng. Không giả redelivery bằng gọi service.
+- DB pause làm persistence thất bại, retry hữu hạn, không success callback hoặc
+  inbox/contribution; _error chứa message với FaultRetryCount=3; DB resume nhận lại được.
+- Poison và conflicting duplicate cũng vào MassTransit _error sau 3 retry; không
+  overwrite projection. Broker DLQ là cơ chế khác, BindDeadLetterQueue không chứng
+  minh consumer fault đi vào .dlq.
+- Broker stop_app/start_app giữ durable queued event và consumer nhận sau resume.
+
+[MealIntegrityTests](../../src/Services/Progress/tests/Progress.IntegrationTests/Messaging/MealIntegrityTests.cs)
+bổ sung 5 case: sửa atomic partial pair từ replay hợp lệ (hai chiều), reject canonical
+IDs sai, reject inbox association sai, actual PostgreSQL PK uniqueness lỗi không liên
+quan phải throw và rollback inbox. Không match exception message; dùng SQLSTATE và
+constraint names rồi re-read known dedup conflict. ProcessedAt dùng TimeProvider.
+
+## Actual Diet producer interoperability — tách khỏi 733 full-solution tests
+
+Harness [test-diet-interoperability.ps1](../../scripts/progress/test-diet-interoperability.ps1)
+archive PR #12 SHA ở trên vào môi trường tạm; chỉ thêm harness test trong đó.
+Actual Diet API/MealActivityPublisher/IPublishEndpoint + EF bus outbox → RabbitMQ →
+actual Progress consumer/PostgreSQL: **1 integration test PASS**. Assert receive
+exchange=longevia.events và routing key=diet.meal.logged. Cấu hình Send routing key
+formatter hiện tại của PR #12 thực tế tương thích publish/outbox trong lần chạy này;
+không có failing interoperability case cần Huy sửa producer, không sửa Diet source.
+
+Harness tạo 101 historical meals + một meal HTTP, actual replay=102, đợi 102 inbox,
+actual Diet exporter JSON v1 rồi Progress reconciliation matched=102/PASS. Đây là
+production-producer interoperability + replay/reconciliation fixture, không phải
+Gateway/Identity/Frontend E2E hoặc bằng chứng dữ liệu triển khai đã bootstrap đủ.
+CapturedAtUtc không làm cursor, reconciliation không chứng minh broker/outbox drain.
+Cách tái lập và preconditions: [corrective-reconciliation](corrective-reconciliation.md).
+
+## Q01 và UTC boundary evidence
+
+Q01 **APPROVED FOR PROGRESS MVP BY BẢO**, Huy acknowledgment **PENDING**.
+[UtcPolicyTests](../../src/Services/Progress/tests/Progress.IntegrationTests/UtcPolicyTests.cs)
+có 3 deterministic scenarios, bao phủ 12 assertion nhóm theo yêu cầu: water trước
+2026-10-24T23:59:59Z và sau 2026-10-25T00:00:00Z; today không leak ngày cũ; sleep
+wake date/duration qua đêm; metric UTC activity/history inclusive-exclusive; dashboard
+current/best union meal+metric không double-count; Monday UTC fasting start inclusive,
+next Monday exclusive; replay khác OccurredOn giữ BusinessDate; Việt Nam 00:30 vẫn
+ngày UTC trước. Fixed/injected TimeProvider, không dựa timezone máy. Các regressions
+Fasting/Sleep/BMI, concurrency và auth cũ được giữ trong full suite.
+
+## Negative controls đã đỏ đúng lỗi và khôi phục
+
+1. Bỏ guard EventId==MealLogId: test canonical IDs FAIL vì không throw.
+2. Ép reconciliation pass=true: missing contribution FAIL vì process exit0/PASS,
+   matched0 thay vì exit2. Chứng minh regression false-PASS bị bắt.
+3. Blind AlreadyProcessed khi inbox tồn tại: partial inbox-only FAIL contribution
+   count0 thay vì1 (case contribution-only vẫn pass). Đã restore implementation.
+
+Log local corrective-negative-identity/reconcile/partial, corrective-unit/integration,
+corrective-full-tests và corrective-diet-interop; log không commit secret/user data.
+CI mới phải chạy broker suite thật, không skip vì Docker hoặc đổi sang in-memory.
+
+## Migration và readiness còn chặn
+
+Không có migration mới, không sửa 5 applied migration hoặc lịch sử BMI/height/date.
+Không đổi public Dashboard DTO, shared contracts, Identity/Diet/Worker implementation.
+Q02 Height runtime/provider vẫn chờ Nguyên, Q10 Weight vẫn proposal/scaffolding như cũ.
+Diet PR #12 chưa merge; rollout writer/queue/replay/snapshot dữ liệu triển khai và
+completeness mechanism chưa được nghiệm thu. Không claim historical streak đầy đủ.
+Huy chưa acknowledge current-day UTC frontend/Diet; [tin nhắn bàn giao](handoffs/huy-q01-utc.md)
+được soạn cho Bảo tự gửi, không gửi thay hoặc fabricate approval.
+PR #13 tiếp tục Draft; không merge #12/#13, không push main/force-push.
+
+---
+
+## Báo cáo trước corrective này — giữ như lịch sử, không thay evidence hiện hành
 # Báo cáo Kiểm chứng Tổng hợp: Progress Service Phases 2–6 (Corrective PR #13)
 
 ## 1. Trạng thái Repository & Feature Context

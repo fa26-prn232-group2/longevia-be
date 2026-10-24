@@ -50,10 +50,10 @@ public sealed class BodyMetricRepository(ProgressDbContext db) : IBodyMetricRepo
             query = query.Where(x => x.LoggedAt >= fromUtc);
         }
 
-        if (toDate.HasValue)
+        if (toDate.HasValue && toDate.Value != DateOnly.MaxValue)
         {
-            var toUtc = toDate.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-            query = query.Where(x => x.LoggedAt <= toUtc);
+            var toUtc = toDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            query = query.Where(x => x.LoggedAt < toUtc);
         }
 
         var totalCount = await query.CountAsync(ct);
@@ -75,6 +75,6 @@ public sealed class BodyMetricRepository(ProgressDbContext db) : IBodyMetricRepo
             .Select(x => x.LoggedAt)
             .ToListAsync(ct);
 
-        return dates.Select(d => DateOnly.FromDateTime(d.UtcDateTime)).Distinct().ToList();
+        return dates.Select(Progress.Domain.UtcCalendar.Day).Distinct().ToList();
     }
 }

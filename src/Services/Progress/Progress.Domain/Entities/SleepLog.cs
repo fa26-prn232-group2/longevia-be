@@ -38,7 +38,7 @@ public sealed class SleepLog
         }
 
         // Q01 / Q05: Gán ngày theo wake time (UTC DateOnly)
-        var date = DateOnly.FromDateTime(wokeAt.UtcDateTime);
+        var date = UtcCalendar.Day(wokeAt);
 
         return new SleepLog
         {

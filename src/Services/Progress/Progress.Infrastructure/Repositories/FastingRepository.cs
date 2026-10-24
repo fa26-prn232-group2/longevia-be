@@ -86,7 +86,7 @@ public sealed class FastingRepository(ProgressDbContext db) : IFastingRepository
         Guid userId, DateTimeOffset weekStartUtc, DateTimeOffset weekEndUtc, CancellationToken ct)
     {
         return await db.FastingSessions
-            .Where(x => x.UserId == userId && x.EndedAt != null && x.EndedAt >= weekStartUtc && x.EndedAt <= weekEndUtc)
+            .Where(x => x.UserId == userId && x.EndedAt != null && x.EndedAt >= weekStartUtc && x.EndedAt < weekEndUtc)
             .ToListAsync(ct);
     }
 }

@@ -1,9 +1,35 @@
 # Hướng dẫn tích hợp Frontend (Frontend Integration Guide)
 
+## Corrective PR #13 — Q01 có hiệu lực ngày 2026-10-25
+
+**Q01 — APPROVED FOR PROGRESS MVP BY BẢO** (ủy quyền trực tiếp trong corrective).
+
+- Mọi ngày server-derived của Progress dùng UTC calendar: DateOnly của instant.UtcDateTime;
+  today lấy từ TimeProvider.GetUtcNow(). Không dùng timezone máy hoặc Asia/Ho_Chi_Minh.
+- Water date lấy instant ghi; water/today đổi tại 00:00 UTC. Sleep date lấy WokeAt UTC,
+  duration/overlap so full instants; giữ quy tắc overlap hiện hành.
+- Body metric activity lấy LoggedAt UTC; history fromDate inclusive, toDate exclusive
+  tại đầu ngày kế tiếp. Không rebucket hoặc tính lại snapshot BMI/height lịch sử.
+- Dashboard neo UTC today/yesterday theo Q06, tuần bắt đầu Monday 00:00 UTC,
+  cửa sổ ngày dùng UTC; fasting tính theo instant hoàn thành, tuần [Monday,next Monday).
+- Diet MealLoggedEvent.BusinessDate là canonical DateOnly bất biến: consume nguyên văn;
+  CreatedAt/OccurredOn/replay/receive time không đổi ngày ăn. Meal + metric cùng nhãn
+  DateOnly chỉ tạo một active day.
+- Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
+  không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
+  phải có migration/rebucketing và phê duyệt liên service.
+- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- Q02 Height gRPC và Q10 Weight gRPC giữ nguyên phạm vi/blocker; không thêm RPC.
+
+Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
+Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
+cho nội bộ Progress; compatibility liên service vẫn PENDING.
+
 Trạng thái: **PARTIAL_READY_FOR_FRONTEND**.
 
 > [!NOTE]
-> Các cụm tính năng Fasting (Start/End/Current), Water (Log/Today), Sleep (Log), Dashboard (Summary) và Metrics History đã hoàn tất 100% và sẵn sàng tích hợp ngay.
+> Các cụm tính năng Fasting (Start/End/Current), Water (Log/Today), Sleep (Log), Dashboard (Summary) và Metrics History đã có implementation/test. Dashboard historical streak chưa READY đầy đủ trước replay/reconciliation dữ liệu triển khai; không có DTO completeness mới được tự thêm.
 > Riêng thao tác ghi mới `POST /api/progress/metrics` yêu cầu chiều cao từ Identity Service (Nguyên). Khi chưa có runtime provider từ Identity, endpoint trả về `503 Service Unavailable` (`progress.identity_unavailable`); khi người dùng chưa có chiều cao hồ sơ, trả về `422 Unprocessable Entity` (`progress.height_unavailable`).
 
 Tài liệu này bàn giao toàn bộ các HTTP endpoints của Progress Service (Phases 2–6) cho đội ngũ phát triển Frontend.

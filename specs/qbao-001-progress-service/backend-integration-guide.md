@@ -1,61 +1,73 @@
-# Hướng dẫn Tích hợp Backend (Backend Integration Guide)
+# Hướng dẫn tích hợp Backend — Progress PR #13
 
-Trạng thái: **PENDING_EXTERNAL_CONTRACTS** (Phần core Progress đã hoàn tất và kiểm chứng độc lập 100%; chờ canonical integration provider từ Identity và Diet).
+Trạng thái: **PENDING_EXTERNAL_INTEGRATION**. Không READY_FOR_BACKEND toàn feature.
+Không công bố lịch sử streak production đầy đủ chỉ vì test fixture xanh.
 
-Tài liệu này xác định giao diện tích hợp giữa **Progress Service** và các microservice liên quan trong hệ thống Longevia Backend.
+## Identity height — Q02 không đổi
 
----
+Hướng Progress đọc height decimal từ Identity qua gRPC đã được Bảo/Nguyên thống nhất.
+Canonical height-read RPC và runtime provider chưa có trên checkout hiện tại.
+[BodyProfileProvider](../../src/Services/Progress/Progress.Infrastructure/Adapters/Grpc/BodyProfileProvider.cs)
+trả ServiceUnavailable; không thay bằng height giả, HTTP hoặc đọc identity_db.
+POST metric phân biệt 503 unavailable, 404 profile missing và 422 height missing;
+snapshot HeightUsedCm/BMI/category bất biến. Blocker owner: Nguyên.
 
-## 1. Điểm tích hợp 1: Identity Service → Progress Service (gRPC Read Height)
+## Diet meal activity — JSON event v1 và projection
 
-- **Mục đích**: Progress Service cần lấy chiều cao (`HeightCm`) từ hồ sơ người dùng trong Identity Service để tính BMI và lưu snapshot bất biến (`HeightUsedCm`, `Bmi`, `BmiCategory`) khi người dùng ghi nhận chỉ số cơ thể (`POST /api/progress/metrics`).
-- **Quyết định kiến trúc (Q02)**: **APPROVED (Bảo + Nguyên)**.
-  - Hình thức: gRPC read nội bộ đồng bộ qua mạng nội bộ Docker (`http://identity:5000`).
-  - Kiểu dữ liệu: `decimal`, khớp với định nghĩa cột PostgreSQL `numeric(5,2)` của Identity trong PR #10.
-  - Ranh giới trách nhiệm: Identity là **Provider**, Progress là **Consumer**.
-- **Hiện trạng & External Blocker**:
-  - Identity đã merge PR #10 (cập nhật model và REST user profile).
-  - Schema protobuf `GetBodyProfile` trong `contracts/identity/v1/identity.proto` và runtime implementation gRPC service trong Identity Service hiện **chưa có trên `main`**.
-  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER** (Chủ sở hữu: Nguyên).
-  - **Hành động tiếp theo**: Nguyên (`nguyen`) phát hành RPC method trong `contracts/identity/v1/identity.proto` và triển khai gRPC server tại `Identity.Api`.
-  - **Triển khai tại Progress**:
-    - Progress đã tạo abstraction [`IBodyProfileProvider`](file:///src/Services/Progress/Progress.Application/Abstractions/IBodyProfileProvider.cs) trong Application layer với kết quả `ProfileHeightResult` phân loại trạng thái rõ ràng.
-    - Infrastructure layer đã có stub [`BodyProfileProvider`](file:///src/Services/Progress/Progress.Infrastructure/Adapters/Grpc/BodyProfileProvider.cs) mặc định trả về `ServiceUnavailable` khi chưa kết nối runtime Identity provider.
-    - Kiểm thử tích hợp `MetricsTests.cs` đã kiểm chứng đầy đủ 4 trường hợp:
-      - Khi provider trả về chiều cao (vd: 175cm) -> tính BMI 22.86, lưu snapshot, trả **`201 Created`**.
-      - Khi provider trả về `HeightNotRecorded` (chưa có chiều cao) -> trả **`422 Unprocessable Entity`** với mã lỗi `progress.height_unavailable`.
-      - Khi provider trả về `ProfileNotFound` -> trả **`404 Not Found`** với mã lỗi `progress.profile_not_found`.
-      - Khi provider trả về `ServiceUnavailable` (Identity chưa sẵn sàng / RPC chưa có) -> trả **`503 Service Unavailable`** với mã lỗi `progress.identity_unavailable`.
+Canonical event: [MealLoggedEvent](../../src/Shared/Events/MealLoggedEvent.cs),
+EventId=MealLogId, UserId, BusinessDate, CreatedAt, OccurredOn; SchemaVersion=1 constant.
+Topology topic `longevia.events`, key `diet.meal.logged`, durable queue
+`progress.meal-activity`. Không sửa Diet/Worker queues.
 
----
+Consumer chạy transaction progress_db: advisory lock theo MealLogId, inbox và
+contribution atomic. Canonical IDs không khớp bị reject. Duplicate phải khớp owner,
+business date và CreatedAt (độ chính xác PostgreSQL microsecond); không overwrite.
+Inbox association sai hoặc nhiều association bị reject. Replay hợp lệ có thể phục
+hồi một nửa cặp inbox/contribution bị thiếu trong cùng transaction. Unique violation
+chỉ cân nhắc re-read với SQLSTATE 23505 và đúng dedup constraint; lỗi khác không
+được coi AlreadyProcessed. ProcessedAt lấy injected TimeProvider ở lúc xử lý.
 
-## 2. Điểm tích hợp 2: Diet Service → Progress Service (RabbitMQ Meal Activity Event)
+Retry hữu hạn 2s/5s/10s. Consumer exception hết retry đi vào queue MassTransit
+`progress.meal-activity_error`, không phải tự động vào broker DLQ.
+Binding `progress.meal-activity.dlx`/`.dlq` dành cho broker dead-letter semantics;
+không dùng cấu hình BindDeadLetterQueue làm bằng chứng consumer fault routing.
+Broker test kiểm tra error message thực, không dựa tên cấu hình.
 
-- **Mục đích**: Cập nhật ngày hoạt động (active day) của người dùng khi có bữa ăn được ghi nhận trong Diet Service để tính toán chuỗi ngày hoạt động liên tục (Streak) trên Dashboard.
-- **Quyết định kiến trúc (Q06 / Q09)**: **APPROVED**.
-  - Quy tắc Active Day: Là tập hợp hợp (union) của các ngày có nhật ký bữa ăn (`Diet.MealLog`) và các ngày có ghi nhận chỉ số cơ thể (`BodyMetricLog`). Nước, ngủ và fasting không tạo streak độc lập.
-  - Hình thức tích hợp: Asynchronous Event qua RabbitMQ (`MealLoggedEvent`).
-  - Ngày tính streak: Sử dụng `MealLog.Date` (`DateOnly` do client cung cấp hoặc UTC date), không dùng thời điểm nhận event qua mạng.
-  - Ranh giới trách nhiệm: Diet Service là **Producer**, Progress Service là **Consumer**.
-- **Hiện trạng & Triển khai tại Progress**:
-  - **Shared Contract**: Đã bổ sung contract `Longevia.Shared.Events.MealLoggedEvent` với các trường `EventId`, `UserId`, `MealLogId`, `BusinessDate`, `CreatedAt`, `OccurredOn` khớp với PR #12 của Diet.
-  - **Durable Inbox & Deduplication**: Bảng `processed_meal_events` (migration `20261024214957_AddProcessedMealEvents`) lưu trữ các event đã xử lý. Sử dụng transaction-scoped advisory lock `pg_advisory_xact_lock(hashtext(mealLogId))` để ngăn chặn race condition khi nhiều consumer nhận cùng event đồng thời.
-  - **Conflicting Duplicate Invariant**: Nếu nhận event cùng `MealLogId` nhưng khác `UserId` hoặc `BusinessDate`, hệ thống từ chối và ném exception chuyển vào DLQ (`progress.meal-activity.dlq`), tuyệt đối không âm thầm ghi đè.
-  - **MassTransit Consumer**: `MealLoggedConsumer` lắng nghe topic exchange `longevia.events` với routing key `diet.meal.logged`, durable queue `progress.meal-activity`, retry exponential 2s/5s/10s và dead-letter exchange `progress.meal-activity.dlx`.
-  - **Historical Replay & Reconciliation**: Script `scripts/progress/reconcile-meal-activity-snapshot.ps1` hỗ trợ đối soát toàn bộ snapshot v1 từ file CSV hoặc API của Diet theo `contracts/diet/v1/meal-activity-snapshot.md`.
-  - **Trạng thái**: **PROGRESS IMPLEMENTED & VERIFIED 100% (READY FOR DIET PR #12 MERGE)**. Toàn bộ 6 integration tests trong `MealActivityConsumerTests.cs` đã pass 100% trên Testcontainers PostgreSQL. Khi PR #12 của Huy được merge vào `origin/main`, Progress sẽ tự động nhận và xử lý event ngay tại runtime mà không cần sửa code.
+RabbitMQ host/user/password bắt buộc cấu hình tường minh, port hợp lệ (mặc định
+protocol 5672 khi không cấp). Không default localhost/guest/password. In-memory
+transport chỉ dùng khi operator/test đặt explicit Messaging:UseInMemory=true;
+suite RabbitMQ không bật cờ này.
 
----
+Q01 nội bộ Progress **APPROVED bởi Bảo cho MVP UTC**. Diet BusinessDate luôn giữ
+nguyên, kể cả backdate/replay; không đổi theo timestamp. Frontend tự chọn current
+meal day theo UTC cần Huy xác nhận; client chọn ngày lịch sử giữ ngày được chọn.
+Việt Nam 00:30 có thể vẫn là ngày UTC trước đó. **Huy acknowledgment PENDING**.
 
-## 3. Điểm tích hợp 3: Progress Service → Diet Service (Latest Weight for BMR/TDEE - Q10)
+## Snapshot, replay và bằng chứng
 
-- **Mục đích**: Diet Service cần cân nặng mới nhất để tính chỉ số chuyển hoá cơ bản (BMR/TDEE) khi thiết lập mục tiêu dinh dưỡng.
-- **Hiện trạng & Triển khai (Q10 / T038)**:
-  - **Canonical Contract Proposal**: Đã biên soạn file protobuf canonical [`contracts/progress/v1/progress.proto`](file:///contracts/progress/v1/progress.proto) định nghĩa service `ProgressGrpcService` với RPC `GetLatestWeight`:
-    - Numeric Representation: Sử dụng `int32 weight_kg_x100` (giá trị cân nặng nhân 100, ví dụ 72.45 kg = 7245) để triệt tiêu hoàn toàn sai số dấu phẩy động (floating-point precision issues).
-    - Query Semantics: `as_of_utc` (truy vấn bản ghi cân nặng gần nhất tại hoặc trước thời điểm chỉ định: `LoggedAt <= asOfUtc ORDER BY LoggedAt DESC, Id DESC LIMIT 1`).
-    - Explicit Empty Result: Sử dụng protobuf `oneof result { WeightRecord record; bool no_record_found; }` phân biệt rõ ràng giữa trường hợp có dữ liệu và trường hợp chưa từng ghi nhận cân nặng.
-  - **Proposal Document**: Tài liệu [`contracts/progress/v1/README.md`](file:///contracts/progress/v1/README.md) liệt kê 7 câu hỏi kiến trúc cụ thể chờ Bảo (Dev 3) và Huy (Dev 2) biểu quyết phê duyệt chính thức.
-  - **Query Scaffolding Implementation**: Progress đã triển khai service [`IWeightQueryService`](file:///src/Services/Progress/Progress.Application/Abstractions/IWeightQueryService.cs) và [`WeightQueryService`](file:///src/Services/Progress/Progress.Application/Features/Metrics/WeightQueryService.cs) trong Application layer, tuân thủ đúng as-of timestamp và thuật toán làm tròn `Math.Round(metric.WeightKg * 100m)`.
-  - **Kiểm chứng**: 5 unit tests (`WeightQueryServiceTests.cs`) và 1 integration test (`WeightProviderIntegrationTests.cs`) pass 100%.
-  - **Trạng thái**: **CONTRACT PROPOSED & SCAFFOLDING IMPLEMENTED (AWAITING APPROVAL)**. Runtime gRPC endpoint sẽ được mở khi hợp đồng được hai bên thống nhất.
+Snapshot canonical là JSON v1 (schemaVersion/snapshotId/capturedAtUtc/entries/
+recordCount/entriesSha256), không phải CSV/public API. Contract và verifier do Diet
+sở hữu trên PR #12 chưa merge; corrective không copy/đổi shared contract.
+
+[Hướng dẫn reconciliation](corrective-reconciliation.md) mô tả kiểm tra raw checksum,
+batch SQL read-only RepeatableRead, exit codes và harness isolated PR #12.
+Reconciliation PASS chỉ chứng minh tập entries của file có projection/inbox đúng;
+không chứng minh producer outbox hoặc broker đã drain. Extra live records ngoài
+snapshot được giữ nguyên, không buộc total count DB bằng recordCount.
+
+Transport suite dùng synthetic publisher + actual consumer/PG/RabbitMQ. Harness
+ngoài solution dùng actual Diet publisher/outbox/replay/exporter ở SHA PR #12 để
+chứng minh interoperability riêng; kết quả và SHA ở [verification](verification.md).
+Không nhập source Diet vào production Progress, không merge PR #12.
+
+Production rollout vẫn cần bind queue trước nâng writer/replay, drain/error checks,
+snapshot operator thật và reconciliation dữ liệu triển khai. Chưa có public DTO
+completeness được approve nên chưa tuyên bố historical streak READY, không thêm field.
+
+## Latest weight — Q10 không đổi
+
+[progress.proto](../../contracts/progress/v1/progress.proto) và
+[proposal](../../contracts/progress/v1/README.md) vẫn là proposal chờ Bảo/Huy.
+Query scaffolding as-of giữ nguyên: LoggedAt <= asOfUtc, LoggedAt DESC/Id DESC,
+presence phân biệt no record và unavailable, scale weight_kg_x100.
+Corrective không mở runtime RPC hoặc thay hợp đồng Weight/BMR/TDEE của Diet.

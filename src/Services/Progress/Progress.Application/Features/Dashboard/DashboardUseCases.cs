@@ -16,7 +16,7 @@ public sealed class DashboardUseCases(
     {
         var userId = currentUser.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Progress.Domain.UtcCalendar.Day(now);
 
         // 1. Weight & BMI
         var latestMetric = await metricRepo.GetLatestAsync(userId, ct);
@@ -52,10 +52,8 @@ public sealed class DashboardUseCases(
 
         // 3. Fasting this week completed
         // Tuần hiện tại tính từ thứ Hai đầu tuần UTC
-        var daysFromMonday = ((int)now.DayOfWeek + 6) % 7;
-        var startOfWeekUtc = new DateTimeOffset(
-            now.Date.AddDays(-daysFromMonday), TimeSpan.Zero);
-        var endOfWeekUtc = startOfWeekUtc.AddDays(7).AddTicks(-1);
+        var startOfWeekUtc = Progress.Domain.UtcCalendar.StartOfWeek(now);
+        var endOfWeekUtc = startOfWeekUtc.AddDays(7);
 
         var completedFastingSessions = await fastingRepo.GetCompletedSessionsInWeekAsync(
             userId, startOfWeekUtc, endOfWeekUtc, ct);

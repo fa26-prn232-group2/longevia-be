@@ -2,6 +2,7 @@ using System.Data;
 using Longevia.Shared.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Progress.Application.Abstractions;
 using Progress.Domain.Entities;
 using Progress.Infrastructure.Persistence;
@@ -10,99 +11,63 @@ namespace Progress.Infrastructure.Services;
 
 public sealed class MealActivityConsumerService(
     ProgressDbContext db,
-    ILogger<MealActivityConsumerService> logger) : IMealActivityConsumerService
+    ILogger<MealActivityConsumerService> logger,
+    TimeProvider time) : IMealActivityConsumerService
 {
     private const string MealSource = "Diet.Meal";
 
-    public async Task<MealProcessingResult> ProcessMealLoggedAsync(MealLoggedEvent @event, CancellationToken ct)
+    public async Task<MealProcessingResult> ProcessMealLoggedAsync(MealLoggedEvent message, CancellationToken ct)
     {
-        if (@event.EventId == Guid.Empty || @event.UserId == Guid.Empty || @event.MealLogId == Guid.Empty)
+        if (message.EventId == Guid.Empty || message.UserId == Guid.Empty || message.EventId != message.MealLogId)
+            throw new ArgumentException("Canonical Diet v1 requires nonempty IDs and EventId == MealLogId.");
+
+        try
         {
-            throw new ArgumentException("MealLoggedEvent contains empty IDs.");
+            return await PersistAsync(message, ct);
         }
-
-        var sourceLogId = @event.MealLogId.ToString();
-
-        var strategy = db.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
-            await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
-
-            // Khóa phạm vi MealLogId bằng transaction advisory lock
-            await db.Database.ExecuteSqlRawAsync(
-                "SELECT pg_advisory_xact_lock(hashtext({0}))", [@event.MealLogId.ToString()], ct);
-
-            var existingEvent = await db.ProcessedMealEvents
-                .FirstOrDefaultAsync(x => x.EventId == @event.EventId, ct);
-
-            var existingContrib = await db.ActivityContributions
-                .FirstOrDefaultAsync(x => x.Source == MealSource && x.SourceLogId == sourceLogId, ct);
-
-            if (existingEvent != null || existingContrib != null)
-            {
-                var conflictUserId = (existingEvent != null && existingEvent.UserId != @event.UserId)
-                    || (existingContrib != null && existingContrib.UserId != @event.UserId);
-
-                var conflictDate = (existingEvent != null && existingEvent.BusinessDate != @event.BusinessDate)
-                    || (existingContrib != null && existingContrib.Date != @event.BusinessDate);
-
-                if (conflictUserId || conflictDate)
-                {
-                    logger.LogWarning(
-                        "Conflicting duplicate MealLoggedEvent detected. MealLogId: {MealLogId}, ExpectedUser: {User1}, ReceivedUser: {User2}, ExpectedDate: {Date1}, ReceivedDate: {Date2}",
-                        @event.MealLogId,
-                        existingEvent?.UserId ?? existingContrib?.UserId,
-                        @event.UserId,
-                        existingEvent?.BusinessDate ?? existingContrib?.Date,
-                        @event.BusinessDate);
-
-                    await tx.RollbackAsync(ct);
-                    return MealProcessingResult.ConflictingDuplicate;
-                }
-
-                if (existingEvent == null)
-                {
-                    db.ProcessedMealEvents.Add(ProcessedMealEvent.Create(
-                        @event.EventId, @event.MealLogId, @event.UserId, @event.BusinessDate, DateTimeOffset.UtcNow));
-                    await db.SaveChangesAsync(ct);
-                    await tx.CommitAsync(ct);
-                }
-
-                return MealProcessingResult.AlreadyProcessed;
-            }
-
-            var contribution = ActivityContribution.Create(
-                @event.UserId,
-                MealSource,
-                sourceLogId,
-                @event.BusinessDate,
-                @event.CreatedAt);
-
-            var processedEvent = ProcessedMealEvent.Create(
-                @event.EventId,
-                @event.MealLogId,
-                @event.UserId,
-                @event.BusinessDate,
-                DateTimeOffset.UtcNow);
-
-            db.ActivityContributions.Add(contribution);
-            db.ProcessedMealEvents.Add(processedEvent);
-
-            try
-            {
-                await db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
-                return MealProcessingResult.Created;
-            }
-            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-            {
-                await tx.RollbackAsync(ct);
-                return MealProcessingResult.AlreadyProcessed;
-            }
-        });
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "PK_processed_meal_events" or "IX_activity_contributions_Source_SourceLogId"
+        })
+        {
+            // Only known dedup keys are candidates. Re-read under the same lock and
+            // compare metadata; unrelated uniqueness errors must reach broker retry/error.
+            db.ChangeTracker.Clear();
+            return await PersistAsync(message, ct);
+        }
     }
 
-    private static bool IsUniqueViolation(DbUpdateException ex) =>
-        ex.InnerException?.Message.Contains("23505") == true ||
-        ex.Message.Contains("unique", StringComparison.OrdinalIgnoreCase);
+    private async Task<MealProcessingResult> PersistAsync(MealLoggedEvent message, CancellationToken ct)
+    {
+        var sourceId = message.MealLogId.ToString();
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(hashtext({0}))", [sourceId], ct);
+        var inbox = await db.ProcessedMealEvents.AsNoTracking()
+            .Where(x => x.EventId == message.EventId || x.MealLogId == message.MealLogId).ToListAsync(ct);
+        var contribution = await db.ActivityContributions.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Source == MealSource && x.SourceLogId == sourceId, ct);
+        if (inbox.Count > 1 || inbox.Any(x => x.EventId != message.EventId || x.MealLogId != message.MealLogId
+            || x.UserId != message.UserId || x.BusinessDate != message.BusinessDate)
+            || (contribution is not null && (contribution.UserId != message.UserId
+                || contribution.Date != message.BusinessDate
+                || contribution.CreatedAt.UtcTicks / 10 != message.CreatedAt.UtcTicks / 10)))
+        {
+            logger.LogWarning("Rejected conflicting canonical meal projection; no persisted data changed.");
+            return MealProcessingResult.ConflictingDuplicate;
+        }
+        if (contribution is not null && inbox.Count == 1)
+            return MealProcessingResult.AlreadyProcessed;
+
+        // A valid replay repairs a partial pair atomically, never acknowledges a missing effect.
+        if (contribution is null)
+            db.ActivityContributions.Add(ActivityContribution.Create(message.UserId, MealSource,
+                sourceId, message.BusinessDate, message.CreatedAt));
+        if (inbox.Count == 0)
+            db.ProcessedMealEvents.Add(ProcessedMealEvent.Create(message.EventId, message.MealLogId,
+                message.UserId, message.BusinessDate, time.GetUtcNow()));
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return contribution is null ? MealProcessingResult.Created : MealProcessingResult.AlreadyProcessed;
+    }
 }

@@ -1,18 +1,18 @@
-# Progress Service — foundation Phase 2
+# Progress Service — foundation và capability hiện hành
 
 Progress dùng bốn layer Domain, Application, Infrastructure và Api, cộng hai
 project xUnit. Domain độc lập framework; Application chỉ reference Domain;
 Infrastructure triển khai persistence; Api là composition root, tái sử dụng Shared.
-Chưa có entity, business endpoint, RPC/event, broker client hoặc adapter liên service.
+Hiện có Fasting, Water, Sleep, body metric snapshots/history, Dashboard và meal inbox/projection.
+Height runtime RPC chưa có; Weight RPC vẫn proposal, không công bố feature hoàn chỉnh.
 
 ## Persistence và khởi động
 
 ConnectionStrings:Progress phải trỏ `progress_db`, role `progress_user` do init script
 deployment provision. Cấu hình thiếu/sai hoặc DB không kết nối được làm startup thất
-bại trước nhận traffic. Không tự tạo DB thiếu. DbContext chưa entity nên chưa tạo
-migration rỗng/bảng giả/EnsureCreated. Khi assembly có migration, initializer gọi
-MigrateAsync trước phục vụ request; migration đầu tiên sinh bằng EF ở phase có
-schema được duyệt. Cancellation truyền tới mở kết nối/migration, scope được dispose.
+bại trước nhận traffic. Không tự tạo DB thiếu. DbContext có năm migration Code First
+hiện hữu; corrective không sửa migration cũ. Initializer chạy MigrateAsync trước
+phục vụ request. Cancellation truyền tới mở kết nối/migration, scope được dispose.
 
 ## Auth và operational surface
 
@@ -44,3 +44,22 @@ chiseled không cần curl/shell). Nginx reuse route prefix stripping hiện có
 Prometheus static target progress:8080/metrics. Bảo được developer cấp quyền
 integration Progress vào shared infrastructure; không cần Duy duyệt riêng.
 Kiểm chứng, giới hạn và trạng thái task: ../../specs/qbao-001-progress-service/verification.md.
+
+## Corrective PR #13
+
+Q01 được Bảo approve cho Progress MVP: UTC calendar cho server-derived days,
+TimeProvider cho current day, week Monday 00:00 UTC, history upper bound đầu ngày
+kế tiếp exclusive. Sleep lấy UTC WokeAt, metric activity lấy UTC LoggedAt; duration
+và overlap dùng full instants. Không rebucket dữ liệu/BMI snapshots đã lưu.
+Diet BusinessDate tiêu thụ nguyên văn, không suy từ CreatedAt/OccurredOn/receive time.
+Huy acknowledgment cho tự chọn current meal date theo UTC vẫn PENDING; UTC-only
+không tương đương midnight local Việt Nam, không cần timezone từ Identity.
+
+Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,
+reject conflicting duplicate và repair partial pair chỉ từ valid replay. Rabbit
+credentials phải explicit; retry hữu hạn đưa consumer fault vào MassTransit _error,
+không giả định broker DLQ nhận mọi exception. Snapshot JSON v1 reconciliation CLI
+là read-only RepeatableRead/batch500, integrity trước DB, exit0 chỉ khi khớp toàn bộ
+entry. Không coi snapshot capturedAtUtc là cursor hoặc PASS là outbox drain.
+
+Runtime tests và rollout limitations: ../../specs/qbao-001-progress-service/verification.md.

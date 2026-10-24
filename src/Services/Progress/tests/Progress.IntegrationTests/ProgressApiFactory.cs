@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Progress.IntegrationTests;
 
 public sealed class ProgressApiFactory(ProgressFixture fixture,
-    IReadOnlyDictionary<string, string?>? overrides = null) : WebApplicationFactory<Program>
+    IReadOnlyDictionary<string, string?>? overrides = null, TimeProvider? time = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -37,7 +37,7 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
         {
             services.AddSingleton<IStartupFilter, FoundationProbeStartupFilter>();
             services.AddScoped<IValidator<ProbeRequest>, ProbeRequestValidator>();
-            services.Replace(ServiceDescriptor.Singleton<TimeProvider>(new FoundationTimeProvider()));
+            services.Replace(ServiceDescriptor.Singleton<TimeProvider>(time ?? new FoundationTimeProvider()));
         });
     }
 }

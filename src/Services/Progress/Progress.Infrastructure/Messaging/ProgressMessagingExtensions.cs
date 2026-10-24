@@ -28,10 +28,15 @@ public static class ProgressMessagingExtensions
 
             var rabbitHost = config["RabbitMQ:Host"]
                 ?? config["RABBITMQ_HOST"]
-                ?? "localhost";
-            var rabbitPort = int.TryParse(config["RabbitMQ:Port"] ?? config["RABBITMQ_PORT"], out var p) ? p : 5672;
-            var rabbitUser = config["RabbitMQ:User"] ?? config["RABBITMQ_USER"] ?? "guest";
-            var rabbitPassword = config["RabbitMQ:Password"] ?? config["RABBITMQ_PASSWORD"] ?? "guest";
+                ?? throw new InvalidOperationException("RabbitMQ:Host is required.");
+            var portText = config["RabbitMQ:Port"] ?? config["RABBITMQ_PORT"] ?? "5672";
+            if (!int.TryParse(portText, out var rabbitPort))
+                throw new InvalidOperationException("RabbitMQ:Port must be a valid port.");
+            var rabbitUser = config["RabbitMQ:User"] ?? config["RABBITMQ_USER"];
+            var rabbitPassword = config["RabbitMQ:Password"] ?? config["RABBITMQ_PASSWORD"];
+            if (string.IsNullOrWhiteSpace(rabbitHost) || string.IsNullOrWhiteSpace(rabbitUser)
+                || string.IsNullOrWhiteSpace(rabbitPassword) || rabbitPort is < 1 or > 65535)
+                throw new InvalidOperationException("Explicit valid RabbitMQ host, port, user and password are required.");
 
             bus.UsingRabbitMq((context, cfg) =>
             {
@@ -48,6 +53,7 @@ public static class ProgressMessagingExtensions
                 });
 
                 cfg.Message<MealLoggedEvent>(m => m.SetEntityName(ProgressMessagingTopology.EventsExchange));
+                cfg.Publish<MealLoggedEvent>(p => p.ExchangeType = "topic");
 
                 cfg.ReceiveEndpoint(ProgressMessagingTopology.MealActivityQueue, endpoint =>
                 {

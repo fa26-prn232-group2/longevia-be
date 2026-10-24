@@ -53,7 +53,7 @@ Mục tiêu: start/current/end, concurrency và retry. Kiểm thử độc lập
 Mục tiêu: append nước/tổng ngày và sleep duration/quality. Kiểm thử độc lập:
 350+650=1000 ml, giấc ngủ 23:00–07:00=8 giờ; không cần Diet/Identity.
 
-- [x] T015 [US3] **DONE** — Chốt Q01/Q05 theo steer an toàn nhất: water target default 2500 ml constant, 1–5000 ml, percent không cap 100%, gán ngày theo UTC DateOnly; sleep duration <= 24h, cấm wokeAt <= sleptAt, cấm overlap thời gian ngủ, quality enum (Poor, Fair, Good, Excellent), gán ngày theo wake time.
+- [x] T015 [US3] **DONE** — Q01 UTC MVP được Bảo approve trực tiếp trong corrective; Q05 giữ nguyên: water target default 2500 ml constant, 1–5000 ml, percent không cap 100%, gán ngày theo UTC DateOnly; sleep duration <= 24h, cấm wokeAt <= sleptAt, cấm overlap thời gian ngủ, quality enum (Poor, Fair, Good, Excellent), gán ngày theo wake time.
 - [x] T016 [US3] **DONE** — WaterTests.cs; kiểm chứng 350+650=1000 ml (40%), ngày rỗng=0 ml (0%), validation 1-5000 ml (400 Bad Request), cách ly dữ liệu hai người dùng pass 100%.
 - [x] T017 [US3] **DONE** — WaterLog.cs, WaterLogConfiguration.cs, migration `20261024193519_AddWaterAndSleep`.
 - [x] T018 [US3] **DONE** — WaterUseCases.cs, WaterValidators.cs, WaterDtos.cs, IWaterRepository.cs, WaterRepository.cs và WaterEndpoints.cs (/water/log, /water/today).
@@ -89,13 +89,13 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 - [x] T028 [US4] **DONE** — Chốt Q06/Q09 theo steer an toàn nhất: Active day = hợp ngày có MealLog và BodyMetricLog (nước, ngủ, fasting không tạo streak độc lập); weight delta so tuần trước (now - 7 days, 72->70->68.5 delta -1.5kg); current streak chạy đến hôm nay hoặc neo hôm qua, gap >= 2 ngày trả 0; best streak dài nhất lịch sử.
 - [x] T029 [US4] **DONE** — StreakTests.cs và DashboardTests.cs; kiểm chứng active 1,2,3,5 best=3 current=1, anchor hôm qua=3, gap 2 ngày=0; dashboard summary đầy đủ 8 trường canonical, delta -1.5kg, streak 2 ngày hợp meal+metric pass 100%.
 - [x] T030 [US4] **DONE** — ActivityContribution.cs, ActivityContributionConfiguration.cs, migration `20261024194214_AddActivityContributions`, IActivityContributionRepository.cs, ActivityContributionRepository.cs.
-- [x] T031 [US4] **DONE (PROGRESS-OWNED CONSUMER & INBOX IMPLEMENTED)** — Triển khai hoàn tất durable inbox `ProcessedMealEvent` với migration `20261024214957_AddProcessedMealEvents`, transaction-scoped advisory lock chống race condition, deduplication, rejection conflicting duplicate payload, MassTransit consumer `MealLoggedConsumer`, topology topic `longevia.events` routing key `diet.meal.logged`, retry/DLQ, và script reconciliation `scripts/progress/reconcile-meal-activity-snapshot.ps1`. Kiểm chứng 6 integration tests xanh 100%. Sẵn sàng nhận event tự động ngay khi PR #12 của Diet được merge.
+- [ ] T031 [US4] **PARTIAL — CORRECTIVE** — Consumer/inbox đã có; corrective bổ sung DB reconciliation thật, audit idempotency và RabbitMQ runtime tests. Không dùng 6 test gọi service trực tiếp làm bằng chứng broker/E2E hoặc lịch sử production đầy đủ.
 - [x] T032 [US4] **DONE** — DashboardUseCases.cs, DashboardDtos.cs, StreakCalculator.cs và DashboardEndpoints.cs (/dashboard/summary).
 - [x] T033 [US4] **DONE (SCOPED PROGRESS INTEGRATION)** — DashboardTests.cs và MealActivityConsumerTests.cs tích hợp toàn bộ luồng metrics, water, sleep, fasting và meal activity projection pass 100% trên scoped test fixture; full live multi-service E2E journey qua Gateway + Identity + Diet + RabbitMQ được ghi nhận là PENDING INTEGRATION chờ merge upstream PRs.
 - [ ] T034 [US4] **PROVISIONAL / BENCHMARK PENDING** — Đánh giá performance sơ bộ: cấu trúc database indexes trên UserId + LoggedAt/Date; các test tích hợp đo đạc thời gian đáp ứng ở mức vài milliseconds; benchmark chính thức với target workload: PENDING môi trường load test.
-- [x] T035 [US4] **DONE** — Kiểm tra toàn feature tại verification.md: 69 unit tests + 66 integration tests Progress pass 100% (135 tests); 690 tests toàn solution pass 100%; 0 warning, 0 error, 0 vulnerable packages.
+- [x] T035 [US4] **DONE — CORRECTIVE VERIFIED** — Progress 178/178, full solution 733/733, 0 skip; format/Debug/Release/vulnerability pass. Evidence hiện hành tại verification.md, số đếm cũ là lịch sử.
 - [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: trạng thái PARTIAL_READY_FOR_FRONTEND (Fasting, Water, Sleep, Dashboard query sẵn sàng; POST /metrics phụ thuộc runtime Identity height).
-- [x] T037 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/backend-integration-guide.md: Điểm tích hợp 2 (Diet Consumer) đã triển khai hoàn tất và kiểm chứng 100%; Điểm tích hợp 3 (Weight gRPC Provider) đã phát hành protobuf canonical contract `contracts/progress/v1/progress.proto` và query scaffolding; trung thực ghi nhận các external blockers còn lại từ Identity và Diet PR #12.
+- [ ] T037 [US4] **PARTIAL — EXTERNAL READINESS** — Backend guide phân biệt transport, producer interoperability, replay/reconciliation fixture và rollout thực; chờ Q01 acknowledgment Huy, Q02 provider và Q10 approval.
 
 ## Thứ tự, dependency và khả năng song song
 
@@ -111,8 +111,8 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
   - Sẽ được quyết định và kiểm chứng khi triển khai các entity nghiệp vụ cụ thể ở Phase 3 (Fasting), Phase 4 (Water/Sleep), Phase 5 (Body Metrics), Phase 6 (Dashboard); không tuyên bố đã test ở Phase 2.
 - **Future Phases Prerequisites**:
   - Phase 3 Fasting: Q03 và Q08-B (resource ownership và error policy) cần chốt trước/cùng khi triển khai; concurrency, retries, current.
-  - Phase 4 Water/Sleep: Chờ Q01/Q05 và Q08-B duyệt; append nước, sleep qua đêm.
-  - Phase 5 Body Metrics/BMI: Q02 hướng gRPC read đã APPROVED (chiều cao decimal theo PR #10); chờ canonical RPC schema trong identity.proto, runtime provider implementation của Identity, và Q01/Q04/Q07/Q08-B; T038 theo dõi Q10 độc lập.
+  - Phase 4 Water/Sleep: Q01 UTC nội bộ đã APPROVED; Q05/Q08-B theo quyết định hiện hành; append nước, sleep qua đêm.
+  - Phase 5 Body Metrics/BMI: Q02 hướng gRPC read đã APPROVED (chiều cao decimal theo PR #10); chờ canonical RPC schema trong identity.proto, runtime provider implementation của Identity, và Q04/Q07/Q08-B (Q01 UTC nội bộ đã APPROVED); T038 theo dõi Q10 độc lập.
   - Phase 6 Dashboard/Streak: Chờ Q06/Q09 và Diet meal activity contract/bootstrap.
   - Không tạo phụ thuộc nhân tạo bắt Phase 2 hoặc các phase sau phải chờ PR Shared Auth của Nguyên khi Progress guard cục bộ đã an toàn độc lập.
 - Roadmap yêu cầu: Phase 2 → 3 → 4 → 5 → 6. Về nghiệp vụ US2 và US3 độc lập
@@ -132,3 +132,11 @@ MVP increment đầu tiên có thể demo Fasting sau foundation/Q03, chưa cầ
 Tiếp theo Water/Sleep, rồi BMI có contract và Dashboard đầy đủ. Demo từng phần
 không đồng nghĩa hoàn tất feature. Phase 1 dừng ở tài liệu/review; không bắt đầu
 T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở deferred.
+
+## Corrective PR #13 — phạm vi được Bảo ủy quyền
+
+- [x] T039 **DONE** — Đối soát JSON v1 thực với progress_db trong read-only RepeatableRead, batch parameterized; kiểm tra exit code qua process thật, không PASS khi skip DB.
+- [x] T040 **DONE** — Canonical IDs, partial inbox/contribution recovery, conflicting duplicates và structured unique violation; atomic transaction, negative controls.
+- [x] T041 **DONE** — RabbitMQ/PostgreSQL Testcontainers thật, routing/runtime error queue, retry/redelivery/restart; giữ CI chạy test thật, synthetic transport tách actual Diet harness.
+- [x] T042 **DONE** — Q01 APPROVED FOR PROGRESS MVP BY BẢO: UTC day/week/history, fixed midnight tests; Diet BusinessDate bất biến, Huy acknowledgment PENDING; không rebucket lịch sử.
+- [x] T043 **DONE — LOCAL GATES VERIFIED** — Artifacts và full gates hoàn tất; corrective commit này được xuất bản vào PR #13 giữ Draft, SHA/CI final theo báo cáo PR; không merge PR #12/#13. Public dashboard schema không đổi, completeness readiness vẫn bị chặn trước rollout thật.

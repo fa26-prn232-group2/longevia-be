@@ -171,20 +171,24 @@ public sealed class MealActivityConsumerTests(ProgressFixture fixture)
         var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
 
         var userId = Guid.NewGuid();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = new DateOnly(2026, 10, 25);
         var yesterday = today.AddDays(-1);
 
         // 1. Ghi nhận 2 meals vào hôm qua (2 bữa ăn cùng 1 ngày vẫn chỉ tính 1 active day)
-        var meal1 = new MealLoggedEvent(Guid.NewGuid(), userId, Guid.NewGuid(), yesterday, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-        var meal2 = new MealLoggedEvent(Guid.NewGuid(), userId, Guid.NewGuid(), yesterday, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var instant = DateTimeOffset.Parse("2026-10-25T00:00:00Z");
+        var meal1 = new MealLoggedEvent(id1, userId, id1, yesterday, instant, instant);
+        var meal2 = new MealLoggedEvent(id2, userId, id2, yesterday, instant, instant);
         await consumerService.ProcessMealLoggedAsync(meal1, CancellationToken.None);
         await consumerService.ProcessMealLoggedAsync(meal2, CancellationToken.None);
 
         // 2. Ghi nhận 1 meal vào hôm nay VÀ 1 body metric vào hôm nay (cùng hôm nay không double count)
-        var mealToday = new MealLoggedEvent(Guid.NewGuid(), userId, Guid.NewGuid(), today, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var todayId = Guid.NewGuid();
+        var mealToday = new MealLoggedEvent(todayId, userId, todayId, today, instant, instant);
         await consumerService.ProcessMealLoggedAsync(mealToday, CancellationToken.None);
 
-        var metricToday = BodyMetricLog.Create(userId, DateTimeOffset.UtcNow, 70.0m, 175.0m);
+        var metricToday = BodyMetricLog.Create(userId, instant, 70.0m, 175.0m);
         db.BodyMetricLogs.Add(metricToday);
         await db.SaveChangesAsync();
 

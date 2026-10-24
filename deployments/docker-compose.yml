@@ -161,6 +161,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: ${RABBITMQ_USER:?Set explicit RabbitMQ user for Progress}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Set explicit RabbitMQ password for Progress}
       # Progress verifies ES256 with public keys only; never inject a private key.
       Jwt__Issuer: ${JWT__ISSUER:-longevia}
       Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
@@ -170,6 +174,8 @@ services:
       Jwt__PreviousPublicKey: ${JWT__PREVIOUS_PUBLIC_KEY:-}
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - edge

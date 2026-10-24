@@ -1,5 +1,31 @@
 # Kế hoạch triển khai: Progress Service
 
+## Corrective PR #13 — Q01 có hiệu lực ngày 2026-10-25
+
+**Q01 — APPROVED FOR PROGRESS MVP BY BẢO** (ủy quyền trực tiếp trong corrective).
+
+- Mọi ngày server-derived của Progress dùng UTC calendar: DateOnly của instant.UtcDateTime;
+  today lấy từ TimeProvider.GetUtcNow(). Không dùng timezone máy hoặc Asia/Ho_Chi_Minh.
+- Water date lấy instant ghi; water/today đổi tại 00:00 UTC. Sleep date lấy WokeAt UTC,
+  duration/overlap so full instants; giữ quy tắc overlap hiện hành.
+- Body metric activity lấy LoggedAt UTC; history fromDate inclusive, toDate exclusive
+  tại đầu ngày kế tiếp. Không rebucket hoặc tính lại snapshot BMI/height lịch sử.
+- Dashboard neo UTC today/yesterday theo Q06, tuần bắt đầu Monday 00:00 UTC,
+  cửa sổ ngày dùng UTC; fasting tính theo instant hoàn thành, tuần [Monday,next Monday).
+- Diet MealLoggedEvent.BusinessDate là canonical DateOnly bất biến: consume nguyên văn;
+  CreatedAt/OccurredOn/replay/receive time không đổi ngày ăn. Meal + metric cùng nhãn
+  DateOnly chỉ tạo một active day.
+- Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
+  không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
+  phải có migration/rebucketing và phê duyệt liên service.
+- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- Q02 Height gRPC và Q10 Weight gRPC giữ nguyên phạm vi/blocker; không thêm RPC.
+
+Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
+Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
+cho nội bộ Progress; compatibility liên service vẫn PENDING.
+
 **Nhánh**: `feat/progress-service` | **Feature**: `qbao-001-progress-service`
 **Ngày**: 2026-10-24 | **Đầu vào**: [spec.md](spec.md)
 
@@ -91,8 +117,7 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 - Water append/SUM tránh lost update; sleep xử lý instant đầy đủ. Ngày/zone Q01
   phải dùng thống nhất trong body activity, water, sleep và meal projection.
 - MealLog.Date là DateOnly client cấp; CreatedAt là UTC, summary default UTC.
-  Streak dùng business date, không publish/receive timestamp. User timezone của
-  metric phải tương thích DateOnly Diet; không tự coi UTC là product policy.
+  Streak dùng business date, không publish/receive timestamp. Metric dùng UTC calendar theo Bảo phê duyệt MVP; Diet DateOnly giữ nguyên, Huy xác nhận frontend còn PENDING.
 - BMI lưu height/BMI/category snapshot + provenance tại ghi (BR-05), không tính lại khi GET.
 - Dashboard đọc snapshot và union active day; current/best và window Q06 phải duyệt.
   Không ship metrics-only streak như hoàn chỉnh hoặc đoán số 0 khi meal thiếu.
@@ -119,6 +144,12 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 | Bảo/product | Q01, Q03–Q07, Q08-B, Q09–Q10 và ADR direction mới giữa các affected service owners. | Chặn task liên quan trước code; danh sách đầy đủ ở research. |
 
 ## Shared Files & Conflict Hotspots
+
+Corrective PR #13 tiếp tục quyền Progress infrastructure đã cấp: chỉ block service
+`progress` trong `deployments/docker-compose.yml` thêm explicit RabbitMQ settings
+và dependency health; không sửa queue/service Diet/Worker hoặc canonical contract.
+Không cần package/solution/migration mới; Testcontainers core hiện có cung cấp
+container RabbitMQ thật. Các test bên ngoài cho PR #12 chỉ chạy ở archive tạm.
 
 ### Quyền thực thi Phase 2 — 2026-10-25
 
@@ -182,9 +213,9 @@ cao hơn câu hướng dẫn cũ còn trong plan template. Không đổi .agents
 1. Phase 2 — Foundation & Persistence: hoàn thành skeleton/persistence/observability/auth guard;
    Q08-A JWT policy đã APPROVED, Progress guard đạt yêu cầu bảo mật độc lập, gates xanh 100%, T001–T008 DONE.
 2. Phase 3 — Fasting: Q08-A đã approved; Q03 và Q08-B (resource ownership và error policy) cần được quyết định trước/cùng khi triển khai; concurrency, retries, current.
-3. Phase 4 — Water & Sleep: Chờ Q01/Q05 và Q08-B duyệt; append nước, sleep qua đêm và validation.
+3. Phase 4 — Water & Sleep: Q01 UTC MVP được Bảo approve; Q05/Q08-B theo quyết định hiện hành; append nước, sleep qua đêm và validation.
 4. Phase 5 — Body Metrics & BMI: Q02 hướng gRPC read đã APPROVED (height decimal theo PR #10);
-   chờ canonical RPC schema trong identity.proto, runtime provider implementation, và Q01/Q04/Q07/Q08-B;
+   chờ canonical RPC schema trong identity.proto, runtime provider implementation, và Q04/Q07/Q08-B (Q01 UTC MVP đã approve);
    T038 theo dõi Q10 độc lập, không biến BMR/TDEE thành Progress core.
 5. Phase 6 — Dashboard, Streaks & Integration: chờ Q06/Q09 và Diet contract/bootstrap,
    tests real broker/DB, load test, source/contract sync và guides.
@@ -198,7 +229,7 @@ chép lại bảng gate. (Lưu ý lịch sử Phase 1: khi chưa có test projec
 
 Không có vi phạm Constitution cần ngoại lệ. Projection/retry receipt chỉ thêm khi
 contract được duyệt, tránh framework/dedup tầng riêng không có nhu cầu.
-Ở thời điểm hiện tại: Q08-A JWT policy và Q02 transport đã APPROVED. Các câu hỏi Q01,
+Ở thời điểm hiện tại: Q08-A JWT policy và Q02 transport đã APPROVED. Q01 UTC MVP đã APPROVED nội bộ Progress. Các câu hỏi
 Q02 protobuf schema, Q03–Q07, Q08-B, Q09–Q10 giữ PENDING cho các phase sau tương ứng.
 Phase 2 foundation & persistence đã hoàn thành triển khai và kiểm chứng toàn diện (T001–T008 DONE).
 Hai hướng dẫn handoff được cập nhật khi các phase thực sự thay đổi surface tích hợp.

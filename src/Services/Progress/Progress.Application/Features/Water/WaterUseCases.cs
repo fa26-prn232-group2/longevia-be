@@ -17,7 +17,7 @@ public sealed class WaterUseCases(
     {
         var userId = currentUser.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Progress.Domain.UtcCalendar.Day(now);
 
         var log = WaterLog.Create(userId, request.AmountMl, today, now);
         waterRepo.Add(log);
@@ -37,7 +37,7 @@ public sealed class WaterUseCases(
     {
         var userId = currentUser.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Progress.Domain.UtcCalendar.Day(now);
 
         var totalConsumed = await waterRepo.GetTotalConsumedMlAsync(userId, today, ct);
         var percent = Math.Round((double)totalConsumed / DefaultDailyTargetMl * 100, 2);

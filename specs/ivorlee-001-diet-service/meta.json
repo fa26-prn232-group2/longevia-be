@@ -1,0 +1,12 @@
+{
+  "owner": "ivorlee",
+  "number": 1,
+  "slug": "diet-service",
+  "branch": "feat/diet-service",
+  "status": "open",
+  "services": [
+    "diet"
+  ],
+  "description": "Diet Service dev 2: catalog, manual targets, meal logs, local infrastructure and tests",
+  "opened_at": "2026-10-24"
+}

@@ -279,12 +279,15 @@
 
 ### 3.3 `GET /api/diet/targets/me` — Lấy mục tiêu dinh dưỡng hiện tại
 - **Xác thực**: Bearer JWT
+- **Giai đoạn Diet độc lập**: mục tiêu được nhập tay; `bmr` và `tdee` trả `null`
+  cho đến khi contract hồ sơ/cân nặng được tích hợp. Chưa có mục tiêu trả
+  `404` với code `diet.target_not_found`, không tự tạo mục tiêu mặc định.
 - **Response `200 OK`**:
   ```json
   {
     "id": "11fa24e8-466d-4ee8-a6b3-6c7081734a91",
-    "bmr": 1720,
-    "tdee": 2450,
+    "bmr": null,
+    "tdee": null,
     "targetCalories": 2100,
     "targetProteinGrams": 150.0,
     "targetCarbsGrams": 210.0,
@@ -336,6 +339,9 @@
 
 ### 3.6 `GET /api/diet/meals/daily-summary` — Tổng hợp dinh dưỡng trong ngày
 - **Xác thực**: Bearer JWT
+- **Quy ước**: ngày mặc định UTC; `consumed` cộng snapshot của mọi log cùng ngày,
+  nhóm theo `mealType`. Target là mục tiêu hiện tại; remaining có thể âm khi
+  vượt mục tiêu. Chưa có target trả `404 diet.target_not_found`.
 - **Query Parameters**:
   - `date` (string YYYY-MM-DD, default: ngày hiện tại)
 - **Response `200 OK`**:

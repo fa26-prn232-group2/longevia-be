@@ -1,6 +1,10 @@
 # Hướng dẫn tích hợp Frontend (Frontend Integration Guide)
 
-Trạng thái: **READY_FOR_FRONTEND**.
+Trạng thái: **PARTIAL_READY_FOR_FRONTEND**.
+
+> [!NOTE]
+> Các cụm tính năng Fasting (Start/End/Current), Water (Log/Today), Sleep (Log), Dashboard (Summary) và Metrics History đã hoàn tất 100% và sẵn sàng tích hợp ngay.
+> Riêng thao tác ghi mới `POST /api/progress/metrics` yêu cầu chiều cao từ Identity Service (Nguyên). Khi chưa có runtime provider từ Identity, endpoint trả về `503 Service Unavailable` (`progress.identity_unavailable`); khi người dùng chưa có chiều cao hồ sơ, trả về `422 Unprocessable Entity` (`progress.height_unavailable`).
 
 Tài liệu này bàn giao toàn bộ các HTTP endpoints của Progress Service (Phases 2–6) cho đội ngũ phát triển Frontend.
 

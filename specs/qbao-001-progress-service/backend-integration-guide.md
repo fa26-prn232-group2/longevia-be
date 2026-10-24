@@ -1,6 +1,6 @@
 # Hướng dẫn Tích hợp Backend (Backend Integration Guide)
 
-Trạng thái: **IN_PROGRESS** (Phần core Progress đã hoàn tất và kiểm chứng; chờ canonical integration provider từ Identity và Diet).
+Trạng thái: **PENDING_EXTERNAL_CONTRACTS** (Phần core Progress đã hoàn tất và kiểm chứng độc lập 100%; chờ canonical integration provider từ Identity và Diet).
 
 Tài liệu này xác định giao diện tích hợp giữa **Progress Service** và các microservice liên quan trong hệ thống Longevia Backend.
 
@@ -16,13 +16,16 @@ Tài liệu này xác định giao diện tích hợp giữa **Progress Service*
 - **Hiện trạng & External Blocker**:
   - Identity đã merge PR #10 (cập nhật model và REST user profile).
   - Schema protobuf `GetBodyProfile` trong `contracts/identity/v1/identity.proto` và runtime implementation gRPC service trong Identity Service hiện **chưa có trên `main`**.
-  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER**.
+  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER** (Chủ sở hữu: Nguyên).
+  - **Hành động tiếp theo**: Nguyên (`nguyen`) phát hành RPC method trong `contracts/identity/v1/identity.proto` và triển khai gRPC server tại `Identity.Api`.
   - **Triển khai tại Progress**:
-    - Progress đã tạo abstraction [`IBodyProfileProvider`](file:///src/Services/Progress/Progress.Application/Abstractions/IBodyProfileProvider.cs) trong Application layer.
-    - Infrastructure layer đã có stub [`BodyProfileProvider`](file:///src/Services/Progress/Progress.Infrastructure/Adapters/Grpc/BodyProfileProvider.cs) sẵn sàng kết nối client gRPC khi RPC schema được phát hành.
-    - Kiểm thử tích hợp `MetricsTests.cs` đã kiểm chứng đầy đủ:
-      - Khi provider trả về chiều cao (vd: 175cm) -> tính BMI 22.86, lưu snapshot, trả 201 Created.
-      - Khi provider trả về `null` (profile chưa có chiều cao) -> trả **`422 Unprocessable Entity`** với mã lỗi `progress.height_unavailable`.
+    - Progress đã tạo abstraction [`IBodyProfileProvider`](file:///src/Services/Progress/Progress.Application/Abstractions/IBodyProfileProvider.cs) trong Application layer với kết quả `ProfileHeightResult` phân loại trạng thái rõ ràng.
+    - Infrastructure layer đã có stub [`BodyProfileProvider`](file:///src/Services/Progress/Progress.Infrastructure/Adapters/Grpc/BodyProfileProvider.cs) mặc định trả về `ServiceUnavailable` khi chưa kết nối runtime Identity provider.
+    - Kiểm thử tích hợp `MetricsTests.cs` đã kiểm chứng đầy đủ 4 trường hợp:
+      - Khi provider trả về chiều cao (vd: 175cm) -> tính BMI 22.86, lưu snapshot, trả **`201 Created`**.
+      - Khi provider trả về `HeightNotRecorded` (chưa có chiều cao) -> trả **`422 Unprocessable Entity`** với mã lỗi `progress.height_unavailable`.
+      - Khi provider trả về `ProfileNotFound` -> trả **`404 Not Found`** với mã lỗi `progress.profile_not_found`.
+      - Khi provider trả về `ServiceUnavailable` (Identity chưa sẵn sàng / RPC chưa có) -> trả **`503 Service Unavailable`** với mã lỗi `progress.identity_unavailable`.
 
 ---
 
@@ -35,8 +38,9 @@ Tài liệu này xác định giao diện tích hợp giữa **Progress Service*
   - Ngày tính streak: Sử dụng `MealLog.Date` (`DateOnly` do client cung cấp hoặc UTC date), không dùng thời điểm nhận event qua mạng.
   - Ranh giới trách nhiệm: Diet Service là **Producer**, Progress Service là **Consumer**.
 - **Hiện trạng & External Blocker**:
-  - Diet Service hiện tại chỉ có REST POST `/meals` ghi vào `diet_db`, chưa có outbox pattern hoặc publisher sự kiện RabbitMQ trên `main`.
-  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER**.
+  - Diet Service hiện tại chỉ có REST POST `/meals` ghi vào `diet_db`. PR #12 của Diet đang mở nhưng chưa merge vào `main`.
+  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER** (Chủ sở hữu: Huy).
+  - **Hành động tiếp theo**: Huy (`huy`) hoàn thiện và merge PR #12 cung cấp canonical `MealLoggedEvent` schema và outbox publisher. Sau khi PR #12 merge, Bảo (`qbao`) sẽ bổ sung MassTransit consumer tương ứng trong Progress.
   - **Triển khai tại Progress**:
     - Progress đã thiết kế entity [`ActivityContribution`](file:///src/Services/Progress/Progress.Domain/Entities/ActivityContribution.cs) và bảng `activity_contributions` trong `progress_db`.
     - Đã có unique constraint `(Source, SourceLogId)` để đảm bảo tính Idempotent tuyệt đối khi nhận event lặp lại từ message broker.

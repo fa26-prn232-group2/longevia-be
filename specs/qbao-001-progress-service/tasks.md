@@ -42,11 +42,11 @@ Mục tiêu: start/current/end, concurrency và retry. Kiểm thử độc lập
 đêm, 20 start chỉ 1 active/user; không gọi Identity hoặc Diet.
 
 - [x] T009 [US2] **DONE** — Chốt Q03 và schema start/end/current + error catalog tại specs/qbao-001-progress-service/contracts/README.md và research.md theo steer an toàn nhất: 16:8, 18:6, 20:4, Custom (1–24h), không tương lai, 1 active session qua PostgreSQL Filtered Unique Index, 409 conflict, idempotent end 200, 404 ownership hiding.
-- [x] T010 [US2] **DONE** — FastingSessionTests.cs và FastingTests.cs; kiểm chứng chu kỳ 975 phút qua đêm (16.25h), remaining không âm, 20 concurrent start chỉ 1 thành công (19 mã 409), 404 ownership hiding giữa 2 users.
+- [x] T010 [US2] **DONE** — FastingSessionTests.cs và FastingTests.cs; kiểm chứng chu kỳ 975 phút qua đêm (16.25h), remaining không âm, 20 concurrent start chỉ 1 thành công (19 mã 409), 404 ownership hiding giữa 2 users; kiểm chứng atomic end transition qua PostgreSQL advisory lock (pg_advisory_xact_lock theo sessionId), 2 concurrent end request khác timestamp chỉ 1 thành công (409 conflict), retry cùng timestamp replay 200 OK.
 - [x] T011 [US2] **DONE** — FastingSession.cs, FastingProtocol.cs, FastingStatus.cs tại Progress.Domain; bất biến domain và tính toán ActualHours, IsGoalReached.
 - [x] T012 [US2] **DONE** — FastingSessionConfiguration.cs với Filtered Unique Index `\"EndedAt\" IS NULL` và migration `20261024192855_AddFastingSessions`.
 - [x] T013 [US2] **DONE** — FastingUseCases.cs, FastingValidators.cs, FastingDtos.cs, IFastingRepository.cs, FastingRepository.cs và FastingEndpoints.cs (/fasting/start, /fasting/end, /fasting/current).
-- [x] T014 [US2] **DONE** — Ghi evidence fasting tại verification.md; scoped unit (36/36) + integration tests (5/5) pass 100%.
+- [x] T014 [US2] **DONE** — Ghi evidence fasting tại verification.md; scoped unit (36/36) + integration tests (9/9) pass 100%.
 
 ## Phase 4 — Water & Sleep — US3
 
@@ -57,7 +57,7 @@ Mục tiêu: append nước/tổng ngày và sleep duration/quality. Kiểm th�
 - [x] T016 [US3] **DONE** — WaterTests.cs; kiểm chứng 350+650=1000 ml (40%), ngày rỗng=0 ml (0%), validation 1-5000 ml (400 Bad Request), cách ly dữ liệu hai người dùng pass 100%.
 - [x] T017 [US3] **DONE** — WaterLog.cs, WaterLogConfiguration.cs, migration `20261024193519_AddWaterAndSleep`.
 - [x] T018 [US3] **DONE** — WaterUseCases.cs, WaterValidators.cs, WaterDtos.cs, IWaterRepository.cs, WaterRepository.cs và WaterEndpoints.cs (/water/log, /water/today).
-- [x] T019 [US3] **DONE** — SleepDurationTests.cs và SleepTests.cs; kiểm chứng 8h qua đêm 23:00-07:00, wokeAt <= sleptAt trả 400, overlap trả 409 conflict, cách ly hai người dùng pass 100%.
+- [x] T019 [US3] **DONE** — SleepDurationTests.cs và SleepTests.cs; kiểm chứng 8h qua đêm 23:00-07:00, wokeAt <= sleptAt trả 400, overlap trả 409 conflict, cách ly hai người dùng; kiểm chứng concurrency-safe overlap qua PostgreSQL advisory lock (pg_advisory_xact_lock theo userId trong transaction), 5 concurrent overlapping requests chỉ đúng 1 thành công (4 mã 409), touching intervals (22-06 và 06-07) được cho phép.
 - [x] T020 [US3] **DONE** — SleepLog.cs, SleepQuality.cs, SleepLogConfiguration.cs, SleepUseCases.cs, SleepValidators.cs, SleepDtos.cs, ISleepRepository.cs, SleepRepository.cs và SleepEndpoints.cs (/sleep/log).
 - [x] T021 [US3] **DONE** — Ghi evidence water/sleep tại verification.md; unit + integration tests pass 100%.
 
@@ -69,9 +69,9 @@ Q10 là dependency ngược Diet cần cân nặng; T038 chỉ theo dõi quyết
 
 - [x] T038 [US1] **DONE** — Theo dõi Q10 Latest Weight Contract for Diet BMR/TDEE tại research.md, contracts/README.md và deferred.md; Provider Progress/Consumer Diet; không tạo RPC giả, ghi nhận dependency rõ ràng.
 - [x] T022 [US1] **DONE** — Ghi phê duyệt Q02/Q04/Q07 theo steer an toàn nhất: Q02 hướng gRPC read profile/height (decimal khớp PR #10 numeric(5,2)); Q04 cân nặng 25-300kg, biomarker limits, huyết áp đi cặp và systolic > diastolic, BMI snapshot bất biến theo BR-05; Q07 pagination wire adapter (pageNumber, pageSize, totalCount, totalPages) với domain PagedResult.
-- [x] T023 [US1] **DONE** — BmiTests.cs và MetricsTests.cs; kiểm chứng 70kg/175cm -> BMI 22.86 NormalWeight, boundaries 25/300kg, cặp huyết áp, thiếu chiều cao trả 422 Unprocessable, phân trang và cách ly 2 user pass 100%.
+- [x] T023 [US1] **DONE** — BmiTests.cs và MetricsTests.cs; kiểm chứng 70kg/175cm -> BMI 22.86 NormalWeight, boundaries 25/300kg, cặp huyết áp, phân loại theo raw unrounded BMI (99.984kg/200cm raw=24.996 NormalWeight dù làm tròn 25.00), kiểm chứng toàn diện các ngưỡng 18.5, 25.0, 30.0 (just below, exact, just above), phân biệt 422 (thiếu chiều cao), 404 (profile not found), 503 (Identity unavailable), phân trang và cách ly 2 user pass 100%.
 - [x] T024 [US1] **DONE** — BodyMetricLog.cs, BmiCategory.cs, BodyMetricLogConfiguration.cs, migration `20261024193906_AddBodyMetrics`.
-- [x] T025 [US1] **DONE** — IBodyProfileProvider.cs abstraction tại Progress.Application và BodyProfileProvider.cs gRPC adapter stub tại Progress.Infrastructure (ghi nhận BLOCKED runtime gRPC provider từ Identity).
+- [ ] T025 [US1] **PARTIAL / BLOCKED** — IBodyProfileProvider.cs abstraction với ProfileHeightStatus (Success, HeightNotRecorded, ProfileNotFound, ServiceUnavailable). BodyProfileProvider.cs mặc định trả về ServiceUnavailable vì Identity canonical height-read RPC (contracts/identity/v1/identity.proto) chưa được cung cấp bởi Nguyên; MetricUseCases phân loại lỗi rõ ràng (503 khi service unavailable, 422 khi thiếu height, 404 khi profile not found). Tích hợp runtime gRPC thực tế: BLOCKED chờ Nguyên implement.
 - [x] T026 [US1] **DONE** — MetricUseCases.cs, MetricValidators.cs, MetricDtos.cs, IBodyMetricRepository.cs, BodyMetricRepository.cs và MetricEndpoints.cs (/metrics, /metrics/history).
 - [x] T027 [US1] **DONE** — Ghi evidence metrics tại verification.md; unit + integration tests pass 100%.
 
@@ -89,13 +89,13 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 - [x] T028 [US4] **DONE** — Chốt Q06/Q09 theo steer an toàn nhất: Active day = hợp ngày có MealLog và BodyMetricLog (nước, ngủ, fasting không tạo streak độc lập); weight delta so tuần trước (now - 7 days, 72->70->68.5 delta -1.5kg); current streak chạy đến hôm nay hoặc neo hôm qua, gap >= 2 ngày trả 0; best streak dài nhất lịch sử.
 - [x] T029 [US4] **DONE** — StreakTests.cs và DashboardTests.cs; kiểm chứng active 1,2,3,5 best=3 current=1, anchor hôm qua=3, gap 2 ngày=0; dashboard summary đầy đủ 8 trường canonical, delta -1.5kg, streak 2 ngày hợp meal+metric pass 100%.
 - [x] T030 [US4] **DONE** — ActivityContribution.cs, ActivityContributionConfiguration.cs, migration `20261024194214_AddActivityContributions`, IActivityContributionRepository.cs, ActivityContributionRepository.cs.
-- [x] T031 [US4] **DONE** — Khởi tạo nền tảng projection/reconciliation với ActivityContributionRepository; ghi nhận BLOCKED external integration thật do Diet chưa có outbox producer cho MealActivity event.
+- [ ] T031 [US4] **PARTIAL / BLOCKED** — Khởi tạo nền tảng projection/reconciliation với ActivityContributionRepository và idempotency check. Tích hợp RabbitMQ event consumer thực tế: BLOCKED chờ Dev 2 (Huy) merge PR #12 và hoàn tất canonical MealLoggedEvent contract.
 - [x] T032 [US4] **DONE** — DashboardUseCases.cs, DashboardDtos.cs, StreakCalculator.cs và DashboardEndpoints.cs (/dashboard/summary).
-- [x] T033 [US4] **DONE** — DashboardTests.cs tích hợp toàn bộ luồng metrics, water, sleep, fasting và meal activity projection; pass 100%.
-- [x] T034 [US4] **DONE** — Đánh giá performance & tải: cấu trúc repository index và query tối ưu (PostgreSQL indexes trên UserId + LoggedAt/Date); các test tích hợp đo đạc thời gian đáp ứng ở mức vài milliseconds.
-- [x] T035 [US4] **DONE** — Kiểm tra toàn feature tại verification.md: 54 unit tests + 52 integration tests Progress pass 100%; 640 tests toàn solution pass 100%; 0 warning, 0 error, 0 vulnerable packages.
-- [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: đầy đủ 9 HTTP routes với request/response DTOs, mã lỗi, Problem Details RFC 7807, trạng thái READY_FOR_FRONTEND.
-- [x] T037 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/backend-integration-guide.md: tài liệu hoá chi tiết 2 điểm tích hợp liên microservice (Identity gRPC Height read và Diet RabbitMQ Meal activity event) với trạng thái PENDING/BLOCKED EXTERNAL PROVIDER minh bạch.
+- [x] T033 [US4] **DONE (SCOPED PROGRESS INTEGRATION)** — DashboardTests.cs tích hợp toàn bộ luồng metrics, water, sleep, fasting và meal activity projection pass 100% trên scoped test fixture; full live multi-service E2E journey qua Gateway + Identity + Diet + RabbitMQ được ghi nhận là PENDING INTEGRATION.
+- [ ] T034 [US4] **PROVISIONAL / BENCHMARK PENDING** — Đánh giá performance sơ bộ: cấu trúc database indexes trên UserId + LoggedAt/Date; các test tích hợp đo đạc thời gian đáp ứng ở mức vài milliseconds; benchmark chính thức với target workload: PENDING môi trường load test.
+- [x] T035 [US4] **DONE** — Kiểm tra toàn feature tại verification.md: 64 unit tests + 59 integration tests Progress pass 100% (123 tests); 678 tests toàn solution pass 100%; 0 warning, 0 error, 0 vulnerable packages.
+- [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: trạng thái PARTIAL_READY_FOR_FRONTEND (Fasting, Water, Sleep, Dashboard query sẵn sàng; POST /metrics phụ thuộc runtime Identity height).
+- [x] T037 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/backend-integration-guide.md: trạng thái PENDING_EXTERNAL_CONTRACTS (tài liệu hoá chi tiết 2 điểm tích hợp liên microservice với trạng thái BLOCKED EXTERNAL PROVIDER minh bạch).
 
 ## Thứ tự, dependency và khả năng song song
 

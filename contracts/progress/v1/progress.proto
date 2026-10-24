@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package longevia.progress.v1;
+
+option csharp_namespace = "Longevia.Progress.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// ProgressService cung cấp các chỉ số theo dõi sức khỏe nội bộ (gRPC) cho các service khác (ví dụ: Diet).
+service ProgressService {
+  // Lấy cân nặng gần nhất của người dùng tính đến thời điểm as_of_utc (Q10).
+  rpc GetLatestWeight (GetLatestWeightRequest) returns (GetLatestWeightResponse);
+}
+
+message GetLatestWeightRequest {
+  string user_id = 1;                              // GUID người dùng (bắt buộc)
+  optional google.protobuf.Timestamp as_of_utc = 2; // Mốc thời gian tính đến (nếu không truyền mặc định lấy thời điểm hiện tại của server)
+}
+
+message WeightRecord {
+  int32 weight_kg_x100 = 1;                        // Cân nặng nhân 100 (ví dụ 70.00 kg -> 7000, 68.50 kg -> 6850), tránh sai số float
+  google.protobuf.Timestamp measured_at = 2;       // Thời điểm đo được ghi nhận (LoggedAt)
+  string source_metric_id = 3;                     // ID của bản ghi BodyMetricLog nguồn
+}
+
+message GetLatestWeightResponse {
+  oneof result {
+    WeightRecord record = 1;                       // Có cân nặng hợp lệ tính đến as_of_utc
+    bool no_record_found = 2;                      // Không tìm thấy bản ghi cân nặng nào (true)
+  }
+}

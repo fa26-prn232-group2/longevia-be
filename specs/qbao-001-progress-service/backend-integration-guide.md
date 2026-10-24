@@ -34,28 +34,28 @@ Tài liệu này xác định giao diện tích hợp giữa **Progress Service*
 - **Mục đích**: Cập nhật ngày hoạt động (active day) của người dùng khi có bữa ăn được ghi nhận trong Diet Service để tính toán chuỗi ngày hoạt động liên tục (Streak) trên Dashboard.
 - **Quyết định kiến trúc (Q06 / Q09)**: **APPROVED**.
   - Quy tắc Active Day: Là tập hợp hợp (union) của các ngày có nhật ký bữa ăn (`Diet.MealLog`) và các ngày có ghi nhận chỉ số cơ thể (`BodyMetricLog`). Nước, ngủ và fasting không tạo streak độc lập.
-  - Hình thức tích hợp: Asynchronous Event qua RabbitMQ (`MealActivityEvent`).
+  - Hình thức tích hợp: Asynchronous Event qua RabbitMQ (`MealLoggedEvent`).
   - Ngày tính streak: Sử dụng `MealLog.Date` (`DateOnly` do client cung cấp hoặc UTC date), không dùng thời điểm nhận event qua mạng.
   - Ranh giới trách nhiệm: Diet Service là **Producer**, Progress Service là **Consumer**.
-- **Hiện trạng & External Blocker**:
-  - Diet Service hiện tại chỉ có REST POST `/meals` ghi vào `diet_db`. PR #12 của Diet đang mở nhưng chưa merge vào `main`.
-  - **Trạng thái**: **BLOCKED EXTERNAL PROVIDER** (Chủ sở hữu: Huy).
-  - **Hành động tiếp theo**: Huy (`huy`) hoàn thiện và merge PR #12 cung cấp canonical `MealLoggedEvent` schema và outbox publisher. Sau khi PR #12 merge, Bảo (`qbao`) sẽ bổ sung MassTransit consumer tương ứng trong Progress.
-  - **Triển khai tại Progress**:
-    - Progress đã thiết kế entity [`ActivityContribution`](file:///src/Services/Progress/Progress.Domain/Entities/ActivityContribution.cs) và bảng `activity_contributions` trong `progress_db`.
-    - Đã có unique constraint `(Source, SourceLogId)` để đảm bảo tính Idempotent tuyệt đối khi nhận event lặp lại từ message broker.
-    - Repository [`IActivityContributionRepository`](file:///src/Services/Progress/Progress.Application/Abstractions/IActivityContributionRepository.cs) cung cấp phương thức truy vấn danh sách các ngày hoạt động từ bữa ăn.
-    - Kiểm thử tích hợp `DashboardTests.cs` đã kiểm chứng đầy đủ:
-      - Khi có ActivityContribution từ Diet (bữa ăn hôm qua) + BodyMetricLog (hôm nay) -> Dashboard tính chính xác `currentStreakDays = 2`.
-      - Nước uống hoặc giấc ngủ không tạo streak độc lập.
+- **Hiện trạng & Triển khai tại Progress**:
+  - **Shared Contract**: Đã bổ sung contract `Longevia.Shared.Events.MealLoggedEvent` với các trường `EventId`, `UserId`, `MealLogId`, `BusinessDate`, `CreatedAt`, `OccurredOn` khớp với PR #12 của Diet.
+  - **Durable Inbox & Deduplication**: Bảng `processed_meal_events` (migration `20261024214957_AddProcessedMealEvents`) lưu trữ các event đã xử lý. Sử dụng transaction-scoped advisory lock `pg_advisory_xact_lock(hashtext(mealLogId))` để ngăn chặn race condition khi nhiều consumer nhận cùng event đồng thời.
+  - **Conflicting Duplicate Invariant**: Nếu nhận event cùng `MealLogId` nhưng khác `UserId` hoặc `BusinessDate`, hệ thống từ chối và ném exception chuyển vào DLQ (`progress.meal-activity.dlq`), tuyệt đối không âm thầm ghi đè.
+  - **MassTransit Consumer**: `MealLoggedConsumer` lắng nghe topic exchange `longevia.events` với routing key `diet.meal.logged`, durable queue `progress.meal-activity`, retry exponential 2s/5s/10s và dead-letter exchange `progress.meal-activity.dlx`.
+  - **Historical Replay & Reconciliation**: Script `scripts/progress/reconcile-meal-activity-snapshot.ps1` hỗ trợ đối soát toàn bộ snapshot v1 từ file CSV hoặc API của Diet theo `contracts/diet/v1/meal-activity-snapshot.md`.
+  - **Trạng thái**: **PROGRESS IMPLEMENTED & VERIFIED 100% (READY FOR DIET PR #12 MERGE)**. Toàn bộ 6 integration tests trong `MealActivityConsumerTests.cs` đã pass 100% trên Testcontainers PostgreSQL. Khi PR #12 của Huy được merge vào `origin/main`, Progress sẽ tự động nhận và xử lý event ngay tại runtime mà không cần sửa code.
 
 ---
 
 ## 3. Điểm tích hợp 3: Progress Service → Diet Service (Latest Weight for BMR/TDEE - Q10)
 
 - **Mục đích**: Diet Service cần cân nặng mới nhất để tính chỉ số chuyển hoá cơ bản (BMR/TDEE) khi thiết lập mục tiêu dinh dưỡng.
-- **Hiện trạng (Q10 / T038)**:
-  - Đây là dependency ngược (Diet phụ thuộc Progress).
-  - Hiện tại mục tiêu BMR/TDEE của Diet đang trả `null` (theo `deferred.md` của Diet).
-  - Progress Service đã chuẩn bị sẵn phương thức `GetLatestAsync(userId)` trong `IBodyMetricRepository`.
-  - Sau khi các bên phê duyệt ADR chính thức cho gRPC read cân nặng giữa Progress (Provider) và Diet (Consumer), Progress sẽ expose RPC method tương ứng trong một feature riêng.
+- **Hiện trạng & Triển khai (Q10 / T038)**:
+  - **Canonical Contract Proposal**: Đã biên soạn file protobuf canonical [`contracts/progress/v1/progress.proto`](file:///contracts/progress/v1/progress.proto) định nghĩa service `ProgressGrpcService` với RPC `GetLatestWeight`:
+    - Numeric Representation: Sử dụng `int32 weight_kg_x100` (giá trị cân nặng nhân 100, ví dụ 72.45 kg = 7245) để triệt tiêu hoàn toàn sai số dấu phẩy động (floating-point precision issues).
+    - Query Semantics: `as_of_utc` (truy vấn bản ghi cân nặng gần nhất tại hoặc trước thời điểm chỉ định: `LoggedAt <= asOfUtc ORDER BY LoggedAt DESC, Id DESC LIMIT 1`).
+    - Explicit Empty Result: Sử dụng protobuf `oneof result { WeightRecord record; bool no_record_found; }` phân biệt rõ ràng giữa trường hợp có dữ liệu và trường hợp chưa từng ghi nhận cân nặng.
+  - **Proposal Document**: Tài liệu [`contracts/progress/v1/README.md`](file:///contracts/progress/v1/README.md) liệt kê 7 câu hỏi kiến trúc cụ thể chờ Bảo (Dev 3) và Huy (Dev 2) biểu quyết phê duyệt chính thức.
+  - **Query Scaffolding Implementation**: Progress đã triển khai service [`IWeightQueryService`](file:///src/Services/Progress/Progress.Application/Abstractions/IWeightQueryService.cs) và [`WeightQueryService`](file:///src/Services/Progress/Progress.Application/Features/Metrics/WeightQueryService.cs) trong Application layer, tuân thủ đúng as-of timestamp và thuật toán làm tròn `Math.Round(metric.WeightKg * 100m)`.
+  - **Kiểm chứng**: 5 unit tests (`WeightQueryServiceTests.cs`) và 1 integration test (`WeightProviderIntegrationTests.cs`) pass 100%.
+  - **Trạng thái**: **CONTRACT PROPOSED & SCAFFOLDING IMPLEMENTED (AWAITING APPROVAL)**. Runtime gRPC endpoint sẽ được mở khi hợp đồng được hai bên thống nhất.

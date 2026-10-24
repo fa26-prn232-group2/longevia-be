@@ -87,17 +87,34 @@
     - Identity service unavailable -> 503 ServiceUnavailable.
     - Phân trang history và cách ly 2 users.
 
-### Phase 6: Dashboard Aggregation & Streaks (US4 — T028–T037)
-- **Domain & Persistence**: Entity `ActivityContribution`, migration `20261024194214_AddActivityContributions` với unique constraint `(Source, SourceLogId)` cho idempotent projection.
+### Phase 6: Dashboard Aggregation, Streaks & Diet Messaging Integration (US4 — T028–T037)
+- **Domain & Persistence**:
+  - Entity `ActivityContribution`, migration `20261024194214_AddActivityContributions` với unique constraint `(Source, SourceLogId)` cho idempotent projection.
+  - Entity `ProcessedMealEvent`, migration `20261024214957_AddProcessedMealEvents` làm Durable Inbox lưu vết các event bữa ăn đã nhận và xử lý.
 - **Thuật toán Streak & Weight Delta**:
   - Active day = Hợp ngày có MealLog và ngày có BodyMetricLog. Nước, ngủ và fasting không tạo streak độc lập.
   - Weight delta so với tuần trước (bản ghi gần nhất tại/trước `now - 7 days`). Thiếu bản ghi tuần trước trả `null`.
   - Current streak kéo dài đến hôm nay (nếu active) hoặc neo ở hôm qua; nếu gap >= 2 ngày trả 0. Best streak là chuỗi dài nhất trong lịch sử.
-- **Tích hợp Diet Meal Activity**:
-  - Schema và repository `ActivityContribution` đã sẵn sàng cho idempotent projection.
-  - Tuy nhiên, PR #12 của Diet (`feat/diet-service`) vẫn đang là OPEN trên main; do đó Progress không tạo speculative consumer hay bịa đặt event schema, mà ghi nhận trung thực **BLOCKED / PENDING PR #12**.
-- **Kiểm chứng thực tế**:
+- **Tích hợp Diet Meal Activity Event (Workstream A)**:
+  - Event contract: `Longevia.Shared.Events.MealLoggedEvent` (EventId, UserId, MealLogId, BusinessDate, CreatedAt, OccurredOn).
+  - Durable Inbox & Concurrency: `MealActivityConsumerService` sử dụng transaction-scoped advisory lock `pg_advisory_xact_lock(hashtext(mealLogId))` để tuần tự hóa, idempotent dedup nếu event lặp lại, và **phát hiện/từ chối conflicting duplicate** (ném exception vào DLQ nếu cùng MealLogId nhưng khác UserId hoặc Date).
+  - MassTransit Consumer: `MealLoggedConsumer` lắng nghe topic exchange `longevia.events` với routing key `diet.meal.logged`, durable queue `progress.meal-activity`, exponential retry (2s/5s/10s), DLQ `progress.meal-activity.dlq`.
+  - Reconciliation Script: `scripts/progress/reconcile-meal-activity-snapshot.ps1` kiểm tra tính toàn vẹn SHA-256 từng dòng snapshot v1 và đối chiếu DB.
+- **Tích hợp Latest Weight gRPC Provider (Workstream B — Q10 / T038)**:
+  - Canonical Contract: `contracts/progress/v1/progress.proto` định nghĩa `GetLatestWeight` RPC với `weight_kg_x100: int32` chống sai số floating-point, as-of UTC timestamp, `oneof result { WeightRecord record; bool no_record_found; }`.
+  - Proposal Documentation: `contracts/progress/v1/README.md` với 7 câu hỏi kiến trúc cho Bảo + Huy duyệt.
+  - Query Scaffolding: `IWeightQueryService` và `WeightQueryService` trong `Progress.Application` xử lý truy vấn as-of và làm tròn `Math.Round(metric.WeightKg * 100m)`.
+- **Kiểm chứng thực tế (Testcontainers PostgreSQL)**:
   - `StreakTests.cs`: 4 unit tests pass 100%.
+  - `WeightQueryServiceTests.cs`: 5 unit tests pass 100% (chính xác as-of record, bỏ qua record sau as-of, thứ tự ưu tiên Id khi cùng timestamp, chuyển đổi weight_kg_x100, trả null khi không có record).
+  - `MealActivityConsumerTests.cs`: 6 integration tests pass 100%:
+    - Tạo mới projection và inbox record từ event bữa ăn hợp lệ.
+    - Idempotent deduplication khi nhận lại cùng event (không tạo bản ghi lặp, trả AlreadyProcessed).
+    - Concurrent duplicate: 5 requests đồng thời cho cùng một event -> chính xác 1 tạo mới, 4 deduplicate an toàn.
+    - Conflicting duplicate: Cùng MealLogId nhưng khác UserId -> từ chối và ném exception `InvalidOperationException` để vào DLQ.
+    - Conflicting duplicate: Cùng MealLogId nhưng khác BusinessDate -> từ chối và ném exception `InvalidOperationException` để vào DLQ.
+    - Multi-event aggregation: 3 events khác nhau cho cùng một user trong nhiều ngày tạo đủ 3 projections và 3 inbox records.
+  - `WeightProviderIntegrationTests.cs`: 1 integration test pass 100% kiểm chứng truy vấn as-of weight thực tế trên PostgreSQL.
   - `DashboardTests.cs`: Tích hợp toàn diện: initial 72kg (14 ngày trước), baseline 70kg (8 ngày trước), current 68.5kg (hôm nay) -> `weightDeltaKg = -1.5kg`; bữa ăn hôm qua + metric hôm nay -> `currentStreakDays = 2`; fasting 1 phiên; giấc ngủ trung bình 8.0h.
 
 ---
@@ -105,26 +122,28 @@
 ## 3. Tổng hợp Bằng chứng Kiểm thử Toàn Solution (Gate Evidence)
 
 ### 3.1 Progress Service Test Suites
-- **Unit Tests (`Progress.UnitTests`)**: **64 / 64 tests PASSED** (0 failed, 0 skipped, Duration: 106 ms).
-- **Integration Tests (`Progress.IntegrationTests`)**: **59 / 59 tests PASSED** (0 failed, 0 skipped, chạy thật trên Testcontainers PostgreSQL, Duration: 16 s).
+- **Unit Tests (`Progress.UnitTests`)**: **69 / 69 tests PASSED** (0 failed, 0 skipped, Duration: 90 ms).
+- **Integration Tests (`Progress.IntegrationTests`)**: **66 / 66 tests PASSED** (0 failed, 0 skipped, chạy thật trên Testcontainers PostgreSQL, Duration: 16 s).
   - `AuthTests`: 16 tests
   - `HostTests`: 13 tests
-  - `FastingTests`: 9 tests (bổ sung 4 tests cho atomic end, concurrency conflict, idempotent replay)
+  - `FastingTests`: 9 tests (atomic end, concurrency conflict, idempotent replay)
   - `WaterTests`: 3 tests
-  - `SleepTests`: 5 tests (bổ sung concurrent stress test 5 requests đồng thời)
-  - `MetricsTests`: 5 tests (bổ sung tests 404, 503, 422, 201 cho Identity height provider)
+  - `SleepTests`: 5 tests (concurrent stress test 5 requests đồng thời)
+  - `MetricsTests`: 5 tests (tests 404, 503, 422, 201 cho Identity height provider)
+  - `MealActivityConsumerTests`: 6 tests (durable inbox, idempotency, concurrent dedup, conflicting duplicate rejection, multi-day projection)
+  - `WeightProviderIntegrationTests`: 1 test (as-of weight query)
   - `DashboardTests`: 1 test
   - Foundation fixtures & probes: 7 tests
-- **Tổng Progress Tests**: **123 / 123 tests PASSED**.
+- **Tổng Progress Tests**: **135 / 135 tests PASSED (100%)**.
 
 ### 3.2 Toàn bộ Solution (`dotnet test longevia-be.slnx -c Release -m:1`)
-- **Tổng số tests passed**: **678 / 678 tests PASSED** (0 failed, 0 skipped):
+- **Tổng số tests passed**: **690 / 690 tests PASSED** (0 failed, 0 skipped):
   - `Diet.IntegrationTests`: 16 tests passed
   - `Diet.UnitTests`: 11 tests passed
   - `Identity.IntegrationTests`: 9 tests passed
   - `Identity.UnitTests`: 67 tests passed
-  - `Progress.IntegrationTests`: 59 tests passed
-  - `Progress.UnitTests`: 64 tests passed
+  - `Progress.IntegrationTests`: 66 tests passed
+  - `Progress.UnitTests`: 69 tests passed
   - `Recommendation.IntegrationTests`: 64 tests passed
   - `Recommendation.UnitTests`: 372 tests passed
   - `Worker.UnitTests`: 16 tests passed
@@ -141,16 +160,16 @@
 | Điểm tích hợp | Phía đối ứng | Hình thức | Trạng thái hiện tại | Xử lý tại Progress |
 | --- | --- | --- | --- | --- |
 | Lấy chiều cao người dùng (Q02) | Identity Service (Nguyên) | gRPC Read đồng bộ | **BLOCKED EXTERNAL PROVIDER** (Chưa có RPC trong `identity.proto` trên main) | Đã tạo abstraction `IBodyProfileProvider`, stub adapter gRPC trả `ServiceUnavailable` (503). Không tự bịa RPC. |
-| Sự kiện bữa ăn (Q06 / Q09) | Diet Service (Huy) | RabbitMQ Event bất đồng bộ | **BLOCKED EXTERNAL PROVIDER** (PR #12 của Diet chưa merge vào main) | Đã tạo entity và repository `ActivityContribution` (idempotent unique key) cho projection. Không tạo speculative consumer. |
-| Cung cấp cân nặng cho Diet (Q10 / T038) | Diet Service (Huy) | gRPC Read đồng bộ | **PENDING APPROVAL** (Phụ thuộc ngược từ Diet) | Đã chuẩn bị phương thức `GetLatestAsync` trong `IBodyMetricRepository`. |
+| Sự kiện bữa ăn (Q06 / Q09) | Diet Service (Huy) | RabbitMQ Event bất đồng bộ | **PROGRESS IMPLEMENTED (READY FOR DIET PR #12 MERGE)** | Đã triển khai hoàn tất MassTransit `MealLoggedConsumer`, durable inbox `ProcessedMealEvent` với advisory lock, conflicting duplicate detection, và reconciliation script. Kiểm chứng 6 tests pass 100%. |
+| Cung cấp cân nặng cho Diet (Q10 / T038) | Diet Service (Huy) | gRPC Read đồng bộ | **CONTRACT PROPOSED & SCAFFOLDING IMPLEMENTED (AWAITING APPROVAL)** | Đã phát hành canonical protobuf `contracts/progress/v1/progress.proto`, tài liệu 7 câu hỏi proposal `contracts/progress/v1/README.md`, và query scaffolding `WeightQueryService` với 6 tests pass 100%. |
 
 ---
 
 ## 5. Kết luận & Trạng thái PR #13
 
-- Toàn bộ các yêu cầu nghiệp vụ nội bộ của US1 (Metrics/BMI), US2 (Fasting), US3 (Water/Sleep), US4 (Dashboard/Streak) đã được hiện thực hóa và kiểm chứng độc lập hoàn chỉnh với 123 tests xanh 100%.
-- Các vấn đề concurrency (Fasting atomic end, Sleep overlap locking, BMI raw precision) đã được khắc phục triệt để và chứng minh bằng integration tests trên PostgreSQL thật.
+- Toàn bộ các yêu cầu nghiệp vụ nội bộ của US1 (Metrics/BMI), US2 (Fasting), US3 (Water/Sleep), US4 (Dashboard/Streak) và hạ tầng tích hợp Progress-owned (Meal Activity Consumer, Durable Inbox, Weight Query Provider Scaffolding) đã được hiện thực hóa và kiểm chứng độc lập hoàn chỉnh với 135 tests xanh 100%.
+- Các vấn đề concurrency và idempotency (Fasting atomic end, Sleep overlap locking, BMI raw precision, Meal event advisory locking & conflicting payload rejection) đã được khắc phục triệt để và chứng minh bằng integration tests trên PostgreSQL thật.
 - **PR #13 TIẾP TỤC GIỮ Ở DRAFT PR**: Không chuyển sang Ready for Review hoặc Auto-merge cho đến khi:
   1. Nguyên (Identity) cung cấp canonical height-read RPC trong `contracts/identity/v1/identity.proto`.
-  2. Huy (Diet) merge PR #12 cung cấp canonical MealLoggedEvent contract.
-  Hoặc đội ngũ thống nhất cắt deliverable độc lập cho các tính năng standalone (Fasting, Water, Sleep, Dashboard query).
+  2. Huy (Diet) merge PR #12 cung cấp canonical MealLoggedEvent outbox publisher vào `origin/main`.
+  3. Bảo và Huy thống nhất phê duyệt 7 câu hỏi kiến trúc cho hợp đồng gRPC `contracts/progress/v1/progress.proto`.

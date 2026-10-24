@@ -22,6 +22,8 @@ public static class DependencyInjection
         services.AddScoped<IFastingRepository, Repositories.FastingRepository>();
         services.AddScoped<IWaterRepository, Repositories.WaterRepository>();
         services.AddScoped<ISleepRepository, Repositories.SleepRepository>();
+        services.AddScoped<IBodyMetricRepository, Repositories.BodyMetricRepository>();
+        services.AddScoped<IBodyProfileProvider, Adapters.Grpc.BodyProfileProvider>();
         return services;
     }
 }

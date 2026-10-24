@@ -9,6 +9,7 @@ public sealed class ProgressDbContext(DbContextOptions<ProgressDbContext> option
     public DbSet<Progress.Domain.Entities.FastingSession> FastingSessions => Set<Progress.Domain.Entities.FastingSession>();
     public DbSet<Progress.Domain.Entities.WaterLog> WaterLogs => Set<Progress.Domain.Entities.WaterLog>();
     public DbSet<Progress.Domain.Entities.SleepLog> SleepLogs => Set<Progress.Domain.Entities.SleepLog>();
+    public DbSet<Progress.Domain.Entities.BodyMetricLog> BodyMetricLogs => Set<Progress.Domain.Entities.BodyMetricLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

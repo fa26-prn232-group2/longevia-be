@@ -22,6 +22,59 @@ namespace Progress.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Progress.Domain.Entities.BodyMetricLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Bmi")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<string>("BmiCategory")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal?>("BodyFatPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<int?>("DiastolicBloodPressure")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("HeightUsedCm")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTimeOffset>("LoggedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RestingHeartRate")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SystolicBloodPressure")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("WaistCircumferenceCm")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "LoggedAt");
+
+                    b.ToTable("body_metric_logs", (string)null);
+                });
+
             modelBuilder.Entity("Progress.Domain.Entities.FastingSession", b =>
                 {
                     b.Property<Guid>("Id")

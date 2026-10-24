@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<Features.Fasting.FastingUseCases>();
         services.AddScoped<Features.Water.WaterUseCases>();
         services.AddScoped<Features.Sleep.SleepUseCases>();
+        services.AddScoped<Features.Metrics.MetricUseCases>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

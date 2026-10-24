@@ -8,7 +8,7 @@ public sealed class UserProfile
     public Guid UserId { get; private set; }
     public DateOnly BirthDate { get; private set; }
     public string BiologicalSex { get; private set; } = Constants.BiologicalSex.Male;
-    public int HeightCm { get; private set; }
+    public decimal HeightCm { get; private set; }
     public string ActivityLevel { get; private set; } = Constants.ActivityLevel.Sedentary;
     public string DietaryPreference { get; private set; } = Constants.DietaryPreference.None;
     public List<string> Allergies { get; private set; } = [];
@@ -23,7 +23,7 @@ public sealed class UserProfile
         Guid userId,
         DateOnly birthDate,
         string biologicalSex,
-        int heightCm,
+        decimal heightCm,
         string activityLevel,
         string dietaryPreference,
         IEnumerable<string>? allergies,
@@ -48,7 +48,7 @@ public sealed class UserProfile
     public void Update(
         DateOnly birthDate,
         string biologicalSex,
-        int heightCm,
+        decimal heightCm,
         string activityLevel,
         string dietaryPreference,
         IEnumerable<string>? allergies,
@@ -66,14 +66,14 @@ public sealed class UserProfile
     }
 
     private static void Validate(
-        int heightCm,
+        decimal heightCm,
         string biologicalSex,
         string activityLevel,
         string dietaryPreference)
     {
-        if (heightCm is < 50 or > 250)
+        if (heightCm is < 50 or > 250 || decimal.Round(heightCm, 2) != heightCm)
         {
-            throw new ArgumentOutOfRangeException(nameof(heightCm), "Chiều cao phải từ 50cm đến 250cm.");
+            throw new ArgumentOutOfRangeException(nameof(heightCm), "Chiều cao phải từ 50cm đến 250cm và có tối đa 2 chữ số thập phân.");
         }
 
         if (!Constants.BiologicalSex.All.Contains(biologicalSex))

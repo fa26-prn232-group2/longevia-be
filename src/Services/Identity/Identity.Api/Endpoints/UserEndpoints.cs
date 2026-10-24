@@ -1,5 +1,5 @@
+using Identity.Api.Extensions;
 using Identity.Application.Features.Users;
-using Longevia.Shared.Validation;
 
 namespace Identity.Api.Endpoints;
 
@@ -29,7 +29,7 @@ public static class UserEndpoints
             var result = await useCase.ExecuteAsync(request, ct);
             return TypedResults.Ok(result);
         })
-        .AddEndpointFilter<ValidationFilter<UpdateProfileRequest>>()
+        .AddIdentityValidation<UpdateProfileRequest>()
         .WithName("UpdateProfile")
         .WithSummary("Cập nhật hồ sơ thể chất cơ bản & dị ứng");
 

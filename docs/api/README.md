@@ -38,6 +38,11 @@ Dùng Problem Details (`application/problem+json`):
 }
 ```
 
+Đây là mặc định chung cho input không hợp lệ. Khi API contract của service quy
+định khác, endpoint phải trả đúng status và error code đã chốt tại
+[`api-spec.md`](api-spec.md); Identity dùng `422 identity.validation_failed` cho
+lỗi request validation.
+
 - Không trả stack trace ra ngoài.
 - Mã lỗi nghiệp vụ dùng `type` ổn định, không phải chuỗi tự do.
 

@@ -1,11 +1,11 @@
 using Identity.Application.Abstractions;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Common.Errors;
-using Identity.Application.Common.Events;
 using Identity.Application.Common.Mappers;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
 using Longevia.Shared.Auth;
+using Longevia.Shared.Events;
 
 namespace Identity.Application.Features.Users;
 
@@ -58,7 +58,7 @@ public sealed class UpdateProfileUseCase(
                 now);
         }
 
-        await eventPublisher.PublishAsync(new UserProfileUpdatedIntegrationEvent(user.Id, now), ct);
+        await eventPublisher.PublishAsync(new UserProfileUpdatedEvent(user.Id, now), ct);
         await unitOfWork.SaveChangesAsync(ct);
 
         return user.Profile!.ToResponse();

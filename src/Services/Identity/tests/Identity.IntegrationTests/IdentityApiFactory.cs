@@ -19,6 +19,7 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
 {
     public ConcurrentQueue<UserRegisteredEvent> RegisteredEvents { get; } = new();
     public ConcurrentQueue<PasswordResetRequestedEvent> PasswordResetEvents { get; } = new();
+    public ConcurrentQueue<UserProfileUpdatedEvent> ProfileUpdatedEvents { get; } = new();
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("identity_db_test")
         .WithUsername("test_user")
@@ -76,7 +77,8 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
             services.AddScoped<IEventPublisher>(provider => new CapturingEventPublisher(
                 provider.GetRequiredService<IPublishEndpoint>(),
                 RegisteredEvents,
-                PasswordResetEvents));
+                PasswordResetEvents,
+                ProfileUpdatedEvents));
 
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));
             if (descriptor is not null)
@@ -94,7 +96,8 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
     private sealed class CapturingEventPublisher(
         IPublishEndpoint publishEndpoint,
         ConcurrentQueue<UserRegisteredEvent> registeredEvents,
-        ConcurrentQueue<PasswordResetRequestedEvent> passwordResetEvents) : IEventPublisher
+        ConcurrentQueue<PasswordResetRequestedEvent> passwordResetEvents,
+        ConcurrentQueue<UserProfileUpdatedEvent> profileUpdatedEvents) : IEventPublisher
     {
         public Task PublishAsync<T>(T @event, CancellationToken ct = default) where T : class
         {
@@ -105,6 +108,10 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
             else if (@event is PasswordResetRequestedEvent resetEvent)
             {
                 passwordResetEvents.Enqueue(resetEvent);
+            }
+            else if (@event is UserProfileUpdatedEvent profileUpdatedEvent)
+            {
+                profileUpdatedEvents.Enqueue(profileUpdatedEvent);
             }
 
             return publishEndpoint.Publish(@event, ct);

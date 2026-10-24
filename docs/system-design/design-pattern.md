@@ -192,7 +192,9 @@ public sealed class ValidationFilter<TRequest> : IEndpointFilter
         if (!result.IsValid)
         {
             var errors = result.Errors.Select(e => new FieldError(e.PropertyName, e.ErrorMessage)).ToList();
-            throw AppException.BadRequest("Dữ liệu không hợp lệ.").WithCode("validation.failed").WithErrors(errors);
+            throw AppException.BadRequest("Dữ liệu không hợp lệ.")
+                .WithCode("validation.failed")
+                .WithErrors(errors);
         }
         return await next(ctx);
     }
@@ -200,6 +202,10 @@ public sealed class ValidationFilter<TRequest> : IEndpointFilter
 ```
 
 Validator được đăng ký một lần: `services.AddValidatorsFromAssembly(...)`.
+
+`ValidationFilter<TRequest>` mặc định dùng `400 validation.failed`; filter nhận
+status/code override khi contract service quy định riêng. Identity cấu hình
+`422 identity.validation_failed` theo `docs/api/api-spec.md`.
 
 ### 4.3 Quy tắc
 

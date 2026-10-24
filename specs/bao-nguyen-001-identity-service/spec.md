@@ -50,7 +50,7 @@ Là người dùng, tôi muốn đổi mật khẩu khi đăng nhập hoặc đ�
 - **FR-011** Mọi email đi qua event RabbitMQ/outbox để Worker gửi; Identity không gọi SMTP/Brevo trực tiếp.
 - **FR-012** Identity tự áp dụng migration của `identity_db` trước khi nhận request khi `Database:AutoMigrate` bật; mặc định bật theo local/development, cấu hình production có thể tắt có chủ đích; lỗi migration làm startup fail.
 - **FR-013** Không trả `avatarUrl` khi chưa có yêu cầu/model/lifecycle avatar được duyệt; không thêm endpoint avatar trong feature này.
-- **FR-014** Event liên service phải có contract version, transactional outbox và consumer idempotent; không phát event profile không có consumer/contract được chấp thuận.
+- **FR-014** Event liên service phải có contract version và transactional outbox; consumer (khi được triển khai) phải idempotent. Mỗi lần cập nhật profile phát `UserProfileUpdatedEvent` v1 chỉ gồm user ID và timestamp, không chứa dữ liệu sức khỏe; hiện chưa có consumer được xác định.
 
 ## API dự kiến
 
@@ -96,5 +96,5 @@ Các route mật khẩu được đưa vào phạm vi dựa trên MVP và event/
 - Chiều cao dùng decimal theo `docs/api/api-spec.md` (ví dụ `175.5`); cần migration từ integer và tương thích dữ liệu.
 - Avatar bị loại khỏi response cho tới khi có yêu cầu, entity và luồng cập nhật chính thức; API sample hiện tại là bằng chứng không nhất quán, không đủ để tạo tính năng avatar.
 - Đổi mật khẩu thuộc MVP; quên/reset thuộc luồng email đã được PRD/Worker đặc tả. Endpoint semantics sẽ được ghi canonical trong API spec trước implementation.
-- `UpdateProfileUseCase` hiện publish `UserProfileUpdatedIntegrationEvent` (2 fields), nhưng đây chưa phải event contract dùng chung và chưa có consumer được xác định. Phase 5 phải đối chiếu Constitution/US3: bỏ publication nếu không có consumer được duyệt, hoặc chuẩn hóa contract versioned và consumer compatibility nếu có; profile update vẫn lưu dữ liệu.
+- PRD traceability yêu cầu `UserProfileUpdatedEvent`. Phase 5 chuẩn hóa publication thành shared contract v1 chỉ gồm user ID và timestamp, qua transactional outbox; không gửi dữ liệu sức khỏe. Hiện chưa có consumer được xác định, nên backend handoff giữ `IN_PROGRESS`.
 - Không có gRPC hay cross-database call trong feature.

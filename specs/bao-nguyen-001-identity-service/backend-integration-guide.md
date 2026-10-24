@@ -4,11 +4,11 @@
 
 - Feature/spec: `specs/bao-nguyen-001-identity-service/spec.md`
 - Requirement: `docs/requirements/prd.md` §2.1
-- Handoff status: **IN_PROGRESS** (Phase 3–4 email integration đã verified; backend guide chưa READY do profile event publication hiện hữu cần xử lý tại T026).
-- Canonical contracts: `src/Shared/Events/UserRegisteredEvent.cs`, `src/Shared/Events/PasswordResetRequestedEvent.cs`, and `contracts/events/v1/README.md` (v1)
-- Counts: **0 RPC · 0 messages gRPC · 0 gRPC fields · 2 canonical email events · 9 canonical event fields · 0 enum values**. Ngoài scope đếm contract: Identity hiện còn publish `UserProfileUpdatedIntegrationEvent` (2 fields, không có schema version/consumer); T026 đang theo dõi việc xử lý publication này.
+- Handoff status: **IN_PROGRESS** (contract/topology/outbox và PostgreSQL integration Phase 5 đã verified; chưa xác định consumer cho profile event).
+- Canonical contracts: `src/Shared/Events/UserRegisteredEvent.cs`, `src/Shared/Events/PasswordResetRequestedEvent.cs`, `src/Shared/Events/UserProfileUpdatedEvent.cs`, and `contracts/events/v1/README.md` (v1)
+- Counts đã đối chiếu source/contract: **0 RPC · 0 messages gRPC · 0 gRPC fields · 3 canonical events · 11 event fields · 0 enum values**. Trong đó 2 event email có consumer Worker (9 fields); 1 event profile có 2 field, hiện chưa có consumer được xác định.
 
-Guide này ghi phần producer topology và evidence của Identity; schema event canonical giữ nguyên.
+Guide này ghi producer topology và evidence Identity. Hai email event giữ nguyên; `UserProfileUpdatedEvent` là contract mới trong v1.
 
 ## 2. Consumers and transport
 
@@ -16,6 +16,7 @@ Guide này ghi phần producer topology và evidence của Identity; schema even
 |---|---|---|---|---|---|
 | Identity | Worker `worker.email` | RabbitMQ event | `UserRegisteredEvent` v1 | async | RabbitMQ trên `data_net` |
 | Identity | Worker `worker.email` | RabbitMQ event | `PasswordResetRequestedEvent` v1 | async | RabbitMQ trên `data_net` |
+| Identity | Undetermined | RabbitMQ event | `UserProfileUpdatedEvent` v1 | async | RabbitMQ trên `data_net` |
 
 ## 3. gRPC
 
@@ -27,6 +28,7 @@ Guide này ghi phần producer topology và evidence của Identity; schema even
 |---|---|---|---|---|---|---|
 | `longevia.events` (`topic`) | `identity.user.registered` | `worker.email` | `UserRegisteredEvent` v1 | Identity | Worker `UserRegisteredConsumer` | producer topology aligned |
 | `longevia.events` (`topic`) | `identity.user.password-reset-requested` | `worker.email` | `PasswordResetRequestedEvent` v1 | Identity | Worker `PasswordResetRequestedConsumer` | producer topology aligned |
+| `longevia.events` (`topic`) | `identity.user.profile-updated` | N/A | `UserProfileUpdatedEvent` v1 | Identity | Chưa xác định | Chưa có consumer |
 
 - Payload canonical: `src/Shared/Events/UserRegisteredEvent.cs`; các field: `UserId`, `Email`, `FullName`, `VerificationToken`, `OccurredOn` (5). Không đổi payload hoặc schema version.
 - Payload reset canonical: `src/Shared/Events/PasswordResetRequestedEvent.cs`; các field: `Email`, `ResetToken`, `ExpiresAt`, `OccurredOn` (4). Không đổi payload hoặc schema version. ResetToken chỉ lưu hash ở `identity_db`; bản rõ chỉ nằm trong outbox/email để Worker gửi mã một lần.
@@ -38,7 +40,7 @@ Guide này ghi phần producer topology và evidence của Identity; schema even
 - Versioning/compatibility: v1 giữ nguyên; producer và consumer dùng chung event contract.
 - Delta: Identity trước đây dùng topology MassTransit mặc định nên Worker không nhận được event. Producer hiện khai báo exchange topic và routing key đúng với Worker binding.
 
-- Existing profile publication (outside Phase 3–4 email counts): `UpdateProfileUseCase` currently emits `UserProfileUpdatedIntegrationEvent` (2 fields), which lacks a shared versioned contract and has no known consumer. This is tracked in T026 and prevents `READY_FOR_BACKEND` until it is removed or contractually completed.
+- `UserProfileUpdatedEvent` payload chỉ gồm `UserId`, `OccurredOn`; không gửi dữ liệu sức khỏe. Identity ghi event qua MassTransit EF bus outbox cùng transaction cập nhật/tạo profile. Hiện chưa có consumer được xác định; backend handoff vẫn `IN_PROGRESS`.
 
 ## 5. Internal HTTP
 
@@ -46,21 +48,23 @@ Guide này ghi phần producer topology và evidence của Identity; schema even
 
 ## 6. Compatibility and rollout
 
-- Schema: không đổi; không cần migration contract hoặc rollout hai phiên bản.
-- Before → after: Identity thêm producer cho reset event v1 trong transactional outbox; topology khớp exchange/routing key Worker, email reset dùng OTP và idempotency phân biệt reset token.
-- Rollout: deploy Worker có template OTP và dedup theo reset-token hash cùng hoặc trước Identity producer; contract v1 và queue hiện hành tương thích.
+- Schema DB: migration Identity chuyển `user_profiles.HeightCm` integer sang `numeric(5,2)`; PostgreSQL integration đã xác nhận giá trị integer cũ được giữ nguyên. Event contract thêm `UserProfileUpdatedEvent` v1; hai event email không đổi.
+- Before → after: Identity phát event profile nội bộ không version thành shared v1 event qua outbox; event email reset giữ OTP và idempotency hiện có.
+- Rollout: hai event email tiếp tục cần Worker hiện hành. Profile event chưa có consumer, vì vậy không được giả định consumer/side effect tồn tại; backend handoff giữ `IN_PROGRESS`.
 
 ## 7. Test evidence
 
 - `dotnet test src/Services/Identity/tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj --no-restore --filter FullyQualifiedName~RegistrationEmailE2ETests` — passed; PostgreSQL, RabbitMQ, Redis, Worker và Mailpit chạy bằng Testcontainers. Test xác nhận email nhận ở Mailpit, lấy link, verify và login thành công.
+- `dotnet test src/Services/Identity/tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj` — **9/9 passed**; bao gồm PostgreSQL migration giữ nguyên `175` thành `175.00`, decimal height round-trip, validation contract `422 identity.validation_failed`, profile/outbox rollback, và E2E PostgreSQL + RabbitMQ + Redis + Worker + Mailpit.
 - `AuthAndUserIntegrationTests.Registration_ShouldPersistUserAndOutboxMessageInSameTransaction` — passed; user và outbox cùng transaction, rollback loại bỏ cả hai.
 - Phase 4 E2E `RegistrationEmailE2ETests.Register_ShouldSendVerificationEmailThroughRabbitWorkerAndMailpit_ThenVerifyAccount` — passed với PostgreSQL + RabbitMQ + Redis + Worker + Mailpit; xác nhận OTP/hash/expiry/replacement, concurrent reset single-winner, replay rejection, session revoke và login bằng mật khẩu mới. Worker Unit xác nhận SMTP lỗi rồi retry gửi được; negative control giữ claim sau lỗi làm test fail vì không gửi email. Negative control bỏ predicate consumed làm test fail vì hai request cùng trả 204; sau restore test passed.
 
 ## 8. Sync checklist
 
 - [x] RPC / gRPC messages / fields: 0 (phase không đổi gRPC).
-- [x] Event schema: 2 event, 9 fields, 0 enum values; đối chiếu record và v1 index.
-- [x] Event topology: 1 exchange, 2 routing keys, 1 queue, 2 producer/consumer pairs; đối chiếu Identity config với Worker binding.
+- [x] Event schema: 3 event, 11 fields, 0 enum values; đối chiếu record và v1 index.
+- [x] Event topology: 1 exchange, 3 routing keys, 1 Worker queue, 2 producer/consumer pairs và 1 event chưa có consumer; xác minh cấu hình Identity.
 - [x] Transactional outbox rollback test cho reset và E2E chạy với container thật; rollback không để lại user reset token hoặc event outbox.
 - [x] Idempotency/retry/DLQ được đối chiếu với Worker consumer và unit test.
 - [x] Phase 4 E2E evidence chạy thực tế với PostgreSQL, RabbitMQ, Worker và Mailpit.
+- [x] Phase 5 PostgreSQL test chứng minh decimal height round-trip, migration giữ nguyên integer data, validation contract và profile/outbox rollback cùng nhau (9/9 integration tests passed).

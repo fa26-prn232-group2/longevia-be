@@ -21,6 +21,10 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
 {
     private const string RabbitUser = "identity_e2e";
     private const string RabbitPassword = "identity_e2e_password";
+    private static string TestcontainersHost =>
+        Environment.GetEnvironmentVariable("TESTCONTAINERS_HOST_OVERRIDE") is { Length: > 0 } host
+            ? host
+            : "127.0.0.1";
 
     private readonly IContainer _rabbit = new ContainerBuilder("rabbitmq:4-management")
         .WithEnvironment("RABBITMQ_DEFAULT_USER", RabbitUser)
@@ -64,7 +68,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
 
         _identityFactory = new IdentityApiFactory
         {
-            RabbitHost = "127.0.0.1",
+            RabbitHost = TestcontainersHost,
             RabbitPort = _rabbitPort,
             RabbitUser = RabbitUser,
             RabbitPassword = RabbitPassword,
@@ -198,13 +202,13 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
             CreateNoWindow = true,
         };
         startInfo.ArgumentList.Add(workerAssembly);
-        startInfo.Environment["RABBITMQ_HOST"] = "127.0.0.1";
+        startInfo.Environment["RABBITMQ_HOST"] = TestcontainersHost;
         startInfo.Environment["RABBITMQ_PORT"] = _rabbitPort.ToString();
         startInfo.Environment["RABBITMQ_USER"] = RabbitUser;
         startInfo.Environment["RABBITMQ_PASSWORD"] = RabbitPassword;
-        startInfo.Environment["REDIS_HOST"] = "127.0.0.1";
+        startInfo.Environment["REDIS_HOST"] = TestcontainersHost;
         startInfo.Environment["REDIS_PORT"] = _redisPort.ToString();
-        startInfo.Environment["SMTP__HOST"] = "127.0.0.1";
+        startInfo.Environment["SMTP__HOST"] = TestcontainersHost;
         startInfo.Environment["SMTP__PORT"] = _mailpitSmtpPort.ToString();
         startInfo.Environment["SMTP__USE_SSL"] = "false";
         startInfo.Environment["SMTP__SENDER_EMAIL"] = "no-reply@longevia.local";
@@ -219,7 +223,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
         using var client = new HttpClient();
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{RabbitUser}:{RabbitPassword}"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-        var queueUri = $"http://127.0.0.1:{_rabbitManagementPort}/api/queues/%2F/worker.email";
+        var queueUri = $"http://{TestcontainersHost}:{_rabbitManagementPort}/api/queues/%2F/worker.email";
 
         await WaitUntilAsync(async () =>
         {
@@ -242,7 +246,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
 
     private async Task WaitForMailpitAsync()
     {
-        _mailpitClient = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{_mailpitHttpPort}/") };
+        _mailpitClient = new HttpClient { BaseAddress = new Uri($"http://{TestcontainersHost}:{_mailpitHttpPort}/") };
         await WaitUntilAsync(async () =>
         {
             try
@@ -264,7 +268,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
             try
             {
                 using var tcpClient = new System.Net.Sockets.TcpClient();
-                await tcpClient.ConnectAsync("127.0.0.1", _redisPort);
+                await tcpClient.ConnectAsync(TestcontainersHost, _redisPort);
                 return tcpClient.Connected;
             }
             catch (SocketException)

@@ -153,7 +153,7 @@
   ```
 - **Validation**: mật khẩu mới tối thiểu 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt, cùng policy với đăng ký.
 - **Response `204 No Content`**: đổi mật khẩu thành công; mọi refresh token của user bị thu hồi. Access JWT hiện tại có thể dùng tới khi hết hạn (tối đa 15 phút).
-- **Lỗi**: `400 identity.invalid_current_password` nếu mật khẩu hiện tại không khớp; `401 identity.unauthorized` nếu JWT không còn được chấp nhận; lỗi validation theo `validation.failed`.
+- **Lỗi**: `400 identity.invalid_current_password` nếu mật khẩu hiện tại không khớp; `401 identity.unauthorized` nếu JWT không còn được chấp nhận; lỗi validation theo `422 identity.validation_failed`.
 
 ### 2.7 `POST /api/identity/auth/forgot-password` — Yêu cầu đặt lại mật khẩu
 - **Xác thực**: Public.
@@ -177,19 +177,23 @@
 
 ### 2.9 `GET /api/identity/users/me` — Lấy thông tin cá nhân
 - **Xác thực**: Bearer JWT
-- **Response `200 OK`**:
+- **Response `200 OK`**: DTO gồm `id`, `email`, `fullName`, `status`, `createdAt` và `profile` (nullable). `profile` có `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies`, `updatedAt`.
   ```json
   {
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "email": "alex.minh@example.com",
     "fullName": "Alex Minh",
+    "status": "Active",
+    "createdAt": "2026-10-21T14:30:00Z",
     "profile": {
+      "id": "0d5d3d36-d8ef-43fb-b50c-b393b874205c",
       "birthDate": "1998-05-15",
       "biologicalSex": "Male",
       "heightCm": 175.5,
       "activityLevel": "ModeratelyActive",
       "dietaryPreference": "Mediterranean",
-      "allergies": ["Peanuts", "Shellfish"]
+      "allergies": ["Peanuts", "Shellfish"],
+      "updatedAt": "2026-10-21T14:30:00Z"
     }
   }
   ```
@@ -211,10 +215,10 @@
   ```
 - **Validation**:
   - `biologicalSex`: Chỉ chấp nhận `"Male"` hoặc `"Female"`.
-  - `heightCm`: Số thực từ 50.0 đến 250.0 cm.
+  - `heightCm`: Số thực từ 50.00 đến 250.00 cm, tối đa 2 chữ số thập phân.
   - `activityLevel`: Một trong các giá trị `["Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive"]`.
   - `dietaryPreference`: Một trong `["None", "Keto", "Vegan", "Mediterranean", "LowCarb"]`.
-- **Response `200 OK`**: Trả về dữ liệu profile sau khi cập nhật.
+- **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies` và `updatedAt`; `heightCm` là số thực.
 
 ---
 

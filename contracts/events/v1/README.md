@@ -9,6 +9,7 @@ C# records in `src/Shared/Events/` (each carries `SchemaVersion = 1`).
 | --- | --- | --- | --- | --- |
 | `UserRegisteredEvent` | `identity.user.registered` | `src/Shared/Events/UserRegisteredEvent.cs` | Identity (via transactional outbox — obligation recorded in `specs/mavil-001-infra-observability/data-model.md` §1.1, implementation owned by Identity feature) | Worker `worker.email` queue → verification email |
 | `PasswordResetRequestedEvent` | `identity.user.password-reset-requested` | `src/Shared/Events/PasswordResetRequestedEvent.cs` | Identity (via transactional outbox) | Worker `worker.email` queue → reset email |
+| `UserProfileUpdatedEvent` | `identity.user.profile-updated` | `src/Shared/Events/UserProfileUpdatedEvent.cs` | Identity (via transactional outbox) | No current consumer; signals a profile change without health profile data |
 
 ## Versioning policy
 

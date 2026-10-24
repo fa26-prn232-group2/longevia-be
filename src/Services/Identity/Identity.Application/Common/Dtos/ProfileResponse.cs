@@ -4,7 +4,7 @@ public sealed record ProfileResponse(
     Guid Id,
     DateOnly BirthDate,
     string BiologicalSex,
-    int HeightCm,
+    decimal HeightCm,
     string ActivityLevel,
     string DietaryPreference,
     IReadOnlyList<string> Allergies,

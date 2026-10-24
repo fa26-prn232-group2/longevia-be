@@ -118,17 +118,45 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 
 ## Shared Files & Conflict Hotspots
 
+### Quyền thực thi Phase 2 — 2026-10-25
+
+Developer giao T001–T008, cho phép đồng bộ nhánh an toàn, commit/push có gate và
+mở PR Phase 2 mới. `longevia-be.slnx`: người sửa Bảo; **Explicit developer authorization**
+để đăng ký sáu project Progress (bốn production, hai test); không cần Duy duyệt
+thêm riêng file này. Giữ nguyên project/folder hiện có. Không sửa central packages.
+Composition root/DI và persistence mới dưới Progress do Bảo sở hữu, xử lý tuần tự.
+Không tạo business entity, schema hoặc migration rỗng chỉ để đủ checklist.
+
+Steer developer 2026-10-25 thay hạn chế phối hợp hạ tầng trước đó: Bảo sở hữu
+integration riêng Progress, được trực tiếp sửa Compose, Prometheus, Nginx và
+.env.example khi cần; không chờ Duy. Không có Technical Lead được chỉ định.
+Đã fetch lại: origin/main vẫn `2addfea063cbe5753dcf0ea4b925e0edfcda3acc`,
+không thay đổi đồng thời các file này. Nginx đã có prefix stripping `/api/progress/`;
+giữ route hiện có. Q08 Bảo + Nguyên vẫn PENDING:
+Progress được thêm guard phù hợp ADR (public key SPKI/P-256, kid, subject) và
+kiểm thử, không sửa Shared/Identity hay coi guard là đồng thuận liên service.
+T002/T003 và phần host/DB độc lập được phép tiếp tục; security acceptance vẫn chặn.
+T003 chỉ cần PostgreSQL thật; chưa publisher/consumer nên không thêm RabbitMQ.
+Clock dùng trực tiếp TimeProvider thay interface IClock trùng chức năng.
+
+DbContext Phase 2 chưa có entity: xác minh kết nối DB đã provision trước startup,
+gọi MigrateAsync chỉ khi assembly có migration. Không EnsureCreated, không tự tạo
+DB thiếu, không DDL/bảng giả; migration đầu tiên sinh bằng EF ở phase có schema
+đã duyệt. Trước nhận traffic phải kiểm tra DB, lỗi/cancellation dừng startup.
+Chỉ ConnectionStrings:Progress trỏ progress_db và progress_user.
+
 Phase 1 **không sửa** hàng nào dưới đây. Đây là điều kiện phối hợp cho Phase 2–6,
 không phải quyền sửa file owner khác. Registry base: Identity feature còn open với
 Identity/Shared/Worker; Progress không nhận ownership các file đó.
 
 | Path | Nhu cầu dự kiến | Owner / phối hợp trước sửa | Điểm hợp nhất |
 | --- | --- | --- | --- |
-| deployments/docker-compose.yml | Thêm host Progress/env/networks/health, không expose private key. | Duy; chờ xác nhận slot thay đổi. | Phase 2 host. |
-| deployments/nginx/nginx.conf | Route Progress đã có; chỉ sửa nếu kiểm tra xác nhận thiếu. | Duy. | Phase 2 routing test. |
-| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics; thiếu job thì target không xuất hiện. | Duy. | Phase 2 observability. |
+| deployments/docker-compose.yml | Thêm host Progress/env/networks, không expose private key. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 host. |
+| deployments/nginx/nginx.conf | Reuse route Progress đã có; chỉ sửa nếu có lỗi thực tế. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 routing test. |
+| deployments/prometheus/prometheus.yml | Thêm static scrape Progress /metrics. | Bảo, explicit developer authorization theo steer; không chờ Duy. | Phase 2 observability. |
+| .env.example | Tái sử dụng Progress DB/JWT config; chỉ sửa nếu thiếu; comment English. | Bảo được phép riêng Progress theo steer; không cần sửa hiện tại. | Phase 2 config. |
 | deployments/postgres/init/01-databases.sh | Đã có progress DB/user; kiểm tra quyền, không sửa tay DB. | Duy. | Phase 2 integration. |
-| longevia-be.slnx | Thêm project Progress/tests sau khi tạo. | Bảo phối hợp Duy/lead, tránh nhiều PR sửa đồng thời. | Phase 2. |
+| longevia-be.slnx | Đăng ký sáu project Progress/tests. | Bảo; Explicit developer authorization, không cần thêm Duy approval. | Phase 2. |
 | Directory.Packages.props | Chỉ nếu thiếu package so với dependency hiện có; ưu tiên tái sử dụng version. | Lead + Duy; PR shared riêng nếu cần. | Trước package mới; không mặc định cần sửa. |
 | src/Services/Progress/Progress.Api/Program.cs | DI, auth, migrations, health/Swagger/metrics. | Bảo; mọi phase chạm composition root phải tuần tự. | Phase 2 rồi từng story. |
 | src/Services/Progress/Progress.Infrastructure/Persistence/Migrations | Migrations/snapshot chỉ Progress, một open feature sở hữu. | Bảo; resolve/registry trước tạo, đồng bộ main theo quyền. | Từng phase persistence sau approve policy. |

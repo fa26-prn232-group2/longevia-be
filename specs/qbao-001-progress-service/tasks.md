@@ -2,8 +2,9 @@
 
 Đầu vào: [spec](spec.md), [plan](plan.md), [research](research.md),
 [data model](data-model.md), [proposal](contracts/README.md).
-Phase 1 chỉ planning; **0 task triển khai hoàn thành**. Chỉ bắt đầu khi developer giao
-phase triển khai sau review. US1/US2/US3/US4 tương ứng bốn US-PROG trong spec.
+Phase 1 chỉ planning; Phase 2 được developer giao ngày 2026-10-25 sau PR #9 merge.
+Trạng thái T001–T008 bên dưới chỉ được xác nhận bằng evidence trong verification.md.
+US1/US2/US3/US4 tương ứng bốn US-PROG trong spec.
 Mọi path source dưới đây là dự kiến. Các task có nhãn BLOCKED không được tự gỡ
 bằng mock/fallback; cần evidence approve và canonical contract ở producer PR.
 
@@ -13,18 +14,27 @@ Phase 2–6 khi thực sự đổi surface. Việc ngoài scope ở deferred, kh
 
 ## Phase 2 — Foundation & Persistence
 
+Phạm vi developer cho phép tiếp tục phần độc lập khi Q08 chưa được nghiệm thu.
+Steer 2026-10-25 cho Bảo quyền integration riêng Progress vào solution/Compose/
+Prometheus/routing/env; không chờ Duy, không có Technical Lead được chỉ định.
+Chỉ Bảo + Nguyên xác nhận Q08 liên service. Các reference lead/slot trong lịch sử
+Phase 1 không phải blocker quyền hạ tầng của Phase 2.
+Phase 2 không đổi RPC/event/topology hoặc giao tiếp liên service: không tạo
+backend-integration-guide.md. HTTP operational surface có frontend-guide.md;
+T036 vẫn dành cho handoff business Phase 3–6, không tick nhờ operational routes.
+
 Mục tiêu: host Progress độc lập, DB riêng, bảo mật/quan sát được, chưa dựng schema business thiếu quyết định.
 Kiểm chứng: app khởi động với config hợp lệ, fail khi config/DB invalid, 401 đúng,
 health/metrics hoạt động, migration chỉ progress_db. Liên service chưa cần hoạt động.
 
-- [ ] T001 Theo dõi approval Q01/Q08 tại specs/qbao-001-progress-service/research.md và plan.md; FR-001/FR-017/FR-019; sau human review Phase 1; BLOCKED phần approval, không chặn skeleton T002/T003; verification: người duyệt/ngày, Q08 chặn security acceptance T004–T008, Q01 chặn date logic Phase 4–6; không tự sửa Shared/Gateway.
-- [ ] T002 Tạo bốn project theo Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj và Progress.Api/Progress.Api.csproj; FR-019, SC-001; phụ thuộc human giao Phase 2 và shared solution slot Duy/lead, không phụ thuộc T001/Q01/Q08; verification: references hướng vào trong, DI wiring cấu trúc, không reference service khác hoặc claim auth readiness.
-- [ ] T003 Tạo test projects src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj và src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj cùng fixture PostgreSQL/RabbitMQ thật; SC-003/SC-007; sau T002; verification: fixture tạo DB riêng, assert đọc/ghi giá trị, negative control đúng nguyên nhân.
-- [ ] T004 Viết auth/ownership/config tests tại src/Services/Progress/tests/Progress.IntegrationTests/Foundation/AuthTests.cs; FR-001/SC-003; sau T003, cần phần Q08 của T001 và Shared remediation owner trước nghiệm thu security; Q01 không chặn scaffolding; verification: unsigned/wrong algorithm/kid missing/unknown/expired/issuer/audience sai → 401, hai user cách ly, config thiếu fail-start, thấy đỏ trước implementation.
-- [ ] T005 Cấu hình host tại src/Services/Progress/Progress.Api/Program.cs và Progress.Application/Abstractions/IClock.cs: JWT public-key-only, ICurrentUser, clock, DI, centralized AppException/validation, cancellation và options fail-start; FR-001/FR-017; sau T004; verification: T004 xanh, không private key/log PII, endpoint không chứa business logic, không sửa Shared để né test.
-- [ ] T006 Tạo ProgressDbContext/UoW tại src/Services/Progress/Progress.Infrastructure/Persistence/ProgressDbContext.cs và EfUnitOfWork.cs, migration foundation đã có quyết định; FR-001/FR-019; sau T005; verification: chỉ progress_db, MigrateAsync trước request, lỗi fail-start, migration review, không sinh business table PENDING hoặc sửa snapshot bằng tay.
-- [ ] T007 Tạo health/Swagger/metrics tại src/Services/Progress/Progress.Api/Extensions/HostExtensions.cs và Program.cs; SC-006/SC-007; sau T006, BLOCKED slot Duy cho compose/scrape; verification: AddObservability("Progress"), MapPrometheusScrapingEndpoint, target Progress UP sau job static_configs do Duy phối hợp, request metric tăng, Grafana hiển thị, Swagger chỉ Development.
-- [ ] T008 Ghi kết quả foundation tại specs/qbao-001-progress-service/verification.md; SC-001/FR-019; sau T007; verification: gate theo AGENTS §2, test scoped đúng project, ghi số pass/fail, negative control, shared slot/reconciliation; chỉ qua phase sau khi gate xanh.
+- [ ] T001 **PARTIAL** — Theo dõi Q01/Q08 tại research.md và plan.md; FR-001/FR-017/FR-019. Phase 2 đã được giao; Q01 vẫn PENDING và chỉ chặn date logic Phase 4–6; Q08 Bảo + Nguyên PENDING, không tự approve từ guard riêng Progress.
+- [x] T002 **DONE** — Bốn project Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj, Progress.Api/Progress.Api.csproj; FR-019, SC-001. Sáu project gồm tests đăng ký longevia-be.slnx theo explicit developer authorization; dependency hướng vào trong, không service import, Domain không framework.
+- [x] T003 **DONE** — src/Services/Progress/tests/Progress.UnitTests và Progress.IntegrationTests; SC-003/SC-007. xUnit, WebApplicationFactory, test-only keys/TimeProvider, PostgreSQL Testcontainers progress_db/progress_user và DI fixtures thực. Không RabbitMQ vì chưa publisher/consumer, không EF InMemory. Assertion DB/current user/validation/negative control cụ thể; xem verification.md.
+- [ ] T004 **PARTIAL** — AuthTests.cs, HostTests.cs và FoundationOptionsTests.cs trong hai test project; FR-001/SC-003. Auth/config/subject tests chạy thật; missing kid mutation đỏ 401→200 rồi khôi phục xanh. Q08 chưa có đồng thuận Bảo + Nguyên; chưa entity/endpoint business nên không claim resource ownership 404 hay persistence hai-user đã kiểm chứng.
+- [ ] T005 **PARTIAL** — Progress.Api/Program.cs, Auth/, Extensions/HostExtensions.cs và ProgressExceptionHandler.cs; FR-001/FR-017. Shared ES256/current user, local ADR guards, validation filter, Problem Details, DI và TimeProvider; không tạo IClock trùng chức năng. Host chạy/test xanh; security acceptance chờ Q08, không sửa Shared/Identity.
+- [x] T006 **DONE** — Progress.Infrastructure/Persistence/ProgressDbContext.cs, ProgressDatabaseOptions.cs, ProgressDatabaseInitializer.cs và IUnitOfWork; FR-001/FR-019. DbContext là UoW, không thêm wrapper EfUnitOfWork vô ích. Xác minh DB trước traffic, MigrateAsync khi có migration; chưa entity nên không migration rỗng/EnsureCreated/DDL giả. PostgreSQL thật xác nhận DB/user/schema rỗng, init lặp, cancellation và fail-start.
+- [x] T007 **DONE** — HostExtensions.cs, Program.cs, Dockerfile, deployments/docker-compose.yml, deployments/prometheus/prometheus.yml và scripts/smoke/progress-smoke.ps1; SC-006/SC-007. Được Bảo cấp quyền hạ tầng, không chờ Duy. AddObservability("ProgressService"), scrape, health/Swagger đã hoạt động; đã có evidence thật: container healthy, gateway prefix stripping đúng, Prometheus target UP, metric tăng (32 -> 45), Grafana datasource & dashboard kiểm chứng thành công.
+- [ ] T008 **PARTIAL** — verification.md; SC-001/FR-019. Ghi evidence/gates thực và blocker Q08; không claim toàn Phase 2 complete hoặc bắt đầu Phase 3 khi security acceptance chưa duyệt.
 
 ## Phase 3 — Fasting — US2
 

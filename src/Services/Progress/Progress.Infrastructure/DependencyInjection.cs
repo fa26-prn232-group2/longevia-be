@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddDbContext<ProgressDbContext>((provider, options) => options.UseNpgsql(
             provider.GetRequiredService<IOptions<ProgressDatabaseOptions>>().Value.Progress));
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ProgressDbContext>());
+        services.AddScoped<IFastingRepository, Repositories.FastingRepository>();
         return services;
     }
 }

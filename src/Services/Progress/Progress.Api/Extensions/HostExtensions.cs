@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Progress.Api.Auth;
+using Progress.Api.Endpoints;
 using Progress.Infrastructure.Persistence;
 
 namespace Progress.Api.Extensions;
@@ -47,6 +48,7 @@ public static class HostExtensions
         app.MapGet("/health", async (ProgressDbContext db, CancellationToken ct) =>
             await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503))
             .AllowAnonymous();
+        app.MapFastingEndpoints();
         return app;
     }
 

@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddProgressApplication(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddScoped<Features.Fasting.FastingUseCases>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

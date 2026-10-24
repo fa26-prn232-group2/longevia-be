@@ -19,12 +19,16 @@ schema được duyệt. Cancellation truyền tới mở kết nối/migration,
 Shared xác thực ES256 với public keys. Progress-local guard yêu cầu SPKI P-256,
 issuer/audience/key id hợp lệ, previous key/id đi cặp và distinct, không nhận private
 key cấu hình, reject kid thiếu và subject thiếu/không phải Guid/Guid rỗng.
-Q08 về đồng thuận auth/ownership liên service đã được THỐNG NHẤT (APPROVED) giữa Bảo và Nguyên:
-chính sách strict JWT (ES256, kid hợp lệ, sub Guid, fail-start khi thiếu key) được bảo vệ;
-Progress giữ guard cục bộ hiện tại, Nguyên cập nhật Shared Auth trong PR riêng.
+Q08-A về chính sách xác thực JWT đã được THỐNG NHẤT (APPROVED) giữa Bảo và Nguyên:
+chính sách strict JWT (ES256, kid hợp lệ, sub Guid khác empty, fail-start khi thiếu key hoặc
+cấu hình nhầm private key) được bảo vệ; Progress giữ guard cục bộ hiện tại, Nguyên cập nhật Shared Auth
+trong PR riêng của Identity. Q08-B về resource ownership và error policy (403 vs 404, Problem Details mapping)
+tiếp tục PENDING cho các business resource endpoints (Phase 3–6); Phase 2 chưa có resource business
+nên chưa nghiệm thu ownership 404 và không tuyên bố đã test.
 Q02 về chiều cao cho BMI (Phase 5) đã thống nhất hướng gRPC read từ Identity sang Progress,
-kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), schema RPC chi tiết chốt trước Phase 5.
-Chưa có resource business để nghiệm thu ownership 404. Application dùng TimeProvider, không đọc HttpContext.
+kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), snapshot BMI bất biến;
+schema RPC trong identity.proto PENDING trước Phase 5, provider runtime chưa có trong Identity.
+Application dùng TimeProvider, không đọc HttpContext. Không có role Technical Lead trong repo.
 
 - `/alive`: liveness 200 JSON status=ok, độc lập DB.
 - `/health`: readiness 200 status=ok khi kết nối PostgreSQL được; 503 khi DB lỗi.

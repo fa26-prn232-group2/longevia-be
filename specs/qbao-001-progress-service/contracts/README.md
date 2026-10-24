@@ -34,9 +34,10 @@ lịch sử fasting vào scope chỉ vì persistence hỗ trợ được.
   timestamp policy và Custom bounds chỉ là đề xuất Q03–Q05, chưa là accepted contract.
 - Input invalid theo system-design: 400 `validation.failed`, Problem Details gồm
   type/title/status/detail/code/errors/traceId; không rải logic lỗi trong endpoint.
-- 401 token không hợp lệ; 404 ownership hiding, 409 active/retry conflict,
-  422 thiếu chiều cao, 503 dependency unavailable là đề xuất Q02/Q03/Q08/Q09.
-  Mã Progress cụ thể cần catalog được duyệt trước code, không tái dùng mã Identity.
+- 401 token không hợp lệ (tuân thủ Q08-A strict JWT validation đã approved: ES256, kid hợp lệ, sub Guid);
+  404 ownership hiding (Q08-B PENDING cho business endpoints), 409 active/retry conflict (Q03),
+  422 thiếu chiều cao (Q02), 503 dependency unavailable (Q09) là các đề xuất cần chốt khi triển khai
+  phase nghiệp vụ tương ứng. Mã Progress cụ thể cần catalog được duyệt trước code, không tái dùng mã Identity.
 - Nội bộ `PagedResult<T>`: items, page, pageSize, totalItems, totalPages,
   hasPreviousPage, hasNextPage. API wire hiện dùng pageNumber/totalCount.
   Q07 đề xuất DTO adapter cục bộ, không sửa Shared; Count trước Skip/Take.
@@ -52,7 +53,12 @@ Event `UserProfileUpdatedEvent` (PR #10) chỉ có `UserId` và `OccurredOn`, kh
 - Kiểu dữ liệu: `decimal`, đồng bộ với PR #10 của Identity (`HeightCm` dạng `decimal`, cột DB `numeric(5,2)`, validation 50.00–250.00 cm).
 - Snapshot bất biến: Chiều cao nhận được dùng để tính BMI và lưu snapshot (`HeightUsedCm`, `Bmi`, `BmiCategory`) trong `BodyMetricLog`. Thay đổi chiều cao profile sau này trong Identity KHÔNG làm thay đổi BMI lịch sử (BR-05). Không recalculate khi đọc history.
 - Tên làm việc RPC: `GetBodyProfile` (request `userId`; response `userId`, `heightCm` decimal, `hasProfile`/`hasHeight`, `profileVersion`/`updatedAt`). Cần hoàn thiện schema protobuf, deadline (đề xuất default 2s), retry policy (tối đa 1 read retry), và error handling (422 khi thiếu height, 503 khi unavailable) trước khi triển khai Phase 5.
-- Progress adapter chỉ map contract-native DTO, không reference `Identity.Application`, không đọc trực tiếp DB của Identity. Không tạo RPC giả hay adapter trong Phase 2.
+- Hiện trạng:
+  - Hướng kiến trúc gRPC read: **APPROVED**.
+  - Protobuf schema trong `identity.proto`: **PENDING** trước Phase 5.
+  - Runtime provider implementation: **NOT YET AVAILABLE** trong Identity Service.
+  - Phase 5 integration: **NOT YET COMPLETE**; không tạo RPC giả hay adapter trong Phase 2.
+- Progress adapter chỉ map contract-native DTO, không reference `Identity.Application`, không đọc trực tiếp DB của Identity.
 - Phương án event snapshot chiều cao: Không chọn do nguy cơ stale data và phức tạp hóa outbox/bootstrap; hướng gRPC read đã được chọn chính thức.
 
 ## Meal activity — B / BLOCKED, PENDING INTEGRATION Huy
@@ -99,7 +105,7 @@ eventId dedup không đủ để chặn event cũ ghi đè mới.
 - Timezone: Diet/Progress thống nhất semantics Q01; không suy từ timestamp nhận event.
 - Đề xuất topology: topic `longevia.events`, queue `progress.meal-activity`, routing key
   `diet.meal.activity-changed`, DLX/DLQ riêng và retry hữu hạn. Tên, retry/backoff,
-  retention, prefetch, dedup lifetime đều phải Huy/Duy/lead duyệt trước canonicalization.
+  retention, prefetch, dedup lifetime đều phải Huy/Duy/Bảo thống nhất duyệt trước canonicalization (không có role Lead).
 
 Phương án khác: gRPC lấy active dates theo user/range có pagination/cursor, version
 và completeness; triển khai query đơn giản hơn nhưng cần deadline, availability,
@@ -124,8 +130,8 @@ hoặc trạng thái duyệt; không dùng weight=0. Đề xuất deadline tổn
 tối đa 1 trong deadline; stale threshold, chấp nhận cache và retention còn PENDING.
 Event projection giảm coupling nhưng eventual/stale và thêm outbox/version/bootstrap/
 reconcile; gRPC đơn giản/fresh hơn nhưng phụ thuộc availability. Không DB/HTTP/import chéo.
-Diet → Progress/Identity chưa có trong whitelist service-boundaries, cần lead ADR,
-Nguyên/Huy/Bảo duyệt canonical contracts trước code. T038 chỉ theo dõi; provider
+Diet → Progress và Diet → Identity chưa có trong whitelist service-boundaries, cần thống nhất ADR
+giữa các affected owners (Nguyên/Huy/Bảo) + canonical contracts trước code. T038 chỉ theo dõi; provider
 implementation là feature riêng sau approval, không chặn Progress BMI core.
 
 ## Worker / digest — C, ngoài Phase 1 triển khai

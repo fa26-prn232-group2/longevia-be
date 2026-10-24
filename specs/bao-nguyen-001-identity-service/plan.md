@@ -33,27 +33,29 @@ Hoàn thiện vòng đời tài khoản Identity: xác minh email, chỉ cho `Ac
 5. **Refresh token**: plan yêu cầu hash-at-rest và rotation concurrency an toàn. Cần migration nếu phải đổi cấu trúc hiện tại; xác định chính xác cùng schema phase.
 6. **Profile height**: API spec mô tả decimal và ví dụ `175.5`; chuyển application/domain/storage sang kiểu decimal, migration integer→numeric với backfill giữ giá trị cũ.
 7. **Avatar**: không đưa `avatarUrl` vào response vì PRD không yêu cầu, entity không có field/lifecycle quản lý avatar; API example hiện chưa có nguồn dữ liệu.
-8. **Password flows**: MVP liệt kê change password; PRD/Worker đã có reset event/template nhưng API chưa có endpoint. Bổ sung API contract trước implementation; forgot-password không tiết lộ account tồn tại.
-9. **Profile event**: event nội bộ hiện chưa có versioned shared contract/consumer. Không đổi payload hoặc thêm event mới nếu chưa xác định consumer; đối chiếu PRD traceability trước khi đóng feature.
-10. **Migrations lúc start**: mặc định bật theo `migration.md`; `Database:AutoMigrate=false` là override production có kiểm soát; migrate fail thì startup fail. Model drift MassTransit Outbox đã được giải quyết bằng migration Code First; kiểm thử startup Testcontainers đã xác nhận áp dụng được. Migration bỏ cột legacy `OutboxState.BusName`; trước khi áp dụng lên DB có dữ liệu, cần xác nhận outbox đã drain để không mất trạng thái xử lý đang hoạt động.
+8. **Password flows**: API canonical chốt `change-password` (Bearer, mật khẩu hiện tại + mật khẩu mới), `forgot-password` (Public, luôn trả 202 không body), và `reset-password` (Public, token + mật khẩu mới). Reset chỉ cho user Active; mọi refresh session bị revoke trong cùng transaction. Access JWT stateless còn hiệu lực tối đa 15 phút. Forgot-password không tiết lộ account tồn tại; reset token chỉ lưu SHA-256, TTL 15 phút, thay token mới sẽ vô hiệu token cũ.
+9. **Reset email UX**: Worker gửi mã hex một lần để người dùng nhập trong ứng dụng. Không đưa link thẳng tới API reset vì endpoint POST cần cả token và mật khẩu mới; API GET không được phép làm thay đổi mật khẩu.
+10. **Profile event**: source hiện publish `UserProfileUpdatedIntegrationEvent` 2-field nhưng không có shared versioned contract/consumer. Phase 5 phải đưa về tuân thủ Constitution: ngừng publish nếu không có consumer được duyệt, hoặc tạo contract versioned + consumer tương thích nếu có yêu cầu được xác nhận. Không được đánh dấu backend handoff READY trước khi xử lý.
+11. **Migrations lúc start**: mặc định bật theo `migration.md`; `Database:AutoMigrate=false` là override production có kiểm soát; migrate fail thì startup fail. Model drift MassTransit Outbox đã được giải quyết bằng migration Code First; kiểm thử startup Testcontainers đã xác nhận áp dụng được. Migration bỏ cột legacy `OutboxState.BusName`; trước khi áp dụng lên DB có dữ liệu, cần xác nhận outbox đã drain để không mất trạng thái xử lý đang hoạt động.
 
 ## Model dữ liệu dự kiến
 
-- **User**: email canonical, password hash, status, verification token hash/expiry/consumed state, timestamps.
+- **User**: email canonical, password hash, status, verification token hash/expiry/consumed state, reset token hash/expiry/consumed state, timestamps.
 - **RefreshToken**: user id, token hash, expiry, revoke timestamp, replacement relation; unique hash; concurrency/race semantics rõ ràng.
-- **PasswordResetToken** (nếu không gộp chung token table): user id, token hash, expiry, consumed timestamp, created timestamp; index unique hash và index phục vụ tra cứu theo user.
 - **UserProfile**: birth date, biological sex, decimal height cm, activity level, dietary preference, allergies, updated timestamp.
 - **MassTransit outbox**: các bảng outbox hiện có thuộc `identity_db`, cùng transaction với user/token thay đổi.
 
 ## Shared Files & Conflict Hotspots
 
-Các file sau là shared/client integration surface, phải được review trước khi sửa. Không file nào thuộc Mavil được chỉnh trong feature này.
+Các file sau là shared/client integration surface, phải được review trước khi sửa. Không sửa code hoặc tài liệu của Mavil; ngoại lệ phối hợp registry đã được developer xác nhận chỉ đổi `status` trong `meta.json`.
 
 | File | Lý do | Kế hoạch |
 |---|---|---|
 | `docs/api/api-spec.md` | Canonical HTTP contract chung; hiện thiếu verify/change/forgot/reset, sai lệch avatar/height | Chỉ cập nhật sau khi schema/semantics được chốt; cập nhật frontend guide cùng phase |
-| `contracts/events/v1/README.md` | Canonical event index dùng chung | Hiện giữ event auth v1; nếu profile event cần publish thì phải thêm contract versioned, có consumer được xác nhận |
+| `contracts/events/v1/README.md` | Canonical event index dùng chung | Giữ nguyên event v1; Phase 4 kích hoạt producer reset đã được Worker tiêu thụ. API spec khớp index và topology Worker |
 | `src/Shared/Events/**` | DTO event dùng chung Identity/Worker | Giữ nguyên hai event v1 trừ khi có quyết định contract; không đổi payload ngầm |
+| `src/Services/Worker/Consumers/**`, `src/Services/Worker/Idempotency/**`, `src/Services/Worker/tests/Worker.UnitTests/**` | Worker consumer/idempotency dùng chung cho email Identity | Reset email cần consumer + retry semantics khớp contract; thay đổi dedup phải giữ hành vi event đăng ký |
+| `docs/system-design/event-driven-design.md` | Quy tắc kiến trúc event/idempotency dùng chung | Cập nhật retry claim semantics sau review phát hiện SMTP failure có thể làm mất email |
 | `src/Services/Identity/Identity.Infrastructure/Persistence/Migrations/**` | Schema/migration Identity | Chỉ một feature tạo migration; đã có migration `ReconcileMassTransitOutboxModel` để đồng bộ model MassTransit |
 | `src/Services/Identity/Identity.Infrastructure/Persistence/IdentityDbContextModelSnapshot.cs` | EF snapshot sinh tự động | Chỉ cập nhật bằng `dotnet ef migrations add`, không sửa tay |
 

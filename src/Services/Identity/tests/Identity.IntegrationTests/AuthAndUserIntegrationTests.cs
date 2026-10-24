@@ -28,6 +28,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Contains("20261021212343_InitialIdentityDb", appliedMigrations);
         Assert.Contains("20261023193116_ReconcileMassTransitOutboxModel", appliedMigrations);
         Assert.Contains(appliedMigrations, migration => migration.Contains("VerificationToken", StringComparison.Ordinal));
+        Assert.Contains("20261024083300_AddPasswordResetTokenLifecycle", appliedMigrations);
 
         await db.Database.MigrateAsync();
 
@@ -45,14 +46,14 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Contains("OutboxState", tables);
 
         var verificationColumns = await db.Database.SqlQueryRaw<string>(
-                """SELECT column_name AS "Value" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name IN ('VerificationTokenHash', 'VerificationTokenExpiresAt', 'VerificationTokenConsumedAt')""")
+                """SELECT column_name AS "Value" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name IN ('VerificationTokenHash', 'VerificationTokenExpiresAt', 'VerificationTokenConsumedAt', 'PasswordResetTokenHash', 'PasswordResetTokenExpiresAt', 'PasswordResetTokenConsumedAt')""")
             .ToListAsync();
-        Assert.Equal(3, verificationColumns.Count);
+        Assert.Equal(6, verificationColumns.Count);
 
         var indexDefinitions = await db.Database.SqlQueryRaw<string>(
-                """SELECT indexdef AS "Value" FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('IX_users_Email', 'IX_user_profiles_UserId', 'IX_refresh_tokens_Token')""")
+                """SELECT indexdef AS "Value" FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('IX_users_Email', 'IX_user_profiles_UserId', 'IX_refresh_tokens_Token', 'IX_users_PasswordResetTokenHash')""")
             .ToListAsync();
-        Assert.Equal(3, indexDefinitions.Count);
+        Assert.Equal(4, indexDefinitions.Count);
         Assert.All(indexDefinitions, index => Assert.Contains("UNIQUE INDEX", index.ToUpperInvariant()));
 
         var outboxIndexes = await db.Database.SqlQueryRaw<string>(
@@ -148,9 +149,24 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.NotNull(newTokens);
         Assert.NotEqual(tokenResult.RefreshToken, newTokens.RefreshToken);
 
-        // 9. Logout
+        // 9. Change password invalidates every refresh session.
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newTokens.AccessToken);
-        var logoutResponse = await _client.PostAsJsonAsync("/auth/logout", new LogoutRequest(newTokens.RefreshToken));
+        var changeResponse = await _client.PostAsJsonAsync(
+            "/auth/change-password", new Identity.Application.Features.Password.ChangePasswordRequest(password, "ChangedPassword456!"));
+        Assert.Equal(HttpStatusCode.NoContent, changeResponse.StatusCode);
+        var revokedAfterChange = await _client.PostAsJsonAsync("/auth/refresh", new RefreshTokenRequest(newTokens.RefreshToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, revokedAfterChange.StatusCode);
+        var oldPasswordLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
+        Assert.Equal(HttpStatusCode.Unauthorized, oldPasswordLogin.StatusCode);
+        var changedPasswordLogin = await _client.PostAsJsonAsync(
+            "/auth/login", new LoginRequest(email, "ChangedPassword456!"));
+        Assert.Equal(HttpStatusCode.OK, changedPasswordLogin.StatusCode);
+        var changedTokens = await changedPasswordLogin.Content.ReadFromJsonAsync<AuthTokenResponse>();
+        Assert.NotNull(changedTokens);
+
+        // 10. Logout
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", changedTokens.AccessToken);
+        var logoutResponse = await _client.PostAsJsonAsync("/auth/logout", new LogoutRequest(changedTokens.RefreshToken));
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
     }
 
@@ -178,6 +194,47 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.False(await verificationDb.Users.AnyAsync(user => user.Email == email));
         var remainingOutboxBodies = await verificationDb.Database.SqlQueryRaw<string>("SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"").ToListAsync();
         Assert.DoesNotContain(remainingOutboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ForgotPassword_ShouldPersistResetHashAndOutboxEventInSameTransaction()
+    {
+        var email = $"reset_rollback_{Guid.NewGuid():N}@example.com";
+        using (var seedScope = factory.Services.CreateScope())
+        {
+            var db = seedScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            var user = Identity.Domain.Entities.User.Create(
+                Guid.NewGuid(), email, "existing-password-hash", "Reset User",
+                DateTimeOffset.UtcNow, "verification-hash", DateTimeOffset.UtcNow.AddHours(24));
+            Assert.True(user.TryVerify("verification-hash", DateTimeOffset.UtcNow));
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var useCase = scope.ServiceProvider.GetRequiredService<Identity.Application.Features.Password.ForgotPasswordUseCase>();
+            await useCase.ExecuteAsync(new Identity.Application.Features.Password.ForgotPasswordRequest(email));
+
+            var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
+            Assert.NotNull(user.PasswordResetTokenHash);
+            var outboxBodies = await db.Database.SqlQueryRaw<string>(
+                "SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"")
+                .ToListAsync();
+            Assert.Contains(outboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
+            await transaction.RollbackAsync();
+        }
+
+        using var verifyScope = factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var persistedUser = await verifyDb.Users.SingleAsync(candidate => candidate.Email == email);
+        Assert.Null(persistedUser.PasswordResetTokenHash);
+        var remainingBodies = await verifyDb.Database.SqlQueryRaw<string>(
+            "SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"")
+            .ToListAsync();
+        Assert.DoesNotContain(remainingBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

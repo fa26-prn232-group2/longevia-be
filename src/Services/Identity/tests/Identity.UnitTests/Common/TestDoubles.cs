@@ -28,6 +28,20 @@ internal sealed class InMemoryUserRepository : IUserRepository
         return Task.FromResult(user is not null);
     }
 
+    public Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        Task.FromResult(_users.FirstOrDefault(u => u.PasswordResetTokenHash == tokenHash));
+
+    public Task<bool> TryResetPasswordAsync(
+        string tokenHash,
+        string passwordHash,
+        DateTimeOffset resetAt,
+        CancellationToken ct = default)
+    {
+        var user = _users.FirstOrDefault(candidate =>
+            candidate.TryConsumePasswordResetToken(tokenHash, passwordHash, resetAt));
+        return Task.FromResult(user is not null);
+    }
+
     public Task AddAsync(User user, CancellationToken ct = default)
     {
         _users.Add(user);
@@ -51,6 +65,7 @@ internal sealed class InMemoryUserRepository : IUserRepository
 internal sealed class InMemoryRefreshTokenRepository : IRefreshTokenRepository
 {
     private readonly List<RefreshToken> _tokens = [];
+    public IReadOnlyList<RefreshToken> Tokens => _tokens;
 
     public Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken ct = default) =>
         Task.FromResult(_tokens.FirstOrDefault(t => t.Token == token));
@@ -58,6 +73,16 @@ internal sealed class InMemoryRefreshTokenRepository : IRefreshTokenRepository
     public Task AddAsync(RefreshToken token, CancellationToken ct = default)
     {
         _tokens.Add(token);
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken ct = default)
+    {
+        foreach (var token in _tokens.Where(token => token.UserId == userId && !token.IsRevoked))
+        {
+            token.Revoke(revokedAt);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -96,6 +121,16 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
     {
         SaveChangesCalls++;
         return Task.FromResult(1);
+    }
+
+    public Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken ct = default) =>
+        Task.FromResult<IUnitOfWorkTransaction>(new FakeUnitOfWorkTransaction());
+
+    private sealed class FakeUnitOfWorkTransaction : IUnitOfWorkTransaction
+    {
+        public Task CommitAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
 

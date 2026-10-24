@@ -37,14 +37,14 @@ public sealed class EmailTemplatesTests
     }
 
     [Fact]
-    public void PasswordReset_ContainsOtpLinkAndFifteenMinuteWording()
+    public void PasswordReset_ContainsOtpCodeAndFifteenMinuteWordingWithoutApiLink()
     {
         var expiresAt = new DateTimeOffset(2026, 10, 22, 12, 0, 0, TimeSpan.Zero);
         var email = EmailTemplates.PasswordReset("user@example.com", "reset-token-xyz", expiresAt);
 
         Assert.Equal("Đặt lại mật khẩu Longevia", email.Subject);
         Assert.Contains("reset-token-xyz", email.HtmlBody);
-        Assert.Contains("http://localhost:8080/api/identity/auth/reset-password", email.HtmlBody);
+        Assert.DoesNotContain("/auth/reset-password?token=", email.HtmlBody);
         Assert.Contains("15 phút", email.HtmlBody);
     }
 

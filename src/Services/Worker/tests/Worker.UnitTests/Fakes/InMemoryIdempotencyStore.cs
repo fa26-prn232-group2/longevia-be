@@ -10,4 +10,11 @@ public sealed class InMemoryIdempotencyStore : IIdempotencyStore
     /// <inheritdoc />
     public Task<bool> TryClaimAsync(string key, TimeSpan ttl, CancellationToken cancellationToken = default) =>
         Task.FromResult(_claimed.Add(key));
+
+    /// <inheritdoc />
+    public Task ReleaseAsync(string key, CancellationToken cancellationToken = default)
+    {
+        _claimed.Remove(key);
+        return Task.CompletedTask;
+    }
 }

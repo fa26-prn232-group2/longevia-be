@@ -3,7 +3,7 @@
   "number": 1,
   "slug": "infra-observability",
   "branch": "feat/infra-observability",
-  "status": "open",
+  "status": "closed",
   "services": [
     "Identity",
     "Worker",

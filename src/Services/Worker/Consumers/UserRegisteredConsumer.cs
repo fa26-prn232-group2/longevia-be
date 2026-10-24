@@ -39,7 +39,32 @@ public sealed class UserRegisteredConsumer(
         }
 
         var email = EmailTemplates.Verification(message.Email, message.FullName, message.VerificationToken);
-        await emailSender.SendAsync(email, cancellationToken);
+        try
+        {
+            await emailSender.SendAsync(email, cancellationToken);
+        }
+        catch
+        {
+            await ReleaseClaimAfterFailureAsync(key);
+            throw;
+        }
+
         logger.LogInformation("Verification email dispatched");
+    }
+
+    private async Task ReleaseClaimAfterFailureAsync(string key)
+    {
+        try
+        {
+            // The message cancellation token is already canceled on some failed
+            // deliveries; cleanup must still run before MassTransit retries.
+            await idempotency.ReleaseAsync(key, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            // Preserve the SMTP exception so MassTransit can apply its retry/DLQ
+            // policy. This log intentionally contains no message/token data.
+            logger.LogError(exception, "Failed to release verification email idempotency claim");
+        }
     }
 }

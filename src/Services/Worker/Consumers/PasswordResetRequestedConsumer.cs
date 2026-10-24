@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Longevia.Shared.Events;
 using Longevia.Worker.Adapters.Email;
 using Longevia.Worker.Idempotency;
@@ -32,7 +34,8 @@ public sealed class PasswordResetRequestedConsumer(
     /// </summary>
     public async Task HandleAsync(PasswordResetRequestedEvent message, CancellationToken cancellationToken = default)
     {
-        var key = $"consumed:{PasswordResetRequestedEvent.SchemaVersion}:{message.Email}:{message.OccurredOn.Ticks}";
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(message.ResetToken)));
+        var key = $"consumed:{PasswordResetRequestedEvent.SchemaVersion}:{tokenHash}";
         if (!await idempotency.TryClaimAsync(key, DedupTtl, cancellationToken))
         {
             logger.LogInformation("Duplicate PasswordResetRequestedEvent ignored");
@@ -40,7 +43,32 @@ public sealed class PasswordResetRequestedConsumer(
         }
 
         var email = EmailTemplates.PasswordReset(message.Email, message.ResetToken, message.ExpiresAt);
-        await emailSender.SendAsync(email, cancellationToken);
+        try
+        {
+            await emailSender.SendAsync(email, cancellationToken);
+        }
+        catch
+        {
+            await ReleaseClaimAfterFailureAsync(key);
+            throw;
+        }
+
         logger.LogInformation("Password reset email dispatched");
+    }
+
+    private async Task ReleaseClaimAfterFailureAsync(string key)
+    {
+        try
+        {
+            // The message cancellation token is already canceled on some failed
+            // deliveries; cleanup must still run before MassTransit retries.
+            await idempotency.ReleaseAsync(key, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            // Preserve the SMTP exception so MassTransit can apply its retry/DLQ
+            // policy. This log intentionally contains no message/token data.
+            logger.LogError(exception, "Failed to release password reset email idempotency claim");
+        }
     }
 }

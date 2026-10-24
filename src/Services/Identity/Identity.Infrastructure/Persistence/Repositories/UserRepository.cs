@@ -36,6 +36,24 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
                 .SetProperty(u => u.VerificationTokenConsumedAt, (DateTimeOffset?)verifiedAt)
                 .SetProperty(u => u.UpdatedAt, (DateTimeOffset?)verifiedAt), ct) == 1;
 
+    public async Task<bool> TryResetPasswordAsync(
+        string tokenHash,
+        string passwordHash,
+        DateTimeOffset resetAt,
+        CancellationToken ct = default) =>
+        await dbContext.Users
+            .Where(u => u.PasswordResetTokenHash == tokenHash
+                && u.Status == Identity.Domain.Constants.UserStatus.Active
+                && u.PasswordResetTokenExpiresAt > resetAt
+                && u.PasswordResetTokenConsumedAt == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.PasswordHash, passwordHash)
+                .SetProperty(u => u.PasswordResetTokenConsumedAt, (DateTimeOffset?)resetAt)
+                .SetProperty(u => u.UpdatedAt, (DateTimeOffset?)resetAt), ct) == 1;
+
+    public async Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        await dbContext.Users.FirstOrDefaultAsync(u => u.PasswordResetTokenHash == tokenHash, ct);
+
     public async Task AddAsync(User user, CancellationToken ct = default) =>
         await dbContext.Users.AddAsync(user, ct);
 

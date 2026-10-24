@@ -2,13 +2,18 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Identity.Application.Features.Auth;
+using Identity.Application.Features.Password;
 using Identity.Application.Features.Registration;
+using Identity.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Identity.IntegrationTests;
 
@@ -110,6 +115,71 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
 
         var loginResponse = await _identityClient!.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
         Assert.Equal(System.Net.HttpStatusCode.OK, loginResponse.StatusCode);
+
+        using var loginDocument = JsonDocument.Parse(await loginResponse.Content.ReadAsStringAsync());
+        var oldRefreshToken = loginDocument.RootElement.GetProperty("refreshToken").GetString();
+        var forgotResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/forgot-password", new ForgotPasswordRequest(email));
+        Assert.Equal(System.Net.HttpStatusCode.Accepted, forgotResponse.StatusCode);
+
+        var resetEmail = await WaitForEmailAsync(email, "Đặt lại mật khẩu Longevia");
+        var resetHtml = resetEmail.GetProperty("HTML").GetString() ?? string.Empty;
+        var resetTokenMatch = Regex.Match(resetHtml, "(?<![A-Fa-f0-9])[A-Fa-f0-9]{64}(?![A-Fa-f0-9])", RegexOptions.CultureInvariant);
+        Assert.True(resetTokenMatch.Success, "The password reset email must contain a 64-character reset code.");
+        var resetToken = resetTokenMatch.Value;
+
+        using (var scope = _identityFactory!.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
+            var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(resetToken)));
+            Assert.Equal(tokenHash, user.PasswordResetTokenHash);
+            Assert.NotEqual(resetToken, user.PasswordResetTokenHash);
+            await db.Users.Where(candidate => candidate.Email == email)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(candidate => candidate.PasswordResetTokenExpiresAt, DateTimeOffset.UtcNow.AddMinutes(-1)));
+        }
+
+        var expiredResetResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/reset-password", new ResetPasswordRequest(resetToken, "RenewedPassword456!"));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, expiredResetResponse.StatusCode);
+
+        var replacementForgotResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/forgot-password", new ForgotPasswordRequest(email));
+        Assert.Equal(System.Net.HttpStatusCode.Accepted, replacementForgotResponse.StatusCode);
+        var replacementEmail = await WaitForEmailAsync(email, "Đặt lại mật khẩu Longevia", resetToken);
+        var replacementHtml = replacementEmail.GetProperty("HTML").GetString() ?? string.Empty;
+        var replacementTokenMatch = Regex.Match(replacementHtml, "(?<![A-Fa-f0-9])[A-Fa-f0-9]{64}(?![A-Fa-f0-9])", RegexOptions.CultureInvariant);
+        Assert.True(replacementTokenMatch.Success, "The replacement reset email must contain a 64-character code.");
+        Assert.NotEqual(resetToken, replacementTokenMatch.Value);
+        var replacedTokenResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/reset-password", new ResetPasswordRequest(resetToken, "RenewedPassword456!"));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, replacedTokenResponse.StatusCode);
+        resetToken = replacementTokenMatch.Value;
+        string[] candidatePasswords = ["RenewedPassword456!", "AlternatePassword789@"];
+        var concurrentResetResponses = await Task.WhenAll(candidatePasswords.Select(candidate =>
+            _identityClient.PostAsJsonAsync(
+                "/auth/reset-password", new ResetPasswordRequest(resetToken, candidate))));
+        Assert.Single(concurrentResetResponses, candidate => candidate.StatusCode == System.Net.HttpStatusCode.NoContent);
+        Assert.Single(concurrentResetResponses, candidate => candidate.StatusCode == System.Net.HttpStatusCode.BadRequest);
+        var newPassword = candidatePasswords[Array.FindIndex(concurrentResetResponses,
+            candidate => candidate.StatusCode == System.Net.HttpStatusCode.NoContent)];
+
+        var replayResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/reset-password", new ResetPasswordRequest(resetToken, newPassword));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, replayResponse.StatusCode);
+
+        var revokedRefreshResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/refresh", new RefreshTokenRequest(oldRefreshToken!));
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, revokedRefreshResponse.StatusCode);
+
+        var newLoginResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/login", new LoginRequest(email, newPassword));
+        Assert.Equal(System.Net.HttpStatusCode.OK, newLoginResponse.StatusCode);
+
+        var unknownEmailResponse = await _identityClient.PostAsJsonAsync(
+            "/auth/forgot-password", new ForgotPasswordRequest($"missing_{Guid.NewGuid():N}@example.com"));
+        Assert.Equal(System.Net.HttpStatusCode.Accepted, unknownEmailResponse.StatusCode);
     }
 
     private void StartWorker()
@@ -204,7 +274,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
         }, TimeSpan.FromSeconds(45), "Redis did not become ready.");
     }
 
-    private async Task<JsonElement> WaitForEmailAsync(string email)
+    private async Task<JsonElement> WaitForEmailAsync(string email, string? subject = null, string? excludedToken = null)
     {
         JsonElement message = default;
         await WaitUntilAsync(async () =>
@@ -218,21 +288,33 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
 
             using var searchDocument = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var messages = searchDocument.RootElement.GetProperty("messages");
-            if (messages.GetArrayLength() == 0)
+            foreach (var messageSummary in messages.EnumerateArray())
             {
-                return false;
+                if (subject is not null && messageSummary.GetProperty("Subject").GetString() != subject)
+                {
+                    continue;
+                }
+
+                var messageId = messageSummary.GetProperty("ID").GetString();
+                using var messageResponse = await _mailpitClient.GetAsync($"api/v1/message/{Uri.EscapeDataString(messageId!)}");
+                if (!messageResponse.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                using var messageDocument = JsonDocument.Parse(await messageResponse.Content.ReadAsStringAsync());
+                var candidate = messageDocument.RootElement.Clone();
+                var html = candidate.GetProperty("HTML").GetString() ?? string.Empty;
+                if (excludedToken is not null && html.Contains(excludedToken, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                message = candidate;
+                return true;
             }
 
-            var messageId = messages[0].GetProperty("ID").GetString();
-            using var messageResponse = await _mailpitClient.GetAsync($"api/v1/message/{Uri.EscapeDataString(messageId!)}");
-            if (!messageResponse.IsSuccessStatusCode)
-            {
-                return false;
-            }
-
-            using var messageDocument = JsonDocument.Parse(await messageResponse.Content.ReadAsStringAsync());
-            message = messageDocument.RootElement.Clone();
-            return true;
+            return false;
         }, TimeSpan.FromSeconds(45), "Worker did not deliver the verification email to Mailpit.");
 
         return message;

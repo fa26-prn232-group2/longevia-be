@@ -18,6 +18,9 @@ public sealed class User
     public string? VerificationTokenHash { get; private set; }
     public DateTimeOffset? VerificationTokenExpiresAt { get; private set; }
     public DateTimeOffset? VerificationTokenConsumedAt { get; private set; }
+    public string? PasswordResetTokenHash { get; private set; }
+    public DateTimeOffset? PasswordResetTokenExpiresAt { get; private set; }
+    public DateTimeOffset? PasswordResetTokenConsumedAt { get; private set; }
 
     public UserProfile? Profile { get; private set; }
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
@@ -79,6 +82,31 @@ public sealed class User
         ArgumentException.ThrowIfNullOrWhiteSpace(newPasswordHash);
         PasswordHash = newPasswordHash;
         UpdatedAt = updatedAt;
+    }
+
+    public void IssuePasswordResetToken(string tokenHash, DateTimeOffset issuedAt, DateTimeOffset expiresAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
+        PasswordResetTokenHash = tokenHash;
+        UpdatedAt = issuedAt;
+        PasswordResetTokenExpiresAt = expiresAt;
+        PasswordResetTokenConsumedAt = null;
+    }
+
+    public bool TryConsumePasswordResetToken(string tokenHash, string passwordHash, DateTimeOffset resetAt)
+    {
+        if (Status != UserStatus.Active
+            || PasswordResetTokenConsumedAt is not null
+            || PasswordResetTokenExpiresAt is null
+            || PasswordResetTokenExpiresAt <= resetAt
+            || !string.Equals(PasswordResetTokenHash, tokenHash, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        ChangePassword(passwordHash, resetAt);
+        PasswordResetTokenConsumedAt = resetAt;
+        return true;
     }
 
     public bool TryVerify(string verificationTokenHash, DateTimeOffset verifiedAt)

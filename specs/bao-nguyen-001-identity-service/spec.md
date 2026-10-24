@@ -33,20 +33,20 @@ Là người dùng đã xác thực, tôi muốn đọc/cập nhật hồ sơ n�
 
 Là người dùng, tôi muốn đổi mật khẩu khi đăng nhập hoặc đặt lại bằng email khi không truy cập được tài khoản.
 
-**Kiểm thử độc lập**: mật khẩu mới tuân policy; token reset một lần và có hạn 15 phút; token/session cũ bị vô hiệu theo chính sách; request quên mật khẩu không tiết lộ email có tồn tại.
+**Kiểm thử độc lập**: mật khẩu mới tuân policy; token reset một lần và có hạn 15 phút; mọi refresh session cũ bị vô hiệu; access JWT stateless hết hạn tự nhiên trong tối đa 15 phút; request quên mật khẩu không tiết lộ email có tồn tại.
 
 ## Yêu cầu chức năng
 
 - **FR-001** Chuẩn hóa email trước khi kiểm tra/tạo tài khoản và xử lý trùng email thành `409 identity.email_taken`, kể cả khi hai request đua nhau.
-- **FR-002** Mật khẩu đăng ký/đổi/reset tối thiểu 8 ký tự, có chữ hoa, số và ký tự đặc biệt; lưu bằng BCrypt/Argon2id, không log mật khẩu.
+- **FR-002** Mật khẩu đăng ký/đổi/reset tối thiểu 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt (đồng nhất policy đã thực thi ở đăng ký); lưu bằng BCrypt/Argon2id, không log mật khẩu.
 - **FR-003** Đăng ký tạo `PendingVerification`; lưu hash token xác minh và thời hạn 24 giờ; phát `UserRegisteredEvent` bằng transactional outbox trong cùng transaction.
-- **FR-004** `POST /auth/verify?token=...` chỉ kích hoạt token hợp lệ, chưa hết hạn, chưa tiêu thụ; thao tác tiêu thụ token phải nguyên tử.
+- **FR-004** `GET /auth/verify?token=...` chỉ kích hoạt token hợp lệ, chưa hết hạn, chưa tiêu thụ; thao tác tiêu thụ token phải nguyên tử.
 - **FR-005** Login chỉ phát token khi user `Active`; pending trả cùng lỗi xác thực chung để tránh lộ trạng thái account; suspended giữ lỗi bị khóa theo contract.
 - **FR-006** Access token ES256 sống 15 phút, có `kid`; refresh token ngẫu nhiên sống 7 ngày, rotation/revoke đúng hạn; API trả `expiresIn: 900`.
 - **FR-007** Refresh chỉ cấp cặp token mới cho token còn hạn/chưa revoke và user `Active`; mỗi refresh token chỉ rotate thành công một lần.
 - **FR-008** Logout yêu cầu JWT và chỉ revoke refresh token thuộc đúng user trong JWT.
 - **FR-009** Profile gồm ngày sinh, giới tính sinh học, chiều cao, activity level, dietary preference và allergies; ngày sinh phải đạt tối thiểu 13 tuổi; height 50–250 cm.
-- **FR-010** Đổi mật khẩu cần mật khẩu hiện tại; quên mật khẩu luôn trả phản hồi không tiết lộ email; reset token lưu dạng hash, sống 15 phút, chỉ dùng một lần.
+- **FR-010** Đổi mật khẩu cần mật khẩu hiện tại; forgot-password luôn trả phản hồi không tiết lộ email; reset token lưu SHA-256 hash, sống 15 phút, chỉ dùng một lần. Đổi/reset thành công revoke toàn bộ refresh token; access JWT stateless hết hạn tự nhiên trong tối đa 15 phút.
 - **FR-011** Mọi email đi qua event RabbitMQ/outbox để Worker gửi; Identity không gọi SMTP/Brevo trực tiếp.
 - **FR-012** Identity tự áp dụng migration của `identity_db` trước khi nhận request khi `Database:AutoMigrate` bật; mặc định bật theo local/development, cấu hình production có thể tắt có chủ đích; lỗi migration làm startup fail.
 - **FR-013** Không trả `avatarUrl` khi chưa có yêu cầu/model/lifecycle avatar được duyệt; không thêm endpoint avatar trong feature này.
@@ -59,7 +59,7 @@ Gateway prefix `/api/identity`; service định nghĩa route không có prefix.
 | Method | Service route | Auth | Mục đích |
 |---|---|---|---|
 | POST | `/auth/register` | Public | Tạo tài khoản pending |
-| POST | `/auth/verify?token=` | Public | Kích hoạt tài khoản |
+| GET  | `/auth/verify?token=` | Public | Kích hoạt tài khoản |
 | POST | `/auth/login` | Public | Phát hành token cho user Active |
 | POST | `/auth/refresh` | Public | Rotate token |
 | POST | `/auth/logout` | Bearer | Revoke token của chính user |
@@ -96,5 +96,5 @@ Các route mật khẩu được đưa vào phạm vi dựa trên MVP và event/
 - Chiều cao dùng decimal theo `docs/api/api-spec.md` (ví dụ `175.5`); cần migration từ integer và tương thích dữ liệu.
 - Avatar bị loại khỏi response cho tới khi có yêu cầu, entity và luồng cập nhật chính thức; API sample hiện tại là bằng chứng không nhất quán, không đủ để tạo tính năng avatar.
 - Đổi mật khẩu thuộc MVP; quên/reset thuộc luồng email đã được PRD/Worker đặc tả. Endpoint semantics sẽ được ghi canonical trong API spec trước implementation.
-- `UserProfileUpdatedIntegrationEvent` hiện không phải event contract dùng chung và chưa có consumer được xác định. Không mở rộng payload/contract cho tới khi có consumer nghiệp vụ được xác nhận; profile update vẫn lưu dữ liệu.
+- `UpdateProfileUseCase` hiện publish `UserProfileUpdatedIntegrationEvent` (2 fields), nhưng đây chưa phải event contract dùng chung và chưa có consumer được xác định. Phase 5 phải đối chiếu Constitution/US3: bỏ publication nếu không có consumer được duyệt, hoặc chuẩn hóa contract versioned và consumer compatibility nếu có; profile update vẫn lưu dữ liệu.
 - Không có gRPC hay cross-database call trong feature.

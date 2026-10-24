@@ -68,6 +68,11 @@ public static class DependencyInjection
                     cfg.Send<UserRegisteredEvent>(send =>
                         send.UseRoutingKeyFormatter(_ => IdentityEventTopology.UserRegisteredRoutingKey));
 
+                    cfg.Message<PasswordResetRequestedEvent>(message => message.SetEntityName(IdentityEventTopology.EventsExchange));
+                    cfg.Publish<PasswordResetRequestedEvent>(publish => publish.ExchangeType = "topic");
+                    cfg.Send<PasswordResetRequestedEvent>(send =>
+                        send.UseRoutingKeyFormatter(_ => IdentityEventTopology.PasswordResetRoutingKey));
+
                     cfg.ConfigureEndpoints(ctx);
                 });
             }

@@ -11,6 +11,7 @@ public sealed class ProgressDbContext(DbContextOptions<ProgressDbContext> option
     public DbSet<Progress.Domain.Entities.SleepLog> SleepLogs => Set<Progress.Domain.Entities.SleepLog>();
     public DbSet<Progress.Domain.Entities.BodyMetricLog> BodyMetricLogs => Set<Progress.Domain.Entities.BodyMetricLog>();
     public DbSet<Progress.Domain.Entities.ActivityContribution> ActivityContributions => Set<Progress.Domain.Entities.ActivityContribution>();
+    public DbSet<Progress.Domain.Entities.ProcessedMealEvent> ProcessedMealEvents => Set<Progress.Domain.Entities.ProcessedMealEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

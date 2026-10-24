@@ -149,6 +149,33 @@ namespace Progress.Infrastructure.Migrations
                     b.ToTable("fasting_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("Progress.Domain.Entities.ProcessedMealEvent", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("MealLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("EventId");
+
+                    b.HasIndex("MealLogId");
+
+                    b.HasIndex("UserId", "BusinessDate");
+
+                    b.ToTable("processed_meal_events", (string)null);
+                });
+
             modelBuilder.Entity("Progress.Domain.Entities.SleepLog", b =>
                 {
                     b.Property<Guid>("Id")

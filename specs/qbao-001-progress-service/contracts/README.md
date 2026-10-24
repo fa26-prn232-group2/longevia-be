@@ -64,10 +64,33 @@ nhược: chiều cao có thể stale, bootstrap/reconcile phức tạp. Chưa c
 
 ## Meal activity — B / BLOCKED, PENDING INTEGRATION Huy
 
-Chưa có Diet source/meal contract. Không tự thêm `MealLoggedEvent` vào Shared/contracts.
+Diet tại origin/main `418d41b8` đã có Meal Logging create-only, catalog, manual
+targets, daily summary, EF diet_db/auth/tests/Docker. Chưa có canonical meal event
+hoặc producer transactional outbox cho streak; Progress chưa có consumer/projection/
+reconciliation/bootstrap hoặc E2E Diet → Progress. Không tự thêm event vào Shared/contracts.
+
+**Semantics hiện có**: MealLog.Date là DateOnly client cấp qua LogMealRequest;
+CreatedAt do server lấy UTC. Summary mặc định ngày UTC khi không truyền date.
+POST /meals tạo log mới; không có REST update/delete meal trong PR #8.
+Streak dùng meal business date, không suy từ CreatedAt/publish/receive timestamp.
+ProcessedAt UTC ghi khi xử lý chỉ dùng ordering/audit, không gán ngày ăn.
+Q01 cần duyệt cách metric activity date/user timezone tương thích DateOnly Diet;
+không tự lấy UTC hay timezone máy làm policy chung.
+
+**MVP đề xuất chưa duyệt**: create-only event versioned với eventId, userId,
+mealLogId, businessDate, createdAtUtc, processedAtUtc; Huy ghi outbox cùng transaction
+meal, Bảo claim inbox cùng transaction projection. EventId dedup, mealLogId unique
+contribution, nhiều meal/ngày chỉ một active day. Bootstrap phải bao phủ meal cũ
+bằng snapshot/cursor/watermark + replay và completeness, không chỉ nhận event mới.
+
+**Future lifecycle chưa triển khai**: update/delete/change-date chỉ mở sau khi duyệt
+revision, old/new business date, tombstone retention, reconciliation và version/
+migration cho consumer cũ. Additive chỉ khi tương thích; operation mới cần rollout/
+queue version rõ, không silently drop delete. Các tình huống lifecycle dưới đây là
+acceptance có điều kiện, không phải bằng chứng đã có endpoint edit/delete:
 Tên làm việc event `MealActivityChangedV1` chỉ là đề xuất, không schema chính thức.
 Payload cần bàn: schemaVersion, eventId, userId, mealLogId, revision, operation
-(upsert/delete), ngày cũ/mới hoặc occurredAt + zone/day đã thống nhất,
+(upsert/delete), businessDate cũ/mới và zone metadata nếu được Q01 duyệt,
 effectiveAt và processedAt. `processedAt` dùng thứ tự phải đóng ở thời điểm xử lý,
 không lấy thời điểm tạo user/log thay thế. Revision trên cùng mealLog chống đảo thứ tự;
 eventId dedup không đủ để chặn event cũ ghi đè mới.
@@ -88,6 +111,29 @@ eventId dedup không đủ để chặn event cũ ghi đè mới.
 Phương án khác: gRPC lấy active dates theo user/range có pagination/cursor, version
 và completeness; triển khai query đơn giản hơn nhưng cần deadline, availability,
 ADR chiều gọi và cơ chế sửa/xóa dữ liệu cũ. Không coi DB query là phương án.
+
+## Weight provider cho Diet BMR/TDEE — Q10 / PENDING APPROVAL
+
+Diet sở hữu BMR/TDEE, TargetResponse.Bmr/Tdee hiện nullable và mapper trả null.
+Identity sở hữu tuổi/ngày sinh, giới tính, chiều cao, mức vận động; Progress sở hữu
+weight trong BodyMetricLog. Không chuyển công thức/target Diet sang Progress.
+
+Đề xuất gRPC read do Bảo sở hữu provider, Huy sở hữu Diet consumer. Chưa định nghĩa
+RPC/proto/tag: request logic userId + asOf/effectiveAt; response đề xuất presence,
+weightKg, measuredAt (LoggedAt), sourceMetricId và observedAt/provenance. Cần duyệt
+latest tại lúc đọc hay tại effectiveAt target; đề xuất latest LoggedAt <= asOf,
+tie Id ổn định, Diet snapshot lúc tính target. Weight mới không tự sửa target cũ;
+nếu muốn auto-refresh cần approval riêng. Future weight không thành latest;
+backdate chỉ thắng theo measuredAt, không CreatedAt, không đoán weight quá khứ.
+
+Missing metric khác unavailable: đề xuất absence có presence, Diet giữ Bmr/Tdee null
+hoặc trạng thái duyệt; không dùng weight=0. Đề xuất deadline tổng 2s và read retry
+tối đa 1 trong deadline; stale threshold, chấp nhận cache và retention còn PENDING.
+Event projection giảm coupling nhưng eventual/stale và thêm outbox/version/bootstrap/
+reconcile; gRPC đơn giản/fresh hơn nhưng phụ thuộc availability. Không DB/HTTP/import chéo.
+Diet → Progress/Identity chưa có trong whitelist service-boundaries, cần lead ADR,
+Nguyên/Huy/Bảo duyệt canonical contracts trước code. T038 chỉ theo dõi; provider
+implementation là feature riêng sau approval, không chặn Progress BMI core.
 
 ## Worker / digest — C, ngoài Phase 1 triển khai
 

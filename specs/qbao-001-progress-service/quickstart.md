@@ -40,7 +40,8 @@ make test PROJECTS=src/Services/Progress/tests/Progress.IntegrationTests
 | History | Nhiều timestamp + tie, khoảng ngày, nhiều trang | Sort ổn định, Count đúng, filter theo Q01, wire theo Q07. |
 | Dashboard delta | Initial 72, baseline tuần trước 70, current 68.5 | Delta -1.5 khi fixture đúng cutoff Q06; không -3.5. |
 | Streak | Meal/metric ngày 1,2,3,5 | Best=3; current theo clock/Q06, water-only không active. |
-| Meal lifecycle thật | Publish bằng Diet-approved contract qua outbox/broker, sửa/chuyển/xóa/trùng/late | Progress projection đúng revision, delete không xóa ngày còn metric, dedup không nhân ngày. |
+| Meal MVP thật | Create qua Diet-approved outbox/broker; duplicate/late, business date khác ngày publish | Union theo MealLog.Date, không ngày receive/processed; dedup không nhân ngày, bootstrap đầy đủ. |
+| Future meal lifecycle | Chỉ sau approval và producer hỗ trợ sửa/chuyển/xóa | Revision/tombstone đúng, không xóa ngày còn metric; không giả Diet MVP đã có endpoint này. |
 | Bootstrap race | Backfill snapshot + event đến lúc backfill | Watermark/replay không mất thay đổi, completeness chỉ true khi đủ. |
 | E2E hạ tầng | HTTP qua Nginx ghi metric, broker cấp meal fixture đúng contract | DB có snapshot đúng, summary/streak cụ thể, không chỉ assert 200. |
 | Observability | Gọi host rồi scrape /metrics | Prometheus target Progress UP và request counter tăng, dashboard Grafana hiển thị. |

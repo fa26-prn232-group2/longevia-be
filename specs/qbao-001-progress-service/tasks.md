@@ -17,10 +17,10 @@ Mục tiêu: host Progress độc lập, DB riêng, bảo mật/quan sát đư�
 Kiểm chứng: app khởi động với config hợp lệ, fail khi config/DB invalid, 401 đúng,
 health/metrics hoạt động, migration chỉ progress_db. Liên service chưa cần hoạt động.
 
-- [ ] T001 Chốt và ghi evidence policy chung Q01/Q08, thỏa thuận slot shared files với Duy/lead tại specs/qbao-001-progress-service/research.md và plan.md; FR-001/FR-017/FR-019; phụ thuộc human review Phase 1; BLOCKED Q01/Q08; verification: người duyệt/ngày, producer issue/PR nếu cần, không tự sửa Shared/Gateway.
-- [ ] T002 Tạo bốn project theo Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj và Progress.Api/Progress.Api.csproj; FR-019, SC-001; sau T001; verification: build references hướng vào trong, không reference service khác. Thêm solution chỉ khi Duy/lead cấp slot theo plan.
+- [ ] T001 Theo dõi approval Q01/Q08 tại specs/qbao-001-progress-service/research.md và plan.md; FR-001/FR-017/FR-019; sau human review Phase 1; BLOCKED phần approval, không chặn skeleton T002/T003; verification: người duyệt/ngày, Q08 chặn security acceptance T004–T008, Q01 chặn date logic Phase 4–6; không tự sửa Shared/Gateway.
+- [ ] T002 Tạo bốn project theo Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj và Progress.Api/Progress.Api.csproj; FR-019, SC-001; phụ thuộc human giao Phase 2 và shared solution slot Duy/lead, không phụ thuộc T001/Q01/Q08; verification: references hướng vào trong, DI wiring cấu trúc, không reference service khác hoặc claim auth readiness.
 - [ ] T003 Tạo test projects src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj và src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj cùng fixture PostgreSQL/RabbitMQ thật; SC-003/SC-007; sau T002; verification: fixture tạo DB riêng, assert đọc/ghi giá trị, negative control đúng nguyên nhân.
-- [ ] T004 Viết auth/ownership/config tests tại src/Services/Progress/tests/Progress.IntegrationTests/Foundation/AuthTests.cs; FR-001/SC-003; sau T003, BLOCKED Q08/Shared remediation owner nếu chưa xong; verification: unsigned/wrong algorithm/kid missing/unknown/expired/issuer/audience sai → 401, hai user cách ly, config thiếu fail-start, thấy đỏ trước implementation.
+- [ ] T004 Viết auth/ownership/config tests tại src/Services/Progress/tests/Progress.IntegrationTests/Foundation/AuthTests.cs; FR-001/SC-003; sau T003, cần phần Q08 của T001 và Shared remediation owner trước nghiệm thu security; Q01 không chặn scaffolding; verification: unsigned/wrong algorithm/kid missing/unknown/expired/issuer/audience sai → 401, hai user cách ly, config thiếu fail-start, thấy đỏ trước implementation.
 - [ ] T005 Cấu hình host tại src/Services/Progress/Progress.Api/Program.cs và Progress.Application/Abstractions/IClock.cs: JWT public-key-only, ICurrentUser, clock, DI, centralized AppException/validation, cancellation và options fail-start; FR-001/FR-017; sau T004; verification: T004 xanh, không private key/log PII, endpoint không chứa business logic, không sửa Shared để né test.
 - [ ] T006 Tạo ProgressDbContext/UoW tại src/Services/Progress/Progress.Infrastructure/Persistence/ProgressDbContext.cs và EfUnitOfWork.cs, migration foundation đã có quyết định; FR-001/FR-019; sau T005; verification: chỉ progress_db, MigrateAsync trước request, lỗi fail-start, migration review, không sinh business table PENDING hoặc sửa snapshot bằng tay.
 - [ ] T007 Tạo health/Swagger/metrics tại src/Services/Progress/Progress.Api/Extensions/HostExtensions.cs và Program.cs; SC-006/SC-007; sau T006, BLOCKED slot Duy cho compose/scrape; verification: AddObservability("Progress"), MapPrometheusScrapingEndpoint, target Progress UP sau job static_configs do Duy phối hợp, request metric tăng, Grafana hiển thị, Swagger chỉ Development.
@@ -54,7 +54,10 @@ Mục tiêu: append nước/tổng ngày và sleep duration/quality. Kiểm th�
 ## Phase 5 — Body Metrics & BMI — US1
 
 Mục tiêu: snapshot BMI bất biến và lịch sử. BLOCKED tích hợp Nguyên Q02,
-policy Q04/Q07; chưa có canonical height contract/ADR không được code adapter giả.
+policy Q01/Q04/Q07; chưa có canonical height contract/ADR không được code adapter giả.
+Q10 là dependency ngược Diet cần cân nặng; T038 chỉ theo dõi quyết định, không chặn BMI core.
+
+- [ ] T038 [US1] Theo dõi Q10 Latest Weight Contract for Diet BMR/TDEE tại specs/qbao-001-progress-service/research.md, contracts/README.md và deferred.md; FR-019, SC-001; sau human review Phase 1, độc lập T022–T027; PENDING APPROVAL Bảo/Huy/Nguyên/lead; verification: ghi latest/asOf/effective-time, absence/null vs unavailable/stale, future/backdate/provenance, refresh policy, deadline và ADR direction, provider Progress/consumer Diet; không tạo RPC/event/adapter hoặc tính BMR/TDEE, implementation chỉ feature riêng sau approval.
 
 - [ ] T022 [US1] Ghi phê duyệt Q02/Q04/Q07 và tham chiếu canonical Identity contract/ADR tại specs/qbao-001-progress-service/research.md và contracts/README.md; FR-002–FR-005/FR-018; sau T008 (roadmap sau T021); BLOCKED Nguyên/lead; verification: height int proposal vs decimal được reconcile, presence/backdate/missing/unavailable, bounds/category/precision, pagination wire được duyệt; không tự sửa Identity/contracts.
 - [ ] T023 [US1] Viết tests trước tại src/Services/Progress/tests/Progress.UnitTests/Metrics/BmiTests.cs và Progress.IntegrationTests/Metrics/MetricsTests.cs; FR-001–FR-005/FR-017/FR-018, SC-003/SC-004/SC-005; sau T022; verification: 25/300/sát ngoài, optional biomarker bounds/null/pair, BMI/category thresholds, missing/timeout, 70kg/175cm, BR-05, two-user, page/date/tie/invalid range đỏ đúng lý do.
@@ -67,6 +70,12 @@ policy Q04/Q07; chưa có canonical height contract/ADR không được code ada
 
 Mục tiêu: summary đúng dữ liệu, streak có Diet đầy đủ; BLOCKED Q06/Q09 và canonical
 meal contract/ADR. Không coi projection fixture là tích hợp production hoàn tất.
+
+Diet MVP hiện create-only; T028–T033 phải kiểm chứng create/idempotency/business
+date/bootstrap/completeness và Diet → Progress E2E. Các case edit/delete/change-date,
+revision/tombstone dưới đây chỉ bắt buộc khi lifecycle mở rộng được approve và
+producer hỗ trợ; nếu chưa có thì ghi deferred/compatibility plan rõ, không giả endpoint
+hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION tới approval.
 
 - [ ] T028 [US4] Chốt Q06/Q09 và ghi approved Diet contract/topology/backfill/completeness tại specs/qbao-001-progress-service/contracts/README.md và research.md; FR-013–FR-016/FR-018; sau T027/T014/T021; BLOCKED Huy/Bảo/lead/Duy; verification: revision/delete/tombstone/timezone/late/bootstrap, ownership và baseline/windows/null/error đã được duyệt, không sửa producer.
 - [ ] T029 [US4] Viết tests dashboard/streak trước tại src/Services/Progress/tests/Progress.UnitTests/Dashboard/StreakTests.cs và Progress.IntegrationTests/Dashboard/DashboardTests.cs; FR-001/FR-013–FR-018, SC-003/SC-004/SC-005; sau T028; verification: active 1,2,3,5 best=3, current today/yesterday/gap, meal+metric union, water-only không active, 72/70/68.5 delta -1.5, empty/null, sleep mean/fasting boundaries, hai user đỏ đúng lý do.
@@ -81,8 +90,11 @@ meal contract/ADR. Không coi projection fixture là tích hợp production hoà
 
 ## Thứ tự, dependency và khả năng song song
 
-- Foundation T001→T008 chặn mọi story triển khai; Q08 Shared remediation không được
-  root tự sửa ngoài scope. Gate đỏ dừng, không bỏ test/migration/scan để đi tiếp.
+- Sau human giao phase/shared slot: T002→T003 độc lập Q01/Q08 và Identity/Diet.
+  Phần Q08 của T001 + remediation owner → T004→T005→T006→T007→T008; security
+  acceptance không được miễn. Q01 chỉ chặn date logic Phase 4–6, không skeleton.
+  T038 theo dõi Q10 độc lập chuỗi core, không vòng phụ thuộc; không code provider
+  trong core. Gate đỏ dừng, không bỏ test/migration/scan để đi tiếp.
 - Roadmap yêu cầu: Phase 2 → 3 → 4 → 5 → 6. Về nghiệp vụ US2 và US3 độc lập
   Identity/Diet; US1 chờ Nguyên; US4 đầy đủ chờ cả ba story và Huy.
 - T015/T022 có thể chuẩn bị approval song song sau foundation, nhưng không chạy

@@ -12,7 +12,7 @@ chỉ để chạy plan. Developer yêu cầu giữ PENDING cho review planning.
 - [x] Tiêu chí thành công định lượng và truy xuất được tới test/task.
 - [x] Phạm vi Phase 1 chỉ tài liệu; canonical contract/source/migration không thay đổi.
 - [x] Phân biệt yêu cầu có căn cứ và proposal PENDING, có owner/phase bị chặn.
-- [ ] Không còn quyết định nghiệp vụ/tích hợp ảnh hưởng triển khai chưa duyệt: Q01–Q09 còn PENDING.
+- [ ] Không còn quyết định nghiệp vụ/tích hợp ảnh hưởng triển khai chưa duyệt: Q01–Q10 còn PENDING; Q10 không chặn core BMI.
 - [ ] Tất cả yêu cầu hoàn toàn không mơ hồ để implement ngay: cần team duyệt policy/schema trước.
 - [x] Không khẳng định ví dụ API là policy BMI/water/delta đã duyệt.
 - [x] Không thay điều kiện streak PRD bằng water/sleep/fasting hoặc metrics-only.

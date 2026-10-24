@@ -16,6 +16,12 @@ có căn cứ và đề xuất chưa duyệt trong [research.md](research.md). D
 
 ## Làm rõ
 
+Corrective theo base `418d41b8` (PR #8): Diet đã có Food Catalog, Manual Targets,
+Meal Logging create-only, Daily Summary, EF diet_db, auth/tests/Docker. Chưa có
+meal activity contract/outbox và tích hợp projection/bootstrap/E2E với Progress.
+Diet cần cân nặng Progress + profile Identity cho BMR/TDEE: Q10 chỉ lập kế hoạch
+weight provider sau duyệt; thuật toán và consumer thuộc Diet, không thuộc core Progress.
+
 ### Phiên 2026-10-24
 
 - Hỏi: Giữ quyết định thiếu căn cứ PENDING để team review trước Phase 2? → Đáp: Có; hoàn thiện kế hoạch, chặn task liên quan đến khi duyệt.
@@ -97,7 +103,7 @@ contract và tích hợp thật, fixture không chứng minh tích hợp đã ho
 **Nghiệm thu**:
 
 1. Active day = có ít nhất một meal log HOẶC body metric log; có cả hai chỉ tính một ngày. Nước/ngủ/fasting không tạo active day.
-2. Active ngày 1,2,3,5 cho best = 3; current neo hôm nay/hôm qua theo Q06. Xóa meal cuối ngày chỉ bỏ active day nếu không còn metric; chuyển log sang ngày khác cập nhật cả ngày cũ và mới.
+2. Active business date 1,2,3,5 cho best = 3; current neo hôm nay/hôm qua theo Q06. Diet hiện tạo meal với DateOnly client cấp; không suy ngày từ CreatedAt UTC hoặc timestamp publish/receive/processed. Future delete/change-date cần contract mở rộng: chỉ bỏ ngày nếu không còn metric/meal và cập nhật cả ngày cũ/mới; không giả Diet đã có endpoints này.
 3. Với initial 72 kg, tuần trước 70 kg và hiện tại 68.5 kg, delta so tuần trước là -1.5 kg, không lấy -3.5 kg từ initial. PRD cao hơn ví dụ API; cách chọn mốc tuần trước chờ Q06.
 4. Current BMI lấy snapshot đã lưu; profile thay đổi không đổi BMI cũ. Không có số đo không được dựng số đo 0; null/shape rỗng chờ Q06.
 5. Fasting hoàn tất tuần và average sleep có cửa sổ, cách đếm và làm tròn được duyệt Q06; test ranh giới tuần, tuần rỗng, hai user.
@@ -131,7 +137,7 @@ backfill/rebuild; dashboard có số liệu cụ thể và ownership.
 | FR-013 | Dashboard gồm current/initial weight, delta tuần trước và BMI snapshot. | PRD ưu tiên API; Q06. |
 | FR-014 | Streak là hợp ngày meal/metric, current/best không đếm trùng. | PRD; Q01/Q06/Q09. |
 | FR-015 | Tổng fasting hoàn tất tuần và average sleep theo cửa sổ được duyệt. | API; Q06. |
-| FR-016 | Meal projection xử lý add/edit/delete, duplicate/late và backfill đúng. | Q09, chặn tích hợp. |
+| FR-016 | Meal projection xử lý create, duplicate/late và bootstrap đúng; future edit/delete/change-date có revision/tombstone/reconcile trước mở lifecycle. | Q09, chặn tích hợp; Diet MVP hiện create-only. |
 | FR-017 | Phân biệt UTC instant và ngày lịch; cùng quy tắc ngày cho tổng hợp. | Coding conventions; Q01. |
 | FR-018 | Thiếu chiều cao/meal data báo đúng trạng thái, không giả dữ liệu. | Q02/Q09. |
 | FR-019 | Phase 1 không đổi source, migration hoặc canonical contract. | Phạm vi yêu cầu. |
@@ -158,6 +164,6 @@ backfill/rebuild; dashboard có số liệu cụ thể và ownership.
 ## Giả định
 
 - Không dùng timezone máy dev làm mặc định sản phẩm, không mặc định profile luôn có chiều cao.
-- Q01–Q09 trong research chặn phần code liên quan; được review kế hoạch không đồng nghĩa được implement giả định.
+- Q01–Q10 trong research đều PENDING, chặn phần code liên quan; skeleton không cần Q01/Q08, security acceptance vẫn cần Q08 và date logic cần Q01. Q10 không chặn BMI core; review kế hoạch không đồng nghĩa approve contract.
 - Phase 1 không đổi surface đang chạy, không đặt `READY_FOR_FRONTEND`/`READY_FOR_BACKEND`.
 - AI, weekly digest delivery và sửa service khác được ghi trong [deferred.md](deferred.md).

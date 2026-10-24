@@ -60,6 +60,12 @@ Không unique user/day đối với sleep trước khi chọn single/multiple sl
 
 ## Activity projection — US4 / BLOCKED Q09
 
+Diet MVP hiện chỉ create meal; MealLog.Date (DateOnly client cấp) là business date,
+CreatedAt UTC khác processedAt/publish/receive. Projection dùng business date;
+ZoneId và metric ActivityDate cần Q01 tương thích DateOnly, không suy ngày từ event instant.
+Revision/tombstone/delete dưới đây là thiết kế mở rộng có điều kiện, chưa phải
+contract hoặc update/delete endpoint hiện có. Create-only vẫn cần bootstrap meal cũ.
+
 Đề xuất ActivityContribution: UserId, Source (Metric/Meal), SourceLogId, Revision,
 ActivityDate, IsDeleted và LastEventId. Khóa (Source, SourceLogId) cùng owner scope;
 meal lưu tombstone revision để late upsert không hồi sinh log đã xóa. ActivityDay
@@ -74,6 +80,11 @@ retry lỗi rollback receipt. Backfill có checkpoint/watermark/revision và tr�
 completeness theo hợp đồng được duyệt, không dùng thời điểm nhận làm ngày nghiệp vụ.
 
 ## Retry / outbox / dashboard
+
+Q10 chỉ đề xuất weight read provider: dùng WeightKg, LoggedAt (measuredAt), Id làm
+provenance; chưa thêm schema/RPC/outbox. Latest/asOf, future/backdate/stale/missing
+và target effective-time chờ approval. Diet snapshot input và tính BMR/TDEE;
+Progress không lưu thuật toán/target Diet, không tự tính lại target khi weight thay đổi.
 
 - RequestReceipt nếu Q03 chọn idempotency key: UserId, Operation, Key, PayloadHash,
   ResponseStatus/Body, ExpiresAt; unique (UserId, Operation, Key), commit cùng phiên.

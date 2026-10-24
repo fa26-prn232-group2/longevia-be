@@ -11,6 +11,13 @@ database riêng và các contract đã duyệt. Phần BMI/streak đầy đủ b
 không thay bằng HTTP, DB join hoặc giả dữ liệu. Các policy thiếu căn cứ giữ PENDING
 theo lựa chọn developer, không tuyên bố toàn bộ kế hoạch đã sẵn sàng thực thi.
 
+Corrective đối chiếu origin/main `418d41b82c4eca846995ed3d505736f0ba7b0c5e`:
+Diet từ PR #8 đã có catalog, targets nhập tay, meal create, daily summary,
+EF diet_db, auth, tests và Docker. Thiếu contract/outbox meal activity,
+Progress projection/reconciliation/bootstrap và E2E, không thiếu toàn bộ Diet.
+Diet còn cần weight từ Progress và profile Identity cho BMR/TDEE (Q10);
+thuật toán thuộc Diet, Progress chỉ cung cấp dữ liệu sau approval riêng.
+
 ## Bối cảnh kỹ thuật
 
 - C# / ASP.NET Core .NET 10; PostgreSQL 17, EF Core Code First/Npgsql theo repo.
@@ -83,6 +90,9 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
   Clock abstraction để current lấy một mốc; elapsed UTC duration không reset theo ngày.
 - Water append/SUM tránh lost update; sleep xử lý instant đầy đủ. Ngày/zone Q01
   phải dùng thống nhất trong body activity, water, sleep và meal projection.
+- MealLog.Date là DateOnly client cấp; CreatedAt là UTC, summary default UTC.
+  Streak dùng business date, không publish/receive timestamp. User timezone của
+  metric phải tương thích DateOnly Diet; không tự coi UTC là product policy.
 - BMI lưu height/BMI/category snapshot + provenance tại ghi (BR-05), không tính lại khi GET.
 - Dashboard đọc snapshot và union active day; current/best và window Q06 phải duyệt.
   Không ship metrics-only streak như hoàn chỉnh hoặc đoán số 0 khi meal thiếu.
@@ -100,7 +110,8 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 | Owner | Cần xác nhận | Tác động |
 | --- | --- | --- |
 | Nguyên — Identity | Height int proposal vs API decimal; RPC/presence/effective-time/deadline/error hoặc event snapshot + backfill; profile missing; Shared auth strict kid/fail-start với lead. | BMI Phase 5/Q02; auth Q08. Không sửa feature Identity đang open. |
-| Huy — Diet | Event lifecycle hoặc gRPC active days, date/zone, revision/tombstone, outbox, bootstrap/correction/completeness và canonical schema/topology. | Full streak Phase 6/Q09; không có Diet implementation ở base. |
+| Huy — Diet | Create meal đã có; còn event/outbox hoặc gRPC active days, business date/zone, bootstrap/completeness. Future edit/delete/change-date/revision/tombstone cần contract trước endpoint mới. | Full streak Phase 6/Q09 vẫn BLOCKED/PENDING INTEGRATION. |
+| Bảo + Huy; phối hợp Nguyên/lead | Q10 provider cân nặng Progress → Diet cho BMR/TDEE; latest/asOf/effective-time, missing/future/backdate/stale/deadline/provenance và ADR Diet → Progress/Identity. | T038 theo dõi approval Phase 5; provider implementation feature riêng sau duyệt, không chặn BMI core. Bmr/Tdee hiện nullable và mapper trả null. |
 | Duy — Gateway/Worker | Compose Progress, Prometheus scrape, route/Swagger reachability, shared solution/package coordination; digest proposal feature riêng. | Host foundation Phase 2; không triển khai Worker/Gateway Phase 1. |
 | Đức — Recommendation | RPC workout/habits đã tồn tại; nếu mở tích hợp tương lai cần direction ADR, profile/nutrition, deadline/limits/citation/disclaimer. | Deferred; không chặn core độc lập. |
 | Bảo/product/lead | Q01/Q03–Q08 và ADR direction mới. | Chặn task liên quan trước code; danh sách đầy đủ ở research. |
@@ -122,6 +133,7 @@ Identity/Shared/Worker; Progress không nhận ownership các file đó.
 | src/Services/Progress/Progress.Api/Program.cs | DI, auth, migrations, health/Swagger/metrics. | Bảo; mọi phase chạm composition root phải tuần tự. | Phase 2 rồi từng story. |
 | src/Services/Progress/Progress.Infrastructure/Persistence/Migrations | Migrations/snapshot chỉ Progress, một open feature sở hữu. | Bảo; resolve/registry trước tạo, đồng bộ main theo quyền. | Từng phase persistence sau approve policy. |
 | contracts/identity/v1/identity.proto | Height RPC nếu được chọn. | Nguyên; không sửa từ Progress. | Producer PR được duyệt/merge trước consumer. |
+| contracts/progress/v1/ (chưa tồn tại) | Weight read provider nếu Q10 được duyệt ở feature tiếp theo. | Bảo provider, Huy Diet consumer; Nguyên profile, lead ADR. | Phase 1 chỉ planning; không tạo proto/adapter hoặc sửa Diet. |
 | contracts/events/v1/README.md, src/Shared/Events | Meal/schema topology nếu được chọn. | Huy + lead + Duy; không sửa khi Identity đang sở hữu Shared. | Contract PR riêng trước Phase 6. |
 | src/Shared/Auth | Missing kid/fail-start khác chuẩn đề xuất strict. | Nguyên/lead; không patch Shared trong Progress. | Q08 trước claim auth hoàn chỉnh. |
 
@@ -130,11 +142,13 @@ cao hơn câu hướng dẫn cũ còn trong plan template. Không đổi .agents
 
 ## Roadmap và verification
 
-1. Phase 2 — Foundation & Persistence: skeleton, auth, clock, errors, DB riêng, config,
-   health/metrics/Swagger, hạ tầng phối hợp. Chưa chọn schema business còn PENDING.
+1. Phase 2 — Foundation & Persistence: skeleton/test scaffolding/wiring cấu trúc
+   độc lập Q01/Q08 sau human giao phase và shared slot; auth acceptance chờ Q08,
+   business date chờ Q01. DB/config/health/metrics phối hợp, không schema PENDING.
 2. Phase 3 — Fasting: Q03/Q08 approved rồi test trước/cùng code; concurrency, retries, current.
 3. Phase 4 — Water & Sleep: Q01/Q05/Q08 approved rồi append nước, sleep qua đêm và validation.
-4. Phase 5 — Body Metrics & BMI: chờ Q02/Q04/Q07 và Identity canonical contract + ADR.
+4. Phase 5 — Body Metrics & BMI: chờ Q01/Q02/Q04/Q07 và Identity canonical contract + ADR;
+   T038 theo dõi Q10 độc lập, không biến BMR/TDEE thành Progress core.
 5. Phase 6 — Dashboard, Streaks & Integration: chờ Q06/Q09 và Diet contract/bootstrap,
    tests real broker/DB, load test, source/contract sync và guides.
 

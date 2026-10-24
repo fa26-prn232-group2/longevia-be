@@ -7,6 +7,6 @@
   "services": [
     "Progress"
   ],
-  "description": "Phase 2: foundation và persistence Progress Service; Q08 chờ đồng thuận Bảo + Nguyên, chưa triển khai nghiệp vụ Phase 3–6",
+  "description": "Progress Service Phases 2–6: foundation, persistence, fasting, water, sleep, body metrics, và dashboard summary (PR #13 Draft)",
   "opened_at": "2026-10-24"
 }

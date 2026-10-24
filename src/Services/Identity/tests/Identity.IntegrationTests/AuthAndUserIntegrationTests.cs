@@ -3,14 +3,17 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Features.Auth;
 using Identity.Application.Features.Registration;
 using Identity.Application.Features.Users;
 using Identity.Domain.Constants;
 using Identity.Infrastructure.Persistence;
+using Longevia.Shared.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Testcontainers.PostgreSql;
 
 namespace Identity.IntegrationTests;
 
@@ -29,6 +32,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Contains("20261023193116_ReconcileMassTransitOutboxModel", appliedMigrations);
         Assert.Contains(appliedMigrations, migration => migration.Contains("VerificationToken", StringComparison.Ordinal));
         Assert.Contains("20261024083300_AddPasswordResetTokenLifecycle", appliedMigrations);
+        Assert.Contains(appliedMigrations, migration => migration.Contains("ConvertProfileHeightToDecimal", StringComparison.Ordinal));
 
         await db.Database.MigrateAsync();
 
@@ -65,6 +69,24 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
                 """SELECT column_name AS "Value" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'OutboxState' AND column_name = 'BusName'""")
             .ToListAsync();
         Assert.Empty(legacyBusNameColumn);
+    }
+
+    [Fact]
+    public async Task InvalidRegistration_ShouldUseCanonicalIdentityValidationProblemDetails()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/auth/register",
+            new RegisterUserRequest("invalid-email", "weak", "A"));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(422, problem.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal(
+            "identity.validation_failed",
+            problem.RootElement.GetProperty("code").GetString());
+        var errors = problem.RootElement.GetProperty("errors").EnumerateArray().ToArray();
+        Assert.NotEmpty(errors);
+        Assert.Contains(errors, error => error.GetProperty("field").GetString() == "email");
     }
 
     [Fact]
@@ -128,18 +150,45 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var updateProfileRequest = new UpdateProfileRequest(
             new DateOnly(1995, 6, 15),
             BiologicalSex.Male,
-            178,
+            178.25m,
             ActivityLevel.ModeratelyActive,
             DietaryPreference.Mediterranean,
             ["Seafood", "Peanuts"]);
+
+        var invalidProfileResponse = await _client.PutAsJsonAsync(
+            "/users/me/profile",
+            updateProfileRequest with { HeightCm = 178.255m });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, invalidProfileResponse.StatusCode);
+        using (var profileProblem = JsonDocument.Parse(await invalidProfileResponse.Content.ReadAsStringAsync()))
+        {
+            Assert.Equal(
+                "identity.validation_failed",
+                profileProblem.RootElement.GetProperty("code").GetString());
+            Assert.Contains(
+                profileProblem.RootElement.GetProperty("errors").EnumerateArray(),
+                error => error.GetProperty("field").GetString() == "heightCm");
+        }
 
         var profileResponse = await _client.PutAsJsonAsync("/users/me/profile", updateProfileRequest);
         Assert.Equal(HttpStatusCode.OK, profileResponse.StatusCode);
         var updatedProfile = await profileResponse.Content.ReadFromJsonAsync<ProfileResponse>();
         Assert.NotNull(updatedProfile);
-        Assert.Equal(178, updatedProfile.HeightCm);
+        Assert.Equal(178.25m, updatedProfile.HeightCm);
         Assert.Equal(BiologicalSex.Male, updatedProfile.BiologicalSex);
         Assert.Contains("Seafood", updatedProfile.Allergies);
+        var profileEvent = Assert.Single(factory.ProfileUpdatedEvents, message => message.UserId == createdUser.Id);
+        Assert.Equal(1, UserProfileUpdatedEvent.SchemaVersion);
+        Assert.NotEqual(default, profileEvent.OccurredOn);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            var profileHeight = await db.UserProfiles
+                .Where(profile => profile.UserId == createdUser.Id)
+                .Select(profile => profile.HeightCm)
+                .SingleAsync();
+            Assert.Equal(178.25m, profileHeight);
+        }
 
         // 8. Refresh Token
         var refreshRequest = new RefreshTokenRequest(tokenResult.RefreshToken);
@@ -168,6 +217,108 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", changedTokens.AccessToken);
         var logoutResponse = await _client.PostAsJsonAsync("/auth/logout", new LogoutRequest(changedTokens.RefreshToken));
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task HeightMigration_ShouldPreserveExistingIntegerMeasurements()
+    {
+        await using var postgres = new PostgreSqlBuilder("postgres:17-alpine")
+            .WithDatabase("identity_height_migration_test")
+            .WithUsername("test_user")
+            .WithPassword("test_password")
+            .Build();
+        await postgres.StartAsync();
+
+        var options = new DbContextOptionsBuilder<IdentityDbContext>()
+            .UseNpgsql(postgres.GetConnectionString())
+            .Options;
+        await using var db = new IdentityDbContext(options);
+
+        await db.Database.MigrateAsync("20261024083300_AddPasswordResetTokenLifecycle");
+
+        var userId = Guid.NewGuid();
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO users ("Id", "Email", "PasswordHash", "FullName", "Status", "CreatedAt")
+            VALUES ({userId}, {$"migration_{userId:N}@example.com"}, 'existing-hash', 'Migration User', 'Active', {DateTimeOffset.UtcNow})
+            """);
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO user_profiles
+                ("Id", "UserId", "BirthDate", "BiologicalSex", "HeightCm", "ActivityLevel", "DietaryPreference", "Allergies", "UpdatedAt")
+            VALUES
+                ({Guid.NewGuid()}, {userId}, {new DateOnly(1990, 1, 1)}, 'Female', 175, 'Sedentary', 'None', ARRAY[]::text[], {DateTimeOffset.UtcNow})
+            """);
+
+        await db.Database.MigrateAsync();
+
+        var profile = await db.UserProfiles.SingleAsync(candidate => candidate.UserId == userId);
+        var heightColumnType = await db.Database.SqlQueryRaw<string>(
+                "SELECT data_type AS \"Value\" FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'user_profiles' AND column_name = 'HeightCm'")
+            .SingleAsync();
+
+        Assert.Equal(175m, profile.HeightCm);
+        Assert.Equal("numeric", heightColumnType);
+    }
+
+    [Fact]
+    public async Task ProfileUpdate_ShouldPersistVersionedEventInOutboxAndRollbackTogether()
+    {
+        var email = $"profile_rollback_{Guid.NewGuid():N}@example.com";
+        var verificationTokenHash = $"verification_{Guid.NewGuid():N}";
+        Guid userId;
+        using (var seedScope = factory.Services.CreateScope())
+        {
+            var db = seedScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            var user = Identity.Domain.Entities.User.Create(
+                Guid.NewGuid(), email, "existing-password-hash", "Profile Rollback User",
+                DateTimeOffset.UtcNow, verificationTokenHash, DateTimeOffset.UtcNow.AddHours(24));
+            Assert.True(user.TryVerify(verificationTokenHash, DateTimeOffset.UtcNow));
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+            userId = user.Id;
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var useCase = scope.ServiceProvider.GetRequiredService<UpdateProfileUseCase>();
+            var accessor = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
+            accessor.HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+                [
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, userId.ToString()),
+                ], "integration-test")),
+            };
+
+            ProfileResponse response;
+            try
+            {
+                response = await useCase.ExecuteAsync(new UpdateProfileRequest(
+                    new DateOnly(1995, 6, 15), BiologicalSex.Female, 168.75m,
+                    ActivityLevel.ModeratelyActive, DietaryPreference.Mediterranean, ["Nuts"]));
+            }
+            finally
+            {
+                accessor.HttpContext = null;
+            }
+
+            Assert.Equal(168.75m, response.HeightCm);
+            var outboxBodies = await db.Database.SqlQueryRaw<string>(
+                "SELECT (\"MessageType\" || ' ' || \"Body\"::text) AS \"Value\" FROM \"OutboxMessage\"")
+                .ToListAsync();
+            Assert.Contains(outboxBodies, body => body.Contains("UserProfileUpdatedEvent", StringComparison.Ordinal)
+                && body.Contains(userId.ToString(), StringComparison.Ordinal));
+            await transaction.RollbackAsync();
+        }
+
+        using var verifyScope = factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        Assert.False(await verifyDb.UserProfiles.AnyAsync(profile => profile.UserId == userId));
+        var remainingBodies = await verifyDb.Database.SqlQueryRaw<string>(
+            "SELECT (\"MessageType\" || ' ' || \"Body\"::text) AS \"Value\" FROM \"OutboxMessage\"")
+            .ToListAsync();
+        Assert.DoesNotContain(remainingBodies, body => body.Contains(userId.ToString(), StringComparison.Ordinal));
     }
 
     [Fact]
@@ -200,13 +351,14 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
     public async Task ForgotPassword_ShouldPersistResetHashAndOutboxEventInSameTransaction()
     {
         var email = $"reset_rollback_{Guid.NewGuid():N}@example.com";
+        var verificationTokenHash = $"verification_{Guid.NewGuid():N}";
         using (var seedScope = factory.Services.CreateScope())
         {
             var db = seedScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
             var user = Identity.Domain.Entities.User.Create(
                 Guid.NewGuid(), email, "existing-password-hash", "Reset User",
-                DateTimeOffset.UtcNow, "verification-hash", DateTimeOffset.UtcNow.AddHours(24));
-            Assert.True(user.TryVerify("verification-hash", DateTimeOffset.UtcNow));
+                DateTimeOffset.UtcNow, verificationTokenHash, DateTimeOffset.UtcNow.AddHours(24));
+            Assert.True(user.TryVerify(verificationTokenHash, DateTimeOffset.UtcNow));
             db.Users.Add(user);
             await db.SaveChangesAsync();
         }

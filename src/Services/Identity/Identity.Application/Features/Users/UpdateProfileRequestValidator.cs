@@ -17,8 +17,10 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
             .WithMessage("Giới tính phải là 'Male' hoặc 'Female'.");
 
         RuleFor(x => x.HeightCm)
-            .InclusiveBetween(50, 250)
-            .WithMessage("Chiều cao phải từ 50cm đến 250cm.");
+            .InclusiveBetween(50m, 250m)
+            .WithMessage("Chiều cao phải từ 50cm đến 250cm.")
+            .Must(height => decimal.Round(height, 2) == height)
+            .WithMessage("Chiều cao chỉ được có tối đa 2 chữ số thập phân.");
 
         RuleFor(x => x.ActivityLevel)
             .NotEmpty().WithMessage("Mức độ vận động không được để trống.")

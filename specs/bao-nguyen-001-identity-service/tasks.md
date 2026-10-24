@@ -47,29 +47,29 @@
 
 **Checkpoint — Phase 4 hoàn tất**: Identity unit 52/52, Worker unit 16/16, Identity integration 6/6 (PostgreSQL + RabbitMQ + Redis + Worker + Mailpit). Close-out Release toàn repo: build 0 warning/error; 510/510 tests pass (Identity Integration 6, Identity Unit 52, Recommendation Integration 64, Recommendation Unit 372, Worker Unit 16); vulnerability scan không tìm thấy package dễ tổn thương; format-check, team-feature check, EF model check và git diff check đạt. `make` chưa cài nên chạy trực tiếp các lệnh tương đương; Docker/Testcontainers và Roslyn format chạy ngoài sandbox sau khi sandbox chặn Docker/named-pipe. Negative control bỏ điều kiện compare-and-set làm E2E đỏ vì cả hai reset request trả 204; negative control giữ claim sau SMTP lỗi làm retry không gửi email; khôi phục cả hai thì test xanh.
 
-## Phase 5 — Profile, response và contract (US3)
+## Phase 5 — Profile, response và contract (US3) — hoàn thành
 
-- [ ] T024 [P] Bổ sung test profile cho tuổi 13, biên height 50/250, decimal height, enum sai, allergies và user ownership.
-- [ ] T025 Chuyển `HeightCm` sang decimal tại request/domain/DTO/validator/EF; tạo migration có kiểm tra giữ nguyên dữ liệu height hiện có; không thêm `avatarUrl` khi không có yêu cầu/model.
-- [ ] T026 Xử lý publication profile hiện hữu: `UpdateProfileUseCase` đang publish `UserProfileUpdatedIntegrationEvent` (2 fields), nhưng event không có trong shared versioned contract và chưa xác định consumer. Đối chiếu Constitution/US3; nếu không có consumer được duyệt thì bỏ publication, nếu có thì chuẩn hóa contract v1 + consumer compatibility tests.
-- [x] T027 Cập nhật `docs/api/api-spec.md` và `specs/bao-nguyen-001-identity-service/frontend-guide.md`; đồng bộ route xác minh email/status/error theo source.
-- [x] T028 Đối chiếu `contracts/events/v1/README.md`; giữ nguyên event v1 vì contract đã đúng, tạo `specs/bao-nguyen-001-identity-service/backend-integration-guide.md` cho producer topology và kiểm thử E2E topology/consumer.
+- [x] T024 [P] Bổ sung unit test profile cho tuổi 13, biên height 50/250, decimal height/precision, enum sai, allergies và user ownership; Identity Unit 67/67 xanh. Negative control trước sửa 422 xác nhận contract test đỏ trên `400 BadRequest`, sau sửa test xanh.
+- [x] T025 Chuyển `HeightCm` sang decimal tại request/domain/DTO/validator/EF; migration Code First và PostgreSQL integration xác nhận dữ liệu integer cũ `175` được giữ thành `175.00`, decimal round-trip; không thêm `avatarUrl` khi không có yêu cầu/model.
+- [x] T026 Theo PRD, thay publication nội bộ bằng shared `UserProfileUpdatedEvent` v1 chỉ chứa user ID/timestamp, cấu hình routing key `identity.user.profile-updated`, PostgreSQL integration xác nhận transactional outbox rollback; ghi rõ chưa có consumer được xác định.
+- [x] T027 Cập nhật `docs/api/api-spec.md` và `specs/bao-nguyen-001-identity-service/frontend-guide.md`; đồng bộ route, DTO height decimal/precision, status/error và counted sync theo source.
+- [x] T028 Đối chiếu `contracts/events/v1/README.md`; thêm event profile v1 theo PRD, đồng bộ producer topology/outbox và backend guide; PostgreSQL integration xác nhận event/outbox và rollback.
 
 ## Phase 6 — Close-out và CI
 
 - [ ] T029 [P] Cập nhật `src/Services/Identity/README.md`, cấu hình cần thiết và docs Identity để không còn mô tả stub/TODO đã lỗi thời.
 - [x] T030 Chạy `pwsh scripts/speckit/team-feature.ps1 check`; xác nhận `meta.json` khai báo `Identity`, `Shared`, `Worker` đúng scope và không thay đổi feature khác.
-- [x] T031 Chạy gate tương đương `make lint` và `make test PROJECTS=src/Services/Identity` bằng `dotnet format`, build warnings-as-errors, Identity Unit/Integration; ghi rõ `make` không cài trên máy.
+- [x] T031 Chạy gate Phase 5 tương đương `make lint` và `make test PROJECTS=src/Services/Identity`: `make lint` (solution format-check sạch + solution build 0 warning/0 error), Identity Unit 67/67 và Integration 9/9 (Linux SDK 10 container, Testcontainers thật).
 - [x] T032 Chạy đường E2E thật DB + RabbitMQ + Worker + Mailpit và ghi evidence cụ thể trong backend guide.
-- [ ] T033 Hoàn tất counted sync frontend/backend guides; trạng thái READY chỉ khi implementation, contract, tests và counts hoàn chỉnh.
-- [x] T034 Trước khi developer tự push, chạy gate tương đương `make check` toàn repo (Release format/build/test/vulnerability scan); không commit/push thay developer.
+- [x] T033 Hoàn tất counted sync guides; frontend handoff READY_FOR_FRONTEND sau implementation, contract, tests và counts. Backend counts/evidence đã đồng bộ, nhưng backend handoff vẫn IN_PROGRESS vì profile event consumer chưa xác định.
+- [ ] T034 Trước khi developer tự push Phase 5, chạy gate tương đương `make check` toàn repo (Release format/build/test/vulnerability scan); chưa chạy trong lượt này. Developer chạy gate close-out trước khi push; không commit/push thay developer.
 
 ### Handoff integration
 
 - [x] T035 **Có đổi client surface**: feature đổi hành vi HTTP và thêm endpoint theo spec; cần frontend guide.
-- [x] T036 **Có cập nhật hành vi tích hợp producer/consumer**: `UserRegisteredEvent` và `PasswordResetRequestedEvent` giữ schema v1; Identity publish đúng topology, Worker gửi OTP và dedup theo token hash. Guide đã đồng bộ; E2E Phase 3 đạt, Phase 4 evidence còn ở T023.
-- [ ] T037 **Đồng bộ frontend guide khi close-out**: route/status/DTO/enum/error counts được đếm và đối chiếu thật.
-- [x] T038 **Đồng bộ backend guide cho Phase 3–4**: 2 event email canonical, 9 field, 1 exchange, 2 routing key, 1 queue, E2E evidence cập nhật; guide vẫn IN_PROGRESS vì profile publication hiện hữu được ghi nhận ở T026.
+- [x] T036 **Có cập nhật hành vi tích hợp producer/consumer**: hai email event giữ schema v1 và Worker behavior; thêm profile event v1 không có consumer hiện được xác định. Contract, producer topology và outbox test đã được xác minh.
+- [x] T037 **Đồng bộ frontend guide khi close-out**: route/status/DTO/enum/error counts được đếm và đối chiếu thật; frontend handoff READY_FOR_FRONTEND.
+- [x] T038 **Đồng bộ backend guide cho Phase 3–5**: đếm event/field/topology sau khi thêm profile event; ghi consumer chưa xác định, test evidence và giữ trạng thái IN_PROGRESS đến khi handoff đủ điều kiện.
 
 ### Dependencies
 

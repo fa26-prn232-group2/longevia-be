@@ -6,4 +6,5 @@ internal static class IdentityEventTopology
     public const string EventsExchange = "longevia.events";
     public const string UserRegisteredRoutingKey = "identity.user.registered";
     public const string PasswordResetRoutingKey = "identity.user.password-reset-requested";
+    public const string UserProfileUpdatedRoutingKey = "identity.user.profile-updated";
 }

@@ -26,6 +26,7 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
             .IsRequired();
 
         builder.Property(p => p.HeightCm)
+            .HasPrecision(5, 2)
             .IsRequired();
 
         builder.Property(p => p.ActivityLevel)

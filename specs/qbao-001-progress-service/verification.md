@@ -5,6 +5,8 @@
 - Repository: `fa26-prn232-group2/longevia-be`
 - Branch: `feat/progress-service`
 - Base commit: `2addfea063cbe5753dcf0ea4b925e0edfcda3acc` (Merge pull request #9)
+- Head commit: `7e58d6c`
+- Pull Request: [#11 (Draft)](https://github.com/fa26-prn232-group2/longevia-be/pull/11)
 - Owner: Bảo (`qbao`), Dev 3
 - Feature: `qbao-001-progress-service`
 - Phiên tiếp quản: Handoff từ Codex sau khi đạt giới hạn quota. Toàn bộ mã nguồn, cấu hình và kịch bản kiểm thử của Codex được bảo tồn nguyên vẹn và kiểm chứng độc lập bởi Antigravity.
@@ -66,6 +68,7 @@
 | Team Feature Check | `pwsh scripts/speckit/team-feature.ps1 check` | Pass (Features: 6, Owner: qbao, layout consistent) |
 | Git Whitespace Check | `git diff --check` | Pass (Exit 0) |
 | Runtime Smoke Tests | `pwsh scripts/smoke/progress-smoke.ps1` | Pass 100% (16/16 assertions pass) |
+| CI Workflow GitHub Actions (PR #11) | [Run 40120146939](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/40120146939) | Pass (build-test 3m24s, 592 tests passed) |
 
 ### Chi tiết phân bổ 592 Tests toàn hệ thống (Release)
 

@@ -2,8 +2,9 @@
 
 Đầu vào: [spec](spec.md), [plan](plan.md), [research](research.md),
 [data model](data-model.md), [proposal](contracts/README.md).
-Phase 1 chỉ planning; **0 task triển khai hoàn thành**. Chỉ bắt đầu khi developer giao
-phase triển khai sau review. US1/US2/US3/US4 tương ứng bốn US-PROG trong spec.
+Phase 1 chỉ planning; Phase 2 được developer giao ngày 2026-10-25 sau PR #9 merge.
+Trạng thái T001–T008 bên dưới chỉ được xác nhận bằng evidence trong verification.md.
+US1/US2/US3/US4 tương ứng bốn US-PROG trong spec.
 Mọi path source dưới đây là dự kiến. Các task có nhãn BLOCKED không được tự gỡ
 bằng mock/fallback; cần evidence approve và canonical contract ở producer PR.
 
@@ -13,25 +14,34 @@ Phase 2–6 khi thực sự đổi surface. Việc ngoài scope ở deferred, kh
 
 ## Phase 2 — Foundation & Persistence
 
+Phạm vi developer cho phép tiếp tục phần độc lập khi Q08 chưa được nghiệm thu.
+Steer 2026-10-25 cho Bảo quyền integration riêng Progress vào solution/Compose/
+Prometheus/routing/env; không chờ Duy, không có Technical Lead được chỉ định.
+Chỉ Bảo + Nguyên xác nhận Q08 liên service. Các reference lead/slot trong lịch sử
+Phase 1 không phải blocker quyền hạ tầng của Phase 2.
+Phase 2 không đổi RPC/event/topology hoặc giao tiếp liên service: không tạo
+backend-integration-guide.md. HTTP operational surface có frontend-guide.md;
+T036 vẫn dành cho handoff business Phase 3–6, không tick nhờ operational routes.
+
 Mục tiêu: host Progress độc lập, DB riêng, bảo mật/quan sát được, chưa dựng schema business thiếu quyết định.
 Kiểm chứng: app khởi động với config hợp lệ, fail khi config/DB invalid, 401 đúng,
 health/metrics hoạt động, migration chỉ progress_db. Liên service chưa cần hoạt động.
 
-- [ ] T001 Theo dõi approval Q01/Q08 tại specs/qbao-001-progress-service/research.md và plan.md; FR-001/FR-017/FR-019; sau human review Phase 1; BLOCKED phần approval, không chặn skeleton T002/T003; verification: người duyệt/ngày, Q08 chặn security acceptance T004–T008, Q01 chặn date logic Phase 4–6; không tự sửa Shared/Gateway.
-- [ ] T002 Tạo bốn project theo Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj và Progress.Api/Progress.Api.csproj; FR-019, SC-001; phụ thuộc human giao Phase 2 và shared solution slot Duy/lead, không phụ thuộc T001/Q01/Q08; verification: references hướng vào trong, DI wiring cấu trúc, không reference service khác hoặc claim auth readiness.
-- [ ] T003 Tạo test projects src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj và src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj cùng fixture PostgreSQL/RabbitMQ thật; SC-003/SC-007; sau T002; verification: fixture tạo DB riêng, assert đọc/ghi giá trị, negative control đúng nguyên nhân.
-- [ ] T004 Viết auth/ownership/config tests tại src/Services/Progress/tests/Progress.IntegrationTests/Foundation/AuthTests.cs; FR-001/SC-003; sau T003, cần phần Q08 của T001 và Shared remediation owner trước nghiệm thu security; Q01 không chặn scaffolding; verification: unsigned/wrong algorithm/kid missing/unknown/expired/issuer/audience sai → 401, hai user cách ly, config thiếu fail-start, thấy đỏ trước implementation.
-- [ ] T005 Cấu hình host tại src/Services/Progress/Progress.Api/Program.cs và Progress.Application/Abstractions/IClock.cs: JWT public-key-only, ICurrentUser, clock, DI, centralized AppException/validation, cancellation và options fail-start; FR-001/FR-017; sau T004; verification: T004 xanh, không private key/log PII, endpoint không chứa business logic, không sửa Shared để né test.
-- [ ] T006 Tạo ProgressDbContext/UoW tại src/Services/Progress/Progress.Infrastructure/Persistence/ProgressDbContext.cs và EfUnitOfWork.cs, migration foundation đã có quyết định; FR-001/FR-019; sau T005; verification: chỉ progress_db, MigrateAsync trước request, lỗi fail-start, migration review, không sinh business table PENDING hoặc sửa snapshot bằng tay.
-- [ ] T007 Tạo health/Swagger/metrics tại src/Services/Progress/Progress.Api/Extensions/HostExtensions.cs và Program.cs; SC-006/SC-007; sau T006, BLOCKED slot Duy cho compose/scrape; verification: AddObservability("Progress"), MapPrometheusScrapingEndpoint, target Progress UP sau job static_configs do Duy phối hợp, request metric tăng, Grafana hiển thị, Swagger chỉ Development.
-- [ ] T008 Ghi kết quả foundation tại specs/qbao-001-progress-service/verification.md; SC-001/FR-019; sau T007; verification: gate theo AGENTS §2, test scoped đúng project, ghi số pass/fail, negative control, shared slot/reconciliation; chỉ qua phase sau khi gate xanh.
+- [x] T001 **DONE** — Theo dõi Q01/Q08 tại research.md và plan.md; FR-001/FR-017/FR-019. Q08-A JWT policy đã được Bảo + Nguyên **APPROVED** chính thức (policy strict: token ES256, kid hợp lệ, sub là GUID, fail-start khi thiếu public key; Shared Auth remediation do Nguyên sở hữu trong PR riêng của Identity); Q08-B resource ownership và error policy PENDING cho business endpoints; Q01 tiếp tục theo dõi cho Phase 4–6. Phase 2 hoàn tất mục tiêu theo dõi kiến trúc.
+- [x] T002 **DONE** — Bốn project Clean Architecture tại src/Services/Progress/Progress.Domain/Progress.Domain.csproj, Progress.Application/Progress.Application.csproj, Progress.Infrastructure/Progress.Infrastructure.csproj, Progress.Api/Progress.Api.csproj; FR-019, SC-001. Sáu project gồm tests đăng ký longevia-be.slnx theo explicit developer authorization; dependency hướng vào trong, không service import, Domain không framework.
+- [x] T003 **DONE** — src/Services/Progress/tests/Progress.UnitTests và Progress.IntegrationTests; SC-003/SC-007. xUnit, WebApplicationFactory, test-only keys/TimeProvider, PostgreSQL Testcontainers progress_db/progress_user và DI fixtures thực. Không RabbitMQ vì chưa publisher/consumer, không EF InMemory. Assertion DB/current user/validation/negative control cụ thể; xem verification.md.
+- [x] T004 **DONE** — AuthTests.cs, HostTests.cs và FoundationOptionsTests.cs trong hai test project; FR-001/SC-003. Q08-A JWT policy đã được duyệt; 14 kịch bản auth (unsigned, wrong algorithm, invalid/missing/unknown kid, missing/empty/invalid/conflicting sub, current/previous key rotation) và configuration fail-start chạy thật pass 100% (cả local và CI). Nghiệm thu an toàn Phase 2 hoàn tất; resource ownership (403 vs 404 thuộc Q08-B) cho entity nghiệp vụ sẽ kiểm chứng ở từng phase tương ứng khi có schema.
+- [x] T005 **DONE** — Progress.Api/Program.cs, Auth/, Extensions/HostExtensions.cs và ProgressExceptionHandler.cs; FR-001/FR-017. Q08-A đã được duyệt; cấu hình ES256 public-key-only, ProgressJwtOptionsValidator fail-start, Problem Details RFC 7807, centralized exception handling, DI và TimeProvider đã hoàn tất và kiểm chứng 100% tests xanh; không sửa Shared/Identity trong PR này.
+- [x] T006 **DONE** — Progress.Infrastructure/Persistence/ProgressDbContext.cs, ProgressDatabaseOptions.cs, ProgressDatabaseInitializer.cs và IUnitOfWork; FR-001/FR-019. DbContext là UoW, không thêm wrapper EfUnitOfWork vô ích. Xác minh DB trước traffic, MigrateAsync khi có migration; chưa entity nên không migration rỗng/EnsureCreated/DDL giả. PostgreSQL thật xác nhận DB/user/schema rỗng, init lặp, cancellation và fail-start.
+- [x] T007 **DONE** — HostExtensions.cs, Program.cs, Dockerfile, deployments/docker-compose.yml, deployments/prometheus/prometheus.yml và scripts/smoke/progress-smoke.ps1; SC-006/SC-007. Được Bảo cấp quyền hạ tầng, không chờ Duy. AddObservability("ProgressService"), scrape, health/Swagger đã hoạt động; đã có evidence thật: container healthy, gateway prefix stripping đúng, Prometheus target UP, metric tăng (32 -> 45), Grafana datasource & dashboard kiểm chứng thành công.
+- [x] T008 **DONE** — verification.md; SC-001/FR-019. Ghi nhận toàn bộ evidence thực tế: Fast Gate, Release build, Progress tests (21 unit + 34 integration), toàn hệ thống (592 tests branch-only, 610 tests PR merge-ref), scan 27 projects không lỗ hổng, runtime smoke pass 100%, CI pass; Q08-A approved, Q08-B deferred, Q02 gRPC read direction đã ghi nhận. Phase 2 hoàn tất đầy đủ acceptance criteria để human review.
 
 ## Phase 3 — Fasting — US2
 
 Mục tiêu: start/current/end, concurrency và retry. Kiểm thử độc lập: 975 phút qua
 đêm, 20 start chỉ 1 active/user; không gọi Identity hoặc Diet.
 
-- [ ] T009 [US2] Chốt Q03 và schema start/end/current + error catalog tại specs/qbao-001-progress-service/contracts/README.md sau approval; FR-006/FR-007/FR-008/FR-009; sau T008; BLOCKED Q03/Q08; verification: Custom bounds, target mismatch, future timestamps, no-active, replay/conflict và retention đều có người duyệt, không còn proposal lẫn accepted.
+- [ ] T009 [US2] Chốt Q03 và schema start/end/current + error catalog tại specs/qbao-001-progress-service/contracts/README.md sau approval; FR-006/FR-007/FR-008/FR-009; sau T008; BLOCKED Q03; verification: Custom bounds, target mismatch, future timestamps, no-active, replay/conflict và retention đều có người duyệt, không còn proposal lẫn accepted.
 - [ ] T010 [US2] Viết test trước tại src/Services/Progress/tests/Progress.UnitTests/Fasting/FastingSessionTests.cs và Progress.IntegrationTests/Fasting/FastingTests.cs; FR-006–FR-009/SC-002/SC-003/SC-004; sau T009; verification: preset/Custom, 975 phút, sát target, remaining không âm, same/changed retry payload, no-current, ownership, 20 concurrent start/end race đỏ đúng lỗi.
 - [ ] T011 [US2] Tạo src/Services/Progress/Progress.Domain/Entities/FastingSession.cs và Domain/Constants/FastingProtocol.cs; FR-006/FR-008; sau T010; constraints: "Chỉ 16:8, 18:6, 20:4, Custom", "InProgress hoặc Completed", "EndedAt không trước StartedAt"; verification: test domain xanh, quá target không auto-complete theo policy đã duyệt.
 - [ ] T012 [US2] Cấu hình persistence tại src/Services/Progress/Progress.Infrastructure/Persistence/Configurations/FastingSessionConfiguration.cs và Migrations; FR-007; sau T011; constraints: "unique filtered index UserId ở các hàng active (EndedAt IS NULL)"; retry receipt nếu Q03 chọn, unique UserId/operation/key; verification: DB thật 20 start chỉ một active, receipt/session cùng transaction, rollback không để receipt mồ côi.
@@ -57,9 +67,9 @@ Mục tiêu: snapshot BMI bất biến và lịch sử. BLOCKED tích hợp Nguy
 policy Q01/Q04/Q07; chưa có canonical height contract/ADR không được code adapter giả.
 Q10 là dependency ngược Diet cần cân nặng; T038 chỉ theo dõi quyết định, không chặn BMI core.
 
-- [ ] T038 [US1] Theo dõi Q10 Latest Weight Contract for Diet BMR/TDEE tại specs/qbao-001-progress-service/research.md, contracts/README.md và deferred.md; FR-019, SC-001; sau human review Phase 1, độc lập T022–T027; PENDING APPROVAL Bảo/Huy/Nguyên/lead; verification: ghi latest/asOf/effective-time, absence/null vs unavailable/stale, future/backdate/provenance, refresh policy, deadline và ADR direction, provider Progress/consumer Diet; không tạo RPC/event/adapter hoặc tính BMR/TDEE, implementation chỉ feature riêng sau approval.
+- [ ] T038 [US1] Theo dõi Q10 Latest Weight Contract for Diet BMR/TDEE tại specs/qbao-001-progress-service/research.md, contracts/README.md và deferred.md; FR-019, SC-001; sau human review Phase 1, độc lập T022–T027; PENDING APPROVAL Bảo/Huy/Nguyên; verification: ghi latest/asOf/effective-time, absence/null vs unavailable/stale, future/backdate/provenance, refresh policy, deadline và ADR direction, provider Progress/consumer Diet; không tạo RPC/event/adapter hoặc tính BMR/TDEE, implementation chỉ feature riêng sau approval.
 
-- [ ] T022 [US1] Ghi phê duyệt Q02/Q04/Q07 và tham chiếu canonical Identity contract/ADR tại specs/qbao-001-progress-service/research.md và contracts/README.md; FR-002–FR-005/FR-018; sau T008 (roadmap sau T021); BLOCKED Nguyên/lead; verification: height int proposal vs decimal được reconcile, presence/backdate/missing/unavailable, bounds/category/precision, pagination wire được duyệt; không tự sửa Identity/contracts.
+- [ ] T022 [US1] Ghi phê duyệt Q02/Q04/Q07 và tham chiếu canonical Identity contract/ADR tại specs/qbao-001-progress-service/research.md và contracts/README.md; FR-002–FR-005/FR-018; sau T008 (roadmap sau T021); BLOCKED Nguyên + Bảo; verification: Q02 hướng gRPC read đã approved (height decimal khớp PR #10 numeric(5,2)); schema protobuf cụ thể trong identity.proto PENDING trước Phase 5; presence/backdate/missing/unavailable, bounds/category/precision, pagination wire được duyệt; không tự sửa Identity/contracts.
 - [ ] T023 [US1] Viết tests trước tại src/Services/Progress/tests/Progress.UnitTests/Metrics/BmiTests.cs và Progress.IntegrationTests/Metrics/MetricsTests.cs; FR-001–FR-005/FR-017/FR-018, SC-003/SC-004/SC-005; sau T022; verification: 25/300/sát ngoài, optional biomarker bounds/null/pair, BMI/category thresholds, missing/timeout, 70kg/175cm, BR-05, two-user, page/date/tie/invalid range đỏ đúng lý do.
 - [ ] T024 [US1] Tạo src/Services/Progress/Progress.Domain/Entities/BodyMetricLog.cs và Progress.Infrastructure/Persistence/Configurations/BodyMetricLogConfiguration.cs cùng migration; FR-002/FR-003/FR-004; sau T023; constraints: "WeightKg ... 25–300 kg", "Int nullable" cho BP/RHR, snapshot BMI/height/category không recalculate; verification: schema theo precision đã duyệt, index UserId/LoggedAt/Id, không FK DB khác, BR-05 test xanh.
 - [ ] T025 [US1] Tạo height abstraction tại src/Services/Progress/Progress.Application/Abstractions/IBodyProfileProvider.cs và adapter tại Progress.Infrastructure/Adapters/Grpc/BodyProfileProvider.cs; FR-003/FR-018; sau T024/T022; BLOCKED canonical contract + ADR; verification: deadline/error/presence theo approved contract, không gọi REST/import Identity source, contract tests against provider thật, timeout không ghi metric dở.
@@ -77,7 +87,7 @@ revision/tombstone dưới đây chỉ bắt buộc khi lifecycle mở rộng đ
 producer hỗ trợ; nếu chưa có thì ghi deferred/compatibility plan rõ, không giả endpoint
 hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION tới approval.
 
-- [ ] T028 [US4] Chốt Q06/Q09 và ghi approved Diet contract/topology/backfill/completeness tại specs/qbao-001-progress-service/contracts/README.md và research.md; FR-013–FR-016/FR-018; sau T027/T014/T021; BLOCKED Huy/Bảo/lead/Duy; verification: revision/delete/tombstone/timezone/late/bootstrap, ownership và baseline/windows/null/error đã được duyệt, không sửa producer.
+- [ ] T028 [US4] Chốt Q06/Q09 và ghi approved Diet contract/topology/backfill/completeness tại specs/qbao-001-progress-service/contracts/README.md và research.md; FR-013–FR-016/FR-018; sau T027/T014/T021; BLOCKED Huy/Bảo/Duy; verification: revision/delete/tombstone/timezone/late/bootstrap, ownership và baseline/windows/null/error đã được duyệt, không sửa producer.
 - [ ] T029 [US4] Viết tests dashboard/streak trước tại src/Services/Progress/tests/Progress.UnitTests/Dashboard/StreakTests.cs và Progress.IntegrationTests/Dashboard/DashboardTests.cs; FR-001/FR-013–FR-018, SC-003/SC-004/SC-005; sau T028; verification: active 1,2,3,5 best=3, current today/yesterday/gap, meal+metric union, water-only không active, 72/70/68.5 delta -1.5, empty/null, sleep mean/fasting boundaries, hai user đỏ đúng lý do.
 - [ ] T030 [US4] Tạo activity contribution/projection tại src/Services/Progress/Progress.Infrastructure/Persistence/Configurations/ActivityContributionConfiguration.cs cùng migrations và Progress.Application/Features/Dashboard/ActivityProjectionUseCase.cs; FR-014/FR-016; sau T029; constraints: "Khóa (Source, SourceLogId)", "meal lưu tombstone revision"; verification: delete không xóa ngày còn metric/meal khác, metric contribution cùng transaction write; không reference Diet entities.
 - [ ] T031 [US4] Tạo consumer/adapter và bootstrap tại src/Services/Progress/Progress.Infrastructure/Messaging/MealActivityConsumer.cs và Progress.Application/Features/Dashboard/ReconcileMealActivityUseCase.cs; FR-014/FR-016/FR-018; sau T030/T028; BLOCKED canonical contract; verification: DB/broker thật duplicate/late/out-of-order/edit chuyển ngày/delete, unknown optional fields, inbox rollback khi lỗi, watermark/replay race đúng; routing/retry/DLQ approved, không claim metrics-only streak đủ.
@@ -90,11 +100,22 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 
 ## Thứ tự, dependency và khả năng song song
 
-- Sau human giao phase/shared slot: T002→T003 độc lập Q01/Q08 và Identity/Diet.
-  Phần Q08 của T001 + remediation owner → T004→T005→T006→T007→T008; security
-  acceptance không được miễn. Q01 chỉ chặn date logic Phase 4–6, không skeleton.
-  T038 theo dõi Q10 độc lập chuỗi core, không vòng phụ thuộc; không code provider
-  trong core. Gate đỏ dừng, không bỏ test/migration/scan để đi tiếp.
+- **Tiến trình nghiệm thu Phase 2 (Foundation & Persistence)**:
+  - Q08-A JWT Authentication Policy đã APPROVED bởi Bảo + Nguyên (ES256, kid hợp lệ, sub là GUID, fail-start khi thiếu key).
+  - Progress-local guard nghiêm ngặt đã triển khai hoàn tất và kiểm chứng đầy đủ trong T004/T005, độc lập với Shared Auth.
+  - T001–T008 đã hoàn tất thỏa mãn toàn bộ acceptance criteria của Phase 2 foundation và pass 100% các gates.
+- **External Shared Auth Remediation**:
+  - Do Nguyên (`nguyen`, owner Identity) sở hữu trong PR riêng của Identity.
+  - Được theo dõi như external follow-up cross-service, không chặn Progress Phase 2 và không nằm trong PR #11 của Progress.
+- **Resource Ownership & Error Policy (Q08-B)**:
+  - PENDING cho các business resource endpoints (403 vs 404, Problem Details mapping, two-user isolation).
+  - Sẽ được quyết định và kiểm chứng khi triển khai các entity nghiệp vụ cụ thể ở Phase 3 (Fasting), Phase 4 (Water/Sleep), Phase 5 (Body Metrics), Phase 6 (Dashboard); không tuyên bố đã test ở Phase 2.
+- **Future Phases Prerequisites**:
+  - Phase 3 Fasting: Q03 và Q08-B (resource ownership và error policy) cần chốt trước/cùng khi triển khai; concurrency, retries, current.
+  - Phase 4 Water/Sleep: Chờ Q01/Q05 và Q08-B duyệt; append nước, sleep qua đêm.
+  - Phase 5 Body Metrics/BMI: Q02 hướng gRPC read đã APPROVED (chiều cao decimal theo PR #10); chờ canonical RPC schema trong identity.proto, runtime provider implementation của Identity, và Q01/Q04/Q07/Q08-B; T038 theo dõi Q10 độc lập.
+  - Phase 6 Dashboard/Streak: Chờ Q06/Q09 và Diet meal activity contract/bootstrap.
+  - Không tạo phụ thuộc nhân tạo bắt Phase 2 hoặc các phase sau phải chờ PR Shared Auth của Nguyên khi Progress guard cục bộ đã an toàn độc lập.
 - Roadmap yêu cầu: Phase 2 → 3 → 4 → 5 → 6. Về nghiệp vụ US2 và US3 độc lập
   Identity/Diet; US1 chờ Nguyên; US4 đầy đủ chờ cả ba story và Huy.
 - T015/T022 có thể chuẩn bị approval song song sau foundation, nhưng không chạy

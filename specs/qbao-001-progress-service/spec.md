@@ -3,7 +3,7 @@
 **Nhánh**: `feat/progress-service`
 **Feature**: `qbao-001-progress-service`; owner: `qbao`; nghiệp vụ: Bảo
 **Ngày tạo**: 2026-10-24
-**Trạng thái**: Phase 1 chờ review, các quyết định PENDING chưa được phép triển khai
+**Trạng thái**: Phase 1 đã merge PR #9; Phase 2 được giao, triển khai phần foundation độc lập; Q08 vẫn PENDING Bảo + Nguyên, chưa nghiệm thu toàn Phase 2.
 **Đầu vào**: Đặc tả bốn story Progress và kế hoạch Phase 2–6; không tạo mã ứng dụng, migration hoặc sửa hợp đồng service khác.
 
 ## Bối cảnh

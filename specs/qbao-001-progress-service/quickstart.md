@@ -1,5 +1,39 @@
 # Hướng dẫn kiểm chứng
 
+## Phase 2 foundation — 2026-10-25
+
+Sáu project đã đăng ký solution. Không tạo migration rỗng, không chạy ef-add trước
+khi có schema approved. Cấu hình host trực tiếp: `ConnectionStrings__Progress`
+trỏ progress_db/progress_user và `Jwt__Issuer`, `Jwt__Audience`, `Jwt__KeyId`,
+`Jwt__SigningPublicKey` (base64 SPKI PEM P-256). Có rotation thì thêm cặp
+`Jwt__PreviousKeyId`/`Jwt__PreviousPublicKey`; không inject private key.
+Root .env không tự được dotnet run load; Compose map tên env bên ngoài sang đúng
+property config. Không nạp toàn bộ root .env vào Progress vì chứa secret owner khác.
+
+```powershell
+pwsh scripts/speckit/team-feature.ps1 resolve -Json
+pwsh scripts/speckit/team-feature.ps1 check
+make lint
+make test PROJECTS=src/Services/Progress/tests/Progress.UnitTests/Progress.UnitTests.csproj
+make test PROJECTS=src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj
+make check
+docker compose --env-file .env -f deployments/docker-compose.yml config --quiet
+docker compose --env-file .env -f deployments/docker-compose.yml build progress
+docker compose --env-file .env -f deployments/docker-compose.yml up -d --wait postgres progress nginx prometheus grafana
+pwsh scripts/smoke/progress-smoke.ps1
+```
+
+Smoke script không ghi dữ liệu user hoặc đọc private key; chỉ kiểm tra operational
+HTTP/gateway, Swagger, target UP, request metric tăng và Grafana datasource/dashboard.
+Có tham số Gateway/Prometheus/Grafana nếu đổi host ports. Kiểm chứng lượt này dùng
+Compose project riêng `progress-phase2-qbao`, test env ngoài repo và port riêng;
+không đụng volume đang có của người dùng. Script không tự stop/down/delete volume.
+Không claim full-stack Recommendation/Worker/Identity login hay business E2E.
+Docker thiếu/key/config/DB lỗi phải sửa hoặc báo blocker, không skip để claim pass.
+
+Q08 chưa đồng thuận Bảo + Nguyên nên PR Phase 2 phải Draft dù gates/local guards
+xanh. Phần bên dưới là hướng dẫn Phase 1 lịch sử và future business chưa chạy.
+
 ## Phase 1 hiện tại
 
 Từ repository root, cần .NET 10, pwsh, GNU Make; nếu thiếu make dùng chính recipe

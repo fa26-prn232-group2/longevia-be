@@ -6,6 +6,7 @@
   "status": "open",
   "services": [
     "Identity",
+    "Progress",
     "Shared",
     "Worker"
   ],

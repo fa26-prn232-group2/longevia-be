@@ -1,4 +1,5 @@
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -36,6 +37,13 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
         }
         builder.ConfigureTestServices(services =>
         {
+            // Short HTTP assertions can finish before asynchronous bus startup completes.
+            services.Configure<MassTransitHostOptions>(options =>
+            {
+                options.WaitUntilStarted = true;
+                options.StartTimeout = TimeSpan.FromSeconds(30);
+                options.StopTimeout = TimeSpan.FromSeconds(30);
+            });
             services.AddSingleton<IStartupFilter, FoundationProbeStartupFilter>();
             services.AddScoped<IValidator<ProbeRequest>, ProbeRequestValidator>();
             services.Replace(ServiceDescriptor.Singleton<TimeProvider>(time ?? new FoundationTimeProvider()));

@@ -82,6 +82,8 @@ shared networks hiện hữu, Identity HTTP2 listener giữ nguyên, không host
 không route gRPC qua Nginx hoặc đổi DB Identity. Chỉ Progress environment bổ sung
 endpoint; PR14 Identity listener là upstream merge nguyên bản.
 
+CI đầu trên ce9183f:766 cases chạy,765pass/1fail ở MassTransit in-memory ReceiveEndpoint.Stop trong teardown của Metrics_Log_WhenHeightNotRecorded_Returns422Unprocessable; cả17 Height cases pass. Sửa test-only ProgressApiFactory WaitUntilStarted với bounded start/stop30s để endpoint sẵn sàng trước short HTTP tests/disposal, không catch/skip lỗi hoặc đổi production messaging. CI sau fix được ghi tại PR13.
+
 ## Readiness và handoff
 
 - Nguyên + Bảo: chốt/implement service-caller auth, credential lifecycle, provider

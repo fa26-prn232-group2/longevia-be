@@ -46,7 +46,7 @@ Missing user/profile, invalid height, unavailable, deadline và cancellation kh�
 9 options unit cases mới; scoped Progress84unit+120integration pass, không skip.
 Negative controls: stub503 làm primary201 test đỏ; integer division làm175.25 thành
 175.00 và test đỏ. Đã restore trước gates. Regression fixtures dùng cùng fixed clock
-với host để không phụ thuộc ngày chạy; business logic/validation không nới.
+với host để không phụ thuộc ngày chạy; business logic/validation không nới. Test host chờ MassTransit started (bounded30s) trước short HTTP assertions để tránh startup/disposal race phát hiện ở CI đầu; không skip test hoặc đổi production transport.
 
 Full solution Release **766/766 PASS, 0 skip**. Full format, Debug/Release warnings-as-errors, vulnerability scan27projects gồm transitive đều PASS. Không có package vulnerable theo sources hiện tại.
 

@@ -5,10 +5,11 @@ public enum ProfileHeightStatus
     Success,
     ProfileNotFound,
     HeightNotRecorded,
-    ServiceUnavailable
+    ServiceUnavailable,
+    IntegrationFailure
 }
 
-public sealed record ProfileHeightResult(ProfileHeightStatus Status, decimal? HeightCm = null);
+public sealed record ProfileHeightResult(ProfileHeightStatus Status, decimal? HeightCm = null, string? GrpcStatus = null);
 
 public interface IBodyProfileProvider
 {

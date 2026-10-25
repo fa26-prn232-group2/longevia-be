@@ -37,7 +37,7 @@ public sealed class MetricsTests(ProgressFixture fixture)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
 
         var request = new LogBodyMetricRequest(
-            DateTimeOffset.UtcNow,
+            new FoundationTimeProvider().GetUtcNow(),
             70.0m,
             BodyFatPercent: 18.5m,
             WaistCircumferenceCm: 80.0m,
@@ -77,7 +77,7 @@ public sealed class MetricsTests(ProgressFixture fixture)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
 
         var request = new LogBodyMetricRequest(
-            DateTimeOffset.UtcNow,
+            new FoundationTimeProvider().GetUtcNow(),
             70.0m,
             null, null, null, null, null);
 
@@ -102,7 +102,7 @@ public sealed class MetricsTests(ProgressFixture fixture)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
 
         var request = new LogBodyMetricRequest(
-            DateTimeOffset.UtcNow,
+            new FoundationTimeProvider().GetUtcNow(),
             70.0m,
             null, null, null, null, null);
 
@@ -127,7 +127,7 @@ public sealed class MetricsTests(ProgressFixture fixture)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
 
         var request = new LogBodyMetricRequest(
-            DateTimeOffset.UtcNow,
+            new FoundationTimeProvider().GetUtcNow(),
             70.0m,
             null, null, null, null, null);
 
@@ -157,7 +157,7 @@ public sealed class MetricsTests(ProgressFixture fixture)
         clientB.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userB));
 
         // Log 3 bản ghi cho User A
-        var baseTime = DateTimeOffset.UtcNow.AddDays(-5);
+        var baseTime = new FoundationTimeProvider().GetUtcNow().AddDays(-5);
         for (int i = 0; i < 3; i++)
         {
             await clientA.PostAsJsonAsync("/metrics", new LogBodyMetricRequest(

@@ -161,6 +161,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      IdentityGrpc__Address: http://identity:50051
+      IdentityGrpc__DeadlineMilliseconds: "2000"
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: "5672"
       RabbitMQ__User: ${RABBITMQ_USER:?Set explicit RabbitMQ user for Progress}
@@ -194,6 +196,8 @@ services:
       context: ..
       dockerfile: src/Services/Identity/Dockerfile
     environment:
+      IDENTITY__HTTP_PORT: ${IDENTITY__HTTP_PORT:-8080}
+      IDENTITY__GRPC_PORT: ${IDENTITY__GRPC_PORT:-50051}
       ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       RABBITMQ_HOST: rabbitmq
       JWT__KEY_ID: ${JWT__KEY_ID:-longevia-dev-01}

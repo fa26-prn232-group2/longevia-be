@@ -1,3 +1,103 @@
+# Q02 — Identity Height gRPC integration (2026-10-26)
+
+## Revision và sync
+
+- PR #13 previous HEAD: 05aaa877883e422083c8c48b7b686415309471b5, OPEN/Draft.
+- Identity PR #14 MERGED: source 72555e139e31e94bc014be4ada97532cd486974c,
+  merge/main c679b6f174a3cfcdfc0097b03ee81b3729bb72e2.
+- Merge origin/main vào nhánh hiện hữu, không rebase/reset/force-push, giữ 14 commits
+  Progress. Merge tự động không conflict; đã rà semantic Compose, proto, docs, CPM.
+- Evidence áp dụng cho tree của commit chứa báo cáo. Published SHA và CI đúng HEAD
+  được ghi tại PR #13 sau push; không lấy 733 tests/CI cũ làm evidence lượt này.
+- Không merge Diet #12 hoặc PR #13; Diet hiện OPEN tại bc79173d6681ce9964b4badad6b16f5ac1d87472.
+
+## Functional implementation và bảo mật
+
+Q02 functional integration DONE / VERIFIED; authenticated service-to-service trust
+PENDING, full secure production readiness BLOCKED. [Research](research.md) ghi
+đúng ADR 001 §2.2: network trust có chủ đích, chưa có service identity, mTLS hay token
+service. Actual provider chấp nhận call không credentials; JWT vào Progress không
+xác thực Progress với Identity. Không claim authenticated E2E, không fake API key,
+không sửa Identity provider. Follow-up trust model thuộc Nguyên + Bảo.
+
+Canonical RPC: longevia.identity.v1.IdentityService/GetUserHeight, request user_id=1,
+response optional int32 height_cm_x100=1. Codegen Client ở Infrastructure từ proto;
+CPM Google.Protobuf 3.35.1 khớp dependency Identity đang dùng. Không copy generated
+code hoặc reference Identity assemblies/source. Channel/client singleton, host DI
+dispose; Address bắt buộc HTTP(S) không credentials/query, deadline 50–10000ms,
+default2000. Không application retry, caller CancellationToken truyền xuyên call.
+Chia 100m, validate 50.00–250.00. NOT_FOUND404, optional unset422, transport/deadline503,
+invalid/internal/contract failure502; diagnostic GrpcStatus giữ nội bộ và safe logs.
+Public response schemas, BMI formula/category thresholds và historical snapshots giữ nguyên.
+
+## Scoped test evidence hiện hành
+
+Môi trường local: Windows, .NET SDK 10.0.203, Docker Engine 29.9.2, PostgreSQL17-alpine.
+17 [HeightGrpcTests](../../src/Services/Progress/tests/Progress.IntegrationTests/Metrics/HeightGrpcTests.cs)
+pass. Success path chạy actual Identity entry point trong process riêng (kể cả
+Kestrel HTTP1/8080-equivalent và HTTP2/50051-equivalent trên loopback ephemeral ports),
+real Identity migrations/EF repository; fixture tạo/update profile qua API của chính
+Identity. Progress có PG container riêng, API JWT và real adapter, không replace
+IBodyProfileProvider ở primary E2E. Identity broker trong fixture dùng explicit
+in-memory vì không kiểm chứng messaging ở Height flow; Rabbit suite riêng vẫn thật.
+
+- 175.00 cm /70kg →201, stored HeightUsedCm175/Bmi22.86/NormalWeight.
+- Identity profile đổi180 →record mới Bmi21.60, record cũ175/22.86 và history bất biến.
+- 175.25 →wire17525, persisted175.25, BMI dùng decimal; hai JWT user khác nhau
+  dùng đúng profile, forged body userId không override subject.
+- Missing user và existing user/no profile →404, zero partial metric.
+- Controlled optional unset →422, không thay Identity non-null schema.
+- Controlled present0/4999/25001 →502, không đổi thành missing height.
+- Actual endpoint stop →bounded503, GrpcStatus Unavailable, zero persisted effect.
+- Controlled real HTTP2 delay →actual DeadlineExceeded/503; incoming request cancel
+  →outbound server cancellation observed, zero metric.
+- Controlled INVALID_ARGUMENT/INTERNAL/UNAUTHENTICATED giữ diagnostic và502, không lộ
+  provider detail. Đây là controlled fault coverage, không claim provider auth tồn tại.
+- Startup missing/invalid endpoint/deadline fail; actual provider/client dùng HTTP2.
+- EF Progress HasPendingModelChanges=false và đủ5 applied migrations; không migration mới.
+
+9 options unit cases mới; Progress **84 unit +120 integration pass**, không skip.
+17 cases gồm5 actual-provider scenarios (missing variants counted riêng), fault/
+deadline/cancel/config controlled cases. Không cộng lại test scenario vào tổng mới.
+
+Regression đầu đỏ18 vì data lấy wall-clock nhưng host clock cố định25/10; sửa 5 file
+test lấy FoundationTimeProvider đồng nhất, không đổi validation/business behavior.
+Sau sửa toàn scoped120 pass, bao gồm BMI, Fasting/Sleep concurrency, JWT, Rabbit
+transport, snapshot reconciliation và UTC boundaries.
+
+## Negative controls và full gates
+
+Hai negative controls chạy thật và FAIL đúng: thay adapter bằng stub503 khiến primary test expected201/actual503; đổi decimal division sang integer division khiến precision test expected175.25/actual175.00. Đã restore source trước toàn bộ gates; không tính lần mutation compile-fail là evidence.
+Full solution Release: **766/766 PASS, 0 failed, 0 skipped** trong9 assemblies. Progress84unit+120integration; Identity67unit+16integration; Diet11unit+16integration; Recommendation372unit+64integration; Worker16unit. Full format verify, Debug/Release build warnings-as-errors đều PASS, 0 warnings/errors. Vulnerability scan gồm transitive:27 projects không có vulnerable packages. git diff --check PASS. CI đúng published HEAD được liên kết tại PR13 sau push.
+
+Máy không có make; chạy chính xác dotnet recipes Makefile với -m:1 giới hạn MSBuild.
+Docker daemon ban đầu tắt khiến17 cases không chạy được, đã start Docker Desktop E
+rồi rerun thật; không skip, không coi lỗi hạ tầng là pass. Docker build Progress
+**PASS**, image 6a9c53d62d9a14759219633ff7f57a7726f116eca5c691aa7d0ba5d2539de6f5.
+Build Docker compile canonical proto từ COPY contracts/identity, không chỉ localbuild.
+CI thêm bước build Progress image sau make check.
+
+Compose config PASS: Progress IdentityGrpc__Address=http://identity:50051, deadline2000,
+shared networks hiện hữu, Identity HTTP2 listener giữ nguyên, không host-publish50051,
+không route gRPC qua Nginx hoặc đổi DB Identity. Chỉ Progress environment bổ sung
+endpoint; PR14 Identity listener là upstream merge nguyên bản.
+
+## Readiness và handoff
+
+- Nguyên + Bảo: chốt/implement service-caller auth, credential lifecycle, provider
+  authorization và negative authorized/unauthorized tests trước secure readiness.
+- Huy: Q01 auto-selected meal UTC acknowledgment và Diet #12 rollout vẫn riêng;
+  không đổi MealLoggedEvent, queue, replay/reconciliation hoặc Q01 UTC policy.
+- Bảo: review functional integration, giữ PR13 Draft tới khi security/readiness được
+  quyết định. Q10 Weight proposal/scaffolding không thay đổi.
+- Historical production meal replay/completeness chưa nghiệm thu; Height E2E không
+  chứng minh broker/outbox drainage hoặc historical streak rollout đầy đủ.
+- Local logs height-grpc-tests/unit/progress-integration-fixed/docker-build và
+  final gate/CI logs là bằng chứng; CI URLs/outcome đúng published SHA tại PR13.
+
+---
+
+## Báo cáo trước lượt Height — lịch sử, không dùng thay evidence hiện hành
 # Corrective PR #13 — reconciliation thật, broker và Q01 UTC (2026-10-25)
 
 ## HEAD, phạm vi và môi trường

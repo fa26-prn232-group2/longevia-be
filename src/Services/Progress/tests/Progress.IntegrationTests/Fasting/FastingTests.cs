@@ -17,7 +17,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddMinutes(-975);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddMinutes(-975);
         var startRequest = new StartFastingRequest("16:8", startedAt, 16);
 
         // 1. Start fasting
@@ -61,7 +61,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
         var startRequest = new StartFastingRequest("18:6", startedAt, 18);
 
         using var firstResponse = await client.PostAsJsonAsync("/fasting/start", startRequest);
@@ -76,7 +76,7 @@ public sealed class FastingTests(ProgressFixture fixture)
     public async Task Fasting_Concurrent20Starts_OnlyOneSucceeds()
     {
         var userId = Guid.NewGuid();
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-1);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-1);
 
         // Bắn 20 request start đồng thời
         var tasks = Enumerable.Range(0, 20).Select(async _ =>
@@ -104,13 +104,13 @@ public sealed class FastingTests(ProgressFixture fixture)
         using var clientB = CreateClient(userB);
 
         var startA = await clientA.PostAsJsonAsync("/fasting/start",
-            new StartFastingRequest("16:8", DateTimeOffset.UtcNow.AddHours(-2), 16));
+            new StartFastingRequest("16:8", new FoundationTimeProvider().GetUtcNow().AddHours(-2), 16));
         var sessionA = await startA.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(sessionA);
 
         // User B cố tình kết thúc session của User A
         var endB = await clientB.PostAsJsonAsync("/fasting/end",
-            new EndFastingRequest(sessionA.SessionId, DateTimeOffset.UtcNow));
+            new EndFastingRequest(sessionA.SessionId, new FoundationTimeProvider().GetUtcNow()));
 
         // Ownership hiding: trả về 404 Not Found
         Assert.Equal(HttpStatusCode.NotFound, endB.StatusCode);
@@ -122,7 +122,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
         var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
         var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(session);
@@ -139,7 +139,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-16);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-16);
         var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
         var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(session);
@@ -169,7 +169,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-18);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-18);
         var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
         var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(session);
@@ -190,7 +190,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-18);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-18);
         var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
         var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(session);
@@ -224,7 +224,7 @@ public sealed class FastingTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var startedAt = DateTimeOffset.UtcNow.AddHours(-16);
+        var startedAt = new FoundationTimeProvider().GetUtcNow().AddHours(-16);
         var startResp = await client.PostAsJsonAsync("/fasting/start", new StartFastingRequest("16:8", startedAt, 16));
         var session = await startResp.Content.ReadFromJsonAsync<FastingSessionResponse>(JsonOpts);
         Assert.NotNull(session);

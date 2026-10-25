@@ -63,7 +63,7 @@ Mục tiêu: append nước/tổng ngày và sleep duration/quality. Kiểm th�
 
 ## Phase 5 — Body Metrics & BMI — US1
 
-Mục tiêu: snapshot BMI bất biến và lịch sử. BLOCKED tích hợp Nguyên Q02 (runtime gRPC provider),
+Mục tiêu: snapshot BMI bất biến và lịch sử. Q02 functional integration DONE; secure production readiness BLOCKED service-caller auth,
 policy Q01/Q04/Q07; chưa có canonical height contract/ADR không được code adapter giả.
 Q10 là dependency ngược Diet cần cân nặng; T038 chỉ theo dõi quyết định, không chặn BMI core.
 
@@ -71,7 +71,7 @@ Q10 là dependency ngược Diet cần cân nặng; T038 chỉ theo dõi quyết
 - [x] T022 [US1] **DONE** — Ghi phê duyệt Q02/Q04/Q07 theo steer an toàn nhất: Q02 hướng gRPC read profile/height (decimal khớp PR #10 numeric(5,2)); Q04 cân nặng 25-300kg, biomarker limits, huyết áp đi cặp và systolic > diastolic, BMI snapshot bất biến theo BR-05; Q07 pagination wire adapter (pageNumber, pageSize, totalCount, totalPages) với domain PagedResult.
 - [x] T023 [US1] **DONE** — BmiTests.cs và MetricsTests.cs; kiểm chứng 70kg/175cm -> BMI 22.86 NormalWeight, boundaries 25/300kg, cặp huyết áp, phân loại theo raw unrounded BMI (99.984kg/200cm raw=24.996 NormalWeight dù làm tròn 25.00), kiểm chứng toàn diện các ngưỡng 18.5, 25.0, 30.0 (just below, exact, just above), phân biệt 422 (thiếu chiều cao), 404 (profile not found), 503 (Identity unavailable), phân trang và cách ly 2 user pass 100%.
 - [x] T024 [US1] **DONE** — BodyMetricLog.cs, BmiCategory.cs, BodyMetricLogConfiguration.cs, migration `20261024193906_AddBodyMetrics`.
-- [ ] T025 [US1] **PARTIAL / BLOCKED** — IBodyProfileProvider.cs abstraction với ProfileHeightStatus (Success, HeightNotRecorded, ProfileNotFound, ServiceUnavailable). BodyProfileProvider.cs mặc định trả về ServiceUnavailable vì Identity canonical height-read RPC (contracts/identity/v1/identity.proto) chưa được cung cấp bởi Nguyên; MetricUseCases phân loại lỗi rõ ràng (503 khi service unavailable, 422 khi thiếu height, 404 khi profile not found). Tích hợp runtime gRPC thực tế: BLOCKED chờ Nguyên implement.
+- [x] T025 [US1] **DONE — FUNCTIONAL HEIGHT GRPC** — Canonical GetUserHeight client thật và actual Identity provider đã verified; 175/175.25 cm, BMI snapshot bất biến, errors/deadline/cancellation. Service-caller auth chưa có, secure readiness BLOCKED độc lập.
 - [x] T026 [US1] **DONE** — MetricUseCases.cs, MetricValidators.cs, MetricDtos.cs, IBodyMetricRepository.cs, BodyMetricRepository.cs và MetricEndpoints.cs (/metrics, /metrics/history).
 - [x] T027 [US1] **DONE** — Ghi evidence metrics tại verification.md; unit + integration tests pass 100%.
 
@@ -95,7 +95,7 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 - [ ] T034 [US4] **PROVISIONAL / BENCHMARK PENDING** — Đánh giá performance sơ bộ: cấu trúc database indexes trên UserId + LoggedAt/Date; các test tích hợp đo đạc thời gian đáp ứng ở mức vài milliseconds; benchmark chính thức với target workload: PENDING môi trường load test.
 - [x] T035 [US4] **DONE — CORRECTIVE VERIFIED** — Progress 178/178, full solution 733/733, 0 skip; format/Debug/Release/vulnerability pass. Evidence hiện hành tại verification.md, số đếm cũ là lịch sử.
 - [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: trạng thái PARTIAL_READY_FOR_FRONTEND (Fasting, Water, Sleep, Dashboard query sẵn sàng; POST /metrics phụ thuộc runtime Identity height).
-- [ ] T037 [US4] **PARTIAL — EXTERNAL READINESS** — Backend guide phân biệt transport, producer interoperability, replay/reconciliation fixture và rollout thực; chờ Q01 acknowledgment Huy, Q02 provider và Q10 approval.
+- [ ] T037 [US4] **PARTIAL — EXTERNAL READINESS** — Backend guide phân biệt transport, producer interoperability, replay/reconciliation fixture và rollout thực; chờ Q01 acknowledgment Huy, Q02 service-caller auth và Q10 approval.
 
 ## Thứ tự, dependency và khả năng song song
 
@@ -140,3 +140,12 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T041 **DONE** — RabbitMQ/PostgreSQL Testcontainers thật, routing/runtime error queue, retry/redelivery/restart; giữ CI chạy test thật, synthetic transport tách actual Diet harness.
 - [x] T042 **DONE** — Q01 APPROVED FOR PROGRESS MVP BY BẢO: UTC day/week/history, fixed midnight tests; Diet BusinessDate bất biến, Huy acknowledgment PENDING; không rebucket lịch sử.
 - [x] T043 **DONE — LOCAL GATES VERIFIED** — Artifacts và full gates hoàn tất; corrective commit này được xuất bản vào PR #13 giữ Draft, SHA/CI final theo báo cáo PR; không merge PR #12/#13. Public dashboard schema không đổi, completeness readiness vẫn bị chặn trước rollout thật.
+## Identity Height gRPC — lượt 2026-10-26
+
+- [x] T044 **DONE** — Đồng bộ main/PR #14 không rewrite lịch sử, giữ consumer/inbox/reconcile/Q01; canonical proto giữ nguyên.
+- [x] T045 **DONE** — Generated gRPC Client, DI/channel reuse, explicit validated address/deadline, decimal conversion và safe status mapping.
+- [x] T046 **DONE — SCOPED VERIFIED** — 17 gRPC scenarios thật/controlled và 9 options unit cases; immutable snapshots, user isolation, cancellation, missing/fault cases; không đổi schema để giả height missing.
+- [x] T047 **DONE** — Docker build canonical proto, Compose endpoint/network/listeners; regression suite và EF model consistency.
+- [x] T048 **DONE LOCAL GATES** — Full format/Debug/Release,766tests và vulnerability PASS; artifacts đã cập nhật. Scoped merge commit/push và CI đúng published HEAD được ghi trên PR #13 Draft, không dùng CI cũ.
+- Client-facing response fields không đổi; thêm mapping error 502 trong Problem Details hiện hữu và frontend guide.
+- Counted integration sync: 1 RPC, 2 messages, 2 fields đối chiếu canonical generated client và actual provider; chưa READY_FOR_BACKEND toàn feature vì caller-auth và rollout dependencies.

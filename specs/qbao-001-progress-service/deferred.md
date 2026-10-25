@@ -14,3 +14,6 @@ Không để checkbox implement các việc dưới đây trong tasks Progress c
 Q01–Q09 là câu hỏi trong phạm vi core, không bị đẩy ra ngoài để né nghiệm thu;
 chúng nằm ở research và chặn task tương ứng trong roadmap.
 Q10 là dependency ngược được theo dõi, không phải approval tự động hoặc task code BMR/TDEE.
+
+## Q02 secure service-caller trust — BLOCKED
+Nguyên/Bảo sở hữu quyết định và implementation auth phía provider; xem research.md mục hiện hành. Client functional verified không gỡ secure readiness. Cần auth model được phê duyệt, credential lifecycle và provider negative tests trước khi claim authenticated E2E. Huy Q01/Diet rollout và Q10 Weight approval tách riêng.

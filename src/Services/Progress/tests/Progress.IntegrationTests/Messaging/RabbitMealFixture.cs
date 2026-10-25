@@ -73,6 +73,7 @@ public sealed class RabbitMealFixture : IAsyncLifetime
         foreach (var pair in new Dictionary<string, string>
         {
             ["ConnectionStrings__Progress"] = Database.GetConnectionString(),
+            ["IdentityGrpc__Address"] = "http://127.0.0.1:1",
             ["Messaging__UseInMemory"] = "false",
             ["RabbitMQ__Host"] = Rabbit.Hostname,
             ["RabbitMQ__Port"] = Rabbit.GetMappedPublicPort(5672).ToString(),

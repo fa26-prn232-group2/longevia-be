@@ -42,25 +42,62 @@ lịch sử fasting vào scope chỉ vì persistence hỗ trợ được.
   hasPreviousPage, hasNextPage. API wire hiện dùng pageNumber/totalCount.
   Q07 đề xuất DTO adapter cục bộ, không sửa Shared; Count trước Skip/Take.
 
-## Height integration — Q02 APPROVED HƯỚNG gRPC READ (Nguyên + Bảo)
+## Q02 hiện hành — Identity Height gRPC (2026-10-26)
 
-[identity.proto](../../../contracts/identity/v1/identity.proto) hiện chưa có RPC method; schema cụ thể PENDING trước Phase 5.
-REST `/users/me` có height nhưng Progress tuyệt đối không gọi HTTP nội bộ.
-Event `UserProfileUpdatedEvent` (PR #10) chỉ có `UserId` và `OccurredOn`, không có height và không thay thế cho gRPC read.
+PR #14 đã merge: source 72555e139e31e94bc014be4ada97532cd486974c,
+main merge c679b6f174a3cfcdfc0097b03ee81b3729bb72e2. Nhánh Progress merge main
+không rewrite 14 commit cũ; Rabbit/inbox/reconciliation và Q01 UTC giữ nguyên.
 
-**Quyết định kiến trúc đã thống nhất**:
-- Giao thức: gRPC read nội bộ đồng bộ; Identity sở hữu provider, Progress sở hữu consumer.
-- Kiểu dữ liệu: `decimal`, đồng bộ với PR #10 của Identity (`HeightCm` dạng `decimal`, cột DB `numeric(5,2)`, validation 50.00–250.00 cm).
-- Snapshot bất biến: Chiều cao nhận được dùng để tính BMI và lưu snapshot (`HeightUsedCm`, `Bmi`, `BmiCategory`) trong `BodyMetricLog`. Thay đổi chiều cao profile sau này trong Identity KHÔNG làm thay đổi BMI lịch sử (BR-05). Không recalculate khi đọc history.
-- Tên làm việc RPC: `GetBodyProfile` (request `userId`; response `userId`, `heightCm` decimal, `hasProfile`/`hasHeight`, `profileVersion`/`updatedAt`). Cần hoàn thiện schema protobuf, deadline (đề xuất default 2s), retry policy (tối đa 1 read retry), và error handling (422 khi thiếu height, 503 khi unavailable) trước khi triển khai Phase 5.
-- Hiện trạng:
-  - Hướng kiến trúc gRPC read: **APPROVED**.
-  - Protobuf schema trong `identity.proto`: **PENDING** trước Phase 5.
-  - Runtime provider implementation: **NOT YET AVAILABLE** trong Identity Service.
-  - Phase 5 integration: **NOT YET COMPLETE**; không tạo RPC giả hay adapter trong Phase 2.
-- Progress adapter chỉ map contract-native DTO, không reference `Identity.Application`, không đọc trực tiếp DB của Identity.
-- Phương án event snapshot chiều cao: Không chọn do nguy cơ stale data và phức tạp hóa outbox/bootstrap; hướng gRPC read đã được chọn chính thức.
+**Q02 FUNCTIONAL INTEGRATION: DONE / VERIFIED** — client thật đã chạy với actual
+Identity process, HTTP/2 và hai PostgreSQL riêng. **Authenticated service-to-service
+trust: PENDING; secure production readiness: BLOCKED**. Đây không phải service
+flow đã authenticated chỉ vì frontend JWT pass.
 
+Canonical: longevia.identity.v1.IdentityService/GetUserHeight, C# namespace
+Longevia.Identity.Contracts.V1. Request user_id field 1 (GUID); response optional
+height_cm_x100 field 1 (int32 cm × 100). Một RPC, hai message, hai field; không thêm
+GetBodyProfile hoặc wire DTO khác. HasHeightCmX100=false khác present zero.
+17525 / 100m = 175.25 cm, validate 50.00–250.00, không integer division.
+
+Progress.Infrastructure codegen Client từ canonical proto bằng Grpc.Tools;
+Grpc.Net.Client và singleton channel/client do DI dispose, không reference
+Identity implementation. IdentityGrpc:Address bắt buộc (Compose http://identity:50051);
+DeadlineMilliseconds mặc định 2000, cho phép 50–10000. Không application retry;
+deadline tổng mỗi call hữu hạn; truyền incoming cancellation tới HTTP/2.
+
+| Kết quả Identity | HTTP Progress | Code / xử lý |
+| --- | --- | --- |
+| Height hợp lệ | 201 | Tính/lưu BMI snapshot hiện hữu |
+| Optional unset | 422 | progress.height_unavailable |
+| NOT_FOUND | 404 | progress.profile_not_found |
+| UNAVAILABLE / DEADLINE_EXCEEDED | 503 | progress.identity_unavailable |
+| Caller cancellation | Hủy request | Không tiếp tục ghi |
+| INVALID_ARGUMENT / INTERNAL / auth fault / returned height sai | 502 | progress.identity_integration_failure |
+
+ProfileHeightResult.GrpcStatus và structured log giữ status gRPC nội bộ, không đưa
+URL, RpcException detail, credentials hoặc profile data vào Problem Details.
+
+### Bảo mật và follow-up
+
+ADR 001 §2.2 và microservices/02-grpc-and-events hiện chấp nhận Compose network trust:
+không caller auth, không mTLS/token service. Shared ES256 JWT là frontend user
+authentication, không service identity. Identity Program.MapGrpcService và service
+không RequireAuthorization; test gọi không credentials thành công xác nhận gap.
+Network isolation là defense-in-depth, không authenticated identity.
+
+Theo yêu cầu Bảo trong lượt này, secure readiness vẫn BLOCKED. Nguyên và Bảo cần
+ghi quyết định trust model cho Height: triển khai service identity/token hoặc mTLS
+với authorization provider + contract cấp/rotate/revoke credential và negative tests,
+hoặc phê duyệt tường minh mô hình network-trust hiện tại cho phạm vi MVP. Không có
+phê duyệt chung mới được suy diễn; không forward user JWT làm service credential.
+Progress không sửa Identity hoặc thêm API key giả.
+
+17 gRPC scenarios và 9 options unit cases đã pass ở scoped run. Success tests dùng
+Identity entry point/repository/migrations thật; seed/update qua REST của chính
+Identity trong fixture, không DB/source import chéo. Controlled server chỉ cho
+unset, malformed response, fault, deadline/cancellation. Full gates/Docker/CI mới
+được báo ở verification.md và PR #13, không dùng lại số 733 của commit cũ.
+Q10 Weight và Huy Q01 acknowledgment/Diet PR #12 giữ trạng thái riêng.
 ## Meal activity — create-only v1, rollout PENDING
 
 Canonical MealLoggedEvent có EventId=MealLogId, UserId, BusinessDate, CreatedAt,

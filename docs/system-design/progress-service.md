@@ -4,7 +4,9 @@ Progress dùng bốn layer Domain, Application, Infrastructure và Api, cộng h
 project xUnit. Domain độc lập framework; Application chỉ reference Domain;
 Infrastructure triển khai persistence; Api là composition root, tái sử dụng Shared.
 Hiện có Fasting, Water, Sleep, body metric snapshots/history, Dashboard và meal inbox/projection.
-Height runtime RPC chưa có; Weight RPC vẫn proposal, không công bố feature hoàn chỉnh.
+Height runtime dùng canonical Identity GetUserHeight qua HTTP/2; functional integration
+đã verified, service-caller authentication chưa có nên secure readiness còn BLOCKED.
+Weight RPC vẫn proposal, không công bố toàn feature production-ready.
 
 ## Persistence và khởi động
 
@@ -26,8 +28,24 @@ trong PR riêng của Identity. Q08-B về resource ownership và error policy (
 tiếp tục PENDING cho các business resource endpoints (Phase 3–6); Phase 2 chưa có resource business
 nên chưa nghiệm thu ownership 404 và không tuyên bố đã test.
 Q02 về chiều cao cho BMI (Phase 5) đã thống nhất hướng gRPC read từ Identity sang Progress,
-kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), snapshot BMI bất biến;
-schema RPC trong identity.proto PENDING trước Phase 5, provider runtime chưa có trong Identity.
+kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), snapshot BMI bất biến.
+Contract `IdentityService.GetUserHeight` dùng `user_id` GUID và optional `height_cm_x100`
+(`int32`, cm × 100); profile không tồn tại trả `NOT_FOUND`, height chưa có được biểu diễn
+bằng optional unset. Hiện `HeightCm` bắt buộc ở Identity nên profile có height; optional
+không dùng `0` làm sentinel và giữ chỗ cho trường hợp model thay đổi sau này. Identity là
+provider; Progress là consumer. Caller trust theo Compose network trong ADR 001; port gRPC
+không publish ra host.
+Progress codegen Client từ canonical proto, dùng singleton GrpcChannel/client do DI
+quản lý lifetime. IdentityGrpc:Address bắt buộc; Compose http://identity:50051 trên
+data_net chung, không qua Nginx. DeadlineMilliseconds mặc định 2000, giới hạn 50–10000,
+không application retry; incoming cancellation truyền tới call. Optional unset khác
+present zero; height_cm_x100 / 100m giữ 2 decimal và validate 50.00–250.00.
+NOT_FOUND→404, unset→422, UNAVAILABLE/DEADLINE_EXCEEDED→503; INVALID_ARGUMENT,
+INTERNAL hoặc response sai→502 integration failure. Status gRPC giữ nội bộ, không
+đưa detail/URL của provider vào Problem Details. BMI/history snapshot không đổi.
+ADR 001 network trust không phải service identity. Provider hiện không enforce caller
+auth; theo yêu cầu owner Progress, Nguyên/Bảo phải chốt trust model hoặc triển khai
+authenticated caller trước khi gỡ secure readiness blocker. Không forward user JWT.
 Application dùng TimeProvider, không đọc HttpContext. Không có role Technical Lead trong repo.
 
 - `/alive`: liveness 200 JSON status=ok, độc lập DB.

@@ -17,7 +17,7 @@ public sealed class WeightProviderIntegrationTests(ProgressFixture fixture)
         var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
 
         var userId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = new FoundationTimeProvider().GetUtcNow();
 
         // Log 3 bản ghi
         var log1 = BodyMetricLog.Create(userId, now.AddDays(-7), 75.0m, 175.0m);

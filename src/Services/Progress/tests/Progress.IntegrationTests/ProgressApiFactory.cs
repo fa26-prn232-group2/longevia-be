@@ -24,6 +24,7 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
             ["Jwt:PreviousPublicKey"] = ProgressFixture.PublicKey(fixture.PreviousKey),
             ["Jwt:SigningPrivateKey"] = "",
             ["Messaging:UseInMemory"] = "true",
+            ["IdentityGrpc:Address"] = "http://127.0.0.1:1",
         };
         foreach (var setting in overrides ?? new Dictionary<string, string?>())
         {

@@ -25,3 +25,6 @@ jobs:
 
       - name: Gate (format-check + build Release + test + vulnerability scan)
         run: make check
+
+      - name: Build Progress image with canonical Identity proto
+        run: docker build -f src/Services/Progress/Dockerfile -t longevia-progress:ci .

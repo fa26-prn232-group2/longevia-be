@@ -17,8 +17,8 @@ public sealed class SleepTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var sleptAt = DateTimeOffset.UtcNow.AddHours(-10);
-        var wokeAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-10);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
 
         var request = new LogSleepRequest(sleptAt, wokeAt, "Good");
 
@@ -38,8 +38,8 @@ public sealed class SleepTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var sleptAt = DateTimeOffset.UtcNow.AddHours(-10);
-        var wokeAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-10);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
         await client.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));
 
         // Overlapping: sleptAt rơi vào giữa khoảng giấc ngủ trước
@@ -53,8 +53,8 @@ public sealed class SleepTests(ProgressFixture fixture)
     public async Task Sleep_Log_ConcurrentOverlappingRequests_OnlyOneSucceeds()
     {
         var userId = Guid.NewGuid();
-        var sleptAt = DateTimeOffset.UtcNow.AddHours(-10);
-        var wokeAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-10);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
 
         // Bắn 5 request cùng một khoảng thời gian đồng thời
         var tasks = Enumerable.Range(0, 5).Select(async _ =>
@@ -78,8 +78,8 @@ public sealed class SleepTests(ProgressFixture fixture)
         var userId = Guid.NewGuid();
         using var client = CreateClient(userId);
 
-        var sleptAt = DateTimeOffset.UtcNow.AddHours(-2);
-        var wokeAt = DateTimeOffset.UtcNow.AddHours(-5);
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-2);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-5);
 
         var response = await client.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -93,8 +93,8 @@ public sealed class SleepTests(ProgressFixture fixture)
         using var clientA = CreateClient(userA);
         using var clientB = CreateClient(userB);
 
-        var sleptAt = DateTimeOffset.UtcNow.AddHours(-8);
-        var wokeAt = DateTimeOffset.UtcNow.AddHours(-1);
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-8);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-1);
 
         // User A logs sleep
         var respA = await clientA.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));

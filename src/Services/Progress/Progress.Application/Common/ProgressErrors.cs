@@ -4,6 +4,9 @@ namespace Progress.Application.Common;
 
 public static class ProgressErrors
 {
+    public static AppException IdentityIntegrationFailure() =>
+        new("Không thể xác thực chiều cao từ dịch vụ hồ sơ.", 502, "Bad Gateway", "progress.identity_integration_failure");
+
     public static AppException ActiveFastingSessionExists() =>
         AppException.Conflict("Bạn đang có một phiên nhịn ăn chưa kết thúc.", "progress.fasting_active_conflict");
 

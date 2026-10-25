@@ -17,6 +17,10 @@ public sealed class MetricUseCases(
 
         // Lấy chiều cao từ Identity với phân loại trạng thái chính xác
         var heightResult = await profileProvider.GetUserHeightCmAsync(userId, ct);
+        if (heightResult.Status == ProfileHeightStatus.IntegrationFailure)
+        {
+            throw ProgressErrors.IdentityIntegrationFailure();
+        }
         if (heightResult.Status == ProfileHeightStatus.ServiceUnavailable)
         {
             throw ProgressErrors.IdentityServiceUnavailable();

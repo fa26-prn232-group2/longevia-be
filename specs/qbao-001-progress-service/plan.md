@@ -1,3 +1,7 @@
+## Trạng thái Q02 hiện hành (2026-10-26)
+
+Functional GetUserHeight đã VERIFIED với provider thật, 17 scoped scenarios. Những mô tả Q02 schema/provider PENDING của thiết kế Phase 2 bên dưới là lịch sử, được thay thế bởi mục Q02 tích hợp PR #14. Secure readiness vẫn BLOCKED vì chưa có authenticated service caller. Không thay Q01 UTC/Q10.
+
 # Kế hoạch triển khai: Progress Service
 
 ## Corrective PR #13 — Q01 có hiệu lực ngày 2026-10-25
@@ -20,7 +24,7 @@
   phải có migration/rebucketing và phê duyệt liên service.
 - **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
   theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
-- Q02 Height gRPC và Q10 Weight gRPC giữ nguyên phạm vi/blocker; không thêm RPC.
+- Q02 functional Height integration đã verified trong lượt hiện hành; service-caller auth còn BLOCKED. Q10 Weight không đổi.
 
 Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
 Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
@@ -233,3 +237,29 @@ contract được duyệt, tránh framework/dedup tầng riêng không có nhu c
 Q02 protobuf schema, Q03–Q07, Q08-B, Q09–Q10 giữ PENDING cho các phase sau tương ứng.
 Phase 2 foundation & persistence đã hoàn thành triển khai và kiểm chứng toàn diện (T001–T008 DONE).
 Hai hướng dẫn handoff được cập nhật khi các phase thực sự thay đổi surface tích hợp.
+
+## Q02 — Height gRPC tích hợp PR #14 (2026-10-26)
+
+Đồng bộ origin/main c679b6f174a3cfcdfc0097b03ee81b3729bb72e2 bằng merge không rewrite
+14 commit Progress. Canonical proto do Identity sở hữu, chỉ đọc/codegen Client.
+Shared Files & Conflict Hotspots bổ sung: Progress.Infrastructure.csproj/DI,
+Progress Dockerfile, Progress block deployments/docker-compose.yml và ci.yml
+(bước Docker build Progress). Dùng các version gRPC CPM hiện hữu, không đổi
+Directory.Packages.props, solution, proto hoặc implementation Identity.
+
+Client singleton/channel DI-reused, options IdentityGrpc:Address bắt buộc và
+DeadlineMilliseconds mặc định 2000 (50–10000), không application retry. Chia 100m,
+validate height 50.00–250.00. Diagnostic status string nội bộ; cancellation truyền
+xuyên request. Lỗi missing/profile/transport giữ 422/404/503; INTERNAL,
+INVALID_ARGUMENT hoặc contract-invalid thành integration failure 502 an toàn.
+
+Kiểm chứng thật: process Identity hiện hành với PG riêng, seed/update qua REST
+của Identity trong fixture; Progress JWT API dùng client HTTP/2 thật và PG riêng.
+Không reference Identity assemblies/source từ Progress. Controlled gRPC server
+chỉ cho optional-unset/fault/deadline/cancellation, không thay IBodyProfileProvider.
+
+ADR 001 §2.2 cho phép network trust, không có caller identity/mTLS/token service.
+Provider không RequireAuthorization; không đánh đồng JWT frontend với service
+identity. Theo yêu cầu owner hiện hành, chức năng tiếp tục nhưng secure readiness
+BLOCKED tới khi Bảo/Nguyên chốt hoặc triển khai authenticated trust model.
+Hotspot CPM cập nhật: Directory.Packages.props thêm Google.Protobuf 3.35.1, đúng version transitive Identity đang restore. Client codegen cần protobuf runtime riêng; Grpc.Net.Client không kéo runtime này. Không đổi version gRPC hiện hữu.

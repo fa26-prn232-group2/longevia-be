@@ -42,7 +42,7 @@ public sealed class DashboardTests(ProgressFixture fixture)
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", userId));
 
-        var now = DateTimeOffset.UtcNow;
+        var now = new FoundationTimeProvider().GetUtcNow();
         var today = DateOnly.FromDateTime(now.UtcDateTime);
 
         // 1. Log metrics: Initial (72kg, 14 days ago), Baseline (70kg, 8 days ago), Current (68.5kg, today)

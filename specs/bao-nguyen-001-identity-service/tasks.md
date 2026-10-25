@@ -57,19 +57,24 @@
 
 ## Phase 6 — Close-out và CI
 
-- [x] T029 [P] Cập nhật `src/Services/Identity/README.md`: bỏ mô tả stub; ghi trách nhiệm, đủ 10 route, validation/errors, migration, observability, ba event và consumer hiện có/chưa xác định, cấu trúc layer, cấu hình chạy và lệnh kiểm tra. Đã rà các liên kết tương đối trong README.
-- [x] T030 Chạy `pwsh scripts/speckit/team-feature.ps1 check`; xác nhận `meta.json` khai báo `Identity`, `Shared`, `Worker` đúng scope và không thay đổi feature khác.
-- [x] T031 Chạy gate Phase 5 tương đương `make lint` và `make test PROJECTS=src/Services/Identity`: `make lint` (solution format-check sạch + solution build 0 warning/0 error), Identity Unit 67/67 và Integration 9/9 (Linux SDK 10 container, Testcontainers thật).
+- [x] T029 [P] Cập nhật `src/Services/Identity/README.md`: bỏ mô tả stub; ghi trách nhiệm, đủ 10 route, validation/errors, migration, observability, ba event và consumer hiện có/chưa xác định, cấu trúc layer, cấu hình chạy và lệnh kiểm tra. Đã rà các liên kết tương đối trong README; bổ sung RPC GetUserHeight nội bộ.
+- [x] T030 Chạy `pwsh scripts/speckit/team-feature.ps1 check`; xác nhận `meta.json` khai báo `Identity`, `Progress`, `Shared`, `Worker` đúng scope và không thay đổi feature khác.
+- [x] T031 Chạy gate Phase 5 tương đương `make lint` và `make test PROJECTS=src/Services/Identity`: `make lint` (solution format-check sạch + solution build 0 warning/0 error), Identity Unit 67/67 và Integration 16/16 (Linux SDK 10 container, PostgreSQL/Testcontainers thật, bao gồm 7 test gRPC).
 - [x] T032 Chạy đường E2E thật DB + RabbitMQ + Worker + Mailpit và ghi evidence cụ thể trong backend guide.
 - [x] T033 Hoàn tất counted sync guides; frontend handoff READY_FOR_FRONTEND sau implementation, contract, tests và counts. Backend counts/evidence đã đồng bộ, nhưng backend handoff vẫn IN_PROGRESS vì profile event consumer chưa xác định.
-- [x] T034 Chạy full close-out tương đương `make check` trong Linux SDK 10 container: format-check sạch; Release build 0 warning/0 error; full Release tests 528/528 (Identity Integration 9, Identity Unit 67, Recommendation Integration 64, Recommendation Unit 372, Worker Unit 16); vulnerability scan không tìm thấy package dễ tổn thương. `make` không có trên máy, đã chạy chính xác các lệnh dotnet trong Makefile.
+- [x] T034 Chạy full close-out tương đương `make check` trong Linux SDK 10 container: format-check sạch; Release build 0 warning/0 error; full Release tests 617/617 (Diet Integration 16, Diet Unit 11, Identity Integration 16, Identity Unit 67, Progress Integration 34, Progress Unit 21, Recommendation Integration 64, Recommendation Unit 372, Worker Unit 16); vulnerability scan không tìm thấy package dễ tổn thương. `make` không có trên máy, đã chạy chính xác các lệnh dotnet trong Makefile.
 
 ### Handoff integration
 
 - [x] T035 **Có đổi client surface**: feature đổi hành vi HTTP và thêm endpoint theo spec; cần frontend guide.
 - [x] T036 **Có cập nhật hành vi tích hợp producer/consumer**: hai email event giữ schema v1 và Worker behavior; thêm profile event v1 không có consumer hiện được xác định. Contract, producer topology và outbox test đã được xác minh.
 - [x] T037 **Đồng bộ frontend guide khi close-out**: route/status/DTO/enum/error counts được đếm và đối chiếu thật; frontend handoff READY_FOR_FRONTEND.
-- [x] T038 **Đồng bộ backend guide cho Phase 3–5**: đếm event/field/topology sau khi thêm profile event; ghi consumer chưa xác định, test evidence và giữ trạng thái IN_PROGRESS đến khi handoff đủ điều kiện.
+- [x] T038 Đồng bộ backend guide cho Phase 3–6: đếm event/field/topology và gRPC surface sau implementation; ghi consumer profile event chưa xác định, test evidence thực tế và giữ trạng thái IN_PROGRESS đến khi handoff đủ điều kiện.
+- [x] T039 Bổ sung contract `IdentityService.GetUserHeight` với request `user_id` và optional `height_cm_x100` (`int32`, cm × 100); Identity sở hữu contract theo Q02.
+- [x] T040 Implement provider: validate GUID và persisted height, trả `NOT_FOUND` khi thiếu user/profile, `INVALID_ARGUMENT` khi GUID sai, `INTERNAL` nếu height persisted ngoài miền; deadline/cancel đi theo gRPC context; listener HTTP/2 nội bộ theo ADR 001.
+- [x] T041 Thêm integration tests PostgreSQL thật cho scaled height, user/profile thiếu, invalid ID và stored height không hợp lệ.
+- [x] T042 Đồng bộ backend guide, plan/shared-file ownership, progress-service design và counts; codegen/test evidence xác nhận 1 RPC, 2 messages, 2 fields.
+
 
 ### Dependencies
 

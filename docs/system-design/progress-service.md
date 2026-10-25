@@ -26,8 +26,13 @@ trong PR riêng của Identity. Q08-B về resource ownership và error policy (
 tiếp tục PENDING cho các business resource endpoints (Phase 3–6); Phase 2 chưa có resource business
 nên chưa nghiệm thu ownership 404 và không tuyên bố đã test.
 Q02 về chiều cao cho BMI (Phase 5) đã thống nhất hướng gRPC read từ Identity sang Progress,
-kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), snapshot BMI bất biến;
-schema RPC trong identity.proto PENDING trước Phase 5, provider runtime chưa có trong Identity.
+kiểu dữ liệu chiều cao là decimal (khớp numeric(5,2) của PR #10), snapshot BMI bất biến.
+Contract `IdentityService.GetUserHeight` dùng `user_id` GUID và optional `height_cm_x100`
+(`int32`, cm × 100); profile không tồn tại trả `NOT_FOUND`, height chưa có được biểu diễn
+bằng optional unset. Hiện `HeightCm` bắt buộc ở Identity nên profile có height; optional
+không dùng `0` làm sentinel và giữ chỗ cho trường hợp model thay đổi sau này. Identity là
+provider; Progress là consumer. Caller trust theo Compose network trong ADR 001; port gRPC
+không publish ra host.
 Application dùng TimeProvider, không đọc HttpContext. Không có role Technical Lead trong repo.
 
 - `/alive`: liveness 200 JSON status=ok, độc lập DB.

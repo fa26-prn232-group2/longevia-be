@@ -24,7 +24,10 @@ public sealed class WeightQueryService(
             throw new ArgumentException("UserId cannot be empty.", nameof(userId));
         }
 
-        var effectiveAsOf = asOfUtc ?? timeProvider.GetUtcNow();
+        var now = timeProvider.GetUtcNow();
+        var effectiveAsOf = asOfUtc.HasValue && asOfUtc.Value > now
+            ? now
+            : (asOfUtc ?? now);
 
         var metric = await metricRepo.GetLatestBeforeDateAsync(userId, effectiveAsOf, ct);
         if (metric == null)

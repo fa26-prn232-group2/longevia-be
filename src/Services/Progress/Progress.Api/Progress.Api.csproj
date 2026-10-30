@@ -1,7 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="../../../../contracts/progress/v1/progress.proto" GrpcServices="Both" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Progress.Infrastructure/Progress.Infrastructure.csproj" />

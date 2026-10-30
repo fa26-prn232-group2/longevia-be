@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Progress.Api.Auth;
 using Progress.Api.Endpoints;
+using Progress.Api.Grpc;
 using Progress.Infrastructure.Persistence;
 
 namespace Progress.Api.Extensions;
@@ -10,6 +12,7 @@ public static class HostExtensions
 {
     public static IServiceCollection AddProgressHost(this IServiceCollection services, IConfiguration config)
     {
+        services.AddGrpc();
         services.AddProgressAuthentication(config);
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
             context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
@@ -53,6 +56,7 @@ public static class HostExtensions
         app.MapSleepEndpoints();
         app.MapMetricEndpoints();
         app.MapDashboardEndpoints();
+        app.MapGrpcService<ProgressGrpcService>();
         return app;
     }
 

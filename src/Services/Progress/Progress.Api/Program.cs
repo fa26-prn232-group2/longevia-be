@@ -1,4 +1,5 @@
 using Longevia.Shared.Observability;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Progress.Api;
 using Progress.Api.Extensions;
 using Progress.Application;
@@ -19,6 +20,21 @@ if (args is ["--health-check", var address])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+var httpPort = builder.Configuration.GetValue("PROGRESS:HTTP_PORT", 8080);
+var grpcPort = builder.Configuration.GetValue("PROGRESS:GRPC_PORT", 50051);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    if (httpPort > 0)
+    {
+        options.ListenAnyIP(httpPort, listen => listen.Protocols = HttpProtocols.Http1);
+    }
+    if (grpcPort > 0)
+    {
+        options.ListenAnyIP(grpcPort, listen => listen.Protocols = HttpProtocols.Http2);
+    }
+});
+
 builder.Services.AddProgressApplication();
 builder.Services.AddProgressInfrastructure(builder.Configuration);
 builder.Services.AddProgressHost(builder.Configuration);

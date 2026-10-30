@@ -31,6 +31,11 @@ public sealed class WeightQueryServiceTests
             throw new NotImplementedException();
     }
 
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
     [Fact]
     public async Task GetLatestWeight_EmptyUserId_ThrowsArgumentException()
     {
@@ -83,19 +88,18 @@ public sealed class WeightQueryServiceTests
         var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
 
         var log1 = BodyMetricLog.Create(userId, baseTime.AddDays(1), 72.0m, 175.0m);
-        var log2 = BodyMetricLog.Create(userId, baseTime.AddDays(3), 71.0m, 175.0m); // asOf rơi vào ngày 4
+        var log2 = BodyMetricLog.Create(userId, baseTime.AddDays(3), 71.0m, 175.0m);
         var log3 = BodyMetricLog.Create(userId, baseTime.AddDays(5), 70.0m, 175.0m);
 
         repo.Add(log1);
         repo.Add(log2);
         repo.Add(log3);
 
-        // Query as-of ngày 4 (sau log2 nhưng trước log3)
         var asOf = baseTime.AddDays(4);
         var result = await service.GetLatestWeightAsync(userId, asOf, CancellationToken.None);
 
         Assert.True(result.Found);
-        Assert.Equal(7100, result.WeightKgX100); // Phải lấy log2 (71.0 kg)
+        Assert.Equal(7100, result.WeightKgX100);
         Assert.Equal(log2.Id, result.SourceMetricId);
     }
 
@@ -117,5 +121,53 @@ public sealed class WeightQueryServiceTests
         var resultA = await service.GetLatestWeightAsync(userA, null, CancellationToken.None);
         Assert.True(resultA.Found);
         Assert.Equal(7000, resultA.WeightKgX100);
+    }
+
+    [Fact]
+    public async Task GetLatestWeight_FutureAsOf_ClampedToServerUtcNow()
+    {
+        var repo = new StubBodyMetricRepository();
+        var now = new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero);
+        var timeProvider = new FixedTimeProvider(now);
+        var service = new WeightQueryService(repo, timeProvider);
+
+        var userId = Guid.NewGuid();
+        var pastLog = BodyMetricLog.Create(userId, now.AddHours(-2), 70.0m, 175.0m);
+        var futureLog = BodyMetricLog.Create(userId, now.AddHours(2), 69.0m, 175.0m);
+        repo.Add(pastLog);
+        repo.Add(futureLog);
+
+        // Client yêu cầu as_of ở tương lai (+5 hours)
+        var futureAsOf = now.AddHours(5);
+        var result = await service.GetLatestWeightAsync(userId, futureAsOf, CancellationToken.None);
+
+        // Phải được clamp về `now`, do đó bỏ qua futureLog và lấy pastLog
+        Assert.True(result.Found);
+        Assert.Equal(7000, result.WeightKgX100);
+        Assert.Equal(pastLog.Id, result.SourceMetricId);
+    }
+
+    [Fact]
+    public async Task GetLatestWeight_SameTimestamp_PicksHigherIdTieBreak()
+    {
+        var repo = new StubBodyMetricRepository();
+        var now = new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero);
+        var service = new WeightQueryService(repo, new FixedTimeProvider(now));
+
+        var userId = Guid.NewGuid();
+        var timestamp = now.AddDays(-1);
+
+        var log1 = BodyMetricLog.Create(userId, timestamp, 70.0m, 175.0m);
+        var log2 = BodyMetricLog.Create(userId, timestamp, 71.5m, 175.0m);
+
+        repo.Add(log1);
+        repo.Add(log2);
+
+        var expectedLog = log1.Id.CompareTo(log2.Id) > 0 ? log1 : log2;
+        var result = await service.GetLatestWeightAsync(userId, null, CancellationToken.None);
+
+        Assert.True(result.Found);
+        Assert.Equal(expectedLog.Id, result.SourceMetricId);
+        Assert.Equal(checked((int)(expectedLog.WeightKg * 100m)), result.WeightKgX100);
     }
 }

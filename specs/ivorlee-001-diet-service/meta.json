@@ -7,6 +7,6 @@
   "services": [
     "diet"
   ],
-  "description": "Diet Service dev 2: catalog, manual targets, meal logs, local infrastructure and tests",
+  "description": "Diet catalog, targets, meal logs and MealLoggedEvent provider/outbox/replay; consumer integration pending",
   "opened_at": "2026-10-24"
 }

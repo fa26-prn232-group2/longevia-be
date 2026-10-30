@@ -10,8 +10,32 @@
 - [x] Docker/Nginx smoke; Mailpit/Grafana/Prometheus local.
 - [x] Gate và hướng dẫn bàn giao với evidence/sync counts.
 
-Có đổi HTTP surface: cập nhật frontend-guide.md. Không đổi gRPC/event surface
-trong giai đoạn này; backend-integration-guide.md ghi phần phụ thuộc còn thiếu.
+Có đổi HTTP surface: cập nhật frontend-guide.md. Giai đoạn độc lập không đổi gRPC/event; giai đoạn tích hợp bên dưới bổ sung event
+và được ghi trong backend-integration-guide.md.
 
 Bằng chứng: [evidence.md](evidence.md). Checklist này chỉ đóng phạm vi độc lập
 đã được developer chọn. Feature vẫn open vì [phần hoãn](deferred.md) còn thiếu.
+
+## Giai đoạn cung cấp tích hợp
+
+- [x] Khai báo shared hotspots và contract-first MealLoggedEvent v1.
+- [x] Producer outbox cùng transaction meal, không đổi REST surface.
+- [x] Replay snapshot meal cũ, stable identity, không tự declare queue Progress.
+- [x] Soạn Markdown riêng cho Nguyên, Bảo, Đức, Duy trong handoffs/.
+- [x] Kiểm chứng rollback/broker/replay nhiều batch và negative control.
+- [x] Gate, migration và compose smoke cập nhật.
+- [x] Sửa mapping Compose Identity và kiểm chứng token thật Identity → Diet (6 assertion).
+
+Không thêm HTTP endpoint/DTO ở giai đoạn event; counted frontend giữ 6/13/73.
+
+## Hoàn tất nghĩa vụ Diet không bị block
+
+- [x] Contract snapshot v1 và CLI export read-only, streaming, không overwrite.
+- [x] Verifier count/checksum/IDs và hướng dẫn đối soát cho Bảo.
+- [x] Metadata allergens nullable, validation/normalization/EF migration/API docs.
+- [x] PostgreSQL metadata + snapshot tests; verifier negative control.
+- [x] Gate cuối và kiểm chứng CLI Docker trên DB local.
+- [x] Handoffs/remaining-blockers.md chỉ giữ phụ thuộc bên ngoài.
+
+Giai đoạn metadata thêm hai field: frontend counts hiện 6 operation / 13 DTO /
+75 field; phần 73 field ở evidence cũ là lịch sử trước metadata.

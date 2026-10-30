@@ -147,8 +147,15 @@ services:
       Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:-}
       Jwt__PreviousKeyId: ${JWT__PREVIOUS_KEY_ID:-}
       Jwt__PreviousPublicKey: ${JWT__PREVIOUS_PUBLIC_KEY:-}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__User: ${RABBITMQ_USER:-guest}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Diet__ReplayMealActivitiesOnStart: ${DIET_REPLAY_MEAL_ACTIVITIES:-false}
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - edge
@@ -200,9 +207,14 @@ services:
       IDENTITY__GRPC_PORT: ${IDENTITY__GRPC_PORT:-50051}
       ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       RABBITMQ_HOST: rabbitmq
-      JWT__KEY_ID: ${JWT__KEY_ID:-longevia-dev-01}
-      JWT__SIGNING_PRIVATE_KEY: ${JWT__SIGNING_PRIVATE_KEY:-}
-      JWT__SIGNING_PUBLIC_KEY: ${JWT__SIGNING_PUBLIC_KEY:-}
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Issuer: ${JWT__ISSUER:-longevia}
+      Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+      Jwt__KeyId: ${JWT__KEY_ID:-longevia-dev-01}
+      Jwt__SigningPrivateKey: ${JWT__SIGNING_PRIVATE_KEY:-}
+      Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

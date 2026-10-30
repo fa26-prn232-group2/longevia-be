@@ -1,65 +1,92 @@
-# Corrective PR #13 — vận hành đối soát JSON v1
+# Vận hành đối soát Meal Activity Snapshot JSON v1 & Replay Runbook
 
-Chỉ dùng snapshot JSON v1 do Diet xuất; không phải CSV hoặc public API.
-Canonical contract hiện nằm trên PR #12 (chưa merge); không copy/đổi contract
-trong corrective Progress. `capturedAtUtc` là audit timestamp, không phải cursor.
+Tài liệu hướng dẫn quy trình vận hành đồng bộ dữ liệu bữa ăn lịch sử giữa **Diet Service** (Producer — Huy) và **Progress Service** (Consumer — Bảo), được điều phối bởi Duy (DevOps).
 
-## Thực thi
+Dữ liệu Diet PR #12 đã được **MERGED vào main** (commit `4c62273dd04d1f54423f002ec3ac32459ebb0732`). Producer outbox, historical replay và JSON snapshot exporter của Diet đã chính thức sẵn sàng trên codebase chung.
 
-Operator cấp `ConnectionStrings__Progress` qua môi trường/secret store, trỏ đúng
-`progress_db`; không có password mặc định. Không truyền secret trong command line.
+---
 
-```powershell
-pwsh scripts/progress/reconcile-meal-activity-snapshot.ps1 -SnapshotPath artifacts/diet/snapshot.json
+## 1. Runbook Vận hành Phối hợp (Huy, Bảo, Duy)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Duy as Duy (DevOps)
+    actor Huy as Huy (Diet Owner)
+    actor Bao as Bảo (Progress Owner)
+    participant Broker as RabbitMQ (longevia.events)
+    participant ProgressDB as progress_db
+
+    Duy->>Bao: 1. Deploy Progress Service & bind durable queue progress.meal-activity
+    Note over Bao,Broker: Consumer lắng nghe queue progress.meal-activity
+    Duy->>Huy: 2. Kích hoạt DIET_REPLAY_MEAL_ACTIVITIES=true trên Diet
+    Huy->>Huy: Diet xuất snapshot JSON v1 (--export-meal-activities) & verify SHA-256
+    Huy->>Broker: Diet Outbox publish toàn bộ MealLoggedEvent (batch 100)
+    Huy->>Bao: 3. Chuyển file snapshot.json đã verify checksum
+    Broker->>Bao: Consumer ghi nhận inbox & activity_contributions vào progress_db
+    Duy->>Broker: 4. Giám sát hàng đợi progress.meal-activity và error queue về 0
+    Bao->>ProgressDB: 5. Chạy tool đối soát: --reconcile-meal-snapshot snapshot.json
+    ProgressDB-->>Bao: Khớp 100% (Matched: N, Missing: 0, Exit 0)
+    Bao-->>Duy: Xác nhận hoàn tất đối soát dữ liệu lịch sử
 ```
 
-Script launcher chạy CLI `Progress.Api --reconcile-meal-snapshot <path>` trước khi
-khởi tạo web host, JWT, broker hoặc migration. Có thể dùng binary đã publish:
-`dotnet Progress.Api.dll --reconcile-meal-snapshot <path>`.
+### Bước 1: Bảo & Duy chuẩn bị hạ tầng nhận tin (Progress Consumer & Queue Binding)
+1. Deploy Progress Service phiên bản có consumer `MealLoggedConsumer`.
+2. Kiểm tra container `progress` đã khởi động và tự động bind durable queue:
+   - Exchange: `longevia.events` (topic).
+   - Routing key: `diet.meal.logged`.
+   - Queue: `progress.meal-activity`.
+   - Error queue: `progress.meal-activity_error`.
+3. Bắt buộc hàng đợi phải tồn tại trước khi phát tin để tránh thất thoát message.
 
-1. Parse toàn bộ file JSON, kiểm tra schema=1, UUID khác empty, MealLogId unique,
-   UTC timestamp có offset tường minh, DateOnly ISO, count không âm và bằng số entry.
-2. SHA-256 tính trên `GetRawText()` nguyên bản UTF-8 của từng entry + một LF, kể cả
-   entry cuối. Không serialize lại trước hash; chữ hex uppercase phải khớp chính xác.
-   Duplicate JSON property bị từ chối để tránh header/entry mơ hồ.
-3. Chỉ sau integrity thành công mới mở `progress_db`, transaction RepeatableRead
-   READ ONLY; batch tối đa 500 ID dùng typed Npgsql parameters. Không ghi/repair DDL/DML.
-4. Với mỗi entry: contribution duy nhất `Diet.Meal`/SourceLogId=MealLogId, UserId/Date
-   khớp; inbox duy nhất EventId=MealLogId và MealLogId/UserId/BusinessDate khớp.
-   Query inbox theo cả EventId và MealLogId để phát hiện association mâu thuẫn.
-5. Báo count matched, missing từng bảng, user/date mismatch và integrity mismatch.
-   Không log user payload/connection string. Bảng DB chỉ đọc theo batch; JSON document
-   và tập unique IDs giữ trong memory theo kích thước file, cần RAM phù hợp cho file lớn.
+### Bước 2: Huy xuất snapshot và kích hoạt Replay trên Diet
+1. Nâng cấp toàn bộ Diet writers lên phiên bản có producer v1.
+2. Xuất snapshot chuẩn hóa từ cơ sở dữ liệu `diet_db`:
+   ```bash
+   dotnet Diet.Api.dll --export-meal-activities /artifacts/diet/snapshot.json
+   ```
+3. Chạy script kiểm tra checksum SHA-256 độc lập:
+   ```powershell
+   pwsh scripts/diet/verify-meal-activity-snapshot.ps1 -Path /artifacts/diet/snapshot.json
+   ```
+4. Kích hoạt cờ môi trường `DIET_REPLAY_MEAL_ACTIVITIES=true` khi khởi động Diet Service để đẩy toàn bộ bản ghi bữa ăn lịch sử qua Outbox Pattern vào RabbitMQ.
+5. Sau khi hoàn tất enqueue, trả biến môi trường về `false`.
 
-Exit codes: 0=PASS toàn bộ snapshot; 2=projection thiếu/sai; 3=snapshot invalid;
-4=DB/config/query không khả dụng hoặc chưa hoàn tất. Không có PASS khi skip DB.
+### Bước 3: Duy giám sát RabbitMQ Drain
+1. Truy cập RabbitMQ Management (`http://localhost:15672`).
+2. Giám sát hàng đợi `progress.meal-activity`:
+   - Số lượng message unacked / ready giảm dần về 0.
+   - Hàng đợi lỗi `progress.meal-activity_error` không phát sinh message nào.
 
-Extra live records ngoài snapshot không được đếm ở phiên bản này (NOT EVALUATED),
-không dùng equality toàn bảng/recordCount và không xóa extra. Backdate/replay giữ
-BusinessDate, dù CreatedAt/OccurredOn khác ngày snapshot.
+### Bước 4: Bảo thực hiện đối soát Snapshot với Progress DB
+1. Chạy lệnh đối soát:
+   ```powershell
+   pwsh scripts/progress/reconcile-meal-activity-snapshot.ps1 -SnapshotPath artifacts/diet/snapshot.json
+   ```
+2. Hoặc chạy trực tiếp qua binary Progress:
+   ```bash
+   dotnet Progress.Api.dll --reconcile-meal-snapshot artifacts/diet/snapshot.json
+   ```
+3. Cơ chế đối soát:
+   - Xác thực cấu trúc JSON v1 và SHA-256 checksum của toàn bộ entries.
+   - Mở transaction PostgreSQL ở mức cô lập `RepeatableRead` kèm `SET TRANSACTION READ ONLY`.
+   - Phân tích theo từng batch 500 ID.
+   - Đối chiếu:
+     - Bảng `activity_contributions`: phải tồn tại duy nhất 1 bản ghi với `Source = 'Diet.Meal'` và `SourceLogId = MealLogId`, đúng `UserId` và `Date`.
+     - Bảng `processed_meal_events`: phải tồn tại duy nhất 1 bản ghi với `EventId = MealLogId`, đúng `UserId` và `BusinessDate`.
+4. Mã thoát (Exit Codes):
+   - `0`: **PASS** — Khớp 100% toàn bộ bản ghi trong snapshot.
+   - `2`: **FAIL** — Sai lệch dữ liệu (thiếu inbox hoặc contribution, sai lệch UserId/Date).
+   - `3`: **FAIL** — File snapshot không hợp lệ (sai schema, sai format, sai checksum SHA-256).
+   - `4`: **FAIL** — Lỗi kết nối cơ sở dữ liệu hoặc cấu hình connection string không hợp lệ.
 
-## Điều kiện ngoài công cụ
+---
 
-Nâng toàn bộ Diet writer lên producer v1; bind durable Progress queue trước replay;
-operator kiểm tra outbox/broker drain và failure queue riêng. PASS đối soát chỉ chứng
-minh tập entry của file ở một DB snapshot, không chứng minh outbox đã drain hoặc
-production lịch sử hoàn chỉnh. Chưa có DTO completeness được duyệt: đây vẫn là
-readiness blocker cho tuyên bố lịch sử streak đầy đủ, không thêm field dashboard.
+## 2. Tính Hoàn chỉnh Lịch sử (Dashboard Completeness)
 
-## Tái lập test producer thật, không merge PR #12
-
-```powershell
-git fetch origin
-pwsh scripts/progress/test-diet-interoperability.ps1 -DietRef origin/feat/diet-service
-```
-
-Script archive Diet ref vào thư mục tạm, chép source Progress hiện tại (bỏ bin/obj),
-thêm duy nhất harness test vào môi trường tạm. Không đổi nhánh/source Diet trong
-repository. Harness chạy Diet API + publisher/outbox/replay/exporter thật, broker
-RabbitMQ và hai PostgreSQL Testcontainers riêng, rồi consumer/projection Progress
-và đối soát JSON. Không service nào query database của service khác. Log SHA Diet
-và thư mục evidence; Testcontainers chỉ cleanup tài nguyên do test tạo.
-
-Broker suite thường xuyên trong `Progress.IntegrationTests` dùng synthetic publisher,
-được gọi đúng là transport integration. Harness producer thật là evidence riêng,
-không cộng vào full solution test count và không thay bằng kiểm tra compile.
+- **Thực trạng**: Endpoint `GET /api/progress/dashboard/summary` hiện trả về 8 trường dữ liệu canonical:
+  `CurrentWeightKg`, `InitialWeightKg`, `WeightDeltaKg`, `CurrentBmi`, `CurrentStreakDays`, `BestStreakDays`, `FastingThisWeekCompleted`, `AverageSleepHours`.
+- **Ràng buộc**: Theo thỏa thuận thiết kế hiện tại, Progress **không tự ý bổ sung thêm trường DTO** (như `isHistoryComplete`) vào dashboard response vì chưa có sự thống nhất từ Product Owner và Frontend.
+- **Quy tắc an toàn**:
+  - Không tuyên bố chuỗi ngày hoạt động (streak) là hoàn chỉnh chỉ dựa trên test suite.
+  - Việc công bố tính hoàn chỉnh của streak cho người dùng phụ thuộc vào việc hoàn tất runbook đối soát (Exit Code 0) trên môi trường triển khai thực tế.

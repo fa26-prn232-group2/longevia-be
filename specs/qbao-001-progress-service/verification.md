@@ -1,3 +1,79 @@
+# Q10 — Weight gRPC Provider & Diet Integration Verification (2026-10-30)
+
+## Revision và Đồng bộ Main
+
+- **Feature**: `qbao-001-progress-service`, branch: `feat/progress-service`.
+- **Merge upstream `origin/main`**: Commit `4c62273dd04d1f54423f002ec3ac32459ebb0732` (Diet PR #12 merge commit) đã được merge vào `feat/progress-service` bằng merge commit `26a964d`. Không rebase hay force-push, giữ nguyên toàn bộ lịch sử commit đã publish.
+- **Xử lý xung đột**:
+  - `src/Shared/Events/MealLoggedEvent.cs`: Đồng bộ chính xác theo phiên bản canonical từ `main`.
+  - `deployments/docker-compose.yml`: Tự động merge sạch, bổ sung `PROGRESS__HTTP_PORT: 8080` và `PROGRESS__GRPC_PORT: 50051`.
+- **Identity PR #14**: Đã merge trên `main`, giữ nguyên integration Height gRPC client đã verify ở lượt Q02.
+- **Diet PR #12**: Đã merge trên `main`, cung cấp canonical `MealLoggedEvent` và producer outbox.
+
+## Q10 Weight gRPC Architecture & Implementation
+
+- **ADR 003 Approved**: Ghi nhận quyết định kiến trúc đồng thuận giữa Bảo (Progress) và Huy (Diet) tại `docs/decisions/003-diet-to-progress-weight-grpc.md` — Chiều gọi đồng bộ Diet → Progress gRPC để lấy cân nặng mới nhất phục vụ tính BMR/TDEE.
+- **Canonical Proto**: `contracts/progress/v1/progress.proto` và `contracts/progress/v1/README.md` cập nhật canonical status, package `longevia.progress.v1`, C# namespace `Longevia.Progress.Contracts.V1`.
+- **Wire Semantics**:
+  - `user_id`: Chuỗi GUID hợp lệ, bắt buộc không rỗng (trả `INVALID_ARGUMENT` nếu sai định dạng).
+  - `as_of_utc`: Optional protobuf `Timestamp`. Nếu thiếu hoặc nằm ở tương lai (`> server UtcNow`), server tự động clamp về `server UtcNow` qua `TimeProvider`.
+  - Deterministic tie-break: `ORDER BY LoggedAt DESC, Id DESC`.
+  - `weight_kg_x100`: `int32` tương ứng `decimal kg * 100` (ví dụ 70.50 kg → 7050).
+  - Absence vs Failure: Người dùng không có dữ liệu trả `no_record_found` trong `oneof`, không trả 0 giả tạo; lỗi kết nối DB trả `UNAVAILABLE`, không swallow thành missing record.
+  - Snapshotting: Diet lưu snapshot cân nặng tại thời điểm tính target; Progress không recompute các snapshot cũ.
+- **Kestrel Dual Listener**:
+  - HTTP/1.1 trên cổng 8080 (`PROGRESS:HTTP_PORT`, REST API, Health checks `/alive`, `/health`, Metrics `/metrics`).
+  - HTTP/2 trên cổng 50051 (`PROGRESS:GRPC_PORT`, gRPC `ProgressService`).
+  - Cổng 50051 là internal trong Compose network, không map ra host và không route qua Nginx.
+
+## Test Evidence & Môi trường
+
+- **Môi trường**: Windows 11, .NET SDK 10.0.203, PostgreSQL/RabbitMQ Testcontainers.
+- **Ghi chú môi trường Docker local**: Docker daemon không khả dụng cục bộ (`failed to connect to npipe:////./pipe/dockerDesktopLinuxEngine`), các integration test dùng Testcontainers đã được biên dịch thành công 100% với 0 warnings/0 errors và sẽ thực thi hoàn chỉnh trong môi trường GitHub Actions CI (nơi Docker daemon được bật sẵn).
+- **Unit Tests Scoped Progress**: **96/96 PASS** (100% pass, 0 fail, 0 skip).
+  - Bao gồm 12 unit tests mới kiểm tra:
+    - `WeightQueryServiceTests`: As-of filtering, future as-of clamping về server UtcNow, deterministic ordering tie-break theo Id, no records found, user isolation, decimal to int32 x100 conversion, cancellation propagation.
+    - `ProgressGrpcServiceTests`: Guid validation (invalid -> `INVALID_ARGUMENT`), mapping weight record sang `int32 x100`, mapping empty sang `no_record_found`, database exception sang `UNAVAILABLE` có log an toàn, client cancellation propagation.
+- **Configuration & Integration Tests**:
+  - `ProgressWeightConfigurationTests`: **2/2 PASS** cục bộ (Case 19: default ports 8080 HTTP/1 và 50051 HTTP/2; Case 20: custom ports qua biến môi trường).
+  - `ProgressWeightGrpcTests`: 20 kịch bản bao phủ toàn diện:
+    1. Exact as-of lookup
+    2. Clamp future as-of to server UtcNow
+    3. Exclude logs strictly after as-of
+    4. Deterministic tie-break on identical LoggedAt (Id DESC)
+    5. Correct int32 x100 precision (70.50 -> 7050)
+    6. Return source LoggedAt and Log Id
+    7. Empty history returns no_record_found
+    8. User data isolation (user A cannot see user B)
+    9. Invalid user GUID returns INVALID_ARGUMENT
+    10. Empty user GUID returns INVALID_ARGUMENT
+    11. Database unavailable returns UNAVAILABLE (not no_record_found)
+    12. Cancellation token aborts in-flight query
+    13. Unspecified/null as-of uses server UtcNow
+    14. Multiple body metrics with different weights
+    15. Boundary weight values (min/max reasonable values)
+    16. Internal HTTP/2 listener verification
+    17. REST HTTP/1 on 8080 preserved concurrently
+    18. End-to-end integration: Identity Height -> Progress BMI calculation -> Progress Weight gRPC retrieval
+    19. Default port configuration validation
+    20. Environment variable override port validation
+
+## Full Quality Gates
+
+- `git diff --check`: PASS, không có trailing whitespace hay conflict markers.
+- `dotnet format --verify-no-changes`: Scoped Progress format check PASS.
+- `dotnet build -c Release`: Full solution Release build PASS (0 warning, 0 error).
+- Scoped Unit Tests Release: **96/96 PASS**.
+- Package Vulnerability Scan: 0 vulnerable packages trên toàn bộ 27 projects.
+
+## Interoperability & Hand-off Status
+
+- `scripts/progress/test-diet-interoperability.ps1`: Đã cập nhật mặc định `-DietRef 'HEAD'` để kiểm thử trực tiếp với mã nguồn Diet đã merge trên `main`.
+- `specs/qbao-001-progress-service/corrective-reconciliation.md`: Cung cấp quy trình 4 bước chuẩn mực giữa Huy (Diet), Bảo (Progress) và Duy (Lead) để kiểm toán dữ liệu và reconciliation.
+- `specs/qbao-001-progress-service/handoffs/dev2-huy-q10.md`: Tài liệu bàn giao chi tiết cho Huy về endpoint kết nối, wire format, cấu hình deadline (2000ms), xử lý absence vs error và hướng dẫn triển khai gRPC client phía Diet.
+
+---
+
 # Q02 — Identity Height gRPC integration (2026-10-26)
 
 ## Revision và sync

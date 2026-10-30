@@ -76,8 +76,8 @@ Constitution. Bảng là kiểm tra thiết kế, không phải evidence runtime
 | Nguyên tắc | Cách đáp ứng thiết kế | Trạng thái |
 | --- | --- | --- |
 | I — ownership | Chỉ progress_db, không FK/import/DB access service khác. | Đạt ở tài liệu và thực tế. |
-| II — gRPC | Q02 hướng gRPC read profile/height đã APPROVED (chiều cao decimal, BMI snapshot bất biến); schema Protobuf chi tiết PENDING trước Phase 5; không lách HTTP. | Đã thống nhất hướng kiến trúc; schema PENDING trước Phase 5. |
-| III — RabbitMQ | Versioned contract trước consumer; outbox cùng transaction, inbox/projection atomic, idempotent. | Meal BLOCKED Q09. |
+| II — gRPC | Q02 GetUserHeight (Identity → Progress) functional integration DONE (secure readiness BLOCKED). Q10 GetLatestWeight (Diet → Progress) APPROVED theo ADR 003, Protobuf canonical contracts/progress/v1/progress.proto, Progress gRPC Server đã triển khai trên cổng nội bộ HTTP/2 50051; 20 integration cases + E2E flow verified. | Đã thống nhất Q02 & Q10; gRPC server READY. |
+| III — RabbitMQ | Diet PR #12 đã MERGED vào main; canonical event MealLoggedEvent, topology longevia.events / diet.meal.logged / progress.meal-activity. Consumer/inbox và đối soát JSON snapshot v1 đã kiểm chứng đầy đủ. | Đã tích hợp producer merged từ main; replay & đối soát sẵn sàng. |
 | IV — contract-first | Proposal ở feature/contracts, không đổi canonical; Nguyên/Huy phải thống nhất và approve (không có role Technical Lead). | Đã thống nhất Q02 và Q08-A. |
 | V — verified gates | Negative control, scoped tests, E2E thật và gate theo AGENTS §2; đỏ dừng commit/push. | Phase 2 đã pass 100% gates. |
 | EF/config/observability | Migration Code First khi sang phase sau; fail-start; public key env, health, metrics chuẩn. | Phase 2 initializer đã kiểm chứng. |

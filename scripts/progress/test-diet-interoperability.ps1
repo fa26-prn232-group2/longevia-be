@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 [CmdletBinding()]
-param([string] $DietRef = 'origin/feat/diet-service')
+param([string] $DietRef = 'HEAD')
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('progress-diet-interop-' + [Guid]::NewGuid().ToString('N'))

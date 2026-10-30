@@ -1,18 +1,20 @@
-# Progress Service — foundation Phase 2
+# Progress Service — foundation và capability hiện hành
 
 Progress dùng bốn layer Domain, Application, Infrastructure và Api, cộng hai
 project xUnit. Domain độc lập framework; Application chỉ reference Domain;
 Infrastructure triển khai persistence; Api là composition root, tái sử dụng Shared.
-Chưa có entity, business endpoint, RPC/event, broker client hoặc adapter liên service.
+Hiện có Fasting, Water, Sleep, body metric snapshots/history, Dashboard và meal inbox/projection.
+Height runtime dùng canonical Identity GetUserHeight qua HTTP/2; functional integration
+đã verified, service-caller authentication chưa có nên secure readiness còn BLOCKED.
+Weight gRPC Server đã APPROVED (Q10 / ADR 003) và triển khai chính thức trên cổng HTTP/2 nội bộ 50051.
 
 ## Persistence và khởi động
 
 ConnectionStrings:Progress phải trỏ `progress_db`, role `progress_user` do init script
 deployment provision. Cấu hình thiếu/sai hoặc DB không kết nối được làm startup thất
-bại trước nhận traffic. Không tự tạo DB thiếu. DbContext chưa entity nên chưa tạo
-migration rỗng/bảng giả/EnsureCreated. Khi assembly có migration, initializer gọi
-MigrateAsync trước phục vụ request; migration đầu tiên sinh bằng EF ở phase có
-schema được duyệt. Cancellation truyền tới mở kết nối/migration, scope được dispose.
+bại trước nhận traffic. Không tự tạo DB thiếu. DbContext có năm migration Code First
+hiện hữu; corrective không sửa migration cũ. Initializer chạy MigrateAsync trước
+phục vụ request. Cancellation truyền tới mở kết nối/migration, scope được dispose.
 
 ## Auth và operational surface
 
@@ -33,6 +35,17 @@ bằng optional unset. Hiện `HeightCm` bắt buộc ở Identity nên profile 
 không dùng `0` làm sentinel và giữ chỗ cho trường hợp model thay đổi sau này. Identity là
 provider; Progress là consumer. Caller trust theo Compose network trong ADR 001; port gRPC
 không publish ra host.
+Progress codegen Client từ canonical proto, dùng singleton GrpcChannel/client do DI
+quản lý lifetime. IdentityGrpc:Address bắt buộc; Compose http://identity:50051 trên
+data_net chung, không qua Nginx. DeadlineMilliseconds mặc định 2000, giới hạn 50–10000,
+không application retry; incoming cancellation truyền tới call. Optional unset khác
+present zero; height_cm_x100 / 100m giữ 2 decimal và validate 50.00–250.00.
+NOT_FOUND→404, unset→422, UNAVAILABLE/DEADLINE_EXCEEDED→503; INVALID_ARGUMENT,
+INTERNAL hoặc response sai→502 integration failure. Status gRPC giữ nội bộ, không
+đưa detail/URL của provider vào Problem Details. BMI/history snapshot không đổi.
+ADR 001 network trust không phải service identity. Provider hiện không enforce caller
+auth; theo yêu cầu owner Progress, Nguyên/Bảo phải chốt trust model hoặc triển khai
+authenticated caller trước khi gỡ secure readiness blocker. Không forward user JWT.
 Application dùng TimeProvider, không đọc HttpContext. Không có role Technical Lead trong repo.
 
 - `/alive`: liveness 200 JSON status=ok, độc lập DB.
@@ -49,3 +62,38 @@ chiseled không cần curl/shell). Nginx reuse route prefix stripping hiện có
 Prometheus static target progress:8080/metrics. Bảo được developer cấp quyền
 integration Progress vào shared infrastructure; không cần Duy duyệt riêng.
 Kiểm chứng, giới hạn và trạng thái task: ../../specs/qbao-001-progress-service/verification.md.
+
+## Weight gRPC Provider (Q10 / ADR 003)
+
+Progress Service triển khai gRPC server cho contract canonical `contracts/progress/v1/progress.proto`
+(package `longevia.progress.v1`, namespace `Longevia.Progress.Contracts.V1`).
+- Cổng gRPC nội bộ: HTTP/2 trên cổng 50051 (cấu hình qua `PROGRESS:GRPC_PORT`, mặc định 50051).
+- Cổng HTTP/1 REST giữ nguyên trên cổng 8080 (cấu hình qua `PROGRESS:HTTP_PORT`, mặc định 8080).
+- Q10 semantics:
+  - `user_id`: bắt buộc GUID RFC 4122 không rỗng.
+  - `as_of_utc`: tùy chọn; nếu thiếu hoặc ở tương lai thì clamp về server UTC hiện tại (`TimeProvider.GetUtcNow()`).
+  - Lọc bỏ số đo tương lai (`LoggedAt > UtcNow`).
+  - Sắp xếp tất định: `LoggedAt DESC, Id DESC LIMIT 1`.
+  - Cân nặng chuẩn hóa: `int32 weight_kg_x100` (70.50 kg -> 7050).
+  - Phân biệt vắng bản ghi (`no_record_found = true`) và lỗi hệ thống (gRPC status codes `UNAVAILABLE`, `DEADLINE_EXCEEDED`, `INVALID_ARGUMENT`, `INTERNAL`).
+  - Bounded deadline: 2000ms.
+  - Bảo mật: theo ADR 001 §2.2 internal trust domain trên mạng `data_net`. Tuyệt đối không publish cổng 50051 ra host và không route qua Nginx.
+
+## Corrective PR #13
+
+Q01 được Bảo approve cho Progress MVP: UTC calendar cho server-derived days,
+TimeProvider cho current day, week Monday 00:00 UTC, history upper bound đầu ngày
+kế tiếp exclusive. Sleep lấy UTC WokeAt, metric activity lấy UTC LoggedAt; duration
+và overlap dùng full instants. Không rebucket dữ liệu/BMI snapshots đã lưu.
+Diet BusinessDate tiêu thụ nguyên văn, không suy từ CreatedAt/OccurredOn/receive time.
+Huy acknowledgment cho tự chọn current meal date theo UTC vẫn PENDING; UTC-only
+không tương đương midnight local Việt Nam, không cần timezone từ Identity.
+
+Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,
+reject conflicting duplicate và repair partial pair chỉ từ valid replay. Rabbit
+credentials phải explicit; retry hữu hạn đưa consumer fault vào MassTransit _error,
+không giả định broker DLQ nhận mọi exception. Snapshot JSON v1 reconciliation CLI
+là read-only RepeatableRead/batch500, integrity trước DB, exit0 chỉ khi khớp toàn bộ
+entry. Không coi snapshot capturedAtUtc là cursor hoặc PASS là outbox drain.
+
+Runtime tests và rollout limitations: ../../specs/qbao-001-progress-service/verification.md.

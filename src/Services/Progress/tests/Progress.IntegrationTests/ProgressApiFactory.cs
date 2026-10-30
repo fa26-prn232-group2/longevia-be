@@ -1,4 +1,5 @@
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Progress.IntegrationTests;
 
 public sealed class ProgressApiFactory(ProgressFixture fixture,
-    IReadOnlyDictionary<string, string?>? overrides = null) : WebApplicationFactory<Program>
+    IReadOnlyDictionary<string, string?>? overrides = null, TimeProvider? time = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -23,6 +24,8 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
             ["Jwt:PreviousKeyId"] = "previous",
             ["Jwt:PreviousPublicKey"] = ProgressFixture.PublicKey(fixture.PreviousKey),
             ["Jwt:SigningPrivateKey"] = "",
+            ["Messaging:UseInMemory"] = "true",
+            ["IdentityGrpc:Address"] = "http://127.0.0.1:1",
         };
         foreach (var setting in overrides ?? new Dictionary<string, string?>())
         {
@@ -34,9 +37,16 @@ public sealed class ProgressApiFactory(ProgressFixture fixture,
         }
         builder.ConfigureTestServices(services =>
         {
+            // Short HTTP assertions can finish before asynchronous bus startup completes.
+            services.Configure<MassTransitHostOptions>(options =>
+            {
+                options.WaitUntilStarted = true;
+                options.StartTimeout = TimeSpan.FromSeconds(30);
+                options.StopTimeout = TimeSpan.FromSeconds(30);
+            });
             services.AddSingleton<IStartupFilter, FoundationProbeStartupFilter>();
             services.AddScoped<IValidator<ProbeRequest>, ProbeRequestValidator>();
-            services.Replace(ServiceDescriptor.Singleton<TimeProvider>(new FoundationTimeProvider()));
+            services.Replace(ServiceDescriptor.Singleton<TimeProvider>(time ?? new FoundationTimeProvider()));
         });
     }
 }

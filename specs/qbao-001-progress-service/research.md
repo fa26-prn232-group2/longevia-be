@@ -1,4 +1,92 @@
+# Height gRPC integration — báo cáo hiện hành
+
+## Q02 hiện hành — Identity Height gRPC (2026-10-26)
+
+PR #14 đã merge: source 72555e139e31e94bc014be4ada97532cd486974c,
+main merge c679b6f174a3cfcdfc0097b03ee81b3729bb72e2. Nhánh Progress merge main
+không rewrite 14 commit cũ; Rabbit/inbox/reconciliation và Q01 UTC giữ nguyên.
+
+**Q02 FUNCTIONAL INTEGRATION: DONE / VERIFIED** — client thật đã chạy với actual
+Identity process, HTTP/2 và hai PostgreSQL riêng. **Authenticated service-to-service
+trust: PENDING; secure production readiness: BLOCKED**. Đây không phải service
+flow đã authenticated chỉ vì frontend JWT pass.
+
+Canonical: longevia.identity.v1.IdentityService/GetUserHeight, C# namespace
+Longevia.Identity.Contracts.V1. Request user_id field 1 (GUID); response optional
+height_cm_x100 field 1 (int32 cm × 100). Một RPC, hai message, hai field; không thêm
+GetBodyProfile hoặc wire DTO khác. HasHeightCmX100=false khác present zero.
+17525 / 100m = 175.25 cm, validate 50.00–250.00, không integer division.
+
+Progress.Infrastructure codegen Client từ canonical proto bằng Grpc.Tools;
+Grpc.Net.Client và singleton channel/client do DI dispose, không reference
+Identity implementation. IdentityGrpc:Address bắt buộc (Compose http://identity:50051);
+DeadlineMilliseconds mặc định 2000, cho phép 50–10000. Không application retry;
+deadline tổng mỗi call hữu hạn; truyền incoming cancellation tới HTTP/2.
+
+| Kết quả Identity | HTTP Progress | Code / xử lý |
+| --- | --- | --- |
+| Height hợp lệ | 201 | Tính/lưu BMI snapshot hiện hữu |
+| Optional unset | 422 | progress.height_unavailable |
+| NOT_FOUND | 404 | progress.profile_not_found |
+| UNAVAILABLE / DEADLINE_EXCEEDED | 503 | progress.identity_unavailable |
+| Caller cancellation | Hủy request | Không tiếp tục ghi |
+| INVALID_ARGUMENT / INTERNAL / auth fault / returned height sai | 502 | progress.identity_integration_failure |
+
+ProfileHeightResult.GrpcStatus và structured log giữ status gRPC nội bộ, không đưa
+URL, RpcException detail, credentials hoặc profile data vào Problem Details.
+
+### Bảo mật và follow-up
+
+ADR 001 §2.2 và microservices/02-grpc-and-events hiện chấp nhận Compose network trust:
+không caller auth, không mTLS/token service. Shared ES256 JWT là frontend user
+authentication, không service identity. Identity Program.MapGrpcService và service
+không RequireAuthorization; test gọi không credentials thành công xác nhận gap.
+Network isolation là defense-in-depth, không authenticated identity.
+
+Theo yêu cầu Bảo trong lượt này, secure readiness vẫn BLOCKED. Nguyên và Bảo cần
+ghi quyết định trust model cho Height: triển khai service identity/token hoặc mTLS
+với authorization provider + contract cấp/rotate/revoke credential và negative tests,
+hoặc phê duyệt tường minh mô hình network-trust hiện tại cho phạm vi MVP. Không có
+phê duyệt chung mới được suy diễn; không forward user JWT làm service credential.
+Progress không sửa Identity hoặc thêm API key giả.
+
+17 gRPC scenarios và 9 options unit cases đã pass ở scoped run. Success tests dùng
+Identity entry point/repository/migrations thật; seed/update qua REST của chính
+Identity trong fixture, không DB/source import chéo. Controlled server chỉ cho
+unset, malformed response, fault, deadline/cancellation. Full gates/Docker/CI mới
+được báo ở verification.md và PR #13, không dùng lại số 733 của commit cũ.
+Q10 Weight và Huy Q01 acknowledgment/Diet PR #12 giữ trạng thái riêng.
+
+---
+
+## Tài liệu trước lượt Height — đọc theo trạng thái hiện hành ở trên
 # Nghiên cứu và sổ quyết định
+
+## Corrective PR #13 — Q01 có hiệu lực ngày 2026-10-25
+
+**Q01 — APPROVED FOR PROGRESS MVP BY BẢO** (ủy quyền trực tiếp trong corrective).
+
+- Mọi ngày server-derived của Progress dùng UTC calendar: DateOnly của instant.UtcDateTime;
+  today lấy từ TimeProvider.GetUtcNow(). Không dùng timezone máy hoặc Asia/Ho_Chi_Minh.
+- Water date lấy instant ghi; water/today đổi tại 00:00 UTC. Sleep date lấy WokeAt UTC,
+  duration/overlap so full instants; giữ quy tắc overlap hiện hành.
+- Body metric activity lấy LoggedAt UTC; history fromDate inclusive, toDate exclusive
+  tại đầu ngày kế tiếp. Không rebucket hoặc tính lại snapshot BMI/height lịch sử.
+- Dashboard neo UTC today/yesterday theo Q06, tuần bắt đầu Monday 00:00 UTC,
+  cửa sổ ngày dùng UTC; fasting tính theo instant hoàn thành, tuần [Monday,next Monday).
+- Diet MealLoggedEvent.BusinessDate là canonical DateOnly bất biến: consume nguyên văn;
+  CreatedAt/OccurredOn/replay/receive time không đổi ngày ăn. Meal + metric cùng nhãn
+  DateOnly chỉ tạo một active day.
+- Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
+  không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
+  phải có migration/rebucketing và phê duyệt liên service.
+- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- Q02 functional Height gRPC đã verified theo mục hiện hành phía trên; service-caller auth còn BLOCKED. Q10 Weight không đổi.
+
+Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
+Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
+cho nội bộ Progress; compatibility liên service vẫn PENDING.
 
 ## Cập nhật Phase 2 và Quyết định Xác nhận từ Nguyên — 2026-10-25
 
@@ -92,7 +180,7 @@ Các quyết định đã được duyệt ghi nhận rõ người duyệt; các
 
 | ID | Câu hỏi cụ thể và phương án đề xuất | Phương án khác / trade-off | Người xác nhận / Trạng thái |
 | --- | --- | --- | --- |
-| Q01 | Ngày theo timezone nào, đổi timezone có đổi quá khứ không? Diet hiện nhận DateOnly business date từ client và summary mặc định UTC; CreatedAt UTC riêng. Streak dùng meal business date, không suy từ publish/receive/processed timestamp. Đề xuất body metric snapshot ngày/zone, tương thích business date Diet và không tự re-bucket lịch sử; history nhận YYYY-MM-DD, đầu fromDate inclusive và đầu ngày sau toDate exclusive theo zone duyệt. | User timezone IANA cần nguồn zone và quyết định tương thích DateOnly đã có; UTC default của Diet là implementation evidence, chưa phải product policy approved cho mọi service. Asia/Ho_Chi_Minh hoặc dynamic re-bucket đều cần review/migration semantics. | Bảo + Huy + Nguyên; PENDING, không chặn skeleton/foundation, chặn day logic Phase 4–6. |
+| Q01 | **APPROVED FOR PROGRESS MVP BY BẢO**: UTC calendar cho mọi server-derived date; today/week/history UTC, sleep theo WokeAt, metric theo LoggedAt. Diet BusinessDate giữ nguyên, không suy từ timestamp. | Không implicit user timezone, không rebucket lịch sử; Việt Nam local date có thể khác. Future IANA là quyết định versioned riêng. | Nội bộ Progress có hiệu lực; Huy acknowledgment Diet/frontend current meal day **PENDING**, không cần Identity timezone source cho UTC MVP. |
 | Q02 | **APPROVED HƯỚNG KIẾN TRÚC gRPC READ PROFILE/HEIGHT (Nguyên + Bảo)**. Progress lấy chiều cao qua gRPC read nội bộ đồng bộ từ Identity khi tính BMI; height kiểu `decimal` (khớp PR #10 `numeric(5,2)`, 50.00–250.00 cm, 2 decimal places). Snapshot BMI bất biến theo BR-05, thay đổi profile sau này không đổi BMI lịch sử. Schema RPC cụ thể trong `contracts/identity/v1/identity.proto` PENDING trước Phase 5 (cần định nghĩa message, deadline, profile thiếu chiều cao). Runtime provider chưa có trong Identity, chưa triển khai integration ở Phase 2. Không gọi HTTP nội bộ, không đọc DB chéo. | Event snapshot không chọn vì eventual consistency và có thể stale; gRPC read fresh được chọn. UserProfileUpdatedEvent (PR #10) không mang chiều cao. Historical backdate dùng height lúc ghi có provenance. | Nguyên (Identity provider) + Bảo (Progress consumer); **APPROVED hướng gRPC, schema PENDING trước Phase 5**. |
 | Q03 | Custom target, timestamp và retry dùng policy nào? Đề xuất 1–24 giờ, cố định 16/18/20 phải khớp target, không nhận future start/end, end >= start; elapsed/remaining tính giây, response giờ/phút có precision thống nhất. Không tự complete khi quá target. | Cho target dài hơn cần product review; timer client tự tính giảm traffic nhưng phải server làm nguồn thời gian. Đề xuất retry key scoped user+operation, cùng key/cùng payload replay, khác payload 409; key retention 24 giờ chưa duyệt. Start mới khi active 409; end đã completed cùng end replay 200, khác end 409; no current 200 null chưa duyệt. | Bảo; Fasting Phase 3. |
 | Q04 | Giới hạn biomarkers, BMI category và precision là gì? Đề xuất fat >0 đến 100%, waist >0 đến 300 cm; huyết áp đi cặp, systolic 50–250, diastolic 30–150 mmHg, systolic > diastolic; RHR 25–250 bpm. Đề xuất bảng BMI <18.5 Underweight, <25 NormalWeight, <30 Overweight, còn lại Obese; phân loại giá trị chưa làm tròn, hiển thị 2 chữ số. | Các ngưỡng chỉ là policy đề xuất để review, không phải tư vấn/chuẩn y khoa đã được repo phê duyệt. Có thể chọn bộ ngưỡng khác; cấm hardcode lúc implement trước duyệt. Đề xuất không nhận loggedAt tương lai, cho backdate có snapshot provenance. | Bảo/product; validation/category Phase 5. |
@@ -101,15 +189,15 @@ Các quyết định đã được duyệt ghi nhận rõ người duyệt; các
 | Q07 | Wire pagination giữ pageNumber/totalCount hay dùng page/totalItems? Đề xuất Progress-local DTO adapter giữ wire API cũ và query pageNumber, nội bộ PagedResult; không đổi Shared. Normalize page >=1, pageSize 1..100, default 20 theo system-design. | Dùng thẳng PagedResult đổi client field, cần contract update được duyệt. Count phải thật trước Skip/Take, order loggedAt desc + Id desc. | Bảo + frontend; history Phase 5. |
 | Q08-A | **APPROVED (Bảo + Nguyên)**. Thống nhất policy strict như Progress: token ES256 bắt buộc `kid` hợp lệ (missing/unknown kid -> 401), `sub` bắt buộc là GUID hợp lệ khác rỗng (Guid.Empty/sai/thiếu -> 401), service bắt buộc fail-start nếu thiếu public key hoặc cấu hình private key. Bảo sở hữu Progress local guard (đã hoàn tất & pass 100% tests); Nguyên sở hữu remediation chung trong Shared Auth (external follow-up trong PR riêng của Identity). | Progress guard độc lập đã đạt yêu cầu bảo mật Phase 2. Shared Auth do Nguyên cập nhật trong PR riêng. | Bảo + Nguyên; **APPROVED**. |
 | Q08-B | **PENDING FOR BUSINESS RESOURCE ENDPOINTS**. Chính sách ownership và error status cho business endpoints: truy cập tài nguyên người dùng khác trả 403 Forbidden hay 404 Not Found (ownership hiding), mapping Problem Details, format lỗi khi ID không hợp lệ, kiểm chứng cách ly hai người dùng (two-user isolation). Sẽ quyết định và kiểm chứng ở từng phase tương ứng khi có schema thực tế (Phase 3–6). | Không có business resource endpoints ở Phase 2 nên không chặn nghiệm thu foundation Phase 2. Chưa tuyên bố resource-level ownership đã được test. | Bảo (Progress); **PENDING** cho business endpoints. |
-| Q09 | BLOCKED/PENDING INTEGRATION: Diet đã có create meal, chưa có activity contract/outbox cho streak. Đề xuất contract versioned cho create + bootstrap ban đầu; dùng MealLog.Date, tách CreatedAt UTC và ProcessedAt UTC. Future update/delete/change-date cần revision/tombstone/reconciliation trước mở lifecycle; không giả endpoints đã có. | Event projection rẻ lúc đọc nhưng cần outbox producer, dedup và completeness; gRPC active dates coupling availability và cần ADR direction. Create-only không đủ nếu thiếu bootstrap log cũ; future lifecycle phải có version/migration/replay, không silently drop delete. Dashboard 503 hoặc explicit completeness field vẫn chờ duyệt. | Huy + Bảo + Duy; chặn full streak Phase 6, không chặn skeleton. |
-| Q10 | PENDING APPROVAL — Latest Weight Contract for Diet BMR/TDEE. Đề xuất gRPC read do Progress sở hữu, Diet là consumer: chọn metric mới nhất có LoggedAt <= asOf, order LoggedAt/Id ổn định; response đề xuất weightKg, measuredAt (map LoggedAt), sourceMetricId, observedAt/provenance, presence. Cần quyết latest tại thời điểm đọc hay weight tại effectiveAt của target; đề xuất Diet snapshot lúc tính target, cập nhật weight không tự tính lại target cũ. | Không có metric: presence rõ, Diet giữ Bmr/Tdee null hoặc báo trạng thái được duyệt; không weight=0/default. Future measurement không thành latest, backdate chỉ thắng theo measuredAt, tie/provenance cần thống nhất. Đề xuất deadline tổng 2s, bounded retry read tối đa 1; unavailable là transport error, không đồng nhất missing; stale threshold/retention và Diet có dùng snapshot cũ không còn chờ duyệt. Event projection giảm coupling nhưng eventual/stale, cần outbox/version/bootstrap/reconcile, chưa chọn. Diet → Progress và Diet → Identity chưa được whitelist, cần thống nhất ADR giữa các affected owners + canonical contract trước adapter; không DB/HTTP/import chéo. | Bảo + Huy; Nguyên cung cấp tuổi/ngày sinh, giới tính, chiều cao, mức vận động; T038 theo dõi quyết định; provider implementation feature sau khi approved, không chặn BMI core và không đưa thuật toán BMR/TDEE sang Progress. |
+| Q09 | Progress consumer/inbox/projection và read-only JSON v1 reconciliation đã implement; Diet PR #12 có producer/outbox/replay/exporter nhưng chưa merge. Actual-producer interoperability fixture được kiểm chứng riêng, không đồng nghĩa rollout production. | Binding durable trước replay, kiểm tra outbox/broker/error và đối soát snapshot môi trường triển khai; capturedAtUtc không phải cursor. Public completeness mechanism chưa được duyệt. | Bảo + Huy: production historical completeness **PENDING**, xem verification.md; không claim merge là tự động chứng minh đủ lịch sử. |
+| Q10 | **APPROVED (Bảo + Huy, 2026-10-30)** — ADR 003 đã ghi nhận chính thức. Canonical RPC `ProgressService/GetLatestWeight` trong `contracts/progress/v1/progress.proto`. Semantics: `user_id` GUID bắt buộc; `as_of_utc` tùy chọn, nếu thiếu hoặc ở tương lai sẽ clamp về server UtcNow; loại bỏ số đo tương lai (`LoggedAt > UtcNow`); sắp xếp tất định `LoggedAt DESC, Id DESC LIMIT 1`; `weight_kg_x100: int32` tránh sai số float; phân biệt rõ `record` vs `no_record_found = true`, lỗi DB/transport trả status gRPC chuẩn (`UNAVAILABLE`, `DEADLINE_EXCEEDED`, `INTERNAL`), không trả số 0; bounded deadline 2000ms; Diet snapshot cân nặng khi tính BMR/TDEE và không tự recompute target cũ. Bảo sở hữu Progress gRPC Server (đã triển khai và verified 20 test cases + E2E flow); Huy sở hữu Diet gRPC Client, BMR/TDEE logic và target snapshot. | Không có metric: presence rõ, Diet giữ Bmr/Tdee null hoặc báo trạng thái được duyệt; không weight=0/default. Future measurement không thành latest, backdate chỉ thắng theo measuredAt, tie/provenance cần thống nhất. Đề xuất deadline tổng 2s, bounded retry read tối đa 1; unavailable là transport error, không đồng nhất missing. | Bảo + Huy; **APPROVED theo ADR 003**. Progress server READY; Diet client & snapshot do Huy sở hữu. |
 
 ## Phân loại công việc
 
 | Nhóm | Phần việc | Điều kiện |
 | --- | --- | --- |
-| A — độc lập liên service | Skeleton Progress, Clean Architecture, test scaffolding và wiring cấu trúc; business timer/water/sleep có policy riêng | Skeleton T002/T003 không chờ Q01/Q08; cần human giao phase và shared-file slot. Security acceptance đã đạt với Q08-A; business date chờ Q01. |
-| B — thống nhất hợp đồng trước | BMI height, meal streak, cung cấp weight cho Diet, pagination wire, DTO thiếu, ownership/kid, timezone | Q08-A và Q02 transport đã APPROVED; Q01, Q02 proto schema, Q03–Q07, Q08-B, Q09–Q10 PENDING; không biến proposal thành schema chính thức. Q10 chỉ planning provider, thuật toán BMR/TDEE thuộc Diet. |
+| A — độc lập liên service | Skeleton Progress, Clean Architecture, test scaffolding và wiring cấu trúc; business timer/water/sleep có policy riêng | Skeleton T002/T003 không chờ Q01/Q08; cần human giao phase và shared-file slot. Security acceptance đã đạt với Q08-A; business date UTC nội bộ đã được Bảo approve; acknowledgment Huy còn PENDING. |
+| B — thống nhất hợp đồng trước | BMI height, meal streak, cung cấp weight cho Diet, pagination wire, DTO thiếu, ownership/kid, timezone | Q08-A và Q02 transport đã APPROVED; Q02 proto schema, Q03–Q07, Q08-B, Q09–Q10 PENDING; không biến proposal thành schema chính thức. Q10 chỉ planning provider, thuật toán BMR/TDEE thuộc Diet. |
 | C — ngoài phạm vi hiện tại | AI workout/longevity, gửi digest, sửa Identity/Diet/Shared/Gateway/Worker | Xem deferred; Phase 1 không sửa source nào. |
 
 ## Làm rõ và chất lượng spec

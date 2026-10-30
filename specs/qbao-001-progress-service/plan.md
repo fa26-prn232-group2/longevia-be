@@ -1,4 +1,34 @@
+## Trạng thái Q02 hiện hành (2026-10-26)
+
+Functional GetUserHeight đã VERIFIED với provider thật, 17 scoped scenarios. Những mô tả Q02 schema/provider PENDING của thiết kế Phase 2 bên dưới là lịch sử, được thay thế bởi mục Q02 tích hợp PR #14. Secure readiness vẫn BLOCKED vì chưa có authenticated service caller. Không thay Q01 UTC/Q10.
+
 # Kế hoạch triển khai: Progress Service
+
+## Corrective PR #13 — Q01 có hiệu lực ngày 2026-10-25
+
+**Q01 — APPROVED FOR PROGRESS MVP BY BẢO** (ủy quyền trực tiếp trong corrective).
+
+- Mọi ngày server-derived của Progress dùng UTC calendar: DateOnly của instant.UtcDateTime;
+  today lấy từ TimeProvider.GetUtcNow(). Không dùng timezone máy hoặc Asia/Ho_Chi_Minh.
+- Water date lấy instant ghi; water/today đổi tại 00:00 UTC. Sleep date lấy WokeAt UTC,
+  duration/overlap so full instants; giữ quy tắc overlap hiện hành.
+- Body metric activity lấy LoggedAt UTC; history fromDate inclusive, toDate exclusive
+  tại đầu ngày kế tiếp. Không rebucket hoặc tính lại snapshot BMI/height lịch sử.
+- Dashboard neo UTC today/yesterday theo Q06, tuần bắt đầu Monday 00:00 UTC,
+  cửa sổ ngày dùng UTC; fasting tính theo instant hoàn thành, tuần [Monday,next Monday).
+- Diet MealLoggedEvent.BusinessDate là canonical DateOnly bất biến: consume nguyên văn;
+  CreatedAt/OccurredOn/replay/receive time không đổi ngày ăn. Meal + metric cùng nhãn
+  DateOnly chỉ tạo một active day.
+- Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
+  không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
+  phải có migration/rebucketing và phê duyệt liên service.
+- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- Q02 functional Height integration đã verified trong lượt hiện hành; service-caller auth còn BLOCKED. Q10 Weight không đổi.
+
+Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
+Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
+cho nội bộ Progress; compatibility liên service vẫn PENDING.
 
 **Nhánh**: `feat/progress-service` | **Feature**: `qbao-001-progress-service`
 **Ngày**: 2026-10-24 | **Đầu vào**: [spec.md](spec.md)
@@ -46,8 +76,8 @@ Constitution. Bảng là kiểm tra thiết kế, không phải evidence runtime
 | Nguyên tắc | Cách đáp ứng thiết kế | Trạng thái |
 | --- | --- | --- |
 | I — ownership | Chỉ progress_db, không FK/import/DB access service khác. | Đạt ở tài liệu và thực tế. |
-| II — gRPC | Q02 hướng gRPC read profile/height đã APPROVED (chiều cao decimal, BMI snapshot bất biến); schema Protobuf chi tiết PENDING trước Phase 5; không lách HTTP. | Đã thống nhất hướng kiến trúc; schema PENDING trước Phase 5. |
-| III — RabbitMQ | Versioned contract trước consumer; outbox cùng transaction, inbox/projection atomic, idempotent. | Meal BLOCKED Q09. |
+| II — gRPC | Q02 GetUserHeight (Identity → Progress) functional integration DONE (secure readiness BLOCKED). Q10 GetLatestWeight (Diet → Progress) APPROVED theo ADR 003, Protobuf canonical contracts/progress/v1/progress.proto, Progress gRPC Server đã triển khai trên cổng nội bộ HTTP/2 50051; 20 integration cases + E2E flow verified. | Đã thống nhất Q02 & Q10; gRPC server READY. |
+| III — RabbitMQ | Diet PR #12 đã MERGED vào main; canonical event MealLoggedEvent, topology longevia.events / diet.meal.logged / progress.meal-activity. Consumer/inbox và đối soát JSON snapshot v1 đã kiểm chứng đầy đủ. | Đã tích hợp producer merged từ main; replay & đối soát sẵn sàng. |
 | IV — contract-first | Proposal ở feature/contracts, không đổi canonical; Nguyên/Huy phải thống nhất và approve (không có role Technical Lead). | Đã thống nhất Q02 và Q08-A. |
 | V — verified gates | Negative control, scoped tests, E2E thật và gate theo AGENTS §2; đỏ dừng commit/push. | Phase 2 đã pass 100% gates. |
 | EF/config/observability | Migration Code First khi sang phase sau; fail-start; public key env, health, metrics chuẩn. | Phase 2 initializer đã kiểm chứng. |
@@ -91,8 +121,7 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 - Water append/SUM tránh lost update; sleep xử lý instant đầy đủ. Ngày/zone Q01
   phải dùng thống nhất trong body activity, water, sleep và meal projection.
 - MealLog.Date là DateOnly client cấp; CreatedAt là UTC, summary default UTC.
-  Streak dùng business date, không publish/receive timestamp. User timezone của
-  metric phải tương thích DateOnly Diet; không tự coi UTC là product policy.
+  Streak dùng business date, không publish/receive timestamp. Metric dùng UTC calendar theo Bảo phê duyệt MVP; Diet DateOnly giữ nguyên, Huy xác nhận frontend còn PENDING.
 - BMI lưu height/BMI/category snapshot + provenance tại ghi (BR-05), không tính lại khi GET.
 - Dashboard đọc snapshot và union active day; current/best và window Q06 phải duyệt.
   Không ship metrics-only streak như hoàn chỉnh hoặc đoán số 0 khi meal thiếu.
@@ -119,6 +148,12 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 | Bảo/product | Q01, Q03–Q07, Q08-B, Q09–Q10 và ADR direction mới giữa các affected service owners. | Chặn task liên quan trước code; danh sách đầy đủ ở research. |
 
 ## Shared Files & Conflict Hotspots
+
+Corrective PR #13 tiếp tục quyền Progress infrastructure đã cấp: chỉ block service
+`progress` trong `deployments/docker-compose.yml` thêm explicit RabbitMQ settings
+và dependency health; không sửa queue/service Diet/Worker hoặc canonical contract.
+Không cần package/solution/migration mới; Testcontainers core hiện có cung cấp
+container RabbitMQ thật. Các test bên ngoài cho PR #12 chỉ chạy ở archive tạm.
 
 ### Quyền thực thi Phase 2 — 2026-10-25
 
@@ -182,9 +217,9 @@ cao hơn câu hướng dẫn cũ còn trong plan template. Không đổi .agents
 1. Phase 2 — Foundation & Persistence: hoàn thành skeleton/persistence/observability/auth guard;
    Q08-A JWT policy đã APPROVED, Progress guard đạt yêu cầu bảo mật độc lập, gates xanh 100%, T001–T008 DONE.
 2. Phase 3 — Fasting: Q08-A đã approved; Q03 và Q08-B (resource ownership và error policy) cần được quyết định trước/cùng khi triển khai; concurrency, retries, current.
-3. Phase 4 — Water & Sleep: Chờ Q01/Q05 và Q08-B duyệt; append nước, sleep qua đêm và validation.
+3. Phase 4 — Water & Sleep: Q01 UTC MVP được Bảo approve; Q05/Q08-B theo quyết định hiện hành; append nước, sleep qua đêm và validation.
 4. Phase 5 — Body Metrics & BMI: Q02 hướng gRPC read đã APPROVED (height decimal theo PR #10);
-   chờ canonical RPC schema trong identity.proto, runtime provider implementation, và Q01/Q04/Q07/Q08-B;
+   chờ canonical RPC schema trong identity.proto, runtime provider implementation, và Q04/Q07/Q08-B (Q01 UTC MVP đã approve);
    T038 theo dõi Q10 độc lập, không biến BMR/TDEE thành Progress core.
 5. Phase 6 — Dashboard, Streaks & Integration: chờ Q06/Q09 và Diet contract/bootstrap,
    tests real broker/DB, load test, source/contract sync và guides.
@@ -198,7 +233,33 @@ chép lại bảng gate. (Lưu ý lịch sử Phase 1: khi chưa có test projec
 
 Không có vi phạm Constitution cần ngoại lệ. Projection/retry receipt chỉ thêm khi
 contract được duyệt, tránh framework/dedup tầng riêng không có nhu cầu.
-Ở thời điểm hiện tại: Q08-A JWT policy và Q02 transport đã APPROVED. Các câu hỏi Q01,
+Ở thời điểm hiện tại: Q08-A JWT policy và Q02 transport đã APPROVED. Q01 UTC MVP đã APPROVED nội bộ Progress. Các câu hỏi
 Q02 protobuf schema, Q03–Q07, Q08-B, Q09–Q10 giữ PENDING cho các phase sau tương ứng.
 Phase 2 foundation & persistence đã hoàn thành triển khai và kiểm chứng toàn diện (T001–T008 DONE).
 Hai hướng dẫn handoff được cập nhật khi các phase thực sự thay đổi surface tích hợp.
+
+## Q02 — Height gRPC tích hợp PR #14 (2026-10-26)
+
+Đồng bộ origin/main c679b6f174a3cfcdfc0097b03ee81b3729bb72e2 bằng merge không rewrite
+14 commit Progress. Canonical proto do Identity sở hữu, chỉ đọc/codegen Client.
+Shared Files & Conflict Hotspots bổ sung: Progress.Infrastructure.csproj/DI,
+Progress Dockerfile, Progress block deployments/docker-compose.yml và ci.yml
+(bước Docker build Progress). Dùng các version gRPC CPM hiện hữu, không đổi
+Directory.Packages.props, solution, proto hoặc implementation Identity.
+
+Client singleton/channel DI-reused, options IdentityGrpc:Address bắt buộc và
+DeadlineMilliseconds mặc định 2000 (50–10000), không application retry. Chia 100m,
+validate height 50.00–250.00. Diagnostic status string nội bộ; cancellation truyền
+xuyên request. Lỗi missing/profile/transport giữ 422/404/503; INTERNAL,
+INVALID_ARGUMENT hoặc contract-invalid thành integration failure 502 an toàn.
+
+Kiểm chứng thật: process Identity hiện hành với PG riêng, seed/update qua REST
+của Identity trong fixture; Progress JWT API dùng client HTTP/2 thật và PG riêng.
+Không reference Identity assemblies/source từ Progress. Controlled gRPC server
+chỉ cho optional-unset/fault/deadline/cancellation, không thay IBodyProfileProvider.
+
+ADR 001 §2.2 cho phép network trust, không có caller identity/mTLS/token service.
+Provider không RequireAuthorization; không đánh đồng JWT frontend với service
+identity. Theo yêu cầu owner hiện hành, chức năng tiếp tục nhưng secure readiness
+BLOCKED tới khi Bảo/Nguyên chốt hoặc triển khai authenticated trust model.
+Hotspot CPM cập nhật: Directory.Packages.props thêm Google.Protobuf 3.35.1, đúng version transitive Identity đang restore. Client codegen cần protobuf runtime riêng; Grpc.Net.Client không kéo runtime này. Không đổi version gRPC hiện hữu.

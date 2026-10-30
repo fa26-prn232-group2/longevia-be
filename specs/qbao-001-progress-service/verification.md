@@ -1,3 +1,13 @@
+# CI corrective đã verified — 2026-10-31
+
+- Source corrective commit: `a4748db0fa815462fda2f1a1ccec6199f4c0aa5a` (`fix(progress): correct weight grpc precision and e2e verification`). Đây là revision code đã được kiểm chứng cả local lẫn hai CI; commit ghi evidence sau đó chỉ sửa tài liệu/metadata, không đổi C# hay contract.
+- [Push CI41138789477](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138789477): SUCCESS; [PR CI41138795748](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138795748): SUCCESS. Đã đối chiếu headSha chính xác và đọc logs, không dựa vào CI cũ.
+- Cả hai run đều thực thi thành công `make check` và step Build Progress image with canonical Identity proto; image step không skip. Logs xác nhận full Release build0 warnings/errors,829 tests PASS/0 skip và vulnerable scan include-transitive27 projects sạch. Counts theo assembly khớp bảng local bên dưới.
+- PR #13 vẫn OPEN/DRAFT, mergeable; không merge hay tự mark Ready for Review. Progress-owned acceptance đã đạt và đủ điều kiện human merge review, trong khi production replay/completeness và Q01 acknowledgment vẫn external pending.
+- HEAD cuối sau commit tài liệu phải được đối chiếu lại với Push/PR CI; kết quả exact final SHA/URLs được cập nhật tại mô tả PR và báo cáo cuối, không suy từ run của commit trước.
+
+---
+
 # Corrective cuối PR #13 — local gates đã xanh (2026-10-31)
 
 ## Revision và phạm vi bằng chứng
@@ -47,7 +57,7 @@
 
 ## Readiness và trách nhiệm external
 
-- Progress-owned local acceptance đã verified. Commit/push corrective và cả Push/PR CI đúng published SHA còn phải được kiểm tra; không dùng CI cũ hay local PASS để suy CI PASS. PR #13 giữ OPEN/DRAFT, không merge/Ready for Review tự động. Exact published SHA/CI được ghi ở mô tả PR và báo cáo sau push.
+- Progress-owned acceptance đã verified local và cả hai CI đúng source corrective commit nêu phía trên. Không dùng CI cũ hay local PASS để suy CI PASS. PR #13 giữ OPEN/DRAFT, không merge/Ready for Review tự động. Exact published SHA/CI được ghi ở mô tả PR và báo cáo sau push.
 - Huy: Diet Weight client/snapshot, Q01 acknowledgment vẫn PENDING, historical replay/outbox drain và snapshot reconciliation trên môi trường rollout. Q10 approval không thay thế Q01 approval.
 - Nguyên: Shared Auth follow-up theo quyết định nhóm; caller trust nội bộ vẫn ADR001 Compose policy, không tuyên bố user JWT authorization trên Weight RPC.
 - Duy: phối hợp hạ tầng/rollout, kiểm tra mạng và Dashboard completeness. Production historical replay/completeness chưa được xác minh; fixture PASS không thay production evidence.

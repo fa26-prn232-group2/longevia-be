@@ -157,12 +157,12 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T052 **DONE — RUNTIME VERIFIED151/151** — Bộ test Weight đã có source; test cũ seed thẳng DB không phải Identity E2E. Corrective thêm real Identity/JWT HTTP/PostgreSQL/HTTP2 chain, regression timestamp 7 chữ số và lỗi DB khi server vẫn chạy; Đã chạy xanh trên PostgreSQL/HTTP2 thật, bao gồm Identity provider thật.
 - [x] T053 **DONE — PHẠM VI FIXTURE/RUNBOOK** — Producer Diet PR #12 đã merge; snapshot/checksum/reconcile có bằng chứng fixture và runbook. Không chứng minh historical replay hay Dashboard completeness của production; rollout là trách nhiệm external.
 - [x] T054 **DONE** — Đối chiếu quyết định Q01 UTC (nội bộ Progress approved; cross-service Huy acknowledgment pending); hoàn thiện backend-integration-guide.md, frontend-guide.md, research.md, plan.md và handoff cho Huy.
-- [ ] T055 **CORRECTIVE — CHỜ FULL GATES VÀ CI** — HEAD `74cea4b` có Push/PR CI FAILURE; Docker image step bị skip. Corrective chỉ được commit/push sau full gate xanh, rồi kiểm tra cả hai CI đúng SHA; giữ PR #13 Draft, không merge.
+- [x] T055 **DONE — GATES VÀ CI VERIFIED** — HEAD cũ74cea4b đỏ, image skip; source corrective a4748db đã pass local và Push41138789477/PR41138795748, gồm make check829/829, vulnerability và image step thực chạy. Giữ PR #13 Draft, không merge; CI HEAD tài liệu cuối đối chiếu trong PR/report.
 
 ## Corrective cuối — 2026-10-31
 
 - [x] T056 — Reload entity sau SaveChanges bằng Clear + AsNoTracking; timestamp assertion dùng giá trị PostgreSQL chính xác, không tolerance hay đổi domain timestamp. Audit as-of equality dùng persisted timestamp; unit thuần bộ nhớ và UTC fixtures nguyên giây không bị mismatch này.
 - [x] T057 — Provider phân biệt absent/complete/inconsistent; sanitize INTERNAL, validate protobuf timestamp trước query, giữ cancellation và RpcException. Negative control 10 cases đỏ trên code cũ, sau sửa bộ unit xanh.
 - [x] T058 — Chain Identity thật PASS; negative control đỏ đúng lỗi,3 lượt regression PostgreSQL2/2 PASS; immutable BMI175/180cm, historical as-of và hai user verified.
-- [ ] T059 — Local lint/check829/829, Docker image, Compose và EF runtime/CLI PASS; chờ Push + PR CI đúng corrective SHA rồi ghi kết quả cuối.
+- [x] T059 — Local lint/check829/829, Docker image, Compose và EF runtime/CLI PASS; Push41138789477 + PR41138795748 đúng source corrective a4748db SUCCESS, logs/image/vulnerability đã xác minh. Commit evidence chỉ đổi tài liệu; exact final HEAD/CI được kiểm tra tiếp và ghi tại PR/report.
 - Không đổi HTTP DTO, event payload hay proto. Q10 approval không thay thế Huy acknowledgment Q01 (vẫn PENDING); trust nội bộ giữ ADR 001, không bổ sung JWT authorization cho Weight RPC.

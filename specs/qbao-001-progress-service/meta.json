@@ -7,6 +7,6 @@
   "services": [
     "Progress"
   ],
-  "description": "PR #13 Draft: corrective Weight gRPC local829/829 verified; chờ CI đúng SHA, rollout external còn pending",
+  "description": "PR #13 Draft: corrective Weight gRPC local829/829 và source CI verified; rollout external còn pending",
   "opened_at": "2026-10-24"
 }

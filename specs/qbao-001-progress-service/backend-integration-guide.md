@@ -1,8 +1,8 @@
 # Hướng dẫn tích hợp Backend — Progress Service (Close-Out)
 
-Trạng thái tổng thể: **PROGRESS_OWNED_LOCAL_VERIFIED_PENDING_CI** (2026-10-31).
-- HEAD đã xuất bản: `74cea4bd517148eded4046cd38963375dc6660b9`; Push CI và PR CI đều FAILURE. Không dùng bằng chứng cũ để kết luận HEAD này xanh.
-- Corrective đã chạy PASS chain Identity thật → HTTP JWT Progress → PostgreSQL → Weight HTTP/2; Progress151/151, full solution829/829, image/Compose/EF PASS. Chờ CI của corrective commit, không suy CI từ local. Chi tiết tại [verification.md](verification.md).
+Trạng thái tổng thể: **PROGRESS_OWNED_VERIFIED_PENDING_EXTERNAL_ROLLOUT** (2026-10-31).
+- Source corrective a4748db đã pass Push41138789477 và PR41138795748, gồm829 tests và image build thực thi; HEAD cũ74cea4b FAILURE chỉ là lịch sử. Exact final HEAD/CI được cập nhật tại PR/report.
+- Corrective đã chạy PASS chain Identity thật → HTTP JWT Progress → PostgreSQL → Weight HTTP/2; Progress151/151, full solution829/829, image/Compose/EF PASS. Hai CI đúng source corrective đã SUCCESS; không suy CI từ local. Chi tiết tại [verification.md](verification.md).
 - Chờ rollout phía external: Huy triển khai Diet gRPC client & snapshot, chạy replay & đối soát dữ liệu trên môi trường triển khai thực tế, và Huy xác nhận Q01 UTC.
 
 ---
@@ -18,7 +18,7 @@ Q10 đã chính thức được **PHÊ DUYỆT (APPROVED)** bởi Bảo (Progres
 - **RPC Method**: `rpc GetLatestWeight (GetLatestWeightRequest) returns (GetLatestWeightResponse)`
 - **Địa chỉ kết nối nội bộ**: `http://progress:50051` (HTTP/2 cleartext trong mạng `data_net`).
 - **Bounded Deadline đề xuất**: 2000ms.
-- **Trạng thái Server Progress**: **LOCAL VERIFIED / CHỜ CI CORRECTIVE**; test seed trực tiếp DB chỉ chứng minh domain/persistence/Weight RPC, không chứng minh Identity E2E.
+- **Trạng thái Server Progress**: **RUNTIME + CI VERIFIED**; test seed trực tiếp DB chỉ chứng minh domain/persistence/Weight RPC, không chứng minh Identity E2E.
 - **Timestamp**: `measured_at` phải khớp chính xác `LoggedAt` đọc lại từ PostgreSQL (microsecond), không so với entity trước khi reload.
 - **Kết quả thiếu dữ liệu**: `Found=false` → `no_record_found`; `Found=true` thiếu field, weight không dương hoặc source GUID rỗng → sanitized `INTERNAL` và structured integrity log. Timestamp request sai → sanitized `INVALID_ARGUMENT`.
 - **Trách nhiệm của Huy (Diet Service)**:
@@ -109,7 +109,7 @@ Diet PR #12 đã được **MERGED vào main** (commit `4c62273`).
 | Chiều tích hợp | Giao thức | Hợp đồng / Schema | Số lượng RPC / Message / Field | Vai trò Progress | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
 | **Progress → Identity** | gRPC (HTTP/2) | `contracts/identity/v1/identity.proto` | 1 RPC (`GetUserHeight`), 2 Messages, 2 Fields | Client (Consumer) | **DONE & VERIFIED** |
-| **Diet → Progress** | gRPC (HTTP/2) | `contracts/progress/v1/progress.proto` | 1 RPC (`GetLatestWeight`), 3 Messages, 7 Fields | Server (Provider) | **RUNTIME VERIFIED / CHỜ CI CORRECTIVE** |
+| **Diet → Progress** | gRPC (HTTP/2) | `contracts/progress/v1/progress.proto` | 1 RPC (`GetLatestWeight`), 3 Messages, 7 Fields | Server (Provider) | **RUNTIME + CI VERIFIED** |
 | **Diet → Progress** | RabbitMQ (Topic) | `Longevia.Shared.Events.MealLoggedEvent` | 1 Event Class, 6 Fields (`EventId`, `UserId`, `MealLogId`, `BusinessDate`, `CreatedAt`, `OccurredOn`) | Consumer | **DONE & VERIFIED** |
 
 ---

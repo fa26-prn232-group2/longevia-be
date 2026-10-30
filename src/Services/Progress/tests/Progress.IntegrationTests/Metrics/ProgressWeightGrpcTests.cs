@@ -122,7 +122,7 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
         var response = await fixture.Client.GetLatestWeightAsync(new GetLatestWeightRequest
         {
             UserId = userId.ToString(),
-            AsOfUtc = Timestamp.FromDateTimeOffset(timestamp)
+            AsOfUtc = Timestamp.FromDateTimeOffset(log.LoggedAt)
         });
 
         Assert.Equal(GetLatestWeightResponse.ResultOneofCase.Record, response.ResultCase);
@@ -250,26 +250,31 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
     public async Task Case14_GetLatestWeight_MeasuredAtAndSourceMetricId_ExactAccuracy()
     {
         var userId = Guid.NewGuid();
-        var exactTime = new DateTimeOffset(2026, 10, 30, 9, 15, 30, TimeSpan.Zero);
+        var exactTime = new DateTimeOffset(2026, 10, 24, 9, 15, 30, TimeSpan.Zero).AddTicks(2469327);
         var metric = await SeedMetricAsync(userId, 71.00m, 175.00m, exactTime);
 
         var response = await fixture.Client.GetLatestWeightAsync(new GetLatestWeightRequest { UserId = userId.ToString() });
 
         Assert.Equal(metric.Id.ToString(), response.Record.SourceMetricId);
-        Assert.Equal(exactTime, response.Record.MeasuredAt.ToDateTimeOffset());
+        Assert.NotEqual(exactTime, metric.LoggedAt);
+        Assert.Equal(metric.LoggedAt, response.Record.MeasuredAt.ToDateTimeOffset());
     }
 
-    // 15. Database unavailable
+    // 15. Transport unavailable (no server listening)
     [Fact]
-    public async Task Case15_GetLatestWeight_DatabaseUnavailable_ThrowsUnavailable()
+    public async Task Case15_GetLatestWeight_ServerUnreachable_ThrowsUnavailable()
     {
-        using var brokenChannel = GrpcChannel.ForAddress("http://127.0.0.1:1");
+        using var brokenChannel = GrpcChannel.ForAddress("http://127.0.0.1:1", new GrpcChannelOptions
+        {
+            // Fail connection establishment before the RPC deadline, even during parallel fixture startup.
+            HttpHandler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(1) }
+        });
         var brokenClient = new ProgressService.ProgressServiceClient(brokenChannel);
 
         var ex = await Assert.ThrowsAsync<RpcException>(async () =>
             await brokenClient.GetLatestWeightAsync(
                 new GetLatestWeightRequest { UserId = Guid.NewGuid().ToString() },
-                deadline: DateTime.UtcNow.AddSeconds(1)));
+                deadline: DateTime.UtcNow.AddSeconds(10)));
 
         Assert.Equal(StatusCode.Unavailable, ex.StatusCode);
     }
@@ -321,10 +326,9 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
         new ProgressWeightConfigurationTests().Case20_ProductionCompose_NoPublicHostExposure();
     }
 
-    // END-TO-END PROGRESS FLOW:
-    // Identity Height gRPC -> Progress BMI -> Weight gRPC Provider
+    // Partial integration: domain BMI -> PostgreSQL -> real Weight gRPC provider.
     [Fact]
-    public async Task Flow_EndToEnd_IdentityHeight_To_Bmi_To_WeightGrpc()
+    public async Task SeededMetrics_BmiSnapshots_To_WeightGrpc()
     {
         // 1. Seed body metric with real Height & Weight in progress DB
         var userId = Guid.NewGuid();
@@ -332,7 +336,7 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
         var initialHeightCm = 175.00m;
         var initialWeightKg = 70.00m;
 
-        // Metric logged with height from Identity provider and weight
+        // Height is supplied directly to the domain entity in this partial test.
         var initialMetric = await SeedMetricAsync(userId, initialWeightKg, initialHeightCm, now.AddHours(-2));
 
         // BMI: 70 / (1.75 * 1.75) = 22.86
@@ -350,7 +354,7 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
         Assert.Equal(initialMetric.Id.ToString(), weightResponse1.Record.SourceMetricId);
         Assert.Equal(initialMetric.LoggedAt, weightResponse1.Record.MeasuredAt.ToDateTimeOffset());
 
-        // 3. User updates height in Identity (to 180cm) and logs new weight (72kg)
+        // 3. Seed a second snapshot with a different height and weight.
         var updatedHeightCm = 180.00m;
         var updatedWeightKg = 72.00m;
         var secondMetric = await SeedMetricAsync(userId, updatedWeightKg, updatedHeightCm, now.AddHours(-1));
@@ -383,6 +387,7 @@ public sealed class ProgressWeightGrpcTests(ProgressWeightGrpcFixture fixture)
         var log = BodyMetricLog.Create(userId, loggedAt, weightKg, heightCm);
         db.BodyMetricLogs.Add(log);
         await db.SaveChangesAsync();
-        return log;
+        db.ChangeTracker.Clear();
+        return await db.BodyMetricLogs.AsNoTracking().SingleAsync(x => x.Id == log.Id);
     }
 }

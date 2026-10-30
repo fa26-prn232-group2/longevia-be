@@ -12,7 +12,8 @@ using Progress.Application.Features.Metrics;
 
 namespace Progress.IntegrationTests.Metrics;
 
-public sealed class HeightGrpcTests(IdentityHeightFixture fixture) : IClassFixture<IdentityHeightFixture>
+[Collection("Actual Identity height")]
+public sealed class HeightGrpcTests(IdentityHeightFixture fixture)
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
     private static object Metric(Guid? forgedUser = null) => new

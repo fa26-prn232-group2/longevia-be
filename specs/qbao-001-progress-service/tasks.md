@@ -154,7 +154,15 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T049 **DONE** — Đồng bộ nhánh main (merge Diet PR #12, commit 4c62273) vào feat/progress-service an toàn, giải quyết xung đột MealLoggedEvent theo canonical main, bảo toàn 100% chức năng Progress.
 - [x] T050 **DONE** — Ban hành ADR 003 (docs/decisions/003-diet-to-progress-weight-grpc.md) ghi nhận phê duyệt chính thức Q10 giữa Bảo (Progress) và Huy (Diet); cập nhật contracts/progress/v1/progress.proto và README.md với ngữ nghĩa as-of clamping, lọc số đo tương lai, ordering tất định, numeric precision int32 x100, absence vs error handling.
 - [x] T051 **DONE** — Triển khai ProgressGrpcService (src/Services/Progress/Progress.Api/Grpc/ProgressGrpcService.cs), Kestrel HTTP/2 listener trên cổng 50051 (PROGRESS:GRPC_PORT), tích hợp DI AddGrpc() và MapGrpcService(), cập nhật Dockerfile bao gồm contracts/progress/.
-- [x] T052 **DONE** — Xây dựng bộ kiểm thử Weight gRPC toàn diện (ProgressWeightGrpcTests.cs & ProgressWeightConfigurationTests.cs) bao phủ đủ 20 test cases bắt buộc và luồng End-to-End Progress flow (Identity Height gRPC -> Progress BMI snapshot bất biến -> Progress Weight gRPC).
-- [x] T053 **DONE** — Tích hợp và kiểm chứng producer merged từ Diet PR #12, xuất snapshot JSON v1, SHA-256 verification và đối soát cơ sở dữ liệu progress_db; ban hành Runbook 4 bước vận hành cho Huy, Bảo, Duy.
+- [x] T052 **DONE — RUNTIME VERIFIED151/151** — Bộ test Weight đã có source; test cũ seed thẳng DB không phải Identity E2E. Corrective thêm real Identity/JWT HTTP/PostgreSQL/HTTP2 chain, regression timestamp 7 chữ số và lỗi DB khi server vẫn chạy; Đã chạy xanh trên PostgreSQL/HTTP2 thật, bao gồm Identity provider thật.
+- [x] T053 **DONE — PHẠM VI FIXTURE/RUNBOOK** — Producer Diet PR #12 đã merge; snapshot/checksum/reconcile có bằng chứng fixture và runbook. Không chứng minh historical replay hay Dashboard completeness của production; rollout là trách nhiệm external.
 - [x] T054 **DONE** — Đối chiếu quyết định Q01 UTC (nội bộ Progress approved; cross-service Huy acknowledgment pending); hoàn thiện backend-integration-guide.md, frontend-guide.md, research.md, plan.md và handoff cho Huy.
-- [x] T055 **DONE** — Chạy toàn bộ quality gates (format, build Release, unit tests, vulnerability scan), commit theo Conventional Commits và xuất bản PR #13 giữ Draft.
+- [ ] T055 **CORRECTIVE — CHỜ FULL GATES VÀ CI** — HEAD `74cea4b` có Push/PR CI FAILURE; Docker image step bị skip. Corrective chỉ được commit/push sau full gate xanh, rồi kiểm tra cả hai CI đúng SHA; giữ PR #13 Draft, không merge.
+
+## Corrective cuối — 2026-10-31
+
+- [x] T056 — Reload entity sau SaveChanges bằng Clear + AsNoTracking; timestamp assertion dùng giá trị PostgreSQL chính xác, không tolerance hay đổi domain timestamp. Audit as-of equality dùng persisted timestamp; unit thuần bộ nhớ và UTC fixtures nguyên giây không bị mismatch này.
+- [x] T057 — Provider phân biệt absent/complete/inconsistent; sanitize INTERNAL, validate protobuf timestamp trước query, giữ cancellation và RpcException. Negative control 10 cases đỏ trên code cũ, sau sửa bộ unit xanh.
+- [x] T058 — Chain Identity thật PASS; negative control đỏ đúng lỗi,3 lượt regression PostgreSQL2/2 PASS; immutable BMI175/180cm, historical as-of và hai user verified.
+- [ ] T059 — Local lint/check829/829, Docker image, Compose và EF runtime/CLI PASS; chờ Push + PR CI đúng corrective SHA rồi ghi kết quả cuối.
+- Không đổi HTTP DTO, event payload hay proto. Q10 approval không thay thế Huy acknowledgment Q01 (vẫn PENDING); trust nội bộ giữ ADR 001, không bổ sung JWT authorization cho Weight RPC.

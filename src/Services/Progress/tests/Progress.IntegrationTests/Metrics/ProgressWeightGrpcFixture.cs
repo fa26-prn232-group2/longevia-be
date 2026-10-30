@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Progress.Api.Grpc;
 using Progress.Application;
 using Progress.Infrastructure;
@@ -17,23 +18,28 @@ namespace Progress.IntegrationTests.Metrics;
 
 public sealed class ProgressWeightGrpcFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
-        .WithDatabase("progress_grpc_test")
-        .WithUsername("test_user")
-        .WithPassword("test_password")
-        .Build();
+    private PostgreSqlContainer? _postgres;
 
     private WebApplication? _app;
     private GrpcChannel? _channel;
+    public string? ExternalConnectionString { get; init; }
+    public bool SkipMigration { get; init; }
+    public ILoggerProvider? LogProvider { get; init; }
 
     public int GrpcPort { get; private set; }
     public ProgressService.ProgressServiceClient Client { get; private set; } = null!;
     public IServiceProvider Services => _app?.Services ?? throw new InvalidOperationException("Fixture not initialized.");
-    public string ConnectionString => _postgres.GetConnectionString();
+    public string ConnectionString => ExternalConnectionString ?? _postgres?.GetConnectionString()
+        ?? throw new InvalidOperationException("Fixture not initialized.");
 
     public async Task InitializeAsync()
     {
-        await _postgres.StartAsync();
+        if (ExternalConnectionString is null)
+        {
+            _postgres = new PostgreSqlBuilder("postgres:17-alpine")
+                .WithDatabase("progress_grpc_test").WithUsername("test_user").WithPassword("test_password").Build();
+            await _postgres.StartAsync();
+        }
         GrpcPort = FreePort();
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -48,15 +54,17 @@ public sealed class ProgressWeightGrpcFixture : IAsyncLifetime
         });
 
         builder.Services.AddProgressApplication();
+        if (LogProvider is not null) builder.Logging.AddProvider(LogProvider);
         builder.Services.AddGrpc();
         builder.Services.AddDbContext<ProgressDbContext>(options =>
-            options.UseNpgsql(_postgres.GetConnectionString()));
+            options.UseNpgsql(ConnectionString));
         builder.Services.AddScoped<Progress.Application.Abstractions.IBodyMetricRepository, Progress.Infrastructure.Repositories.BodyMetricRepository>();
 
         _app = builder.Build();
 
-        await using (var scope = _app.Services.CreateAsyncScope())
+        if (!SkipMigration)
         {
+            await using var scope = _app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
             await db.Database.MigrateAsync();
         }
@@ -80,7 +88,7 @@ public sealed class ProgressWeightGrpcFixture : IAsyncLifetime
             await _app.StopAsync();
             await _app.DisposeAsync();
         }
-        await _postgres.DisposeAsync();
+        if (_postgres is not null) await _postgres.DisposeAsync();
     }
 
     private static int FreePort()

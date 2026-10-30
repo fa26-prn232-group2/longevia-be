@@ -1,3 +1,121 @@
+# Corrective cuối PR #13 — local gates đã xanh (2026-10-31)
+
+## Revision và phạm vi bằng chứng
+
+- HEAD bắt đầu: `74cea4bd517148eded4046cd38963375dc6660b9`; base: `4c62273dd04d1f54423f002ec3ac32459ebb0732`. Đây là bằng chứng cho source corrective chuẩn bị commit trên parent đó; CI của HEAD cũ vẫn FAILURE, không suy kết quả CI từ local.
+- SHA-256 evidence của 10 file C# corrective (đường dẫn có thứ tự + NUL + nội dung LF): `ace6287db85775dd9c14adf88170144b5d3e5ea78fde9f59466e53dcea24cf5e`. Đã đối chiếu từng file với snapshot thực sự chạy gate; không còn negative-control mutation trong source.
+- Không đổi canonical proto, ADR 003/Q10, Identity/Diet implementation, migration hay authentication. Contract vẫn 1 RPC, 3 messages, 7 fields; as-of clamp/future exclusion/order LoggedAt DESC, Id DESC/x100/oneof giữ nguyên.
+
+## Corrective và kiểm chứng thật
+
+- .NET giữ tick100ns; PostgreSQL timestamptz lưu microsecond. CI cũ lệch7 ticks. Seed helper hiện SaveChanges → Clear tracker → query AsNoTracking, nên MeasuredAt so chính xác với LoggedAt đã persisted. Không tolerance, không round domain hay sửa timestamp response production.
+- Case14 dùng timestamp cố định `.2469327`, assert input khác persisted rồi so exact gRPC/DB; Case07 as-of equality cũng lấy timestamp persisted. Test cũ seed trực tiếp DB đổi tên `SeededMetrics_BmiSnapshots_To_WeightGrpc`, không nhận là Identity E2E.
+- `IdentityToWeightGrpcTests`: actual Identity entry point + EF repository/PostgreSQL riêng, production BodyProfileProvider, Progress HTTP API/JWT, Progress DB riêng, production Weight service trên Kestrel HTTP/2. Đã thực sự chạy và PASS. 70kg/175cm → BMI22.86 NormalWeight; profile đổi180cm, metric72kg → BMI22.22; snapshot cũ175cm/22.86 bất biến; latest7200 và historical7000 đúng source ID/timestamp DB. Hai user/forged body IDs không trộn height/weight.
+- HeightGrpcTests và chain mới dùng chung IdentityHeightCollection, tránh hai fixture cùng build/start provider. Log startup failure chỉ chứa loại exception/resource marker, không dump cấu hình/secret.
+- `WeightDatabaseFailureTests`: reachable HTTP/2 server + actual WeightQueryService/repository/Npgsql kết nối PostgreSQL endpoint không khả dụng. INVALID_ARGUMENT trước/sau fault chứng minh listener sống; query thật nhận UNAVAILABLE, không no_record_found; response và structured provider log không chứa password/connection string/raw exception. PASS scoped, Progress suite và full solution. Không mock query hay stop DB dùng chung.
+- Case15 giờ mang tên ServerUnreachable. ConnectTimeout1s nằm trước RPC deadline10s để connection failure không bị deadline1s cũ che khi fixture startup nặng; không đổi production deadline Q10. DB outage chạy collection riêng để preflight không cạnh tranh fixture Docker đang khởi động.
+- Found=false → no_record_found. Found=true thiếu field, weight không dương hoặc source GUID rỗng → structured integrity error và sanitized INTERNAL. Timestamp protobuf malformed → safe INVALID_ARGUMENT trước query. Unexpected/provider ArgumentException → sanitized INTERNAL; cancellation/deadline/RpcException giữ mapping.
+
+## Negative controls và độ ổn định
+
+- 10 unit cases mới đỏ đúng lý do với provider cũ, rồi toàn bộ Progress unit108/108 xanh sau sửa.
+- Negative control PostgreSQL: trong snapshot riêng, tạm trả entity chưa reload; Case14 đỏ tại Assert.NotEqual vì entity vẫn giữ input. Khôi phục source rồi chạy3 lượt, mỗi lượt Case14 + partial snapshot/Weight flow:2/2 PASS,0 skip. Không sleep để làm test pass.
+- Nhóm targeted gồm regression/partial flow, hai Identity E2E và outage:5/5 PASS. Progress integration đầy đủ151/151 PASS; full solution sau đó829/829 PASS.
+
+## Gates cuối cục bộ
+
+| Assembly | PASS | FAIL | SKIP |
+| --- | ---: | ---: | ---: |
+| Progress.UnitTests | 108 | 0 | 0 |
+| Progress.IntegrationTests | 151 | 0 | 0 |
+| Diet.UnitTests | 12 | 0 | 0 |
+| Diet.IntegrationTests | 23 | 0 | 0 |
+| Identity.UnitTests | 67 | 0 | 0 |
+| Identity.IntegrationTests | 16 | 0 | 0 |
+| Recommendation.UnitTests | 372 | 0 | 0 |
+| Recommendation.IntegrationTests | 64 | 0 | 0 |
+| Worker.UnitTests | 16 | 0 | 0 |
+| Tổng | 829 | 0 | 0 |
+
+- GNU Make không có; chạy đúng prerequisites Makefile: lint = full format verify + Debug build --no-restore -warnaserror; check = full format verify + Release build --no-restore -warnaserror + full Release tests không filter + vulnerable scan include-transitive. Tất cả PASS; Debug/Release0 warnings/errors,27 projects không có known vulnerable packages.
+- Checkout Windows autocrlf có CRLF, source blobs LF. Chạy gate trên archive LF của HEAD + overlay corrective trên ổ D, xác minh code identity như trên; không normalize file ngoài phạm vi trong checkout chính. Local process env DOTNET_PROCESSOR_COUNT=2, MSBUILDDISABLENODEREUSE=1, DOTNET_CLI_USE_MSBUILD_SERVER=0, TEMP/TMP ở D để tránh memory/disk pressure; không đổi cấu hình máy, không skip test hay nới assertion.
+- Docker daemon29.7.2 đã khởi động lại sau backup các thư mục socket runtime được developer cho phép. Builder cache9.853GB đã được prune theo phê duyệt riêng, không xóa image/container/volume. Lượt môi trường lỗi trước đó được giữ lịch sử phía dưới.
+- Docker build `src/Services/Progress/Dockerfile` từ checkout thật, tag `longevia-progress:corrective-pr13`: PASS, image export/unpack hoàn tất. Đây là build image, không phải production deployment.
+- Compose `--env-file .env.example -f deployments/docker-compose.yml config --quiet`: PASS; máy không có `.env` thật nên không nhận là production config/deployment verification.
+- EF CLI Release has-pending-model-changes: PASS. Runtime Height test kiểm tra không pending model change và đúng5 applied migrations trên PostgreSQL: PASS. Không sửa migration cũ.
+- Team registry6 features/ownerqbao: PASS. git diff --check: PASS. RabbitMQ consumer và snapshot reconciliation nằm trong suite151/151, không chỉ compile.
+
+## Readiness và trách nhiệm external
+
+- Progress-owned local acceptance đã verified. Commit/push corrective và cả Push/PR CI đúng published SHA còn phải được kiểm tra; không dùng CI cũ hay local PASS để suy CI PASS. PR #13 giữ OPEN/DRAFT, không merge/Ready for Review tự động. Exact published SHA/CI được ghi ở mô tả PR và báo cáo sau push.
+- Huy: Diet Weight client/snapshot, Q01 acknowledgment vẫn PENDING, historical replay/outbox drain và snapshot reconciliation trên môi trường rollout. Q10 approval không thay thế Q01 approval.
+- Nguyên: Shared Auth follow-up theo quyết định nhóm; caller trust nội bộ vẫn ADR001 Compose policy, không tuyên bố user JWT authorization trên Weight RPC.
+- Duy: phối hợp hạ tầng/rollout, kiểm tra mạng và Dashboard completeness. Production historical replay/completeness chưa được xác minh; fixture PASS không thay production evidence.
+
+## Files corrective
+
+- `specs/qbao-001-progress-service/backend-integration-guide.md`
+- `specs/qbao-001-progress-service/meta.json`
+- `specs/qbao-001-progress-service/pr-description.md`
+- `specs/qbao-001-progress-service/tasks.md`
+- `specs/qbao-001-progress-service/verification.md`
+- `src/Services/Progress/Progress.Api/Grpc/ProgressGrpcService.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/HeightGrpcTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/IdentityHeightFixture.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/ProgressWeightGrpcFixture.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/ProgressWeightGrpcTests.cs`
+- `src/Services/Progress/tests/Progress.UnitTests/Metrics/ProgressGrpcServiceTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/IdentityHeightCollection.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/IdentityToWeightGrpcTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/WeightDatabaseFailureTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/WeightDatabaseFaultCollection.cs`
+
+---
+
+## Lịch sử các lượt trước — không phải kết quả hiện tại
+
+# Corrective PR #13 — bằng chứng hiện tại (2026-10-31)
+
+- HEAD bắt đầu và HEAD remote đã xác minh: `74cea4bd517148eded4046cd38963375dc6660b9`; base `4c62273dd04d1f54423f002ec3ac32459ebb0732`. Corrective đang ở working tree, chưa commit/push vì gate chưa xanh.
+- Push CI: https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41087297414 — FAILURE.
+- PR CI: https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41087310047 — FAILURE. Progress integration 147/148, unit 96/96; image build bị skip và vulnerability target sau test chưa chạy trong make check này.
+- Lỗi timestamp: DateTimeOffset giữ tick 100 ns trong RAM; PostgreSQL lưu microsecond. Sai khác CI 7 ticks. Seed helper hiện SaveChanges → ChangeTracker.Clear → AsNoTracking read; assertion MeasuredAt bằng LoggedAt đã persisted, không tolerance và không sửa timestamp production.
+- Regression Case14 dùng input `.2469327`, chứng minh input khác persisted rồi assert exact gRPC/persisted. As-of equality dùng timestamp persisted. Test domain/persistence cũ đổi tên `SeededMetrics_BmiSnapshots_To_WeightGrpc`, không còn nhận là Identity E2E.
+- `IdentityToWeightGrpcTests` tái sử dụng actual Identity process/EF/PostgreSQL fixture và Progress API JWT/BodyProfileProvider; Weight HTTP/2 đọc cùng Progress DB riêng với Identity. Hai test bao phủ 175cm/70kg → BMI22.86, đổi profile 180cm/72kg → BMI22.22, snapshot cũ, historical as-of và hai users. Chưa runtime PASS vì Docker chưa hoạt động; không tuyên bố actual Identity provider đã được gọi trong chain mới.
+- `WeightDatabaseFailureTests`: server HTTP/2 thật + repository/Npgsql thật với PostgreSQL endpoint không khả dụng; không mock query, không stop shared container. Scoped run và full solution run đều PASS cho test outage: INVALID_ARGUMENT trước/sau fault chứng minh listener sống, DB failure → UNAVAILABLE, safe response và structured warning không chứa secret/connection string. Lượt suite khi Docker lỗi bị timeout ở preflight dưới tải; lượt full solution kế tiếp PASS. Thêm collection không chạy song song với fixture khác để preflight listener độc lập các constructor đang block khi dò Docker; lượt Progress integration cuối sau khi tách collection:3 PASS/148 FAIL/0 skip, outage PASS;148 test phụ thuộc Docker vẫn FAIL.
+- Provider: Found=false → absent; Found=true thiếu field/weight không dương/GUID rỗng → structured integrity error và sanitized INTERNAL. Malformed Timestamp → INVALID_ARGUMENT trước query; provider ArgumentException → sanitized INTERNAL. Cancellation/deadline/RpcException giữ mapping.
+- Negative control: 10 unit cases mới FAIL đúng lý do trên provider cũ; sau sửa full run Progress unit108/108 PASS, gồm empty GUID và transport propagation.
+- Build Debug và Release toàn solution PASS, 0 warning/0 error; SDK 10.0.303. Scan vulnerable + transitive PASS, 27 projects không có known vulnerable packages.
+- `make` không có trên máy; dùng đúng dotnet commands trong Makefile. Checkout Windows có CRLF có sẵn trái `.editorconfig`; full format verify trực tiếp FAIL. Bản sao source LF từ git archive HEAD cộng overlay corrective được dùng để kiểm chứng mà không sửa file ngoài phạm vi; full format verify trên snapshot LF PASS (exit0). Git archive trên máy cũng áp autocrlf, nên đã normalize786 text files trong bản sao; source blob baseline là LF, working tree là CRLF. Không normalize file ngoài phạm vi trong checkout chính.
+- Compose config với `.env` không chạy vì máy thiếu file; dùng `.env.example` + config --quiet PASS (chỉ cấu hình, không chứng minh deploy).
+- Full solution Release đã chạy không filter/skip: Progress integration3 PASS/148 FAIL (151), Progress unit108/108, Diet unit12/12 và integration0/23, Identity unit67/67 và integration0/16, Recommendation unit372/372 và integration0/64, Worker unit16/16. Tổng578 PASS/251 FAIL/0 skip (829). Integration phụ thuộc Docker thất bại do daemon không khả dụng; RabbitMQ/reconciliation runtime chưa verified ở lượt này. EF CLI `migrations has-pending-model-changes` Release PASS: không lệch model/migration; applied migrations trên PostgreSQL chưa verified vì Docker. Docker build đã thử và FAIL trước build vì daemon không khả dụng. Chưa có evidence timestamp reliability lặp nhiều lần.
+- Contract/ADR đã đọc và đối chiếu, không đổi proto, Q10 semantics, Identity/Diet implementation, migrations hay cơ chế authentication.
+- Q01 Huy acknowledgment vẫn PENDING. Huy: Diet client/snapshot, acknowledgment và replay. Nguyên: Shared Auth follow-up theo quyết định nhóm. Duy: rollout/infra phối hợp kiểm tra replay và Dashboard completeness. Production replay/outbox drain/completeness chưa được chứng minh bằng fixture.
+- Kết luận hiện tại: CORRECTIVE, chưa đủ điều kiện human merge review; PR giữ Draft, không merge hay tạo PR mới.
+
+## File corrective chưa commit
+
+- `specs/qbao-001-progress-service/backend-integration-guide.md`
+- `specs/qbao-001-progress-service/meta.json`
+- `specs/qbao-001-progress-service/pr-description.md`
+- `specs/qbao-001-progress-service/tasks.md`
+- `specs/qbao-001-progress-service/verification.md`
+- `src/Services/Progress/Progress.Api/Grpc/ProgressGrpcService.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/ProgressWeightGrpcFixture.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/ProgressWeightGrpcTests.cs`
+- `src/Services/Progress/tests/Progress.UnitTests/Metrics/ProgressGrpcServiceTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/IdentityToWeightGrpcTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/WeightDatabaseFailureTests.cs`
+- `src/Services/Progress/tests/Progress.IntegrationTests/Metrics/WeightDatabaseFaultCollection.cs`
+
+Không có corrective commit hash. HEAD remote vẫn74cea4b; không stage/commit/push khi gate đỏ. PR description đã sửa để thể hiện đúng trạng thái; OPEN/DRAFT được giữ nguyên.
+
+---
+
+## Hồ sơ lịch sử — không phải bằng chứng cho HEAD/corrective hiện tại
+
+Các số liệu, chữ DONE/READY và trạng thái trong phần dưới là ghi nhận các lượt cũ, đã bị kết quả CI phía trên thay thế. Biên dịch test không tương đương runtime PASS; test seed DB không phải Identity E2E; replay fixture không phải production replay. Dùng phần hiện tại phía trên khi đánh giá readiness.
+
 # Q10 — Weight gRPC Provider & Diet Integration Verification (2026-10-30)
 
 ## Revision và Đồng bộ Main

@@ -63,12 +63,21 @@ public sealed class IdentityHeightFixture : IAsyncLifetime
             ["Logging__LogLevel__Default"] = "Warning"
         }) start.Environment[pair.Key] = pair.Value;
         _process = Process.Start(start)!;
-        _ = _process.StandardOutput.ReadToEndAsync();
-        _ = _process.StandardError.ReadToEndAsync();
+        var stdout = _process.StandardOutput.ReadToEndAsync();
+        var stderr = _process.StandardError.ReadToEndAsync();
         var deadline = DateTime.UtcNow.AddSeconds(90);
         while (DateTime.UtcNow < deadline)
         {
-            if (_process.HasExited) throw new InvalidOperationException($"Actual Identity process exited: {_process.ExitCode}.");
+            if (_process.HasExited)
+            {
+                var output = await stdout + await stderr;
+                // Report only exception types/resource markers, never provider configuration or raw logs.
+                var types = System.Text.RegularExpressions.Regex.Matches(output, @"[A-Za-z0-9_.]+Exception")
+                    .Select(x => x.Value).Distinct();
+                var memoryFailure = output.Contains("Out of memory", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("Failed to create CoreCLR", StringComparison.OrdinalIgnoreCase);
+                throw new InvalidOperationException($"Actual Identity process exited: {_process.ExitCode}; exception types: {string.Join(", ", types)}; runtime memory failure: {memoryFailure}.");
+            }
             try { if ((await IdentityHttp.GetAsync("/health")).IsSuccessStatusCode) return; }
             catch (HttpRequestException) { }
             await Task.Delay(100);

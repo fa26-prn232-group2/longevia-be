@@ -6,7 +6,7 @@ Infrastructure triển khai persistence; Api là composition root, tái sử d�
 Hiện có Fasting, Water, Sleep, body metric snapshots/history, Dashboard và meal inbox/projection.
 Height runtime dùng canonical Identity GetUserHeight qua HTTP/2; functional integration
 đã verified, service-caller authentication chưa có nên secure readiness còn BLOCKED.
-Weight RPC vẫn proposal, không công bố toàn feature production-ready.
+Weight gRPC Server đã APPROVED (Q10 / ADR 003) và triển khai chính thức trên cổng HTTP/2 nội bộ 50051.
 
 ## Persistence và khởi động
 
@@ -62,6 +62,22 @@ chiseled không cần curl/shell). Nginx reuse route prefix stripping hiện có
 Prometheus static target progress:8080/metrics. Bảo được developer cấp quyền
 integration Progress vào shared infrastructure; không cần Duy duyệt riêng.
 Kiểm chứng, giới hạn và trạng thái task: ../../specs/qbao-001-progress-service/verification.md.
+
+## Weight gRPC Provider (Q10 / ADR 003)
+
+Progress Service triển khai gRPC server cho contract canonical `contracts/progress/v1/progress.proto`
+(package `longevia.progress.v1`, namespace `Longevia.Progress.Contracts.V1`).
+- Cổng gRPC nội bộ: HTTP/2 trên cổng 50051 (cấu hình qua `PROGRESS:GRPC_PORT`, mặc định 50051).
+- Cổng HTTP/1 REST giữ nguyên trên cổng 8080 (cấu hình qua `PROGRESS:HTTP_PORT`, mặc định 8080).
+- Q10 semantics:
+  - `user_id`: bắt buộc GUID RFC 4122 không rỗng.
+  - `as_of_utc`: tùy chọn; nếu thiếu hoặc ở tương lai thì clamp về server UTC hiện tại (`TimeProvider.GetUtcNow()`).
+  - Lọc bỏ số đo tương lai (`LoggedAt > UtcNow`).
+  - Sắp xếp tất định: `LoggedAt DESC, Id DESC LIMIT 1`.
+  - Cân nặng chuẩn hóa: `int32 weight_kg_x100` (70.50 kg -> 7050).
+  - Phân biệt vắng bản ghi (`no_record_found = true`) và lỗi hệ thống (gRPC status codes `UNAVAILABLE`, `DEADLINE_EXCEEDED`, `INVALID_ARGUMENT`, `INTERNAL`).
+  - Bounded deadline: 2000ms.
+  - Bảo mật: theo ADR 001 §2.2 internal trust domain trên mạng `data_net`. Tuyệt đối không publish cổng 50051 ra host và không route qua Nginx.
 
 ## Corrective PR #13
 

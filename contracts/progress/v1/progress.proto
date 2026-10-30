@@ -6,26 +6,41 @@ option csharp_namespace = "Longevia.Progress.Contracts.V1";
 
 import "google/protobuf/timestamp.proto";
 
-// ProgressService cung cấp các chỉ số theo dõi sức khỏe nội bộ (gRPC) cho các service khác (ví dụ: Diet).
+// ProgressService cung cấp các chỉ số theo dõi tiến độ sức khỏe nội bộ (gRPC) cho các service khác (ví dụ: Diet).
+// Đã được phê duyệt bởi Bảo (Progress Service Owner) và Huy (Diet Service Owner) theo quyết định Q10 / ADR 003.
 service ProgressService {
   // Lấy cân nặng gần nhất của người dùng tính đến thời điểm as_of_utc (Q10).
   rpc GetLatestWeight (GetLatestWeightRequest) returns (GetLatestWeightResponse);
 }
 
 message GetLatestWeightRequest {
-  string user_id = 1;                              // GUID người dùng (bắt buộc)
-  optional google.protobuf.Timestamp as_of_utc = 2; // Mốc thời gian tính đến (nếu không truyền mặc định lấy thời điểm hiện tại của server)
+  // GUID người dùng (bắt buộc, chuỗi GUID RFC 4122 không rỗng).
+  string user_id = 1;
+
+  // Mốc thời gian tính đến (tùy chọn).
+  // Nếu không truyền hoặc truyền mốc trong tương lai, server sẽ clamp về thời điểm server UTC hiện tại.
+  // Các bản ghi có LoggedAt lớn hơn thời điểm server UTC hiện tại sẽ bị loại trừ.
+  optional google.protobuf.Timestamp as_of_utc = 2;
 }
 
 message WeightRecord {
-  int32 weight_kg_x100 = 1;                        // Cân nặng nhân 100 (ví dụ 70.00 kg -> 7000, 68.50 kg -> 6850), tránh sai số float
-  google.protobuf.Timestamp measured_at = 2;       // Thời điểm đo được ghi nhận (LoggedAt)
-  string source_metric_id = 3;                     // ID của bản ghi BodyMetricLog nguồn
+  // Cân nặng tính bằng kg nhân 100 (ví dụ: 70.50 kg -> 7050; 68.25 kg -> 6825) để tránh sai số số thực nhị phân.
+  int32 weight_kg_x100 = 1;
+
+  // Thời điểm đo thực tế được ghi nhận (LoggedAt) của bản ghi nguồn.
+  google.protobuf.Timestamp measured_at = 2;
+
+  // ID của bản ghi BodyMetricLog nguồn (chuỗi GUID).
+  string source_metric_id = 3;
 }
 
 message GetLatestWeightResponse {
   oneof result {
-    WeightRecord record = 1;                       // Có cân nặng hợp lệ tính đến as_of_utc
-    bool no_record_found = 2;                      // Không tìm thấy bản ghi cân nặng nào (true)
+    // Có bản ghi cân nặng hợp lệ tính đến mốc thời gian hiệu lực (effective as-of).
+    WeightRecord record = 1;
+
+    // Người dùng chưa có bản ghi cân nặng nào tại hoặc trước mốc thời gian hiệu lực (true).
+    // Tuyệt đối không trả về 0 để giả lập cân nặng thiếu.
+    bool no_record_found = 2;
   }
 }

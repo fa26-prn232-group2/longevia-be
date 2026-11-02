@@ -71,3 +71,64 @@ không dùng chặn event đến muộn. Chỉ chuyển snapshot cho operator đ
 
 Catalog allergens nullable đã có; không map unknown thành candidate an toàn hoặc
 ngầm nhận diện alias. Candidate/profile provenance vẫn cần thống nhất trước AI.
+
+## Q10 consumer Diet — 2026-11-02
+
+Đã có IWeightProvider/ProgressWeightProvider, deadline 2s, không retry, lấy
+immutable WeightSnapshot; request clamp về thời gian hiện tại phía Diet, server
+vẫn là authority cutoff. Snapshot ghi requestedAsOf, không bịa effectiveAsOf
+vì response proto không có field đó. Manual target không phát sinh dependency.
+Counts proto canonical không đổi: 1 RPC / 3 messages / 7 fields, chỉ codegen client.
+Chưa READY_FOR_BACKEND cho BMR: chưa có profile đầy đủ, calculate-target flow
+và DB snapshot của phép tính. Tests client dùng CallInvoker, chưa chứng minh
+HTTP/2 hoặc deployment E2E.
+
+## Snapshot đã triển khai — 2026-11-02
+
+Đã có factory calculated target, Mifflin-St Jeor và CalculateAsync nối IWeightProvider
+với repository; profile là input nội bộ đã xác thực, chưa nhận từ REST client.
+Migration AddTargetEnergySnapshot thêm nullable columns, giữ target cũ manual.
+Lưu cả input và kết quả bất biến; manual PUT clear snapshot cùng atomic upsert.
+Phần HTTP profile integration vẫn chờ Identity cung cấp đủ BirthDate/Sex/ActivityLevel.
+Timeout -> 504 diet.weight_timeout; unavailable -> 503 diet.weight_unavailable;
+missing -> null ở provider, CalculateAsync trả 422 diet.weight_not_found.
+
+## Meal AI adapter — 2026-11-02
+
+Đã thực hiện IMealRecommendationProvider/MealRecommendationProvider theo
+GetMealRecommendations v1. Không sửa proto Đức. Mapping serving size dùng
+InvariantCulture, decimal calories round AwayFromZero vào int32 wire; kết quả
+REST-ready nội bộ lấy serving/nutrition gốc Diet, không lấy AI estimate để log.
+Codegen file có các RPC khác nhưng adapter chỉ dùng GetMealRecommendations.
+Input profile phải được xác thực và resolve trước; còn chờ Identity full profile.
+Caller truyền deadline còn lại của request; adapter cap2s, chưa chứng minh SLO<3s
+end-to-end. Không có profile/goal mặc định. Chỉ trong mạng nội bộ Compose.
+Empty/capped response giữ safety note/disclaimer, không tạo food ID cho lời khuyên.
+Provider trả 503 diet.ai_unavailable,504 diet.ai_timeout,502 diet.ai_integration_failed.
+Chưa READY cho public meal-AI endpoint và chưa kiểm chứng server AI thật.
+
+## Trạng thái hiện tại — 2026-11-02: profile và facade
+
+Các ghi chú chưa có profile ở phase trước là lịch sử. Diet nay gọi
+Identity.GetUserProfile theo ADR 004; codegen canonical proto gồm optional
+field 5 dietary_preference và repeated field 6 allergies. Field 5 absent nghĩa
+server cũ: BMR vẫn dùng bốn trường cũ, AI fail closed 503 diet.profile_incomplete.
+Provider Identity thay đổi chỉ mapping hai trường đang có, không migration DB.
+
+Diet → Identity: http://identity:50051, config IdentityGrpc:Address; 2 giây,
+không retry, cancellation truyền xuyên. NOT_FOUND →422 diet.profile_not_found;
+UNAVAILABLE →503 diet.profile_unavailable; DEADLINE_EXCEEDED →504
+diet.profile_timeout; dữ liệu sai/lỗi còn lại →502 diet.profile_integration_failed.
+Diet → Progress vẫn Q10 canonical, as-of/snapshot và lỗi riêng giữ nguyên.
+
+POST calculate lưu inputs + BMR/TDEE cùng target; GET AI resolve profile/weight,
+summary ngày UTC, candidate tối đa100 có metadata và đúng ownership; RPC
+Recommendation nhận mealType/goal explicit. Các field calories wire int32 làm
+tròn AwayFromZero; response còn lại decimal giữ summary chính xác. Tổng budget
+AI 2.8s, từng RPC tối đa2s, hủy xuyên mọi await. Không tự retry hoặc fake metadata.
+Response AI phải giữ citations/disclaimer/safetyNote, cho phép abstain rỗng.
+
+Counted sync mới: Identity 2 RPC / 4 message / 9 field (height request1 + response1,
+profile request1 + response6 =9 field tổng; riêng GetUserProfile 7 field request+response).
+REST Diet 8 operation / 6 path / 16 DTO / 100 field (Swagger test).
+Chưa đặt READY_FOR_BACKEND toàn feature khi rollout/live provider chưa kiểm chứng.

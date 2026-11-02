@@ -358,6 +358,62 @@ namespace Diet.Infrastructure.Persistence.Migrations
                     b.ToTable("OutboxState");
                 });
 
+            modelBuilder.Entity("Diet.Domain.Entities.DailyDietTarget", b =>
+                {
+                    b.OwnsOne("Diet.Domain.EnergyCalculation", "Calculation", b1 =>
+                        {
+                            b1.Property<Guid>("DailyDietTargetId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("ActivityFactor")
+                                .HasPrecision(6, 4)
+                                .HasColumnType("numeric(6,4)");
+
+                            b1.Property<int>("AgeYears")
+                                .HasColumnType("integer");
+
+                            b1.Property<decimal>("Bmr")
+                                .HasPrecision(18, 8)
+                                .HasColumnType("numeric(18,8)");
+
+                            b1.Property<DateTimeOffset>("CalculatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<decimal>("HeightCm")
+                                .HasPrecision(5, 2)
+                                .HasColumnType("numeric(5,2)");
+
+                            b1.Property<bool>("IsMale")
+                                .HasColumnType("boolean");
+
+                            b1.Property<Guid>("SourceMetricId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Tdee")
+                                .HasPrecision(18, 8)
+                                .HasColumnType("numeric(18,8)");
+
+                            b1.Property<decimal>("WeightKg")
+                                .HasPrecision(8, 2)
+                                .HasColumnType("numeric(8,2)");
+
+                            b1.Property<DateTimeOffset>("WeightMeasuredAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTimeOffset>("WeightRequestedAsOf")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("DailyDietTargetId");
+
+                            b1.ToTable("daily_diet_targets");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DailyDietTargetId");
+                        });
+
+                    b.Navigation("Calculation");
+                });
+
             modelBuilder.Entity("Diet.Domain.Entities.FoodItem", b =>
                 {
                     b.OwnsOne("Diet.Domain.NutritionValues", "Nutrition", b1 =>

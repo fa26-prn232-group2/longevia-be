@@ -14,3 +14,8 @@ liên service (service khác gọi Identity qua gRPC).
   dữ liệu profile đã lưu không hợp lệ. Caller phải đặt deadline và xử lý status
   gRPC tường minh.
 - Xem [`docs/system-design/contract-purity-pattern.md`](../../../docs/system-design/contract-purity-pattern.md).
+
+- `GetUserProfile` bổ sung optional `dietary_preference` (field 5) và repeated
+  `allergies` (field 6). Field 5 có presence: absent là server cũ chưa cung cấp
+  metadata, không được suy allergies rỗng nghĩa không dị ứng. Khi field 5 present,
+  allergies rỗng là profile đã khai báo không có dị ứng. Diet gọi theo ADR 004.

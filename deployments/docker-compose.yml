@@ -160,6 +160,7 @@ services:
     networks:
       - edge
       - data_net
+      - internal_net
 
   progress:
     build:

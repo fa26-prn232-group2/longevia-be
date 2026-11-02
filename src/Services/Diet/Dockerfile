@@ -1,6 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props ./
+COPY contracts/recommendation/ ./contracts/recommendation/
+COPY contracts/identity/ ./contracts/identity/
+COPY contracts/progress/ ./contracts/progress/
 COPY src/Shared/ ./src/Shared/
 COPY src/Services/Diet/Diet.Domain/ ./src/Services/Diet/Diet.Domain/
 COPY src/Services/Diet/Diet.Application/ ./src/Services/Diet/Diet.Application/

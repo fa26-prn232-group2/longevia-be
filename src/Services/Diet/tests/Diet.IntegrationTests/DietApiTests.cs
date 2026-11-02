@@ -135,6 +135,8 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
     [InlineData("PUT", "/targets/me")]
     [InlineData("POST", "/meals")]
     [InlineData("GET", "/meals/daily-summary")]
+    [InlineData("POST", "/targets/me/calculate")]
+    [InlineData("GET", "/meals/ai-recommendations?mealType=Lunch&goal=Maintain")]
     public async Task Endpoints_WithoutToken_ReturnUnauthorized(string method, string route)
     {
         using var client = factory.CreateClient();
@@ -176,23 +178,24 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
     }
 
     [Fact]
-    public async Task ObservabilityAndSwagger_ExposeMetricsAndSixBusinessOperations()
+    public async Task ObservabilityAndSwagger_ExposeMetricsAndEightBusinessOperations()
     {
         using var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
         Assert.Contains("http_server", await client.GetStringAsync("/metrics"));
         using var swagger = JsonDocument.Parse(await client.GetStringAsync("/swagger/v1/swagger.json"));
         var paths = swagger.RootElement.GetProperty("paths");
-        Assert.Equal(6, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
+        Assert.Equal(8, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
             !x.Name.StartsWith("/alive") && !x.Name.StartsWith("/metrics")).Sum(x => x.Value.EnumerateObject().Count()));
         var schemaNames = new[]
         {
             "CreateFoodRequest", "UpdateTargetRequest", "LogMealRequest", "LogMealItemRequest",
             "FoodResponse", "FoodPageResponse", "TargetResponse", "MealResponse", "MealItemResponse",
             "DailySummaryResponse", "MacroSummary", "MacroProgress", "MealSummary",
+            "MealRecommendationsResponse", "MealSuggestionResponse", "MealCitationResponse",
         };
         var schemas = swagger.RootElement.GetProperty("components").GetProperty("schemas");
-        Assert.Equal(75, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+        Assert.Equal(100, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
     }
 
     private static async Task<FoodResponse> CreateFood(HttpClient client)

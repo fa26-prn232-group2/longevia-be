@@ -17,6 +17,7 @@ của service khác.
 
 - Client → **Nginx** → Identity / Diet / Progress (HTTP).
 - **Diet → Recommendation** qua **gRPC** (nội bộ).
+- **Diet → Identity** qua **gRPC** (profile BMR/TDEE và AI, [ADR 004](../../decisions/004-diet-to-identity-profile-grpc.md)).
 - **Progress → Identity** qua **gRPC** (nội bộ, lấy chiều cao `GetUserHeight`).
 - **Diet → Progress** qua **gRPC** (nội bộ, lấy cân nặng gần nhất `GetLatestWeight` — xem [ADR 003](../../decisions/003-diet-to-progress-weight-grpc.md)).
 - Bất kỳ service → **RabbitMQ** (publish event, ví dụ Diet `diet.meal.logged` → Progress `progress.meal-activity`).

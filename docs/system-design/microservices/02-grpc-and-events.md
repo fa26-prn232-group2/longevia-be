@@ -3,6 +3,7 @@
 ## gRPC (đồng bộ)
 
 - Dùng cho request/response **giữa các service**, ví dụ:
+  - `Diet → Identity` (`GetUserProfile`, [ADR 004](../../decisions/004-diet-to-identity-profile-grpc.md)).
   - `Diet → Recommendation` (gợi ý bữa ăn, RAG tri thức sách).
   - `Progress → Identity` (truy vấn chiều cao `GetUserHeight` để tính BMI snapshot; `GetUserProfile` cung cấp profile read gồm ngày sinh, giới tính sinh học, chiều cao và activity level khi consumer cần đủ dữ liệu).
   - `Progress → Identity` (truy vấn chiều cao `GetUserHeight` để tính BMI snapshot).

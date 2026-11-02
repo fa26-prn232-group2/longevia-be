@@ -27,7 +27,9 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
             heightCm: 175.25m,
             birthDate: new DateOnly(1990, 4, 23),
             biologicalSex: BiologicalSex.Female,
-            activityLevel: ActivityLevel.VeryActive);
+            activityLevel: ActivityLevel.VeryActive,
+            dietaryPreference: DietaryPreference.Vegan,
+            allergies: ["Peanuts", "Shellfish"]);
 
         var response = await fixture.Client.GetUserProfileAsync(
             new GetUserProfileRequest { UserId = userId.ToString() },
@@ -37,6 +39,10 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
         Assert.Equal(BiologicalSex.Female, response.BiologicalSex);
         Assert.Equal(17525, response.HeightCmX100);
         Assert.Equal(ActivityLevel.VeryActive, response.ActivityLevel);
+        Assert.True(response.HasDietaryPreference);
+        Assert.Equal(DietaryPreference.Vegan, response.DietaryPreference);
+        Assert.Equal(new[] { "Peanuts", "Shellfish" }, response.Allergies);
+
     }
 
     [Fact]
@@ -140,7 +146,9 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
         decimal? heightCm = null,
         DateOnly? birthDate = null,
         string biologicalSex = BiologicalSex.Male,
-        string activityLevel = ActivityLevel.Sedentary)
+        string activityLevel = ActivityLevel.Sedentary,
+        string dietaryPreference = DietaryPreference.None,
+        string[]? allergies = null)
     {
         using var scope = fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -165,8 +173,8 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
                 biologicalSex,
                 heightCm.Value,
                 activityLevel,
-                DietaryPreference.None,
-                [],
+                dietaryPreference,
+                allergies ?? [],
                 DateTimeOffset.UtcNow));
         }
 

@@ -39,3 +39,36 @@ Không thêm HTTP endpoint/DTO ở giai đoạn event; counted frontend giữ 6/
 
 Giai đoạn metadata thêm hai field: frontend counts hiện 6 operation / 13 DTO /
 75 field; phần 73 field ở evidence cũ là lịch sử trước metadata.
+
+## Q10 Diet client
+
+- [x] Codegen từ proto canonical; DI và Docker copy contract.
+- [x] Deadline/cancellation, missing khác unavailable, decimal/provenance validation.
+- [x] Internal calculate-target use case và snapshot DB; public route còn chờ full profile.
+
+Không đổi HTTP surface: vẫn manual target; không cần client sửa request/response.
+
+- [x] Domain Mifflin-St Jeor, calculated target factory và immutable input/result.
+- [x] Migration nullable snapshot, atomic upsert và manual replacement clear.
+- [x] Internal CalculateAsync nối weight/provider → calculation → repository.
+- [x] Public calculate-target API: Identity profile + Progress weight + snapshot atomic.
+
+## Meal AI adapter
+
+- [x] Codegen Recommendation client, DI và Docker/network nội bộ.
+- [x] Map profile/candidate/macro và phục hồi catalog food ID/serving trong result.
+- [x] Loại unknown allergens/foreign-owned foods; kiểm tra citation/disclaimer.
+- [x] Explicit transport errors và caller deadline budget.
+- [x] Public AI facade/full-profile integration, ngân sách 2.8s và error mapping.
+- [x] Kiểm chứng xuyên server HTTP/2 thật và cập nhật evidence (1 probe, model/corpus fixture).
+
+Không đổi HTTP endpoint/event/DTO client ở phase adapter; frontend vẫn 6/13/75.
+
+## Hoàn thiện facade — 2026-11-02
+
+- [x] Bổ sung dietary_preference/allergies, Identity server mapping và test.
+- [x] ADR 004, boundary docs và Diet profile client deadline/error/presence.
+- [x] POST calculate dùng profile thật, giữ bốn mục tiêu user chọn.
+- [x] GET meal AI, lọc ownership/unknown/tag trước limit 100, DTO HTTP riêng.
+- [x] Test âm endpoint 404 trước triển khai, test snapshot/summary/presence/errors.
+- [x] API spec, frontend/backend guides và bàn giao từng người cập nhật.

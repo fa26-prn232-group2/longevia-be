@@ -31,12 +31,13 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
         if (profile.HeightCm is < 50m or > 250m
             || decimal.Round(profile.HeightCm, 2) != profile.HeightCm
             || !BiologicalSex.All.Contains(profile.BiologicalSex)
-            || !ActivityLevel.All.Contains(profile.ActivityLevel))
+            || !ActivityLevel.All.Contains(profile.ActivityLevel)
+            || !DietaryPreference.All.Contains(profile.DietaryPreference))
         {
             throw new RpcException(new Status(StatusCode.Internal, "Stored profile data is invalid."));
         }
 
-        return new GetUserProfileResponse
+        var response = new GetUserProfileResponse
         {
             BirthDate = profile.BirthDate.ToString(
                 "yyyy-MM-dd",
@@ -44,7 +45,10 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
             BiologicalSex = profile.BiologicalSex,
             HeightCmX100 = decimal.ToInt32(profile.HeightCm * 100m),
             ActivityLevel = profile.ActivityLevel,
+            DietaryPreference = profile.DietaryPreference,
         };
+        response.Allergies.AddRange(profile.Allergies);
+        return response;
     }
 
     public override async Task<GetUserHeightResponse> GetUserHeight(

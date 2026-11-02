@@ -34,5 +34,14 @@ public sealed class FoodRepository(DietDbContext db) : IFoodRepository
         await db.FoodItems.AsNoTracking()
             .Where(x => ids.Contains(x.Id) && (x.UserId == null || x.UserId == userId)).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<FoodItem>> GetRecommendationCandidatesAsync(Guid userId,
+        IReadOnlyList<string> allergies, CancellationToken ct)
+    {
+        var tags = allergies.Select(x => x.Trim().ToLowerInvariant()).Distinct().ToArray();
+        return await db.FoodItems.AsNoTracking().Where(x => (x.UserId == null || x.UserId == userId)
+            && x.Allergens != null && !x.Allergens.Any(a => tags.Contains(a)))
+            .OrderBy(x => x.Id).Take(100).ToListAsync(ct);
+    }
+
     public void Add(FoodItem food) => db.FoodItems.Add(food);
 }

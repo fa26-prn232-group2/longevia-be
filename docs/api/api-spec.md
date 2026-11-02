@@ -289,8 +289,8 @@
 
 ### 3.3 `GET /api/diet/targets/me` — Lấy mục tiêu dinh dưỡng hiện tại
 - **Xác thực**: Bearer JWT
-- **Giai đoạn Diet độc lập**: mục tiêu được nhập tay; `bmr` và `tdee` trả `null`
-  cho đến khi contract hồ sơ/cân nặng được tích hợp. Chưa có mục tiêu trả
+- **Target nhập tay**: `bmr` và `tdee` trả `null`; target từ endpoint calculate
+  trả kết quả snapshot đã lưu. Chưa có mục tiêu trả
   `404` với code `diet.target_not_found`, không tự tạo mục tiêu mặc định.
 - **Response `200 OK`**:
   ```json
@@ -383,27 +383,42 @@
 
 ---
 
-### 3.7 `GET /api/diet/meals/ai-recommendations` — Nhận gợi ý món ăn từ AI
-- **Xác thực**: Bearer JWT
-- **Mô tả**: Diet Service tự tính lượng calo/macro còn thiếu trong ngày và gọi nội bộ sang Recommendation Service qua gRPC.
-- **Response `200 OK`**:
-  ```json
-  {
-    "remainingCalories": 650,
-    "recommendedMeals": [
-      {
-        "name": "Cá hồi nướng măng tây và quinoa",
-        "description": "Giàu Omega-3 và chất xơ, hỗ trợ chống viêm và cân bằng vi chất buổi tối mà không gây đầy bụng.",
-        "estimatedCalories": 580,
-        "proteinGrams": 42.0,
-        "carbsGrams": 45.0,
-        "fatGrams": 18.0,
-        "keyMicronutrients": ["Omega-3", "Magie", "Vitamin D"]
-      }
-    ],
-    "longevityTip": "Hạn chế tinh bột nhanh sau 19h để giữ mức Insulin ổn định, kích hoạt quá trình tự thực bào trong đêm."
-  }
-  ```
+### 3.7 `GET /api/diet/meals/ai-recommendations` — Gợi ý bữa ăn
+- Bearer JWT. Query bắt buộc `mealType=Breakfast|Lunch|Dinner|Snack` và
+  `goal=LoseWeight|Maintain|BuildMuscle|Longevity`; không nhận userId/profile từ client.
+- Dùng profile hiện tại từ Identity, cân nặng hiện tại từ Progress, target và
+  snapshot meal ngày UTC hiện tại. Tối đa 100 candidate thuộc user hoặc catalog
+  chung, metadata allergens đã khai báo; unknown bị loại trước khi gọi AI.
+- Deadline tổng 2.8 giây; từng gRPC tối đa 2 giây trong ngân sách còn lại.
+- Response: `remainingCalories` (decimal, có thể âm), `recommendedMeals[]`,
+  `longevityTip`, `tipCitations[]`, `disclaimer`, `calorieCapReached`, `safetyNote`.
+- Mỗi meal: `foodId`, `name`, `servingSize`, `servingUnit`, `calories`,
+  `proteinGrams`, `carbsGrams`, `fatGrams`, `description`, `rationale`, `citations[]`.
+  ID/khẩu phần/dinh dưỡng lấy từ catalog Diet; không tự ghi log món được gợi ý.
+- Citation: `chapterNumber`, `chapterTitle`, `bookPage`, `pdfPage`, `quote`,
+  `verified`, `sourceFile`; bảo toàn `verified=false`, không coi là đã kiểm chứng.
+- Lỗi: 400 `diet.invalid_recommendation_query`; 404 `diet.target_not_found`;
+  422 `diet.weight_not_found`, `diet.profile_not_found`, `diet.no_safe_candidate`;
+  503 `diet.profile_incomplete`, `diet.ai_unavailable`; 504 `diet.ai_timeout`.
+  Profile/weight transport có mã riêng như endpoint calculate bên dưới. Khi
+  Recommendation abstain/degraded, trả danh sách rỗng kèm safetyNote/disclaimer.
+
+### 3.8 `POST /api/diet/targets/me/calculate` — Tính và lưu snapshot BMR/TDEE
+- Bearer JWT; body giống PUT target: `targetCalories`, `targetProteinGrams`,
+  `targetCarbsGrams`, `targetFatGrams`; cùng validation ±5%, không nhận profile.
+- Lấy ngày sinh/giới tính/chiều cao/activity từ Identity.GetUserProfile và cân
+  nặng từ Progress.GetLatestWeight. Mifflin-St Jeor: 10W+6.25H−5A+5 (nam),
+  10W+6.25H−5A−161 (nữ). Hệ số 1.2/1.375/1.55/1.725 tương ứng bốn activity
+  level canonical. Tuổi đủ năm theo ngày UTC; profile chưa hỗ trợ trả 422.
+- Response `TargetResponse` giống GET/PUT, `bmr`/`tdee` có giá trị. Lưu input,
+  provenance cân nặng và kết quả cùng target atomically; giữ ID khi tính lại.
+  Profile/cân nặng thay đổi không sửa target cũ. PUT nhập tay clear snapshot.
+  Calo/macro do user chọn; không tự áp dụng deficit/surplus hoặc tỷ lệ macro.
+- Lỗi 422 `diet.profile_not_found`, `diet.profile_not_supported`, `diet.weight_not_found`;
+  503 `diet.profile_unavailable`, `diet.weight_unavailable`;
+  504 `diet.profile_timeout`, `diet.weight_timeout`;
+  502 `diet.profile_integration_failed`, `diet.weight_integration_failed`.
+  Lỗi dependency không ghi target và không gán cân nặng/profile mặc định.
 
 ---
 

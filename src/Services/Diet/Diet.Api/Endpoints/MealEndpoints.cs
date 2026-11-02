@@ -14,6 +14,10 @@ public static class MealEndpoints
             return TypedResults.Created($"/api/diet/meals/daily-summary?date={result.Date:yyyy-MM-dd}", result);
         }).AddEndpointFilter<ValidationFilter<LogMealRequest>>()
             .WithName("LogMeal").WithSummary("Ghi nhật ký và snapshot dinh dưỡng");
+        group.MapGet("/ai-recommendations", async (string mealType, string goal,
+            MealRecommendationsUseCase useCase, CancellationToken ct) =>
+            TypedResults.Ok(await useCase.ExecuteAsync(mealType, goal, ct)))
+            .WithName("GetMealRecommendations").WithSummary("Gợi ý bữa ăn từ profile và phần dinh dưỡng còn lại hôm nay");
         group.MapGet("/daily-summary", async (DateOnly? date, DailySummaryUseCase useCase, CancellationToken ct) =>
             TypedResults.Ok(await useCase.ExecuteAsync(date, ct)))
             .WithName("GetDailyDietSummary").WithSummary("Tổng hợp dinh dưỡng theo ngày, mặc định UTC");

@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
     <PackageReference Include="MassTransit" />
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
@@ -10,5 +13,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Diet.Application/Diet.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="../../../../contracts/identity/v1/identity.proto" GrpcServices="Client" />
+    <Protobuf Include="../../../../contracts/progress/v1/progress.proto" GrpcServices="Client" />
+    <Protobuf Include="../../../../contracts/recommendation/v1/recommendation.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

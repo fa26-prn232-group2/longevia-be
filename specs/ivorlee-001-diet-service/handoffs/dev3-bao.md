@@ -2,6 +2,18 @@
 
 Huy (dev 2) bổ sung producer meal activity để gỡ phần Diet chặn Streak.
 
+## Đối chiếu cập nhật của Bảo
+
+PR #11 foundation đã merge main 3c59eff. PR #13 draft tại 8d87808 có fasting,
+water/sleep, metrics, dashboard, ActivityContribution và unique (Source, SourceLogId).
+Huy ghi nhận các phần này đã có; không yêu cầu Bảo viết lại entity/thuật toán.
+Chưa có consumer RabbitMQ nhận meal, height adapter runtime vẫn trả null;
+repository GetLatestAsync là nội bộ Progress, chưa phải weight RPC cho Diet.
+
+Producer Diet nằm ở PR #12, commit bc79173, chưa merge main tại lúc đối chiếu.
+Dòng "Diet chưa có producer trên main" của Bảo vẫn đúng theo main, nhưng cần
+đối chiếu PR #12 để nối contract MealLoggedEvent thay vì chờ Huy viết producer mới.
+
 ## Contract Diet cung cấp
 
 Canonical: src/Shared/Events/MealLoggedEvent.cs, namespace Longevia.Shared.Events,
@@ -74,3 +86,20 @@ là tập ID/ngày Huy cung cấp để Bảo đối soát; queued count không 
 producer duy nhất. Bind queue trước export/replay; đối chiếu đủ snapshot IDs rồi
 xử lý live events tiếp theo. capturedAtUtc chỉ audit, không dùng lọc event muộn.
 Không có public download hoặc RPC mới; chỉ chuyển file qua operator được phép.
+
+## Nhờ Bảo phản hồi bàn giao
+
+Gửi Huy/Duy tên queue/binding đã chốt và PR consumer + inbox/projection transaction;
+tái sử dụng ActivityContribution đã có. Cùng Huy kiểm thử live event, duplicate,
+backdate, replay và snapshot reconciliation. Cập nhật trạng thái integration trong
+tài liệu Progress theo PR #12; chưa báo full Streak READY chỉ từ test seed activity.
+Với cân nặng, phản hồi proposal proto/semantics latest-asOf và ADR còn cần duyệt;
+provider gRPC thuộc Bảo, công thức và adapter Diet thuộc Huy.
+
+## Trạng thái mới nhất — 2026-11-02
+
+Các blocker consumer/weight trong phần lịch sử đã được main PR#13 giải quyết.
+Diet đã nối GetLatestWeight và GetUserProfile vào POST calculate + GET meal AI.
+Không còn thiếu RPC của Bảo để triển khai BMR/TDEE/AI. Nhờ Bảo review semantics
+snapshot/asOf/error theo Q10 đã chốt; khi rollout thì đối chiếu snapshot meal,
+queue trước replay và projection sau drain. Không cần tạo contract weight khác.

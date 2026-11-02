@@ -1,4 +1,5 @@
 using Grpc.Core;
+using Identity.Domain.Constants;
 using Identity.Domain.Repositories;
 using Longevia.Identity.Contracts.V1;
 
@@ -8,6 +9,44 @@ namespace Identity.Api.Endpoints;
 public sealed class IdentityGrpcService(IUserRepository userRepository)
     : IdentityService.IdentityServiceBase
 {
+    public override async Task<GetUserProfileResponse> GetUserProfile(
+        GetUserProfileRequest request,
+        ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId) || userId == Guid.Empty)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "user_id must be a non-empty GUID."));
+        }
+
+        var user = await userRepository
+            .GetByIdWithProfileAsync(userId, context.CancellationToken)
+            .ConfigureAwait(false);
+
+        if (user?.Profile is null)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, "User profile was not found."));
+        }
+
+        var profile = user.Profile;
+        if (profile.HeightCm is < 50m or > 250m
+            || decimal.Round(profile.HeightCm, 2) != profile.HeightCm
+            || !BiologicalSex.All.Contains(profile.BiologicalSex)
+            || !ActivityLevel.All.Contains(profile.ActivityLevel))
+        {
+            throw new RpcException(new Status(StatusCode.Internal, "Stored profile data is invalid."));
+        }
+
+        return new GetUserProfileResponse
+        {
+            BirthDate = profile.BirthDate.ToString(
+                "yyyy-MM-dd",
+                System.Globalization.CultureInfo.InvariantCulture),
+            BiologicalSex = profile.BiologicalSex,
+            HeightCmX100 = decimal.ToInt32(profile.HeightCm * 100m),
+            ActivityLevel = profile.ActivityLevel,
+        };
+    }
+
     public override async Task<GetUserHeightResponse> GetUserHeight(
         GetUserHeightRequest request,
         ServerCallContext context)

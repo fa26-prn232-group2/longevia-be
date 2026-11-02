@@ -3,8 +3,9 @@
 Identity là service client-facing qua Nginx và sở hữu `identity_db`. Service quản lý vòng đời tài khoản, xác thực JWT và hồ sơ người dùng. Schema được quản lý bằng EF Core Code First; migration của Identity được áp dụng trước khi API bắt đầu nhận request (mặc định bật, có thể tắt bằng `Database:AutoMigrate=false` khi môi trường deploy quản lý migration riêng).
 
 Identity phục vụ client qua HTTP/Nginx và cung cấp gRPC nội bộ cho service khác.
-RPC `IdentityService.GetUserHeight` lắng nghe HTTP/2 tại cổng cấu hình
-`IDENTITY__GRPC_PORT` (mặc định `50051`); cổng này không publish ra host.
+RPC `IdentityService.GetUserHeight` và `IdentityService.GetUserProfile` lắng nghe
+HTTP/2 tại cổng cấu hình `IDENTITY__GRPC_PORT` (mặc định `50051`); cổng này
+không publish ra host.
 
 ## API
 

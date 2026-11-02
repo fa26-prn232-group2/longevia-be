@@ -4,9 +4,9 @@
 
 - Feature/spec: `specs/bao-nguyen-001-identity-service/spec.md`
 - Requirement: `docs/requirements/prd.md` §2.1
-- Handoff status: **IN_PROGRESS** (contract/provider RPC chiều cao và kiểm thử PostgreSQL đang được bổ sung; profile event vẫn chưa có consumer được xác định).
+- Handoff status: **IN_PROGRESS** (profile event vẫn chưa có consumer được xác định).
 - Canonical contracts: `src/Shared/Events/UserRegisteredEvent.cs`, `src/Shared/Events/PasswordResetRequestedEvent.cs`, `src/Shared/Events/UserProfileUpdatedEvent.cs`, and `contracts/events/v1/README.md` (v1)
-- Counts đã đối chiếu source/contract: **1 RPC · 2 gRPC messages · 2 gRPC fields · 3 canonical events · 11 event fields · 0 enum values**. Trong đó 2 event email có consumer Worker (9 fields); 1 event profile có 2 field, hiện chưa có consumer được xác định.
+- Counts đã đối chiếu source/contract: **2 RPC · 4 gRPC messages · 7 gRPC fields · 3 canonical events · 11 event fields · 0 enum values**. Trong đó 2 event email có consumer Worker (9 fields); 1 event profile có 2 field, hiện chưa có consumer được xác định.
 
 Guide này ghi producer topology và evidence Identity. Hai email event giữ nguyên; `UserProfileUpdatedEvent` là contract mới trong v1.
 
@@ -17,6 +17,7 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 | Identity | Worker `worker.email` | RabbitMQ event | `UserRegisteredEvent` v1 | async | RabbitMQ trên `data_net` |
 | Identity | Worker `worker.email` | RabbitMQ event | `PasswordResetRequestedEvent` v1 | async | RabbitMQ trên `data_net` |
 | Identity | Progress | gRPC | `GetUserHeight` v1 | sync | Network nội bộ Compose; không publish cổng ra host |
+| Identity | Service nội bộ cần đủ profile (consumer chưa được nối trong thay đổi này) | gRPC | `GetUserProfile` v1 | sync | Network nội bộ Compose; không publish cổng ra host |
 | Identity | Undetermined | RabbitMQ event | `UserProfileUpdatedEvent` v1 | async | RabbitMQ trên `data_net` |
 
 ## 3. gRPC
@@ -24,8 +25,11 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 | RPC | Request | Response | Semantics |
 |---|---|---|---|
 | `GetUserHeight` | `user_id` (GUID khác rỗng) | `height_cm_x100` tùy chọn (`int32`, cm × 100) | Thiếu user/profile → `NOT_FOUND`; GUID sai → `INVALID_ARGUMENT`; height lưu không hợp lệ → `INTERNAL`; height chưa có được biểu diễn bằng field tùy chọn không được set. |
+| `GetUserProfile` | `user_id` (GUID khác rỗng) | `birth_date` (`YYYY-MM-DD`), `biological_sex` (`Male`/`Female`), `height_cm_x100` (`int32`, cm × 100), `activity_level` (`Sedentary`/`LightlyActive`/`ModeratelyActive`/`VeryActive`) | Thiếu user/profile → `NOT_FOUND`; GUID sai → `INVALID_ARGUMENT`; height/enum lưu không hợp lệ → `INTERNAL`. Profile được đọc từ Identity qua repository; không truy cập database chéo. |
 
 - Biểu diễn decimal: `175.00 cm` → `height_cm_x100 = 17500`; cột nguồn có kiểu `numeric(5,2)`.
+- `GetUserProfile` giữ độ chính xác chiều cao hai chữ số thập phân theo cùng quy ước; ngày sinh serialize bất biến theo ISO calendar date. Giá trị giới tính và activity level là chuỗi canonical hiện có của Identity, không tạo enum wire mới.
+- `GetUserHeight` được giữ nguyên để consumer hiện tại tiếp tục tương thích; consumer mới có thể dùng `GetUserProfile` khi cần đủ bốn thuộc tính.
 - Hiện `HeightCm` là bắt buộc trong domain và database nên profile tồn tại luôn có height; `optional` giữ contract biểu diễn rõ trường hợp không có nếu model cho phép trạng thái này trong tương lai. Không dùng `0` làm sentinel.
 - Lỗi transport/deadline không bị đổi thành `NOT_FOUND`; status do gRPC transport phát ra được giữ nguyên.
 - Tin cậy caller nội bộ theo ADR 001 §2.2: các service cùng trust domain Compose, cổng gRPC không publish ra host; không xác thực caller, không mTLS và không shared-secret header.
@@ -69,10 +73,11 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 
 ## 8. Sync checklist
 
-- [x] RPC / gRPC messages / fields: 1 RPC, 2 messages, 2 fields; codegen server/client và integration tests đối chiếu contract.
+- [x] RPC / gRPC messages / fields: 2 RPC, 4 messages, 7 fields; Identity API build/codegen thành công và Identity IntegrationTests 21/21 đạt, gồm 12 gRPC cases.
 - [x] Event schema: 3 event, 11 fields, 0 enum values; đối chiếu record và v1 index.
 - [x] Event topology: 1 exchange, 3 routing keys, 1 Worker queue, 2 producer/consumer pairs và 1 event chưa có consumer; xác minh cấu hình Identity.
 - [x] Transactional outbox rollback test cho reset và E2E chạy với container thật; rollback không để lại user reset token hoặc event outbox.
 - [x] Idempotency/retry/DLQ được đối chiếu với Worker consumer và unit test.
 - [x] Phase 4 E2E evidence chạy thực tế với PostgreSQL, RabbitMQ, Worker và Mailpit.
 - [x] Phase 5 PostgreSQL test chứng minh decimal height round-trip, migration giữ nguyên integer data, validation contract và profile/outbox rollback cùng nhau (9/9 integration tests passed).
+- [x] `GetUserProfile` bổ sung additive trên contract v1; PostgreSQL + HTTP/2 integration đã xác nhận ISO birth date, canonical biological sex/activity level, chiều cao cm × 100, user ID sai và profile thiếu. `Identity.Api` build 0 warning/error, Identity UnitTests 67/67 và IntegrationTests 21/21 đạt.

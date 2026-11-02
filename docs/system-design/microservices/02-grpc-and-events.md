@@ -2,7 +2,10 @@
 
 ## gRPC (đồng bộ)
 
-- Dùng cho request/response **giữa các service**, ví dụ `Diet → Recommendation`.
+- Dùng cho request/response **giữa các service**, ví dụ:
+  - `Diet → Recommendation` (gợi ý bữa ăn, RAG tri thức sách).
+  - `Progress → Identity` (truy vấn chiều cao `GetUserHeight` để tính BMI snapshot; `GetUserProfile` cung cấp profile read gồm ngày sinh, giới tính sinh học, chiều cao và activity level khi consumer cần đủ dữ liệu).
+  - `Diet → Progress` (truy vấn cân nặng gần nhất `GetLatestWeight` để tính BMR/TDEE — xem [ADR 003](../../decisions/003-diet-to-progress-weight-grpc.md)).
 - Contract: file `.proto` trong `contracts/`; `.proto` là nguồn chân lý.
 - Không route gRPC qua Nginx; gọi trực tiếp service đích trong mạng nội bộ.
 - Mọi call MUST có **deadline/timeout**; xử lý lỗi transport tường minh.

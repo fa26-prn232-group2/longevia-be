@@ -8,4 +8,17 @@ option csharp_namespace = "Longevia.Identity.Contracts.V1";
 // Methods are added as other services need synchronous access to identity data.
 service IdentityService
 {
+  rpc GetUserHeight(GetUserHeightRequest) returns (GetUserHeightResponse);
+}
+
+message GetUserHeightRequest
+{
+  string user_id = 1;
+}
+
+message GetUserHeightResponse
+{
+  // Height in centimeters multiplied by 100 (for example, 175.00 cm = 17500).
+  // Absent means the profile exists but no height has been recorded.
+  optional int32 height_cm_x100 = 1;
 }

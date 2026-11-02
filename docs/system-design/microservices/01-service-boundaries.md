@@ -7,9 +7,9 @@ của service khác.
 
 | Service | Trách nhiệm | Database | Expose |
 | --- | --- | --- | --- |
-| Identity | Đăng ký/đăng nhập, hồ sơ, phát hành JWT | `identity_db` | HTTP qua Nginx |
+| Identity | Đăng ký/đăng nhập, hồ sơ, phát hành JWT | `identity_db` | HTTP qua Nginx, gRPC nội bộ |
 | Diet | Kế hoạch ăn uống / dinh dưỡng | `diet_db` | HTTP qua Nginx |
-| Progress | Theo dõi tiến độ người dùng | `progress_db` | HTTP qua Nginx |
+| Progress | Theo dõi tiến độ người dùng | `progress_db` | HTTP qua Nginx, gRPC nội bộ |
 | Recommendation | Sinh gợi ý qua Google AI, RAG trên tri thức sách | `recommendation_db` (knowledge store) | gRPC nội bộ |
 | Background Worker | Consume event, gửi email | không | không |
 
@@ -17,7 +17,9 @@ của service khác.
 
 - Client → **Nginx** → Identity / Diet / Progress (HTTP).
 - **Diet → Recommendation** qua **gRPC** (nội bộ).
-- Bất kỳ service → **RabbitMQ** (publish event).
+- **Progress → Identity** qua **gRPC** (nội bộ, lấy chiều cao `GetUserHeight`).
+- **Diet → Progress** qua **gRPC** (nội bộ, lấy cân nặng gần nhất `GetLatestWeight` — xem [ADR 003](../../decisions/003-diet-to-progress-weight-grpc.md)).
+- Bất kỳ service → **RabbitMQ** (publish event, ví dụ Diet `diet.meal.logged` → Progress `progress.meal-activity`).
 - **Background Worker** ← RabbitMQ (consume) → Brevo.
 
 Các chiều gọi khác MUST NOT tồn tại nếu chưa có contract và ADR.

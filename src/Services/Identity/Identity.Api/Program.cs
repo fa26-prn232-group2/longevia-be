@@ -5,13 +5,22 @@ using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Observability;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+var httpPort = builder.Configuration.GetValue("IDENTITY:HTTP_PORT", 8080);
+var grpcPort = builder.Configuration.GetValue("IDENTITY:GRPC_PORT", 50051);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort, listen => listen.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(grpcPort, listen => listen.Protocols = HttpProtocols.Http2);
+});
 
 builder.Services.AddIdentityApplication();
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddGrpc();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorization();
 
@@ -60,6 +69,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
+app.MapGrpcService<IdentityGrpcService>();
 app.MapPrometheusScrapingEndpoint();
 
 if (app.Configuration.GetValue("Database:AutoMigrate", true))

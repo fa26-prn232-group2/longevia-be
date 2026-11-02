@@ -29,6 +29,7 @@ COPY src/Services/Identity/Identity.Application/ ./src/Services/Identity/Identit
 COPY src/Services/Identity/Identity.Domain/ ./src/Services/Identity/Identity.Domain/
 COPY src/Services/Identity/Identity.Infrastructure/ ./src/Services/Identity/Identity.Infrastructure/
 COPY src/Shared/ ./src/Shared/
+COPY contracts/identity/ ./contracts/identity/
 
 RUN dotnet restore ./src/Services/Identity/Identity.Api/Identity.Api.csproj \
  && dotnet publish ./src/Services/Identity/Identity.Api/Identity.Api.csproj \
@@ -47,5 +48,5 @@ COPY --from=build /app/publish ./
 USER app
 
 ENV ASPNETCORE_HTTP_PORTS=8080
-EXPOSE 8080
+EXPOSE 8080 50051
 ENTRYPOINT ["./Identity.Api"]

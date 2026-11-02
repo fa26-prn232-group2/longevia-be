@@ -4,9 +4,9 @@
 
 - Feature/spec: `specs/bao-nguyen-001-identity-service/spec.md`
 - Requirement: `docs/requirements/prd.md` §2.1
-- Handoff status: **IN_PROGRESS** (contract/topology/outbox và PostgreSQL integration Phase 5 đã verified; chưa xác định consumer cho profile event).
+- Handoff status: **IN_PROGRESS** (contract/provider RPC chiều cao và kiểm thử PostgreSQL đang được bổ sung; profile event vẫn chưa có consumer được xác định).
 - Canonical contracts: `src/Shared/Events/UserRegisteredEvent.cs`, `src/Shared/Events/PasswordResetRequestedEvent.cs`, `src/Shared/Events/UserProfileUpdatedEvent.cs`, and `contracts/events/v1/README.md` (v1)
-- Counts đã đối chiếu source/contract: **0 RPC · 0 messages gRPC · 0 gRPC fields · 3 canonical events · 11 event fields · 0 enum values**. Trong đó 2 event email có consumer Worker (9 fields); 1 event profile có 2 field, hiện chưa có consumer được xác định.
+- Counts đã đối chiếu source/contract: **1 RPC · 2 gRPC messages · 2 gRPC fields · 3 canonical events · 11 event fields · 0 enum values**. Trong đó 2 event email có consumer Worker (9 fields); 1 event profile có 2 field, hiện chưa có consumer được xác định.
 
 Guide này ghi producer topology và evidence Identity. Hai email event giữ nguyên; `UserProfileUpdatedEvent` là contract mới trong v1.
 
@@ -16,11 +16,19 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 |---|---|---|---|---|---|
 | Identity | Worker `worker.email` | RabbitMQ event | `UserRegisteredEvent` v1 | async | RabbitMQ trên `data_net` |
 | Identity | Worker `worker.email` | RabbitMQ event | `PasswordResetRequestedEvent` v1 | async | RabbitMQ trên `data_net` |
+| Identity | Progress | gRPC | `GetUserHeight` v1 | sync | Network nội bộ Compose; không publish cổng ra host |
 | Identity | Undetermined | RabbitMQ event | `UserProfileUpdatedEvent` v1 | async | RabbitMQ trên `data_net` |
 
 ## 3. gRPC
 
-- N/A: Phase 3–4 không thay đổi gRPC surface.
+| RPC | Request | Response | Semantics |
+|---|---|---|---|
+| `GetUserHeight` | `user_id` (GUID khác rỗng) | `height_cm_x100` tùy chọn (`int32`, cm × 100) | Thiếu user/profile → `NOT_FOUND`; GUID sai → `INVALID_ARGUMENT`; height lưu không hợp lệ → `INTERNAL`; height chưa có được biểu diễn bằng field tùy chọn không được set. |
+
+- Biểu diễn decimal: `175.00 cm` → `height_cm_x100 = 17500`; cột nguồn có kiểu `numeric(5,2)`.
+- Hiện `HeightCm` là bắt buộc trong domain và database nên profile tồn tại luôn có height; `optional` giữ contract biểu diễn rõ trường hợp không có nếu model cho phép trạng thái này trong tương lai. Không dùng `0` làm sentinel.
+- Lỗi transport/deadline không bị đổi thành `NOT_FOUND`; status do gRPC transport phát ra được giữ nguyên.
+- Tin cậy caller nội bộ theo ADR 001 §2.2: các service cùng trust domain Compose, cổng gRPC không publish ra host; không xác thực caller, không mTLS và không shared-secret header.
 
 ## 4. Events
 
@@ -48,7 +56,7 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 
 ## 6. Compatibility and rollout
 
-- Schema DB: migration Identity chuyển `user_profiles.HeightCm` integer sang `numeric(5,2)`; PostgreSQL integration đã xác nhận giá trị integer cũ được giữ nguyên. Event contract thêm `UserProfileUpdatedEvent` v1; hai event email không đổi.
+- Schema DB: migration Identity chuyển `user_profiles.HeightCm` integer sang `numeric(5,2)`; PostgreSQL integration đã xác nhận giá trị integer cũ được giữ nguyên. Identity gRPC thêm `GetUserHeight`; event contract không đổi.
 - Before → after: Identity phát event profile nội bộ không version thành shared v1 event qua outbox; event email reset giữ OTP và idempotency hiện có.
 - Rollout: hai event email tiếp tục cần Worker hiện hành. Profile event chưa có consumer, vì vậy không được giả định consumer/side effect tồn tại; backend handoff giữ `IN_PROGRESS`.
 
@@ -61,7 +69,7 @@ Guide này ghi producer topology và evidence Identity. Hai email event giữ ng
 
 ## 8. Sync checklist
 
-- [x] RPC / gRPC messages / fields: 0 (phase không đổi gRPC).
+- [x] RPC / gRPC messages / fields: 1 RPC, 2 messages, 2 fields; codegen server/client và integration tests đối chiếu contract.
 - [x] Event schema: 3 event, 11 fields, 0 enum values; đối chiếu record và v1 index.
 - [x] Event topology: 1 exchange, 3 routing keys, 1 Worker queue, 2 producer/consumer pairs và 1 event chưa có consumer; xác minh cấu hình Identity.
 - [x] Transactional outbox rollback test cho reset và E2E chạy với container thật; rollback không để lại user reset token hoặc event outbox.

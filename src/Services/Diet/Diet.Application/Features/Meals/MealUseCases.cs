@@ -7,7 +7,7 @@ using Longevia.Shared.Auth;
 namespace Diet.Application.Features.Meals;
 
 public sealed class MealUseCases(IFoodRepository foods, IMealRepository meals,
-    IUnitOfWork unitOfWork, ICurrentUser user, TimeProvider time)
+    IUnitOfWork unitOfWork, ICurrentUser user, TimeProvider time, IMealActivityPublisher activity)
 {
     public async Task<MealResponse> LogAsync(LogMealRequest request, CancellationToken ct)
     {
@@ -26,6 +26,7 @@ public sealed class MealUseCases(IFoodRepository foods, IMealRepository meals,
         }
 
         meals.Add(meal);
+        await activity.PublishAsync(meal, ct);
         await unitOfWork.SaveChangesAsync(ct);
         return MealResponse.From(meal);
     }

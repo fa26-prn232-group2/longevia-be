@@ -5,6 +5,7 @@
 - Dùng cho request/response **giữa các service**, ví dụ:
   - `Diet → Recommendation` (gợi ý bữa ăn, RAG tri thức sách).
   - `Progress → Identity` (truy vấn chiều cao `GetUserHeight` để tính BMI snapshot; `GetUserProfile` cung cấp profile read gồm ngày sinh, giới tính sinh học, chiều cao và activity level khi consumer cần đủ dữ liệu).
+  - `Progress → Identity` (truy vấn chiều cao `GetUserHeight` để tính BMI snapshot).
   - `Diet → Progress` (truy vấn cân nặng gần nhất `GetLatestWeight` để tính BMR/TDEE — xem [ADR 003](../../decisions/003-diet-to-progress-weight-grpc.md)).
 - Contract: file `.proto` trong `contracts/`; `.proto` là nguồn chân lý.
 - Không route gRPC qua Nginx; gọi trực tiếp service đích trong mạng nội bộ.
@@ -32,7 +33,7 @@
 
 - Event đi qua **RabbitMQ** với topology tường minh (exchange/queue/routing key).
 - Producer publish qua **transactional outbox** trong cùng transaction ghi dữ liệu.
-- Tên event ở thì quá khứ (`UserCreated`, `ProgressLogged`).
+- Tên event ở thì quá khứ (`UserCreated`, `MealLogged`).
 - Consumer idempotent; bỏ qua an toàn field lạ.
 
 ## Khi nào dùng cái nào
@@ -54,3 +55,4 @@
 - [../event-driven-design.md](../event-driven-design.md)
 - [../contract-purity-pattern.md](../contract-purity-pattern.md)
 - [../../decisions/001-authn-authz-architecture.md](../../decisions/001-authn-authz-architecture.md)
+- [../../decisions/003-diet-to-progress-weight-grpc.md](../../decisions/003-diet-to-progress-weight-grpc.md)

@@ -1,5 +1,6 @@
 using Diet.Application.Abstractions;
 using Diet.Domain.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Diet.Infrastructure.Persistence;
@@ -15,5 +16,8 @@ public sealed class DietDbContext(DbContextOptions<DietDbContext> options) : DbC
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DietDbContext).Assembly);
         FoodSeed.Configure(modelBuilder);
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
 }

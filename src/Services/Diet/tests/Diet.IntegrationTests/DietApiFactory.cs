@@ -16,6 +16,9 @@ public sealed class DietApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         .WithDatabase("diet_db_test").WithUsername("diet_test").WithPassword("diet_test_password").Build();
     private readonly ECDsa _key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
 
+    public string? RabbitHost { get; set; }
+    public ushort RabbitPort { get; set; }
+
     public Task InitializeAsync() => _postgres.StartAsync();
 
     public new async Task DisposeAsync()
@@ -28,6 +31,14 @@ public sealed class DietApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.UseSetting("Messaging:UseInMemory", RabbitHost is null ? "true" : "false");
+        if (RabbitHost is not null)
+        {
+            builder.UseSetting("RabbitMQ:Host", RabbitHost);
+            builder.UseSetting("RabbitMQ:Port", RabbitPort.ToString());
+            builder.UseSetting("RabbitMQ:User", "diet_test");
+            builder.UseSetting("RabbitMQ:Password", "diet_test_password");
+        }
         builder.UseSetting("ConnectionStrings:Diet", _postgres.GetConnectionString());
         builder.UseSetting("Jwt:Issuer", "diet-test");
         builder.UseSetting("Jwt:Audience", "diet-clients-test");

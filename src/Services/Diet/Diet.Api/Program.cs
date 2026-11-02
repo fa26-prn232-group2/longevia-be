@@ -2,6 +2,7 @@ using Diet.Api;
 using Diet.Api.Endpoints;
 using Diet.Application;
 using Diet.Infrastructure;
+using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Observability;
@@ -60,6 +61,12 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DietDbContext>();
     await db.Database.MigrateAsync();
+    if (app.Configuration["export-meal-activities"] is { Length: > 0 } snapshotPath)
+    {
+        var count = await scope.ServiceProvider.GetRequiredService<MealActivitySnapshotExporter>().ExportAsync(snapshotPath);
+        app.Logger.LogInformation("Meal activity snapshot exported: {Count} records. HTTP and bus were not started.", count);
+        return;
+    }
 }
 
 app.Run();

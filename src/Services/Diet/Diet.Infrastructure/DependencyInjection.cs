@@ -1,4 +1,5 @@
 using Diet.Application.Abstractions;
+using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Diet.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<ITargetRepository, TargetRepository>();
         services.AddScoped<IMealRepository, MealRepository>();
+        services.AddDietMessaging(config);
         return services;
     }
 }

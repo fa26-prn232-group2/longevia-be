@@ -15,6 +15,7 @@ public sealed class FoodItemConfiguration : IEntityTypeConfiguration<FoodItem>
         builder.Property(x => x.Category).HasMaxLength(50).IsRequired();
         builder.Property(x => x.ServingUnit).HasMaxLength(30).IsRequired();
         builder.Property(x => x.ServingSize).HasPrecision(12, 3);
+        builder.Property(x => x.Allergens).HasColumnType("text[]").IsRequired(false);
         builder.OwnsOne(x => x.Nutrition, NutritionMapping.Configure);
         builder.Navigation(x => x.Nutrition).IsRequired();
     }

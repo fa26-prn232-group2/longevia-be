@@ -1,3 +1,27 @@
+# Height gRPC — chạy hiện hành (2026-10-26)
+
+Local Progress host cần thêm IdentityGrpc__Address (HTTP(S), ví dụ internal Compose
+http://identity:50051) và IdentityGrpc__DeadlineMilliseconds=2000. Không có default
+fake provider. Address/deadline sai làm fail startup; gRPC endpoint không lộ ra host.
+Functional gRPC verified không đồng nghĩa authenticated service-caller readiness.
+
+Từ repo root, restore solution trước scoped tests vì fixture khởi động Identity
+entry point riêng, build bằng dotnet run --no-restore. Fixture seed/update Identity
+qua chính API Identity; không cần dev database hoặc server Identity bên ngoài.
+
+~~~powershell
+dotnet restore longevia-be.slnx
+dotnet test src/Services/Progress/tests/Progress.IntegrationTests/Progress.IntegrationTests.csproj --filter FullyQualifiedName~HeightGrpcTests
+docker build -f src/Services/Progress/Dockerfile -t longevia-progress:height-grpc .
+~~~
+
+Docker phải đang chạy. Primary Height tests dùng hai PG thật và real HTTP2 Identity;
+controlled server chỉ cho negative/fault scenarios. Progress host chỉ giữ JWT public
+key; private key fixture cấp cho Identity test process, không cấp cho Progress.
+Gates và actual evidence mới: [verification.md](verification.md). Các hướng dẫn
+Phase1/2 bên dưới là lịch sử, không thay trạng thái hiện hành.
+
+---
 # Hướng dẫn kiểm chứng
 
 ## Phase 2 foundation — 2026-10-25
@@ -85,3 +109,8 @@ workspace triển khai được kiểm soát, thấy test đỏ đúng nguyên n
 không để mutation kiểm chứng tồn tại trong commit. Test thật DB/broker không mock persistence.
 Load benchmark theo plan, report throughput/p95 và lỗi cùng cấu hình môi trường;
 chưa đo thì không claim đạt NFR. Không gọi API AI hoặc gửi digest trong core E2E.
+
+## Corrective PR #13
+
+Đối soát JSON v1 thật và test isolated producer Diet: [hướng dẫn](corrective-reconciliation.md).
+Q01 UTC MVP đã được Bảo approve nội bộ; Huy acknowledgment frontend/Diet còn PENDING.

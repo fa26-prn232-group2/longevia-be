@@ -247,7 +247,8 @@
         "carbsGrams": 0.0,
         "fatGrams": 3.6,
         "fiberGrams": 0.0,
-        "isCustom": false
+        "isCustom": false,
+        "allergens": null
       }
     ],
     "pageNumber": 1,
@@ -262,6 +263,11 @@
 ---
 
 ### 3.2 `POST /api/diet/foods` — Tạo món ăn tùy chỉnh cá nhân
+- `allergens` (array string, optional/nullable): thiếu hoặc `null` nghĩa chưa khai
+  báo; `[]` nghĩa người tạo khai báo không có nhãn, không phải kiểm định an toàn.
+  Tối đa 32 nhãn, mỗi nhãn không trắng và dài tối đa 50 ký tự; trim, lowercase,
+  bỏ trùng, sắp xếp. Không suy nhãn từ tên hoặc coi null là không dị ứng.
+  Response FoodResponse luôn có `allergens` với cùng quy ước null/array.
 - **Xác thực**: Bearer JWT
 - **Request Body**:
   ```json

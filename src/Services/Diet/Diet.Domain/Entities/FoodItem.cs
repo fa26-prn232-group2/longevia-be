@@ -10,10 +10,12 @@ public sealed class FoodItem
     public string ServingUnit { get; private set; } = "";
     public NutritionValues Nutrition { get; private set; } = new(0, 0, 0, 0, 0);
 
+    public string[]? Allergens { get; private set; }
+
     private FoodItem() { }
 
     public static FoodItem Create(Guid? userId, string name, string category,
-        decimal servingSize, string servingUnit, NutritionValues nutrition)
+        decimal servingSize, string servingUnit, NutritionValues nutrition, IReadOnlyList<string>? allergens = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(servingSize);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -21,6 +23,11 @@ public sealed class FoodItem
             nutrition.FatGrams < 0 || nutrition.FiberGrams < 0)
         {
             throw new ArgumentException("Dinh dưỡng không được âm.", nameof(nutrition));
+        }
+        if (allergens is not null && (allergens.Count > 32 ||
+            allergens.Any(x => string.IsNullOrWhiteSpace(x) || x.Length > 50)))
+        {
+            throw new ArgumentException("Invalid allergen tags.", nameof(allergens));
         }
         return new()
         {
@@ -31,6 +38,7 @@ public sealed class FoodItem
             ServingSize = servingSize,
             ServingUnit = servingUnit.Trim(),
             Nutrition = nutrition,
+            Allergens = allergens?.Select(x => x.Trim().ToLowerInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
         };
     }
 }

@@ -42,11 +42,30 @@ Malformed JSON/query do ASP.NET Core trả 400. Quyền truy cập JWT áp dụn
 
 ## Counted sync
 
-6 operation nghiệp vụ / 4 path / 13 DTO / 73 field DTO khai báo (không nhân field
+6 operation nghiệp vụ / 4 path / 13 DTO / 75 field DTO khai báo (không nhân field
 của type lồng nhau theo số lần sử dụng): foods, targets/me, meals, meals/daily-summary.
 Request: 4 DTO (CreateFoodRequest, UpdateTargetRequest, LogMealRequest,
 LogMealItemRequest). Response nghiệp vụ: 9 DTO (FoodResponse, FoodPageResponse,
 TargetResponse, MealResponse, MealItemResponse, DailySummaryResponse,
 MacroSummary, MacroProgress, MealSummary).
-Test tự động đối chiếu 6 operation và 73 field của 13 schema trong Swagger đã qua.
+Test tự động đối chiếu 6 operation và 75 field của 13 schema trong Swagger đã qua.
 Xem [evidence.md](evidence.md). Chưa READY cho phần tích hợp hoãn.
+
+## Cập nhật cung cấp backend — 2026-10-25
+
+Thêm MealLoggedEvent v1, replay/snapshot phía backend; metadata catalog thêm
+allergens optional vào CreateFoodRequest và nullable vào FoodResponse. Count
+hiện 6 operation / 13 DTO / 75 field (thêm 2 so với 73 ở giai đoạn độc lập).
+HTTP tạo meal 201 nghĩa là meal/outbox đã commit, không có nghĩa Streak Progress
+đã cập nhật đồng bộ; không tự retry POST khi kết quả không rõ.
+Token hợp lệ từ login Identity đã kiểm chứng đọc/ghi Diet qua gateway; phần
+profile/weight/AI và Streak consumer vẫn theo backend-integration-guide.md.
+
+## Metadata allergens
+
+POST /foods có optional allergens: null hoặc bỏ qua = chưa khai báo; [] = người
+tạo khai báo không có tag, không phải xác nhận an toàn. GET/POST response FoodResponse
+có allergens nullable. Tối đa 32 tag, mỗi tag 1..50 ký tự không trắng, server trim,
+lowercase/dedup/sort; null entry bị 400. Client cũ không gửi field vẫn hoạt động.
+Không tự hiển thị unknown thành "không dị ứng" hoặc dùng thông tin do user khai
+báo như chứng nhận y tế. Các món seed/row cũ giữ unknown.

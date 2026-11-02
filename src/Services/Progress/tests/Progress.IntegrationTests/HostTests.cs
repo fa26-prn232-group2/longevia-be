@@ -27,11 +27,11 @@ public sealed class HostTests(ProgressFixture fixture)
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
         Assert.Same(db, scope.ServiceProvider.GetRequiredService<IUnitOfWork>());
-        Assert.Empty(db.Model.GetEntityTypes());
-        Assert.Empty(db.Database.GetMigrations());
+        Assert.NotEmpty(db.Model.GetEntityTypes());
+        Assert.NotEmpty(db.Database.GetMigrations());
         await ProgressDatabaseInitializer.InitializeAsync(db, CancellationToken.None);
         await ProgressDatabaseInitializer.InitializeAsync(db, CancellationToken.None);
-        Assert.Empty(await db.Database.GetAppliedMigrationsAsync());
+        Assert.NotEmpty(await db.Database.GetAppliedMigrationsAsync());
         Assert.Equal(0, await db.SaveChangesAsync());
         await using var connection = new NpgsqlConnection(fixture.ConnectionString);
         await connection.OpenAsync();
@@ -41,7 +41,7 @@ public sealed class HostTests(ProgressFixture fixture)
         Assert.True(await reader.ReadAsync());
         Assert.Equal("progress_db", reader.GetString(0));
         Assert.Equal("progress_user", reader.GetString(1));
-        Assert.Equal(0, reader.GetInt64(2));
+        Assert.True(reader.GetInt64(2) > 0);
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public sealed class HostTests(ProgressFixture fixture)
         var script = await client.GetStringAsync(scriptUrl);
         Assert.Contains("v1/swagger.json", script);
         var paths = document.GetProperty("paths");
-        Assert.False(paths.TryGetProperty("/fasting/start", out _));
-        Assert.False(paths.TryGetProperty("/metrics/history", out _));
+        Assert.True(paths.TryGetProperty("/fasting/start", out _));
+        Assert.True(paths.TryGetProperty("/metrics/history", out _));
     }
 
     [Fact]

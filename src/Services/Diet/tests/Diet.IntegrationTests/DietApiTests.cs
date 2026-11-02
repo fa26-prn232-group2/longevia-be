@@ -192,7 +192,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
             "DailySummaryResponse", "MacroSummary", "MacroProgress", "MealSummary",
         };
         var schemas = swagger.RootElement.GetProperty("components").GetProperty("schemas");
-        Assert.Equal(73, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+        Assert.Equal(75, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
     }
 
     private static async Task<FoodResponse> CreateFood(HttpClient client)

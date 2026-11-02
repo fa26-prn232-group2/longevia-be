@@ -19,6 +19,10 @@ public sealed class CreateFoodRequestValidator : AbstractValidator<CreateFoodReq
         RuleFor(x => x.CarbsGrams).Must(ValidAmount).WithMessage(NutrientError);
         RuleFor(x => x.FatGrams).Must(ValidAmount).WithMessage(NutrientError);
         RuleFor(x => x.FiberGrams).Must(ValidAmount).WithMessage(NutrientError);
+        RuleFor(x => x.Allergens).Must(tags => tags is null || tags.Count <= 32)
+            .WithMessage("Tối đa 32 nhãn dị ứng.");
+        RuleForEach(x => x.Allergens!).NotEmpty().MaximumLength(50)
+            .When(x => x.Allergens is not null);
     }
 
     private const string NutrientError = "Dinh dưỡng phải từ 0 đến 1000000, tối đa 3 chữ số thập phân.";

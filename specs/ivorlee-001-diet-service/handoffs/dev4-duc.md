@@ -35,3 +35,33 @@ thức CandidateFood.allergens trong proto, nhưng caller chưa được map unk
 thành [] an toàn, không tự nhận diện alias/ingredents hay xác nhận bởi prompt.
 Phần còn chờ thật: provider profile/allergies và weight, chốt provenance/safety
 của metadata để chọn candidate và kiểm chứng adapter AI dưới deadline.
+
+## Nhờ Đức phản hồi bàn giao
+
+Review metadata allergens của Diet trong PR #12. Phản hồi mapping cụ thể từ
+catalog/target/profile sang request và từ response về food ID, serving, macro,
+citation/error; phân biệt field đã hỗ trợ với field còn thiếu trong canonical proto.
+Nếu cần đổi contract thì gửi proposal/PR để Huy phối hợp, không dùng profile giả.
+Provider profile/weight vẫn chưa có; phần này không chuyển trách nhiệm sang Đức.
+
+## Adapter đã triển khai — 2026-11-02
+
+Huy đã codegen và viết MealRecommendationProvider theo proto hiện tại. Phía Diet
+map bằng food_id, serving/nutrition catalog, truyền profile/context nội bộ. Unknown
+allergens bị loại khỏi candidates; tags chủ món khai báo không phải chứng nhận y tế.
+Không nhận thêm món ngoài catalog; capped suggestion food_id rỗng không log thành food.
+Citation verified=false được giữ trạng thái; thiếu citation/disclaimer bị reject.
+Nhờ Đức review mapping này, báo field cần bổ sung hoặc khác semantics proto;
+không cần chờ chốt lại mới làm adapter. Chưa mở public route vì full profile Identity
+còn thiếu, chưa chạy full E2E. Deadline2s nằm trong budget caller.
+
+## Cập nhật hiện tại: Diet đã mở facade AI
+
+GET /api/diet/meals/ai-recommendations?mealType=Lunch&goal=Longevity đã nối
+Identity profile + Progress weight + summary UTC → GetMealRecommendations.
+Nhờ Đức review mapping ở Diet.Infrastructure/Grpc/MealRecommendationProvider.cs:
+IDs/nutrition từ catalog, citation/disclaimer/safetyNote giữ nguyên; foodId rỗng
+ở capped suggestion không biến thành food để log. Deadline caller tối đa2s,
+tổng Diet2.8s; server Google AI30s không bảo đảm SLA này. Cần đo với key/corpus
+thật; khi chậm Diet trả504, không kéo dài request hoặc tạo món giả.
+Không cần thêm RPC để Diet code tiếp. Weekly plan ngoài baseline vẫn là scope riêng.

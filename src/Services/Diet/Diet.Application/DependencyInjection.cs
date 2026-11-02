@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<TargetUseCases>();
         services.AddScoped<MealUseCases>();
         services.AddScoped<DailySummaryUseCase>();
+        services.AddScoped<MealRecommendationsUseCase>();
         return services;
     }
 }

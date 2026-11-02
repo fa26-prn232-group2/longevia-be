@@ -11,6 +11,10 @@ public static class TargetEndpoints
         group.MapGet("", async (TargetUseCases useCases, CancellationToken ct) =>
             TypedResults.Ok(await useCases.GetAsync(ct)))
             .WithName("GetDietTarget").WithSummary("Lấy mục tiêu dinh dưỡng hiện tại");
+        group.MapPost("/calculate", async (UpdateTargetRequest request, TargetUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.CalculateAsync(request, ct)))
+            .AddEndpointFilter<ValidationFilter<UpdateTargetRequest>>()
+            .WithName("CalculateDietTarget").WithSummary("Tính BMR/TDEE từ hồ sơ và lưu snapshot cùng mục tiêu");
         group.MapPut("", async (UpdateTargetRequest request, TargetUseCases useCases, CancellationToken ct) =>
             TypedResults.Ok(await useCases.UpdateAsync(request, ct)))
             .AddEndpointFilter<ValidationFilter<UpdateTargetRequest>>()

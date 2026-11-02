@@ -3,6 +3,12 @@
 Owner `ivorlee`, nhánh `feat/diet-service`. Developer chốt triển khai phần độc
 lập: catalog, target nhập tay, nhật ký, hạ tầng local và test.
 
+## Trạng thái hiện tại — 2026-11-02
+
+Phạm vi đã mở rộng theo yêu cầu developer: profile Identity + weight Progress,
+BMR/TDEE snapshot và REST meal AI. Phần mô tả độc lập bên dưới là lịch sử; thiết
+kế hiện tại ở các mục bổ sung cuối file và API §3.7–3.8.
+
 ## Nguồn và phạm vi
 
 [Constitution](../../.specify/memory/constitution.md),
@@ -146,3 +152,57 @@ không đổi proto hay source Đức. AI chưa mở cho đến khi profile/đ�
 metadata đủ theo contract; unknown không được map ngầm thành danh sách an toàn.
 Shared hotspots bổ sung docs/api/api-spec.md (2 field optional, counts 75 thay 73),
 FoodItemConfiguration.cs/model snapshot/migration và frontend guide.
+
+## Q10 client — 2026-11-02
+
+Shared Files & Conflict Hotspots: Diet.Infrastructure DI/csproj, Dockerfile;
+contracts/progress/v1/progress.proto chỉ đọc/codegen, không sửa contract của Bảo.
+Client trả immutable weight snapshot (kg/measuredAt/sourceMetricId/requestedAsOf).
+Manual target không gọi Progress: chưa có profile/calculate-target contract để
+lưu snapshot thể hiện cân nặng thực sự dùng tính toán. Không gắn cân nặng tùy ý
+vào target nhập tay rồi gọi đó là snapshot BMR. DB migration sẽ cùng phase tính target.
+
+## Snapshot target và công thức — 2026-11-02
+
+Shared Files & Conflict Hotspots: Diet target entity/config/repository, migration
+và model snapshot; TargetResponse giữ số field, trả BMR/TDEE đã lưu nếu có.
+Tạo factory calculated target nội bộ nhận dữ liệu profile đã được xác thực;
+chưa mở HTTP input profile tự khai vì contract Identity chỉ cung cấp chiều cao.
+Lưu weight/source/measured/asOf, height/age/sex/activity factor và kết quả ở cùng
+row target; PUT nhập tay clear snapshot. Tuổi tính đủ năm ở UTC date phép tính.
+Activity factor là input đã xác thực (1..3), chưa tự map enum Identity khi thiếu contract.
+
+## Adapter meal AI — 2026-11-02
+
+Shared Files & Conflict Hotspots: Diet.Infrastructure csproj/DI/Dockerfile;
+canonical recommendation.proto chỉ read/codegen. Diet compose thêm internal_net
+để gọi Recommendation theo ADR001 (không expose service AI qua gateway).
+Caller nội bộ phải cung cấp profile đã resolve, catalog đã kiểm tra ownership,
+target và consumed calories. Adapter loại candidate allergens unknown; không coi
+user-declared tags là chứng nhận y tế. Không fake profile để mở public REST flow.
+Mapper chỉ chấp nhận food ID có trong request, trả serving/nutrition catalog và
+citation/disclaimer đầy đủ; calorie cap suggestion ngoài catalog không log thành food.
+
+## Hoàn thiện profile và public facade — 2026-11-02
+
+Developer yêu cầu bổ sung phần Identity thiếu và hoàn thiện Diet. Shared Files &
+Conflict Hotspots bổ sung: contracts/identity/v1/identity.proto + README (thêm
+optional dietary_preference, repeated allergies, giữ nguyên số field cũ),
+IdentityGrpcService.cs và IdentityGrpcTests.cs (chỉ mapping/validation, không schema).
+Phối hợp Nguyên review; không sửa tasks/meta của feature Nguyên. Diet codegen,
+DI/Dockerfile, API spec, hai endpoint và guides cùng cập nhật.
+
+POST /targets/me/calculate nhận cùng bốn field mục tiêu như PUT; profile lấy từ
+Identity và cân nặng Progress. Không tự đặt deficit/surplus hay tỷ lệ macro chưa
+được sản phẩm quy định. Hệ số Sedentary=1.2, LightlyActive=1.375,
+ModeratelyActive=1.55, VeryActive=1.725; tuổi đủ năm theo UTC.
+GET /meals/ai-recommendations yêu cầu mealType và goal (LoseWeight/Maintain/
+BuildMuscle/Longevity), dùng summary ngày UTC, profile/cân nặng hiện tại và tối đa
+100 candidate có metadata, cùng ownership. Deadline tổng 2.8 giây, gRPC tối đa
+2 giây trong ngân sách còn lại; hủy request truyền xuyên. Profile server cũ thiếu
+optional dietary_preference không được coi allergies rỗng là đã khai báo.
+
+Shared hotspots phase này còn gồm docs/decisions/004-diet-to-identity-profile-grpc.md,
+docs/system-design/microservices/01-service-boundaries.md và 02-grpc-and-events.md
+để ghi đúng chiều gọi mới đã được developer yêu cầu. Public DTO AI tách khỏi
+record adapter; Swagger inventory mới 8 operation/6 path/16 DTO/100 field.

@@ -5,8 +5,9 @@
   "branch": "feat/diet-service",
   "status": "open",
   "services": [
-    "diet"
+    "diet",
+    "identity"
   ],
-  "description": "Diet catalog, targets, meal logs and MealLoggedEvent provider/outbox/replay; consumer integration pending",
+  "description": "Diet catalog, target calculation/profile/weight snapshots, meal logs, AI facade and integration contracts",
   "opened_at": "2026-10-24"
 }

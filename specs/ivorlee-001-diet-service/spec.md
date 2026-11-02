@@ -37,3 +37,13 @@ Progress đối chiếu, export không ghi đè/không xuất file dở; không 
 liên service chưa có ADR. Catalog lưu allergens nullable do chủ món khai báo,
 chuẩn hóa tags và giữ unknown khác declared-empty; không hứa an toàn dị ứng.
 Thực hiện độc lập với profile/weight provider, không đẩy thành blocker của Đức/Bảo.
+
+## Phạm vi bổ sung theo yêu cầu developer — 2026-11-02
+
+- POST /targets/me/calculate lấy profile Identity, weight Progress, tính BMR/TDEE
+  và lưu snapshot cùng bốn mục tiêu do người dùng chọn; không giả profile.
+- GET /meals/ai-recommendations lấy profile/cân nặng hiện tại, summary UTC,
+  candidate có metadata thuộc user/shared; query mealType và goal bắt buộc.
+- Dietary preference/allergies do Identity cung cấp theo optional presence.
+- Deadline tổng AI 2.8 giây; lỗi dependency riêng; response giữ citation,
+  disclaimer, safetyNote và trạng thái degraded. Không biến unknown thành an toàn.

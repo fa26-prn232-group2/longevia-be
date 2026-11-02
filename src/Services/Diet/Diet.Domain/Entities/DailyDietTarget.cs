@@ -10,6 +10,16 @@ public sealed class DailyDietTarget
     public decimal TargetFatGrams { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    public EnergyCalculation? Calculation { get; private set; }
+
+    public static DailyDietTarget CreateCalculated(Guid userId, NutritionValues target, EnergyCalculation calculation)
+    {
+        calculation.Validate();
+        var result = Create(userId, target, calculation.CalculatedAt);
+        result.Calculation = calculation;
+        return result;
+    }
+
     private DailyDietTarget() { }
 
     public static DailyDietTarget Create(Guid userId, NutritionValues target, DateTimeOffset now)

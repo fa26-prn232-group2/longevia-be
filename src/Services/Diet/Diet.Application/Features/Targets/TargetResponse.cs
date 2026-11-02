@@ -6,7 +6,7 @@ namespace Diet.Application.Features.Targets;
 public sealed record TargetResponse(Guid Id, decimal? Bmr, decimal? Tdee, decimal TargetCalories,
     decimal TargetProteinGrams, decimal TargetCarbsGrams, decimal TargetFatGrams, DateTimeOffset UpdatedAt)
 {
-    internal static TargetResponse From(DailyDietTarget target) => new(target.Id, null, null,
+    internal static TargetResponse From(DailyDietTarget target) => new(target.Id, target.Calculation?.Bmr, target.Calculation?.Tdee,
         target.TargetCalories, target.TargetProteinGrams, target.TargetCarbsGrams,
         target.TargetFatGrams, target.UpdatedAt);
 }

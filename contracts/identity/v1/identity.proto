@@ -39,4 +39,9 @@ message GetUserProfileResponse
   int32 height_cm_x100 = 3;
   // Canonical Identity values: "Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive".
   string activity_level = 4;
+  // Presence confirms that dietary preference and allergies were supplied by this server version.
+  // Canonical values: None, Keto, Vegan, Mediterranean, LowCarb.
+  optional string dietary_preference = 5;
+  // Empty means the existing profile declares no allergies; never inferred by the caller.
+  repeated string allergies = 6;
 }

@@ -1,29 +1,20 @@
-# Phần còn chờ thật của Huy — Diet
+# Trạng thái chờ bên ngoài — cập nhật 2026-11-02
 
-Chỉ liệt kê dependency bên ngoài; không dùng việc chưa tự làm làm lý do bị block.
-Code bàn giao thuộc nhánh feat/diet-service; feature vẫn open vì các dependency dưới đây.
+Diet đã có client profile/weight, snapshot BMR/TDEE và hai public facade. Không
+còn coi GetUserProfile/GetLatestWeight/meal consumer là endpoint còn nợ của nhóm.
+Bảo đã cung cấp Q10 và consumer/inbox/projection trong main; không yêu cầu code lại.
 
-## Nghĩa vụ Diet đã thực hiện
-
-| Cung cấp cho | Phần Huy đã làm | Bằng chứng / cách dùng |
+| Việc phối hợp | Nhờ ai | Phần còn thực hiện |
 | --- | --- | --- |
-| Bảo | MealLoggedEvent v1, outbox, replay stable IDs/ngày | PostgreSQL + RabbitMQ, rollback/reconnect/replay tests |
-| Bảo | Snapshot danh sách meal activity, count/checksum, verifier | CLI export; đối chiếu đủ MealLogId/businessDate mà không đọc diet_db |
-| Đức | Catalog allergens nullable, validation/normalization, persisted response | Unknown không tự thành danh sách an toàn; proto Đức giữ nguyên |
-| Nguyên/Duy/Bảo | Mapping Compose JWT, token thật Identity → Diet | Register/email Mailpit/verify/login/catalog/target smoke |
-| Tất cả | Handoff riêng, contract inventory và giới hạn readiness | dev1-nguyen.md, dev3-bao.md, dev4-duc.md, dev5-duy.md |
+| Review bổ sung profile | Nguyên | Review proto + Identity mapping hai field dietary/allergies do Huy bổ sung; deploy Identity trước AI |
+| AI thực tế | Đức | Review mapping và đo latency Google AI/corpus thật dưới budget Diet; phản hồi mismatch |
+| Rollout và đối soát Streak | Bảo + Duy | Khi chạy stack, xác nhận queue trước replay, drain và đối chiếu snapshot; không phải thiếu provider |
+| Báo cáo tuần | Duy/Bảo/lead | Chưa có schema/scheduler/recipient/consent; scope riêng ngoài baseline Diet |
 
-## Chỉ những phần bị block
+Food seed allergens null bị loại khỏi candidate. Người dùng cần khai metadata cho
+món tùy chỉnh; hệ thống không tự xác nhận an toàn hoặc suy thành phần từ tên.
+Luồng tính target vẫn nhận bốn mục tiêu user chọn; tự chọn calo/macros để giảm/tăng
+cân chưa được sản phẩm quy định, không phải endpoint Nguyên/Bảo còn thiếu.
 
-| Chức năng | Đang chờ ai/cái gì | Điều kiện Huy tiếp tục |
-| --- | --- | --- |
-| BMR/TDEE tự động | Nguyên: profile provider; Bảo: weight provider; lead: ADR chiều gọi | Canonical contracts + provider có presence/provenance/deadline, rồi Huy adapter/công thức/snapshot target |
-| REST meal AI (route thứ 7) | Profile/allergies/weight đáng tin, Đức/lead xác nhận provenance candidate/goal/mealType/citation mapping | Input contract đủ, không dựng health data giả; Huy gRPC adapter + endpoint/error mapping/test latency |
-| Full Streak E2E | Bảo: consumer/inbox/projection; Duy/Bảo: queue/retry/DLQ + policy ngày metric | Huy đã cung cấp event/replay/snapshot; chạy integration với consumer thực sau khi có |
-| JWT policy chung | Nguyên/Bảo/Duy/lead: missing kid, rotation, fail-start | Đường token hợp lệ đã chạy; policy lỗi cần thống nhất, không tự sửa Shared của cả nhóm |
-| Weekly digest | Duy/Bảo/lead: schema/scheduler, recipient/consent, tuần/timezone, report ownership | Chốt contract/nguồn recipient và schedule, Huy cung cấp nutrition summary thuộc Diet, Worker chỉ gửi |
-
-Không để Huy tự sửa code/migrations Identity/Progress/Recommendation/Worker.
-Edit/delete meal và REST weekly plan chưa thuộc baseline API Diet đã duyệt; không
-thêm tùy ý rồi gọi đó là blocker của các bạn. Không có task độc lập còn mở trong
-phạm vi catalog/manual target/meal logging/provider meal activity đã được giao.
+Test riêng và evidence không thay rollout Compose/live AI. Xem từng file dev1,
+dev3, dev4, dev5 trong thư mục này; không cần nhắn yêu cầu provider đã có.

@@ -9,6 +9,7 @@ option csharp_namespace = "Longevia.Identity.Contracts.V1";
 service IdentityService
 {
   rpc GetUserHeight(GetUserHeightRequest) returns (GetUserHeightResponse);
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
 }
 
 message GetUserHeightRequest
@@ -21,4 +22,21 @@ message GetUserHeightResponse
   // Height in centimeters multiplied by 100 (for example, 175.00 cm = 17500).
   // Absent means the profile exists but no height has been recorded.
   optional int32 height_cm_x100 = 1;
+}
+
+message GetUserProfileRequest
+{
+  string user_id = 1;
+}
+
+message GetUserProfileResponse
+{
+  // ISO 8601 calendar date: YYYY-MM-DD.
+  string birth_date = 1;
+  // Canonical Identity values: "Male" or "Female".
+  string biological_sex = 2;
+  // Height in centimeters multiplied by 100 (for example, 175.25 cm = 17525).
+  int32 height_cm_x100 = 3;
+  // Canonical Identity values: "Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive".
+  string activity_level = 4;
 }

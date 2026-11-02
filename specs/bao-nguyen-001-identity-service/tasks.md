@@ -74,6 +74,7 @@
 - [x] T040 Implement provider: validate GUID và persisted height, trả `NOT_FOUND` khi thiếu user/profile, `INVALID_ARGUMENT` khi GUID sai, `INTERNAL` nếu height persisted ngoài miền; deadline/cancel đi theo gRPC context; listener HTTP/2 nội bộ theo ADR 001.
 - [x] T041 Thêm integration tests PostgreSQL thật cho scaled height, user/profile thiếu, invalid ID và stored height không hợp lệ.
 - [x] T042 Đồng bộ backend guide, plan/shared-file ownership, progress-service design và counts; codegen/test evidence xác nhận 1 RPC, 2 messages, 2 fields.
+- [x] T043 Mở rộng contract Identity v1 bằng RPC additive `GetUserProfile` trả ngày sinh ISO, giới tính sinh học, chiều cao cm × 100 và activity level; giữ nguyên `GetUserHeight`, thêm kiểm thử PostgreSQL + HTTP/2, cập nhật backend guide và counted sync (2 RPC, 4 messages, 7 fields). `Identity.Api` build 0 warning/error; Identity UnitTests 67/67 và IntegrationTests 21/21 đạt, trong đó 12 gRPC cases.
 
 
 ### Dependencies

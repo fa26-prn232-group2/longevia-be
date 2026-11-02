@@ -21,6 +21,52 @@ namespace Identity.IntegrationTests;
 public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFixture<IdentityGrpcApiFixture>
 {
     [Fact]
+    public async Task GetUserProfile_ProfileExists_ReturnsCanonicalProfileValues()
+    {
+        var userId = await SeedUserAsync(
+            heightCm: 175.25m,
+            birthDate: new DateOnly(1990, 4, 23),
+            biologicalSex: BiologicalSex.Female,
+            activityLevel: ActivityLevel.VeryActive);
+
+        var response = await fixture.Client.GetUserProfileAsync(
+            new GetUserProfileRequest { UserId = userId.ToString() },
+            deadline: DateTime.UtcNow.AddSeconds(5)).ResponseAsync;
+
+        Assert.Equal("1990-04-23", response.BirthDate);
+        Assert.Equal(BiologicalSex.Female, response.BiologicalSex);
+        Assert.Equal(17525, response.HeightCmX100);
+        Assert.Equal(ActivityLevel.VeryActive, response.ActivityLevel);
+    }
+
+    [Fact]
+    public async Task GetUserProfile_ProfileDoesNotExist_ReturnsNotFound()
+    {
+        var userId = await SeedUserAsync();
+
+        var exception = await Assert.ThrowsAsync<RpcException>(async () =>
+            await fixture.Client.GetUserProfileAsync(
+                new GetUserProfileRequest { UserId = userId.ToString() },
+                deadline: DateTime.UtcNow.AddSeconds(5)).ResponseAsync);
+
+        Assert.Equal(StatusCode.NotFound, exception.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-guid")]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    public async Task GetUserProfile_InvalidUserId_ReturnsInvalidArgument(string userId)
+    {
+        var exception = await Assert.ThrowsAsync<RpcException>(async () =>
+            await fixture.Client.GetUserProfileAsync(
+                new GetUserProfileRequest { UserId = userId },
+                deadline: DateTime.UtcNow.AddSeconds(5)).ResponseAsync);
+
+        Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
+    }
+
+    [Fact]
     public async Task GetUserHeight_ProfileExists_ReturnsHeightScaledByOneHundred()
     {
         var userId = await SeedUserAsync(heightCm: 175.25m);
@@ -90,7 +136,11 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
         Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
     }
 
-    private async Task<Guid> SeedUserAsync(decimal? heightCm = null)
+    private async Task<Guid> SeedUserAsync(
+        decimal? heightCm = null,
+        DateOnly? birthDate = null,
+        string biologicalSex = BiologicalSex.Male,
+        string activityLevel = ActivityLevel.Sedentary)
     {
         using var scope = fixture.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -111,10 +161,10 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
             db.UserProfiles.Add(UserProfile.Create(
                 Guid.NewGuid(),
                 userId,
-                new DateOnly(1990, 1, 1),
-                BiologicalSex.Male,
+                birthDate ?? new DateOnly(1990, 1, 1),
+                biologicalSex,
                 heightCm.Value,
-                ActivityLevel.Sedentary,
+                activityLevel,
                 DietaryPreference.None,
                 [],
                 DateTimeOffset.UtcNow));

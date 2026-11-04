@@ -11,10 +11,7 @@ Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet 
 approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
 Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
 
-T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
-và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
-3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
-Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+T034/SC-006 **DONE** cho Progress trong cấu hình đo ngày2026-11-04:3/3run PASS, readp95<150ms/writep95<250ms/successfulRPS>=100,0HTTPfail/drop. [Số đo và môi trường](../qbao-002-progress-benchmark-utc-closeout/benchmark-report.md), [machine evidence](../qbao-002-progress-benchmark-utc-closeout/benchmark-evidence.json). Measured source c795500; performance là local controlled run, không phải CI benchmark.
 
 ---
 
@@ -112,7 +109,7 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 - [x] T031 [US4] **DONE (MERGED DIET INTEROP VERIFIED)** — Diet PR #12 đã merged vào main; consumer/inbox/projection và đối soát snapshot JSON v1 với progress_db (RepeatableRead, batch 500) đã kiểm chứng; runbook vận hành đối soát 4 bước sẵn sàng cho rollout production.
 - [x] T032 [US4] **DONE** — DashboardUseCases.cs, DashboardDtos.cs, StreakCalculator.cs và DashboardEndpoints.cs (/dashboard/summary).
 - [x] T033 [US4] **DONE (SCOPED PROGRESS INTEGRATION)** — DashboardTests.cs và MealActivityConsumerTests.cs tích hợp toàn bộ luồng metrics, water, sleep, fasting và meal activity projection pass 100% trên scoped test fixture; full live multi-service E2E journey qua Gateway + Identity + Diet + RabbitMQ được ghi nhận là PENDING INTEGRATION chờ merge upstream PRs.
-- [ ] T034 [US4] **PENDING MEASURED ACCEPTANCE** — Docker hoạt động sau bật SVM; baseline cold run có14dropped arrivals nên không được nhận. Bộ chạy thật tại scripts/progress/benchmark phải có3valid runs đạt readp95<150ms/writep95<250ms/successfulRPS>=100/0error/drop trước DONE. Không coi ordinary integration tests là benchmark.
+- [x] T034 [US4] **DONE — SC-006 VERIFIED** — 3valid measured runs trên c795500 ngày2026-11-04; readp95 11.207/10.621/11.132ms; writep95 6.772/6.420/7.310ms; successfulRPS 120.000/120.000/120.017;0HTTPfail/drop. Actual HTTP/PG/JWT/IdentityHeight/Rabbit; 10k heavy-user metrics. Xem qbao-002 benchmark-report/evidence; không suy capacity production hoặc historical completeness từ kết quả này.
 - [x] T035 [US4] **DONE — CORRECTIVE VERIFIED** — Progress 178/178, full solution 733/733, 0 skip; format/Debug/Release/vulnerability pass. Evidence hiện hành tại verification.md, số đếm cũ là lịch sử.
 - [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: trạng thái PARTIAL_READY_FOR_FRONTEND (Fasting, Water, Sleep, Dashboard query sẵn sàng; POST /metrics phụ thuộc runtime Identity height).
 - [x] T037 [US4] **DONE (INTEGRATION GUIDES & HANDOFFS COMPLETED)** — Backend integration guide hoàn tất cho cả hai chiều Identity Height (consumer) và Diet Weight (provider); handoff Q10 hoàn tất cho Huy; Q01 cross-service UTC APPROVED bởi Bảo theo quyền Huy ủy quyền (ADR005); streak production readiness phụ thuộc rollout replay thực tế.

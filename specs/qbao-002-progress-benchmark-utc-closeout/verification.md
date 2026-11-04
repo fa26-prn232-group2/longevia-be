@@ -1,82 +1,90 @@
-# Tiếp tục sau reboot — 2026-11-04
+# Verification close-out — 2026-11-04
 
-Docker Engine29.9.2 Linux đã hoạt động,12logicalCPU/4107780096bytes RAM trong Docker.
-Progress integration151/151PASS và Diet UTC mới1/1PASS trên PostgreSQL thật.
-Format check + Debug/Release build0warning/error đã PASS. Full suite863/863PASS,0skip qua9assemblies, với dotnet test -c Release -m:1.
-Hai lượt parallel trước đỏ:1Height status DeadlineExceeded thayUnavailable;1Identity
-Worker queue startup timeout. Không đổi assertions/source để xanh; cả hai suite
-đều pass khi chạy tuần tự. CI chuẩn make check vẫn phải chạy trên finalHEAD.
-Evaluator15testsPASS, mutant <= làm2threshold testsFAIL; source thật không đổi.
-Benchmark baseline đã chạy; cold run có14dropped arrivals nên không được nhận.
-Raw logs được giữ trong ignored artifacts/progress-benchmark/baseline. Hai run sau
-đạt latency/throughput, nhưng chưa đủ3valid runs để đóng T034. Bộ đọc timestamp
-đã sửa tương thích k6 nanoseconds trên Python3.10; generator preallocation tăng
-80→240 để tránh runtime VU allocation. Không đổi arrival rate, ngưỡng hoặc production code.
-Report cuối sẽ thay trạng thái checkpoint bên dưới; không dùng lịch sử pre-reboot
-làm trạng thái hiện tại.
+## Source và scope
 
----
+- Start/base main6df059d9858cff1db28aa9abc9782c7d3023abbf, branch feat/progress-benchmark-utc-closeout.
+- Main được fetch lại, không đổi từ assignment. PR13/15/16 đã merge; không reopen/merge PR nào.
+- Q01 commitdd9c95b; toolingd552f2f; sampler fix và measured HEAD
+  c795500193a2deef1e2ae463734b6054e1797cc9, working tree sạch lúc đo.
+- Sau measuredHEAD chỉ cập nhật docs/evidence; không đổi production code, DTO, proto/event,
+  applied migrations hoặc formula BMI. [Report](benchmark-report.md), [JSON](benchmark-evidence.json).
+- Final deliveryHEAD/CI được kiểm tra trên GitHub PR checks và báo trong handoff;
+  không tái sử dụng CI main41488082385/855tests làm evidence của thay đổi này.
 
-# Checkpoint trước reboot — 2026-11-04
+## Gates thực thi
 
-## Repository và quyền
+GNU Make không có trên máy: đọc Makefile rồi chạy format-check, Debug build,
+Release build warnings-as-errors, full Release tests và transitive vulnerability scan.
 
-- Base/start/current HEAD6df059d9858cff1db28aa9abc9782c7d3023abbf.
-- Branch mới feat/progress-benchmark-utc-closeout, working changes chưa commit.
-- PR13/15/16 đều MERGED; không mở lại PR13, không merge PR mới nào.
-- Main CI41488082385 SUCCESS là baseline cũ, không phải evidence changes hiện hành.
-- Q01 ADR005 Accepted theo Bảo thực hiện quyền Huy ủy quyền. ADR004 bổ sung index
-  từ file Accepted hiện hữu; không sửa ADR003/004.
+|Gate|Kết quả thật|
+|---|---|
+|git diff --check|PASS|
+|dotnet format longevia-be.slnx --verify-no-changes|PASS|
+|dotnet build longevia-be.slnx --no-restore -warnaserror|PASS,0warning/error|
+|dotnet build longevia-be.slnx -c Release --no-restore -warnaserror|PASS,0warning/error|
+|dotnet test longevia-be.slnx -c Release -m:1|863/863PASS,9assemblies,0skip|
+|dotnet list longevia-be.slnx package --vulnerable --include-transitive|27projects, không vulnerable package theo current NuGet sources|
+|Seed Release build / format verify / vulnerability scan|PASS,0warning/error, không vulnerable package|
+|python unittest discover scripts/progress/benchmark|19/19PASS|
+|team-feature check|7featuresPASS,0warning|
+|Docker Progress + Identity actual Dockerfiles|BuildPASS; actual images chạy trong benchmark|
+|Compose benchmark config --quiet|PASS với isolated generated .env|
+|Compose deployments config --quiet|PASS với repository .env.example; không có developer .env, không khởi chạy stack team|
+|Progress pending-model check|Không pending changes;5migration applied trên own PG benchmark|
 
-## Kiểm tra đã chạy thật
+Full .NET counts: Diet45integration+12unit, Identity21integration+67unit,
+Progress151integration+115unit, Recommendation64integration+372unit, Worker16unit =863.
+151Progress integration gồm actual Height→BMI→Weight gRPC, JWT isolation, fasting
+concurrency, sleep overlap, real RabbitMQ transport, snapshot/Postgres reconciliation,
+UTC boundaries. Không skip/bypass broker hoặc dùng in-memory làm real-transport evidence.
 
-- Progress unit115/115PASS,0skip (baseline108 +7UTC boundary cases mới).
-- Negative UTC: tạm đổi UtcCalendar.Day từ UtcDateTime sang DateTime tạo2FAIL/5PASS
-  vì Việt Nam local midnight/Monday khác UTC. Source đã restore đúng bytes,
-  full115PASS trở lại. Không còn mutation trong working tree.
-- Evaluator11testsPASS; in-memory mutant `<` thành `<=` làm2threshold testsFAIL,
-  không sửa source evaluator thật. Missing/truncated/failure/drop/late không PASS.
-- Seed tool Release buildPASS,0warning/error, format verifyPASS.
-- Progress và Diet integration projects Release buildPASS,0warning/error;
-  runtime integration tests mới chưa chạy được, không coi compile là testPASS.
-- team-feature check7featuresPASS/0warnings; git diff --checkPASS.
-- Scoped C#format đã chạy cho4new/changed testfiles và seed tool.
+Hai full-suite parallel run trước bị đỏ:1Height test nhận DeadlineExceeded thay
+Unavailable;1Identity email E2E Worker queue startup timeout. Các test/assertion
+không bị sửa; full suite chạy project tuần tự trên host (`-m:1`) PASS cả863.
+Không khẳng định nguyên nhân đã được chứng minh chỉ từ repeat; CI chuẩn `make check`
+vẫn chạy như cũ, không thêm skip hoặc sửa CI scheduling để che lỗi.
 
-## Blocker có bằng chứng
+Local Windows checkout bị core.autocrlf chuyển CRLF: normalize tracked C# về LF để
+chạy formatter, giữ BOM; restore chỉ native line endings khi nội dung canonical
+giống HEAD. Không stage/commit whitespace noise của service khác.
 
-Docker Desktop/WSL log ngày04/11: virtualization disabled in firmware,
-HCS_E_HYPERV_NOT_INSTALLED, noVirtualizationReason=WslVirtualizationDisabledInFirmware.
-Docker engine stopped/API500; không có measured benchmark. Bảo đã chọn bật
-SVM/AMD-V trong BIOS và reboot. Không tự reboot hoặc thay BIOS từ agent.
-Đã invoke runner thật; preflight Docker thất bại, process exit4 và generated
-artifacts/progress-benchmark/results.json ghi INCONCLUSIVE/CalledProcessError,
-runs=[] vào2026-11-04T13:58:12Z. Đây là setup failure, không phải latency testFAIL
-hay measuredPASS. Không tạo credentials khi Docker preflight chưa qua.
+## UTC evidence
 
-Host quan sát: Windows10Pro x64, Ryzen5 5600 (6physical/12logical), RAM
-16663976KiB, available4665484KiB tại audit. Chưa biết tài nguyên Docker khi engine
-chưa chạy; không suy host resources là Docker allocation.
+-7new Progress unit cases:23:59:59Z/00:00Z, Việt Nam00:30/07:00, UTC Monday và
+  Việt Nam Monday chưa sang UTC week. Full115unitPASS.
+- Negative control đổi Day từ UtcDateTime sang DateTime:2FAIL/5PASS; restore đúng
+  bytes rồi115PASS. Source production giữ nguyên, không có mutation trong Git.
+- Diet UTC test mới thực thi riêng1/1PASS rồi full Diet45/45PASS trên PostgreSQL:
+  TimeProvider trước/sau UTC midnight, default summary đổi ngày, explicit historical
+  MealLog.Date và CreatedAt giữ nguyên. Không đổi Diet production DI/schema.
+- Progress UTC tests kiểm tra water rollover, sleep wake/date/duration, UTC metric
+  history boundaries, today/yesterday streak, UTC Monday fasting và meal/metric day union.
+  Assert thêm persisted inbox BusinessDate và historical175cm/BMI22.86 không đổi sau replay.
+- Evaluator19tests; in-memory mutant `<`→`<=` làm đúng2threshold testsFAIL. Missing,
+  truncated, failed, dropped, insufficient duration/count không thể PASS. Actual k6
+  fractional timestamps có regression test cho Python3.10.
 
-T034 **BLOCKED BY BENCHMARK ENVIRONMENT**,0valid runs; read/writep95/RPS chưa đo,
-không có optimization vì chưa có baseline. Chưa commit/push/newPR do full gate
-cần real containers theo constitution. Chưa Dockerimagebuild/Compose runtime verify
-hoặc scan/fullsolutiontest mới. Không lấy855testsCI main làm kết quả lượt này.
+## Performance acceptance
 
-## Tiếp tục sau reboot
+3independent process runs,15s warmup/60s steady,120offered/s, readp95<150ms,
+writep95<250ms,success completions>=100/s,0HTTPfail/drop: cả3PASS.
+Report ghi actual throughput, all-sample latencies, bounded late drain, per-route,
+dataset, CPU/RAM/throttling/limits, image IDs, query-plan và rawSHA256.
+Mỗi run1800metric snapshots được EF kiểm chứng height175.25/BMI22.79/NormalWeight.
+Không tối ưu production hoặc tạo index vì baseline không cho thấy bottleneck cần sửa.
 
-1. Read AGENTS/RTK, kiểm tra gitstatus/HEAD và Docker info; không discard working changes.
-2. `python -m unittest discover -s scripts/progress/benchmark -p test_*.py -v`.
-3. Chạy scoped UTC/Diet/Height/Weight/Rabbit/reconcile regressions thật; sửa nếu fail.
-4. `python scripts/progress/benchmark/run.py` (harness mới cần runtime verification).
-   Build2actualimages,isolated2PG/Rabbit,seed,3run120arrival/s15+60s; xem ignored
-   artifacts/progress-benchmark/results.json và raw logs. Không tự PASS từ script.
-5. Audit evaluator counters/timestamps/real JWT/water200 vs metric201; thu resource
-   samples/EXPLAIN. Nếu baselinefail tối ưu Progress theo planhotspot rồi đo lại.
-6. UpdateT034 từsốđo, run fullmake lint/check equivalent (makeabsent),Docker/Compose,
-   vuln,modelcheck; reviewsecrets/scope. Scoped commits theo yêu cầu +pushbranch,
-   newPRmain,attachartifact,1reviewer và exactfinalHEADCI. Không merge.
+Các lượt preliminary không được nhận vẫn giữ ignored local raw/results: cold run
+14dropped arrivals; Python timestamp parser chưa tương thích; d552f2f sampler race
+khi k6 --rm thoát. Không sửa metrics/verdict cũ thành PASS. c795500 chạy lại đủ3run.
+Trước reboot Docker disabled firmware/API500 chỉ là lịch sử setup failure; sau Bảo
+bật SVM/reboot engine hoạt động. Không còn coi firmware là blocker hiện hành.
 
-Logs không nhạy cảm local closeout-*.log chỉ là checkpoint máy này;
-khi hoàn tất lưu report compact trong repo bằng relativelinks +commit/environment.
-Generated secrets/.env/JWT/users/raw datasets không commit. Frontend/Diet alignment,
-production replay/Dashboard completeness và Q02auth giữ riêng, không tự gỡ.
+## Readiness riêng
+
+Q01 APPROVED bởi Bảo thực hiện quyền Huy ủy quyền (ADR005), T034DONE cho môi trường
+đo. Huy còn frontend auto-today UTC rollout/UX; Bảo và Duy còn evidence production
+replay/outbox drainage/snapshot reconciliation và Dashboard completeness. Không sửa
+public Dashboard DTO. Nguyên giữ canonical Identity/provider/auth ownership.
+ADR001 internal-network trust không phải caller-authenticated service identity;
+future multi-host trust phải review riêng. Không expose gRPC host hoặc đổi trust model.
+Không claim production-ready toàn hệ thống hoặc100RPS của service khác.

@@ -11,10 +11,7 @@ Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet 
 approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
 Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
 
-T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
-và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
-3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
-Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+T034/SC-006 **DONE** cho Progress trong cấu hình đo ngày2026-11-04:3/3run PASS, readp95<150ms/writep95<250ms/successfulRPS>=100,0HTTPfail/drop. [Số đo và môi trường](../qbao-002-progress-benchmark-utc-closeout/benchmark-report.md), [machine evidence](../qbao-002-progress-benchmark-utc-closeout/benchmark-evidence.json). Measured source c795500; performance là local controlled run, không phải CI benchmark.
 
 ---
 

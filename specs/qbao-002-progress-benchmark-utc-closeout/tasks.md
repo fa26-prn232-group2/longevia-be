@@ -1,14 +1,17 @@
 # Tasks close-out
 
-- [x] C001 Audit actual main6df059d, PR13/15/16 merged, CI main success41488082385.
-- [x] C002 Ghi ADR005 Accepted và source delegated authority, không claim Huy ký.
-- [x] C003 Bộ benchmark actual HTTP/PG/Identity/Rabbit/JWT và evaluator strict được viết.
-- [x] C004 Chạy UTC regression mới và hiện hữu trên PG/Broker thật; negative controls.
-- [ ] C005 Build/Compose và3valid measured runs; không tick T034 từ scripts.
-- [ ] C006 Nếu baseline fail, tối ưu theo số đo + regression + đo lại cùng workload.
-- [ ] C007 Full gates, scoped commits/push/newPR, exact finalHEADCI; không merge.
+- [x] C001 Audit actual main6df059d, PR13/15/16 merged; tạo feature branch riêng, không reopen PR13.
+- [x] C002 ADR005 Accepted: Bảo thực hiện quyền Huy ủy quyền; không claim Huy trực tiếp ký/review.
+- [x] C003 Benchmark actual HTTP/PG/Identity/Rabbit/JWT + evaluator và resource sampling19testsPASS.
+- [x] C004 UTC regression:115Progress unit/151integration + Diet45integration; negative controls đỏ/xanh.
+- [x] C005 Docker actualimages/Compose và3valid measured runs c795500 PASS; T034DONE theo report.
+- [x] C006 Không cần tối ưu production: số đo dưới ngưỡng, giữ code/migrations/history/BMI nguyên.
+- [x] C007 Local gates:format/Debug/Release/full863tests/vuln27projects+Seed, scoped commits và evidence.
 
-Không đổi REST DTO, proto, event/topology; guides chỉ cập nhật Q01semantics được
-ủy quyền. Phần mềm benchmark mới không phải client-facing surface. Generated
-credentials/data không stage. T034 pending3valid measured runs; Docker đã hoạt động sau bật SVM/reboot.
-Local full solution863/863PASS (project scheduling tuần tự trên host),0skip.
+Delivery newPR/main và finalHEAD CI được kiểm chứng trong GitHub PR checks/final
+handoff; không coi local performance là GitHub benchmark. Không merge bất kỳ PR nào.
+Không đổi REST DTO/proto/event/topology, không sửa implementation Diet/Identity/Worker.
+Frontend/backend guides chỉ cập nhật Q01 semantics đã được ủy quyền. Generated
+credentials/JWT/users/raw không commit. Không có blocker triển khai trong phạm vi
+close-out sau khi gates/PR checks xanh; frontend rollout, production historical
+replay/completeness và deployment network vẫn là acceptance riêng của các owner.

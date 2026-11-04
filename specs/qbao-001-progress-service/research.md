@@ -1,3 +1,23 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
+và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
+3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
+Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+
+---
+
 # Height gRPC integration — báo cáo hiện hành
 
 ## Q02 hiện hành — Identity Height gRPC (2026-10-26)
@@ -55,7 +75,7 @@ Identity entry point/repository/migrations thật; seed/update qua REST của ch
 Identity trong fixture, không DB/source import chéo. Controlled server chỉ cho
 unset, malformed response, fault, deadline/cancellation. Full gates/Docker/CI mới
 được báo ở verification.md và PR #13, không dùng lại số 733 của commit cũ.
-Q10 Weight và Huy Q01 acknowledgment/Diet PR #12 giữ trạng thái riêng.
+Q10 Weight và Q01 delegated approval theo ADR005/Diet PR #12 giữ trạng thái riêng.
 
 ---
 
@@ -80,13 +100,13 @@ Q10 Weight và Huy Q01 acknowledgment/Diet PR #12 giữ trạng thái riêng.
 - Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
   không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
   phải có migration/rebucketing và phê duyệt liên service.
-- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
-  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- **Cross-service Q01: APPROVED bởi Bảo theo quyền Huy ủy quyền (ADR005)** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy trực tiếp ký ADR hoặc review PR.
 - Q02 functional Height gRPC đã verified theo mục hiện hành phía trên; service-caller auth còn BLOCKED. Q10 Weight không đổi.
 
 Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
 Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
-cho nội bộ Progress; compatibility liên service vẫn PENDING.
+cho nội bộ Progress; approval liên service có hiệu lực theo ADR005; rollout compatibility còn phải kiểm chứng.
 
 ## Cập nhật Phase 2 và Quyết định Xác nhận từ Nguyên — 2026-10-25
 
@@ -180,7 +200,7 @@ Các quyết định đã được duyệt ghi nhận rõ người duyệt; các
 
 | ID | Câu hỏi cụ thể và phương án đề xuất | Phương án khác / trade-off | Người xác nhận / Trạng thái |
 | --- | --- | --- | --- |
-| Q01 | **APPROVED FOR PROGRESS MVP BY BẢO**: UTC calendar cho mọi server-derived date; today/week/history UTC, sleep theo WokeAt, metric theo LoggedAt. Diet BusinessDate giữ nguyên, không suy từ timestamp. | Không implicit user timezone, không rebucket lịch sử; Việt Nam local date có thể khác. Future IANA là quyết định versioned riêng. | Nội bộ Progress có hiệu lực; Huy acknowledgment Diet/frontend current meal day **PENDING**, không cần Identity timezone source cho UTC MVP. |
+| Q01 | **APPROVED FOR PROGRESS MVP BY BẢO**: UTC calendar cho mọi server-derived date; today/week/history UTC, sleep theo WokeAt, metric theo LoggedAt. Diet BusinessDate giữ nguyên, không suy từ timestamp. | Không implicit user timezone, không rebucket lịch sử; Việt Nam local date có thể khác. Future IANA là quyết định versioned riêng. | **APPROVED FOR MVP CROSS-SERVICE UTC POLICY** bởi Bảo thực hiện quyền Huy ủy quyền, ADR005; không cần Identity timezone source. Frontend rollout và replay evidence vẫn riêng. |
 | Q02 | **APPROVED HƯỚNG KIẾN TRÚC gRPC READ PROFILE/HEIGHT (Nguyên + Bảo)**. Progress lấy chiều cao qua gRPC read nội bộ đồng bộ từ Identity khi tính BMI; height kiểu `decimal` (khớp PR #10 `numeric(5,2)`, 50.00–250.00 cm, 2 decimal places). Snapshot BMI bất biến theo BR-05, thay đổi profile sau này không đổi BMI lịch sử. Schema RPC cụ thể trong `contracts/identity/v1/identity.proto` PENDING trước Phase 5 (cần định nghĩa message, deadline, profile thiếu chiều cao). Runtime provider chưa có trong Identity, chưa triển khai integration ở Phase 2. Không gọi HTTP nội bộ, không đọc DB chéo. | Event snapshot không chọn vì eventual consistency và có thể stale; gRPC read fresh được chọn. UserProfileUpdatedEvent (PR #10) không mang chiều cao. Historical backdate dùng height lúc ghi có provenance. | Nguyên (Identity provider) + Bảo (Progress consumer); **APPROVED hướng gRPC, schema PENDING trước Phase 5**. |
 | Q03 | Custom target, timestamp và retry dùng policy nào? Đề xuất 1–24 giờ, cố định 16/18/20 phải khớp target, không nhận future start/end, end >= start; elapsed/remaining tính giây, response giờ/phút có precision thống nhất. Không tự complete khi quá target. | Cho target dài hơn cần product review; timer client tự tính giảm traffic nhưng phải server làm nguồn thời gian. Đề xuất retry key scoped user+operation, cùng key/cùng payload replay, khác payload 409; key retention 24 giờ chưa duyệt. Start mới khi active 409; end đã completed cùng end replay 200, khác end 409; no current 200 null chưa duyệt. | Bảo; Fasting Phase 3. |
 | Q04 | Giới hạn biomarkers, BMI category và precision là gì? Đề xuất fat >0 đến 100%, waist >0 đến 300 cm; huyết áp đi cặp, systolic 50–250, diastolic 30–150 mmHg, systolic > diastolic; RHR 25–250 bpm. Đề xuất bảng BMI <18.5 Underweight, <25 NormalWeight, <30 Overweight, còn lại Obese; phân loại giá trị chưa làm tròn, hiển thị 2 chữ số. | Các ngưỡng chỉ là policy đề xuất để review, không phải tư vấn/chuẩn y khoa đã được repo phê duyệt. Có thể chọn bộ ngưỡng khác; cấm hardcode lúc implement trước duyệt. Đề xuất không nhận loggedAt tương lai, cho backdate có snapshot provenance. | Bảo/product; validation/category Phase 5. |
@@ -196,7 +216,7 @@ Các quyết định đã được duyệt ghi nhận rõ người duyệt; các
 
 | Nhóm | Phần việc | Điều kiện |
 | --- | --- | --- |
-| A — độc lập liên service | Skeleton Progress, Clean Architecture, test scaffolding và wiring cấu trúc; business timer/water/sleep có policy riêng | Skeleton T002/T003 không chờ Q01/Q08; cần human giao phase và shared-file slot. Security acceptance đã đạt với Q08-A; business date UTC nội bộ đã được Bảo approve; acknowledgment Huy còn PENDING. |
+| A — độc lập liên service | Skeleton Progress, Clean Architecture, test scaffolding và wiring cấu trúc; business timer/water/sleep có policy riêng | Skeleton T002/T003 không chờ Q01/Q08; cần human giao phase và shared-file slot. Security acceptance đã đạt với Q08-A; business date UTC nội bộ đã được Bảo approve; Q01 cross-service đã được Bảo duyệt theo quyền Huy ủy quyền. |
 | B — thống nhất hợp đồng trước | BMI height, meal streak, cung cấp weight cho Diet, pagination wire, DTO thiếu, ownership/kid, timezone | Q08-A và Q02 transport đã APPROVED; Q02 proto schema, Q03–Q07, Q08-B, Q09–Q10 PENDING; không biến proposal thành schema chính thức. Q10 chỉ planning provider, thuật toán BMR/TDEE thuộc Diet. |
 | C — ngoài phạm vi hiện tại | AI workout/longevity, gửi digest, sửa Identity/Diet/Shared/Gateway/Worker | Xem deferred; Phase 1 không sửa source nào. |
 

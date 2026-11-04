@@ -10,6 +10,8 @@ Mỗi file ghi một quyết định kiến trúc/vận hành đã chốt, kèm 
 | [001](001-authn-authz-architecture.md) | 2026-10-07 | AuthN/AuthZ Architecture | Accepted |
 | [002](002-recommendation-knowledge-base.md) | 2026-10-22 | Knowledge Base & RAG cho Recommendation Service | Accepted |
 | [003](003-diet-to-progress-weight-grpc.md) | 2026-10-30 | Giao tiếp gRPC đồng bộ Diet → Progress truy vấn cân nặng gần nhất | Accepted |
+| [004](004-diet-to-identity-profile-grpc.md) | 2026-11-02 | Diet → Identity profile gRPC | Accepted |
+| [005](005-mvp-utc-business-calendar.md) | 2026-11-04 | Lịch nghiệp vụ UTC cho MVP — Q01 | Accepted |
 
 ## Quy ước
 

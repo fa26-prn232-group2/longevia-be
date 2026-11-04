@@ -1,3 +1,23 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
+và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
+3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
+Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+
+---
+
 # Tasks: Progress Service — roadmap Phase 2–6
 
 Đầu vào: [spec](spec.md), [plan](plan.md), [research](research.md),
@@ -92,10 +112,10 @@ hoặc coi các case future đã pass. Q09 vẫn BLOCKED/PENDING INTEGRATION t�
 - [x] T031 [US4] **DONE (MERGED DIET INTEROP VERIFIED)** — Diet PR #12 đã merged vào main; consumer/inbox/projection và đối soát snapshot JSON v1 với progress_db (RepeatableRead, batch 500) đã kiểm chứng; runbook vận hành đối soát 4 bước sẵn sàng cho rollout production.
 - [x] T032 [US4] **DONE** — DashboardUseCases.cs, DashboardDtos.cs, StreakCalculator.cs và DashboardEndpoints.cs (/dashboard/summary).
 - [x] T033 [US4] **DONE (SCOPED PROGRESS INTEGRATION)** — DashboardTests.cs và MealActivityConsumerTests.cs tích hợp toàn bộ luồng metrics, water, sleep, fasting và meal activity projection pass 100% trên scoped test fixture; full live multi-service E2E journey qua Gateway + Identity + Diet + RabbitMQ được ghi nhận là PENDING INTEGRATION chờ merge upstream PRs.
-- [ ] T034 [US4] **PROVISIONAL / BENCHMARK PENDING** — Đánh giá performance sơ bộ: cấu trúc database indexes trên UserId + LoggedAt/Date; các test tích hợp đo đạc thời gian đáp ứng ở mức vài milliseconds; benchmark chính thức với target workload: PENDING môi trường load test.
+- [ ] T034 [US4] **PENDING MEASURED ACCEPTANCE** — Docker hoạt động sau bật SVM; baseline cold run có14dropped arrivals nên không được nhận. Bộ chạy thật tại scripts/progress/benchmark phải có3valid runs đạt readp95<150ms/writep95<250ms/successfulRPS>=100/0error/drop trước DONE. Không coi ordinary integration tests là benchmark.
 - [x] T035 [US4] **DONE — CORRECTIVE VERIFIED** — Progress 178/178, full solution 733/733, 0 skip; format/Debug/Release/vulnerability pass. Evidence hiện hành tại verification.md, số đếm cũ là lịch sử.
 - [x] T036 [US4] **DONE** — Cập nhật specs/qbao-001-progress-service/frontend-guide.md: trạng thái PARTIAL_READY_FOR_FRONTEND (Fasting, Water, Sleep, Dashboard query sẵn sàng; POST /metrics phụ thuộc runtime Identity height).
-- [x] T037 [US4] **DONE (INTEGRATION GUIDES & HANDOFFS COMPLETED)** — Backend integration guide hoàn tất cho cả hai chiều Identity Height (consumer) và Diet Weight (provider); handoff Q10 hoàn tất cho Huy; Q01 UTC nội bộ Progress approved, Huy acknowledgment pending; streak production readiness phụ thuộc rollout replay thực tế.
+- [x] T037 [US4] **DONE (INTEGRATION GUIDES & HANDOFFS COMPLETED)** — Backend integration guide hoàn tất cho cả hai chiều Identity Height (consumer) và Diet Weight (provider); handoff Q10 hoàn tất cho Huy; Q01 cross-service UTC APPROVED bởi Bảo theo quyền Huy ủy quyền (ADR005); streak production readiness phụ thuộc rollout replay thực tế.
 
 ## Thứ tự, dependency và khả năng song song
 
@@ -138,7 +158,7 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T039 **DONE** — Đối soát JSON v1 thực với progress_db trong read-only RepeatableRead, batch parameterized; kiểm tra exit code qua process thật, không PASS khi skip DB.
 - [x] T040 **DONE** — Canonical IDs, partial inbox/contribution recovery, conflicting duplicates và structured unique violation; atomic transaction, negative controls.
 - [x] T041 **DONE** — RabbitMQ/PostgreSQL Testcontainers thật, routing/runtime error queue, retry/redelivery/restart; giữ CI chạy test thật, synthetic transport tách actual Diet harness.
-- [x] T042 **DONE** — Q01 APPROVED FOR PROGRESS MVP BY BẢO: UTC day/week/history, fixed midnight tests; Diet BusinessDate bất biến, Huy acknowledgment PENDING; không rebucket lịch sử.
+- [x] T042 **DONE** — Q01 APPROVED FOR PROGRESS MVP BY BẢO: UTC day/week/history, fixed midnight tests; Diet BusinessDate bất biến, Q01 cross-service APPROVED bởi Bảo theo quyền Huy ủy quyền (ADR005); không rebucket lịch sử.
 - [x] T043 **DONE — LOCAL GATES VERIFIED** — Artifacts và full gates hoàn tất; corrective commit này được xuất bản vào PR #13 giữ Draft, SHA/CI final theo báo cáo PR; không merge PR #12/#13. Public dashboard schema không đổi, completeness readiness vẫn bị chặn trước rollout thật.
 ## Identity Height gRPC — lượt 2026-10-26
 
@@ -156,7 +176,7 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T051 **DONE** — Triển khai ProgressGrpcService (src/Services/Progress/Progress.Api/Grpc/ProgressGrpcService.cs), Kestrel HTTP/2 listener trên cổng 50051 (PROGRESS:GRPC_PORT), tích hợp DI AddGrpc() và MapGrpcService(), cập nhật Dockerfile bao gồm contracts/progress/.
 - [x] T052 **DONE — RUNTIME VERIFIED151/151** — Bộ test Weight đã có source; test cũ seed thẳng DB không phải Identity E2E. Corrective thêm real Identity/JWT HTTP/PostgreSQL/HTTP2 chain, regression timestamp 7 chữ số và lỗi DB khi server vẫn chạy; Đã chạy xanh trên PostgreSQL/HTTP2 thật, bao gồm Identity provider thật.
 - [x] T053 **DONE — PHẠM VI FIXTURE/RUNBOOK** — Producer Diet PR #12 đã merge; snapshot/checksum/reconcile có bằng chứng fixture và runbook. Không chứng minh historical replay hay Dashboard completeness của production; rollout là trách nhiệm external.
-- [x] T054 **DONE** — Đối chiếu quyết định Q01 UTC (nội bộ Progress approved; cross-service Huy acknowledgment pending); hoàn thiện backend-integration-guide.md, frontend-guide.md, research.md, plan.md và handoff cho Huy.
+- [x] T054 **DONE** — Đối chiếu quyết định Q01 UTC (nội bộ Progress approved; cross-service approved bởi Bảo theo ủy quyền Huy, ADR005); hoàn thiện backend-integration-guide.md, frontend-guide.md, research.md, plan.md và handoff cho Huy.
 - [x] T055 **DONE — GATES VÀ CI VERIFIED** — HEAD cũ74cea4b đỏ, image skip; source corrective a4748db đã pass local và Push41138789477/PR41138795748, gồm make check829/829, vulnerability và image step thực chạy. Giữ PR #13 Draft, không merge; CI HEAD tài liệu cuối đối chiếu trong PR/report.
 
 ## Corrective cuối — 2026-10-31
@@ -165,4 +185,4 @@ T001 vì chỉ có yêu cầu planning trong phiên này. AI/digest/wearable ở
 - [x] T057 — Provider phân biệt absent/complete/inconsistent; sanitize INTERNAL, validate protobuf timestamp trước query, giữ cancellation và RpcException. Negative control 10 cases đỏ trên code cũ, sau sửa bộ unit xanh.
 - [x] T058 — Chain Identity thật PASS; negative control đỏ đúng lỗi,3 lượt regression PostgreSQL2/2 PASS; immutable BMI175/180cm, historical as-of và hai user verified.
 - [x] T059 — Local lint/check829/829, Docker image, Compose và EF runtime/CLI PASS; Push41138789477 + PR41138795748 đúng source corrective a4748db SUCCESS, logs/image/vulnerability đã xác minh. Commit evidence chỉ đổi tài liệu; exact final HEAD/CI được kiểm tra tiếp và ghi tại PR/report.
-- Không đổi HTTP DTO, event payload hay proto. Q10 approval không thay thế Huy acknowledgment Q01 (vẫn PENDING); trust nội bộ giữ ADR 001, không bổ sung JWT authorization cho Weight RPC.
+- Không đổi HTTP DTO, event payload hay proto. Q10 approval độc lập với Q01 (đã APPROVED riêng theo quyền Huy ủy quyền, ADR005); trust nội bộ giữ ADR 001, không bổ sung JWT authorization cho Weight RPC.

@@ -1,3 +1,23 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
+và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
+3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
+Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+
+---
+
 # Hướng dẫn tích hợp Backend — Progress Service (Close-Out)
 
 Trạng thái tổng thể: **PROGRESS_OWNED_VERIFIED_PENDING_EXTERNAL_ROLLOUT** (2026-10-31).
@@ -118,4 +138,4 @@ Diet PR #12 đã được **MERGED vào main** (commit `4c62273`).
 
 - **Nội bộ Progress**: Bảo đã phê duyệt áp dụng chuẩn UTC Calendar cho mọi ngày server-derived (water/today, sleep wake date, metric activity date, streak calculation, và week boundary bắt đầu từ thứ Hai 00:00 UTC).
 - **Phía Diet**: Tiêu thụ nguyên văn `MealLoggedEvent.BusinessDate`.
-- **Trạng thái Xác nhận từ Huy**: **PENDING**. Cần Huy xác nhận rằng phía Diet/frontend tự chọn ngày hiện tại theo UTC date.
+- **Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY**: Bảo thực hiện quyền Huy ủy quyền, theo ADR005. Huy phụ trách triển khai Diet/frontend auto-today UTC; không ghi Huy trực tiếp ký hoặc review.

@@ -1,3 +1,23 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 đang chờ số đo thật trên môi trường Docker hoạt động. [Bộ chạy](../../scripts/progress/benchmark/README.md)
+và [close-out plan](../qbao-002-progress-benchmark-utc-closeout/plan.md) mô tả
+3run strict120arrival/s,15s warmup/60s steady,actual Identity/PG/JWT.
+Chưa có measured PASS; không dùng benchmark scripts hoặc CI cũ làm performance evidence.
+
+---
+
 # Height gRPC — chạy hiện hành (2026-10-26)
 
 Local Progress host cần thêm IdentityGrpc__Address (HTTP(S), ví dụ internal Compose
@@ -113,4 +133,4 @@ chưa đo thì không claim đạt NFR. Không gọi API AI hoặc gửi digest 
 ## Corrective PR #13
 
 Đối soát JSON v1 thật và test isolated producer Diet: [hướng dẫn](corrective-reconciliation.md).
-Q01 UTC MVP đã được Bảo approve nội bộ; Huy acknowledgment frontend/Diet còn PENDING.
+Q01 UTC MVP đã được Bảo approve nội bộ; Q01 approval cross-service đã hiệu lực theo ADR005; frontend/Diet rollout alignment vẫn cần Huy thực hiện.

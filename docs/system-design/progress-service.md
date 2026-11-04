@@ -86,7 +86,7 @@ TimeProvider cho current day, week Monday 00:00 UTC, history upper bound đầu 
 kế tiếp exclusive. Sleep lấy UTC WokeAt, metric activity lấy UTC LoggedAt; duration
 và overlap dùng full instants. Không rebucket dữ liệu/BMI snapshots đã lưu.
 Diet BusinessDate tiêu thụ nguyên văn, không suy từ CreatedAt/OccurredOn/receive time.
-Huy acknowledgment cho tự chọn current meal date theo UTC vẫn PENDING; UTC-only
+Q01 cross-service đã được Bảo duyệt theo quyền Huy ủy quyền, xem [ADR005](../decisions/005-mvp-utc-business-calendar.md). UI tự chọn current meal date phải UTC; UTC-only
 không tương đương midnight local Việt Nam, không cần timezone từ Identity.
 
 Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,

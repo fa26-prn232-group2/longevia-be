@@ -1,3 +1,5 @@
+> Cập nhật close-out 2026-11-04: **Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY**, Bảo thực hiện quyền Huy ủy quyền, theo [ADR005](../../../docs/decisions/005-mvp-utc-business-calendar.md). PR13 đã merge; phần PR13 bên dưới là hồ sơ lịch sử. T034 được theo dõi trong qbao-002-progress-benchmark-utc-closeout; production replay/completeness và frontend rollout vẫn cần evidence riêng.
+
 # Đề xuất API và hợp đồng phụ thuộc — chưa được phê duyệt
 
 Nguồn hiện hành: [API spec §4](../../../docs/api/api-spec.md), [PRD §2.3](../../../docs/requirements/prd.md).
@@ -97,7 +99,7 @@ Identity entry point/repository/migrations thật; seed/update qua REST của ch
 Identity trong fixture, không DB/source import chéo. Controlled server chỉ cho
 unset, malformed response, fault, deadline/cancellation. Full gates/Docker/CI mới
 được báo ở verification.md và PR #13, không dùng lại số 733 của commit cũ.
-Q10 Weight và Huy Q01 acknowledgment/Diet PR #12 giữ trạng thái riêng.
+Q10 Weight và rollout Diet PR #12 giữ trạng thái riêng; Q01 đã APPROVED theo quyền Huy ủy quyền (ADR005).
 ## Meal activity — create-only v1, rollout PENDING
 
 Canonical MealLoggedEvent có EventId=MealLogId, UserId, BusinessDate, CreatedAt,
@@ -108,7 +110,7 @@ Không có CSV hoặc public snapshot API. capturedAtUtc là audit, không phả
 
 BusinessDate là DateOnly canonical Diet gửi, không đổi bởi replay, receive timestamp,
 CreatedAt hoặc OccurredOn. Metric activity dùng UTC theo Q01 Bảo approve MVP;
-frontend auto-select current meal date UTC cần Huy acknowledgment, còn PENDING.
+frontend auto-select current meal date UTC theo Q01 đã APPROVED bởi Bảo thực hiện quyền Huy ủy quyền (ADR005); cần xác minh frontend rollout riêng.
 Không thêm field DTO completeness; historical streak readiness vẫn chờ rollout,
 replay và reconciliation dữ liệu triển khai. Future edit/delete/change-date không
 thuộc v1, cần contract version/revision/tombstone và migration riêng.

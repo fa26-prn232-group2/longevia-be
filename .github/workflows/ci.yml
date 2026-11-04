@@ -23,6 +23,12 @@ jobs:
       - name: Feature registry check
         run: make team-check
 
+      - name: Benchmark tooling correctness (does not run or claim SC-006)
+        run: |
+          python3 -m unittest discover -s scripts/progress/benchmark -p 'test_*.py' -v
+          dotnet build scripts/progress/benchmark/Seed/Seed.csproj -c Release -warnaserror
+          dotnet format scripts/progress/benchmark/Seed/Seed.csproj --verify-no-changes --no-restore
+
       - name: Gate (format-check + build Release + test + vulnerability scan)
         run: make check
 

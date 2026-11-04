@@ -1,3 +1,5 @@
+> Cập nhật close-out 2026-11-04: **Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY**, Bảo thực hiện quyền Huy ủy quyền, theo [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md). PR13 đã merge; phần PR13 bên dưới là hồ sơ lịch sử. T034 được theo dõi trong qbao-002-progress-benchmark-utc-closeout; production replay/completeness và frontend rollout vẫn cần evidence riêng.
+
 # Sửa Weight gRPC timestamp, integrity và kiểm chứng Identity E2E
 
 Test cũ so timestamp100ns trong RAM với PostgreSQL microsecond và gọi flow seed DB là Identity E2E. Corrective so exact timestamp đọc lại từ DB, bổ sung chain actual Identity → Progress HTTP/JWT → Progress PostgreSQL → Weight HTTP/2, và kiểm tra outage DB khi gRPC listener vẫn sống.
@@ -9,4 +11,4 @@ Test cũ so timestamp100ns trong RAM với PostgreSQL microsecond và gọi flow
 
 HEAD bắt đầu74cea4b có Push/PR CI FAILURE và image skip. Source corrective `a4748db0fa815462fda2f1a1ccec6199f4c0aa5a` đã pass [Push CI](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138789477) và [PR CI](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138795748): make check829/829, vulnerable scan27 projects và Docker image step đều thực thi PASS. Commit evidence sau đó chỉ sửa tài liệu; exact final HEAD/CI được cập nhật tại PR/report. Chi tiết/hồ sơ cũ: [verification.md](verification.md).
 
-Feature `qbao-001-progress-service`, PR #13 giữ OPEN/DRAFT; không merge hay tự mark Ready for Review. Huy còn Diet client/snapshot, Q01 acknowledgment PENDING và replay; Nguyên còn Shared Auth follow-up; Duy phối hợp rollout/infra. Production replay/outbox drain/Dashboard completeness chưa được chứng minh bằng fixture, độc lập Q10 approval.
+Feature `qbao-001-progress-service`, PR #13 giữ OPEN/DRAFT; không merge hay tự mark Ready for Review. Huy còn Diet client/snapshot, Q01 đã APPROVED theo quyền Huy ủy quyền (ADR005) và replay; Nguyên còn Shared Auth follow-up; Duy phối hợp rollout/infra. Production replay/outbox drain/Dashboard completeness chưa được chứng minh bằng fixture, độc lập Q10 approval.

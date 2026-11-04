@@ -1,0 +1,629 @@
+{
+  "measuredCommit": "c795500193a2deef1e2ae463734b6054e1797cc9",
+  "startedAtUtc": "2026-11-04T14:34:53.621866+00:00",
+  "verdict": "PASS",
+  "host": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "architecture": "AMD64",
+    "logicalCpu": 12,
+    "hardware": {
+      "availableRamKiB": 5535752,
+      "ramKiB": 16663976,
+      "cpu": "AMD Ryzen 5 5600 6-Core Processor              ",
+      "logicalCpus": 12,
+      "physicalCores": 6
+    }
+  },
+  "docker": {
+    "ServerVersion": "29.9.2",
+    "NCPU": 12,
+    "MemTotal": 4107780096,
+    "OperatingSystem": "Docker Desktop",
+    "Architecture": "x86_64",
+    "CgroupVersion": "2"
+  },
+  "postgresVersion": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "containers": [
+    {
+      "id": "db3109a1e1e7",
+      "imageId": "sha256:32f2e1ffe46a629805b36460d44ef5ba9a3c95bc417f6605c7788457c7a25c5b",
+      "service": "identity",
+      "memoryBytes": 402653184,
+      "nanoCpus": 1000000000,
+      "oomKilled": false
+    },
+    {
+      "id": "0cf3c343068e",
+      "imageId": "sha256:96e49aa9f07cd4dda8b5237fa57b2b7dd0b734538ae718585ba273dad9691894",
+      "service": "progress",
+      "memoryBytes": 536870912,
+      "nanoCpus": 2000000000,
+      "oomKilled": false
+    },
+    {
+      "id": "5787ffaf5ac4",
+      "imageId": "sha256:ab20e934b27ba3ff927c1b4c9ff8cf6c32f315f743efe68dd3441182a87fb085",
+      "service": "progress-db",
+      "memoryBytes": 536870912,
+      "nanoCpus": 2000000000,
+      "oomKilled": false
+    },
+    {
+      "id": "17d64c4a15af",
+      "imageId": "sha256:ab20e934b27ba3ff927c1b4c9ff8cf6c32f315f743efe68dd3441182a87fb085",
+      "service": "identity-db",
+      "memoryBytes": 268435456,
+      "nanoCpus": 1000000000,
+      "oomKilled": false
+    },
+    {
+      "id": "b10d2c0b2774",
+      "imageId": "sha256:4e32174ea7bfa3a979e37493b0b7348eb1f0c46f8201a12fd91c7db8098b0fa4",
+      "service": "rabbitmq",
+      "memoryBytes": 402653184,
+      "nanoCpus": 1000000000,
+      "oomKilled": false
+    }
+  ],
+  "hostSdkVersion": "10.0.203",
+  "serverRuntimes": {
+    "progress": [
+      "Microsoft.AspNetCore.App 10.0.14",
+      "Microsoft.NETCore.App 10.0.14"
+    ],
+    "identity": [
+      "Microsoft.AspNetCore.App 10.0.14",
+      "Microsoft.NETCore.App 10.0.14"
+    ]
+  },
+  "instances": {
+    "progress": 1,
+    "identity": 1
+  },
+  "pools": {
+    "progressMax": 80,
+    "identityMax": 40
+  },
+  "vus": {
+    "preallocatedPerScenario": 240,
+    "maxPerScenario": 240
+  },
+  "transport": "direct HTTP/1 Kestrel; Identity HTTP/2 actual provider; JWT ES256 validated; no Gateway measurement",
+  "tool": "grafana/k6:1.3.0",
+  "runs": [
+    {
+      "run": 1,
+      "verdict": "PASS",
+      "requestedRps": 120,
+      "measurementSeconds": 60,
+      "warmupSeconds": 15,
+      "attempted": 7201,
+      "successfulInWindow": 7200,
+      "failed": 0,
+      "lateCompletions": 1,
+      "droppedIterations": 0,
+      "statuses": {
+        "200": 5761,
+        "201": 1440
+      },
+      "warmupStatuses": {
+        "200": 1441,
+        "201": 360
+      },
+      "warmupFailed": 0,
+      "attemptedRps": 120.01666666666667,
+      "successfulRps": 120.0,
+      "read": {
+        "p50": 3.888922,
+        "p95": 11.206537,
+        "p99": 13.367718
+      },
+      "write": {
+        "p50": 4.978130999999999,
+        "p95": 6.772417,
+        "p99": 8.472665999999998
+      },
+      "routes": {
+        "/metrics/history?pageNumber=1&pageSize=20": {
+          "p95": 5.069933,
+          "attempted": 721,
+          "successfulRps": 12.0
+        },
+        "/metrics/history?pageNumber=2&pageSize=20": {
+          "p95": 5.0509319999999995,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/dashboard/summary": {
+          "p95": 12.725783000000002,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/water/today": {
+          "p95": 2.20814,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/fasting/current": {
+          "p95": 2.382905,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/water/log": {
+          "p95": 5.1050130000000005,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/metrics": {
+          "p95": 7.2282399999999996,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        }
+      },
+      "windowStartUtc": "2026-11-04T14:35:25.172000+00:00",
+      "observedCompletionSpanSeconds": {
+        "warmup": 14.334100008010864,
+        "steady": 59.9957320690155
+      },
+      "warmupLastCompletionSecondsFromScenarioStart": 15.006083011627197,
+      "elapsedMonotonicSeconds": 81.21799999999985,
+      "persistence": {
+        "measuredMetrics": 1800,
+        "invalidSnapshots": 0,
+        "heightUsedCm": 175.25,
+        "bmi": 22.79
+      },
+      "generatorResourceSamples": 19,
+      "rawSha256": "78c407b8724d6fd57840aad42e35c8d8eddf9c904ba9a482923be94b86c9289d",
+      "dataset": {
+        "users": 33,
+        "heavyUserMetrics": 10000,
+        "metrics": 13200,
+        "water": 1980,
+        "sleep": 1980,
+        "fasting": 2013,
+        "meals": 1980,
+        "inbox": 1980,
+        "migrations": 5,
+        "anchorUtc": "2026-10-25T00:00:00+00:00",
+        "identity": "actual provider; profiles via Identity HTTP API; no direct Identity DB access"
+      },
+      "resourcePeaks": {
+        "identity": {
+          "cpuPercentMax": 32.24,
+          "memoryMiBMax": 122.9
+        },
+        "progress": {
+          "cpuPercentMax": 164.09,
+          "memoryMiBMax": 138.4
+        },
+        "progress-db": {
+          "cpuPercentMax": 150.02,
+          "memoryMiBMax": 202.0
+        },
+        "identity-db": {
+          "cpuPercentMax": 8.64,
+          "memoryMiBMax": 71.55
+        },
+        "rabbitmq": {
+          "cpuPercentMax": 101.1,
+          "memoryMiBMax": 193.4
+        },
+        "generator": {
+          "cpuPercentMax": 18.37,
+          "memoryMiBMax": 100.0
+        }
+      },
+      "cpuCounterDeltas": {
+        "identity": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress-db": {
+          "usage_usec": 19532731,
+          "user_usec": 11919910,
+          "system_usec": 7612820,
+          "nice_usec": 0,
+          "nr_periods": 782,
+          "nr_throttled": 5,
+          "throttled_usec": 1922006,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "identity-db": {
+          "usage_usec": 3088697,
+          "user_usec": 1816579,
+          "system_usec": 1272119,
+          "nice_usec": 0,
+          "nr_periods": 760,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "rabbitmq": {
+          "usage_usec": 31074911,
+          "user_usec": 18217280,
+          "system_usec": 12857631,
+          "nice_usec": 0,
+          "nr_periods": 526,
+          "nr_throttled": 287,
+          "throttled_usec": 18472931,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        }
+      },
+      "queryPlans": {
+        "executionMs": [
+          7.914,
+          2.501
+        ],
+        "nodeTypes": [
+          "Aggregate",
+          "Incremental Sort",
+          "Index Only Scan",
+          "Index Scan",
+          "Limit",
+          "Seq Scan",
+          "Sort"
+        ],
+        "sha256": "29c898aa78487d9137bfee6283448827698054a8242053141ad7bf7a3477837a"
+      },
+      "generatorExitBoundarySamples": 1
+    },
+    {
+      "run": 2,
+      "verdict": "PASS",
+      "requestedRps": 120,
+      "measurementSeconds": 60,
+      "warmupSeconds": 15,
+      "attempted": 7201,
+      "successfulInWindow": 7200,
+      "failed": 0,
+      "lateCompletions": 1,
+      "droppedIterations": 0,
+      "statuses": {
+        "200": 5761,
+        "201": 1440
+      },
+      "warmupStatuses": {
+        "200": 1440,
+        "201": 360
+      },
+      "warmupFailed": 0,
+      "attemptedRps": 120.01666666666667,
+      "successfulRps": 120.0,
+      "read": {
+        "p50": 3.4389659999999997,
+        "p95": 10.620581000000001,
+        "p99": 12.475214
+      },
+      "write": {
+        "p50": 4.956086,
+        "p95": 6.4202,
+        "p99": 8.004559
+      },
+      "routes": {
+        "/metrics/history?pageNumber=1&pageSize=20": {
+          "p95": 4.537254,
+          "attempted": 721,
+          "successfulRps": 12.0
+        },
+        "/metrics/history?pageNumber=2&pageSize=20": {
+          "p95": 4.430307,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/dashboard/summary": {
+          "p95": 11.837121999999999,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/water/today": {
+          "p95": 2.457025,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/fasting/current": {
+          "p95": 2.386719,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/water/log": {
+          "p95": 5.021158,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/metrics": {
+          "p95": 6.9127730000000005,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        }
+      },
+      "windowStartUtc": "2026-11-04T14:37:03.841000+00:00",
+      "observedCompletionSpanSeconds": {
+        "warmup": 14.98348617553711,
+        "steady": 59.99141979217529
+      },
+      "warmupLastCompletionSecondsFromScenarioStart": 14.995251178741455,
+      "elapsedMonotonicSeconds": 81.07900000000018,
+      "persistence": {
+        "measuredMetrics": 1800,
+        "invalidSnapshots": 0,
+        "heightUsedCm": 175.25,
+        "bmi": 22.79
+      },
+      "generatorResourceSamples": 19,
+      "rawSha256": "049a700cafcfcde32622746f6fc3b71fec9fbb852bdfc16deaf0a97057355a66",
+      "dataset": {
+        "users": 33,
+        "heavyUserMetrics": 10000,
+        "metrics": 13200,
+        "water": 1980,
+        "sleep": 1980,
+        "fasting": 2013,
+        "meals": 1980,
+        "inbox": 1980,
+        "migrations": 5,
+        "anchorUtc": "2026-10-25T00:00:00+00:00",
+        "identity": "actual provider; profiles via Identity HTTP API; no direct Identity DB access"
+      },
+      "resourcePeaks": {
+        "identity": {
+          "cpuPercentMax": 6.45,
+          "memoryMiBMax": 130.8
+        },
+        "progress": {
+          "cpuPercentMax": 50.09,
+          "memoryMiBMax": 142.9
+        },
+        "progress-db": {
+          "cpuPercentMax": 36.49,
+          "memoryMiBMax": 202.9
+        },
+        "identity-db": {
+          "cpuPercentMax": 5.81,
+          "memoryMiBMax": 73.38
+        },
+        "rabbitmq": {
+          "cpuPercentMax": 101.44,
+          "memoryMiBMax": 194.4
+        },
+        "generator": {
+          "cpuPercentMax": 17.45,
+          "memoryMiBMax": 99.38
+        }
+      },
+      "cpuCounterDeltas": {
+        "identity": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress-db": {
+          "usage_usec": 18852273,
+          "user_usec": 12345651,
+          "system_usec": 6506621,
+          "nice_usec": 0,
+          "nr_periods": 785,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "identity-db": {
+          "usage_usec": 2899920,
+          "user_usec": 1700909,
+          "system_usec": 1199011,
+          "nice_usec": 0,
+          "nr_periods": 766,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "rabbitmq": {
+          "usage_usec": 30179308,
+          "user_usec": 17396199,
+          "system_usec": 12783109,
+          "nice_usec": 0,
+          "nr_periods": 504,
+          "nr_throttled": 278,
+          "throttled_usec": 17802736,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        }
+      },
+      "queryPlans": {
+        "executionMs": [
+          8.567,
+          2.808
+        ],
+        "nodeTypes": [
+          "Aggregate",
+          "Incremental Sort",
+          "Index Only Scan",
+          "Index Scan",
+          "Limit",
+          "Seq Scan",
+          "Sort"
+        ],
+        "sha256": "d113b0021f2c307ec0defcb87a61870714cd28d907613c8a7e4c0b9f26187e29"
+      },
+      "generatorExitBoundarySamples": 1
+    },
+    {
+      "run": 3,
+      "verdict": "PASS",
+      "requestedRps": 120,
+      "measurementSeconds": 60,
+      "warmupSeconds": 15,
+      "attempted": 7201,
+      "successfulInWindow": 7201,
+      "failed": 0,
+      "lateCompletions": 0,
+      "droppedIterations": 0,
+      "statuses": {
+        "200": 5761,
+        "201": 1440
+      },
+      "warmupStatuses": {
+        "200": 1441,
+        "201": 360
+      },
+      "warmupFailed": 0,
+      "attemptedRps": 120.01666666666667,
+      "successfulRps": 120.01666666666667,
+      "read": {
+        "p50": 3.670588,
+        "p95": 11.131597999999999,
+        "p99": 12.958443
+      },
+      "write": {
+        "p50": 5.261583,
+        "p95": 7.310124,
+        "p99": 9.916252
+      },
+      "routes": {
+        "/metrics/history?pageNumber=1&pageSize=20": {
+          "p95": 4.724743,
+          "attempted": 721,
+          "successfulRps": 12.016666666666667
+        },
+        "/metrics/history?pageNumber=2&pageSize=20": {
+          "p95": 4.866054,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/dashboard/summary": {
+          "p95": 12.465045,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/water/today": {
+          "p95": 2.389972,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/fasting/current": {
+          "p95": 2.6166910000000003,
+          "attempted": 720,
+          "successfulRps": 12.0
+        },
+        "/water/log": {
+          "p95": 6.559177,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        },
+        "/metrics": {
+          "p95": 7.532748000000001,
+          "attempted": 1440,
+          "successfulRps": 24.0
+        }
+      },
+      "windowStartUtc": "2026-11-04T14:38:41.699000+00:00",
+      "observedCompletionSpanSeconds": {
+        "warmup": 14.994181156158447,
+        "steady": 59.990275859832764
+      },
+      "warmupLastCompletionSecondsFromScenarioStart": 15.002701044082642,
+      "elapsedMonotonicSeconds": 81.125,
+      "persistence": {
+        "measuredMetrics": 1800,
+        "invalidSnapshots": 0,
+        "heightUsedCm": 175.25,
+        "bmi": 22.79
+      },
+      "generatorResourceSamples": 19,
+      "rawSha256": "2d82a64dde5841895e5b49d0b6358e274131c3b7112f4b031821698120e58406",
+      "dataset": {
+        "users": 33,
+        "heavyUserMetrics": 10000,
+        "metrics": 13200,
+        "water": 1980,
+        "sleep": 1980,
+        "fasting": 2013,
+        "meals": 1980,
+        "inbox": 1980,
+        "migrations": 5,
+        "anchorUtc": "2026-10-25T00:00:00+00:00",
+        "identity": "actual provider; profiles via Identity HTTP API; no direct Identity DB access"
+      },
+      "resourcePeaks": {
+        "identity": {
+          "cpuPercentMax": 6.17,
+          "memoryMiBMax": 139.2
+        },
+        "progress": {
+          "cpuPercentMax": 53.37,
+          "memoryMiBMax": 139.4
+        },
+        "progress-db": {
+          "cpuPercentMax": 30.63,
+          "memoryMiBMax": 203.9
+        },
+        "identity-db": {
+          "cpuPercentMax": 7.84,
+          "memoryMiBMax": 73.45
+        },
+        "rabbitmq": {
+          "cpuPercentMax": 102.13,
+          "memoryMiBMax": 196.4
+        },
+        "generator": {
+          "cpuPercentMax": 17.94,
+          "memoryMiBMax": 99.59
+        }
+      },
+      "cpuCounterDeltas": {
+        "identity": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress": "not accessible in chiseled image; CPU/RAM sampled through Docker stats",
+        "progress-db": {
+          "usage_usec": 17645441,
+          "user_usec": 10903901,
+          "system_usec": 6741541,
+          "nice_usec": 0,
+          "nr_periods": 797,
+          "nr_throttled": 1,
+          "throttled_usec": 220959,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "identity-db": {
+          "usage_usec": 3116231,
+          "user_usec": 1895650,
+          "system_usec": 1220581,
+          "nice_usec": 0,
+          "nr_periods": 772,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "rabbitmq": {
+          "usage_usec": 29503622,
+          "user_usec": 16980818,
+          "system_usec": 12522805,
+          "nice_usec": 0,
+          "nr_periods": 511,
+          "nr_throttled": 272,
+          "throttled_usec": 16965473,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        }
+      },
+      "queryPlans": {
+        "executionMs": [
+          7.069,
+          2.458
+        ],
+        "nodeTypes": [
+          "Aggregate",
+          "Incremental Sort",
+          "Index Only Scan",
+          "Index Scan",
+          "Limit",
+          "Seq Scan",
+          "Sort"
+        ],
+        "sha256": "cec3fd93167134901317a69f698f4416e2e3d18f05ca6eaece0ceff7bd7a53f9"
+      },
+      "generatorExitBoundarySamples": 1
+    }
+  ]
+}

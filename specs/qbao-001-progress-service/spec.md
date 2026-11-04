@@ -1,3 +1,5 @@
+> Cập nhật close-out 2026-11-04: **Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY**, Bảo thực hiện quyền Huy ủy quyền, theo [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md). PR13 đã merge; phần PR13 bên dưới là hồ sơ lịch sử. T034 được theo dõi trong qbao-002-progress-benchmark-utc-closeout; production replay/completeness và frontend rollout vẫn cần evidence riêng.
+
 # Đặc tả tính năng: Progress Service
 
 **Nhánh**: `feat/progress-service`
@@ -164,6 +166,6 @@ backfill/rebuild; dashboard có số liệu cụ thể và ownership.
 ## Giả định
 
 - Không dùng timezone máy dev làm mặc định sản phẩm, không mặc định profile luôn có chiều cao.
-- Q01–Q10 trong research đều PENDING, chặn phần code liên quan; skeleton không cần Q01/Q08, security acceptance vẫn cần Q08 và date logic cần Q01. Q10 không chặn BMI core; review kế hoạch không đồng nghĩa approve contract.
+- Trạng thái Q01–Q10 theo quyết định cập nhật trong research; Q01 cross-service UTC đã APPROVED theo ADR005. Các quyết định khác chưa duyệt chặn phần code liên quan; skeleton không cần Q01/Q08, security acceptance vẫn cần Q08 và date logic cần Q01. Q10 không chặn BMI core; review kế hoạch không đồng nghĩa approve contract.
 - Phase 1 không đổi surface đang chạy, không đặt `READY_FOR_FRONTEND`/`READY_FOR_BACKEND`.
 - AI, weekly digest delivery và sửa service khác được ghi trong [deferred.md](deferred.md).

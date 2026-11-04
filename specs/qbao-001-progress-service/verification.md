@@ -1,9 +1,26 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 **DONE** cho Progress trong cấu hình đo ngày2026-11-04:3/3run PASS, readp95<150ms/writep95<250ms/successfulRPS>=100,0HTTPfail/drop. [Số đo và môi trường](../qbao-002-progress-benchmark-utc-closeout/benchmark-report.md), [machine evidence](../qbao-002-progress-benchmark-utc-closeout/benchmark-evidence.json). Measured source c795500; performance là local controlled run, không phải CI benchmark.
+
+---
+
 # CI corrective đã verified — 2026-10-31
 
 - Source corrective commit: `a4748db0fa815462fda2f1a1ccec6199f4c0aa5a` (`fix(progress): correct weight grpc precision and e2e verification`). Đây là revision code đã được kiểm chứng cả local lẫn hai CI; commit ghi evidence sau đó chỉ sửa tài liệu/metadata, không đổi C# hay contract.
 - [Push CI41138789477](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138789477): SUCCESS; [PR CI41138795748](https://github.com/fa26-prn232-group2/longevia-be/actions/runs/41138795748): SUCCESS. Đã đối chiếu headSha chính xác và đọc logs, không dựa vào CI cũ.
 - Cả hai run đều thực thi thành công `make check` và step Build Progress image with canonical Identity proto; image step không skip. Logs xác nhận full Release build0 warnings/errors,829 tests PASS/0 skip và vulnerable scan include-transitive27 projects sạch. Counts theo assembly khớp bảng local bên dưới.
-- PR #13 vẫn OPEN/DRAFT, mergeable; không merge hay tự mark Ready for Review. Progress-owned acceptance đã đạt và đủ điều kiện human merge review, trong khi production replay/completeness và Q01 acknowledgment vẫn external pending.
+- PR #13 vẫn OPEN/DRAFT, mergeable; không merge hay tự mark Ready for Review. Progress-owned acceptance đã đạt và đủ điều kiện human merge review, trong khi production replay/completeness và Q01 đã APPROVED theo quyền Huy ủy quyền (ADR005).
 - HEAD cuối sau commit tài liệu phải được đối chiếu lại với Push/PR CI; kết quả exact final SHA/URLs được cập nhật tại mô tả PR và báo cáo cuối, không suy từ run của commit trước.
 
 ---
@@ -58,7 +75,7 @@
 ## Readiness và trách nhiệm external
 
 - Progress-owned acceptance đã verified local và cả hai CI đúng source corrective commit nêu phía trên. Không dùng CI cũ hay local PASS để suy CI PASS. PR #13 giữ OPEN/DRAFT, không merge/Ready for Review tự động. Exact published SHA/CI được ghi ở mô tả PR và báo cáo sau push.
-- Huy: Diet Weight client/snapshot, Q01 acknowledgment vẫn PENDING, historical replay/outbox drain và snapshot reconciliation trên môi trường rollout. Q10 approval không thay thế Q01 approval.
+- Huy: Diet Weight client/snapshot, Q01 đã APPROVED theo quyền Huy ủy quyền (ADR005), historical replay/outbox drain và snapshot reconciliation trên môi trường rollout. Q10 approval không thay thế Q01 approval.
 - Nguyên: Shared Auth follow-up theo quyết định nhóm; caller trust nội bộ vẫn ADR001 Compose policy, không tuyên bố user JWT authorization trên Weight RPC.
 - Duy: phối hợp hạ tầng/rollout, kiểm tra mạng và Dashboard completeness. Production historical replay/completeness chưa được xác minh; fixture PASS không thay production evidence.
 
@@ -100,7 +117,7 @@
 - Compose config với `.env` không chạy vì máy thiếu file; dùng `.env.example` + config --quiet PASS (chỉ cấu hình, không chứng minh deploy).
 - Full solution Release đã chạy không filter/skip: Progress integration3 PASS/148 FAIL (151), Progress unit108/108, Diet unit12/12 và integration0/23, Identity unit67/67 và integration0/16, Recommendation unit372/372 và integration0/64, Worker unit16/16. Tổng578 PASS/251 FAIL/0 skip (829). Integration phụ thuộc Docker thất bại do daemon không khả dụng; RabbitMQ/reconciliation runtime chưa verified ở lượt này. EF CLI `migrations has-pending-model-changes` Release PASS: không lệch model/migration; applied migrations trên PostgreSQL chưa verified vì Docker. Docker build đã thử và FAIL trước build vì daemon không khả dụng. Chưa có evidence timestamp reliability lặp nhiều lần.
 - Contract/ADR đã đọc và đối chiếu, không đổi proto, Q10 semantics, Identity/Diet implementation, migrations hay cơ chế authentication.
-- Q01 Huy acknowledgment vẫn PENDING. Huy: Diet client/snapshot, acknowledgment và replay. Nguyên: Shared Auth follow-up theo quyết định nhóm. Duy: rollout/infra phối hợp kiểm tra replay và Dashboard completeness. Production replay/outbox drain/completeness chưa được chứng minh bằng fixture.
+- Q01 đã APPROVED bởi Bảo thực hiện quyền Huy ủy quyền (ADR005). Huy: Diet client/snapshot, acknowledgment và replay. Nguyên: Shared Auth follow-up theo quyết định nhóm. Duy: rollout/infra phối hợp kiểm tra replay và Dashboard completeness. Production replay/outbox drain/completeness chưa được chứng minh bằng fixture.
 - Kết luận hiện tại: CORRECTIVE, chưa đủ điều kiện human merge review; PR giữ Draft, không merge hay tạo PR mới.
 
 ## File corrective chưa commit
@@ -292,7 +309,7 @@ CI đầu trên ce9183f:766 cases chạy,765pass/1fail ở MassTransit in-memory
 
 - Nguyên + Bảo: chốt/implement service-caller auth, credential lifecycle, provider
   authorization và negative authorized/unauthorized tests trước secure readiness.
-- Huy: Q01 auto-selected meal UTC acknowledgment và Diet #12 rollout vẫn riêng;
+- Huy: Q01 frontend auto-selected meal UTC rollout và Diet #12 rollout vẫn riêng;
   không đổi MealLoggedEvent, queue, replay/reconciliation hoặc Q01 UTC policy.
 - Bảo: review functional integration, giữ PR13 Draft tới khi security/readiness được
   quyết định. Q10 Weight proposal/scaffolding không thay đổi.
@@ -408,7 +425,7 @@ Cách tái lập và preconditions: [corrective-reconciliation](corrective-recon
 
 ## Q01 và UTC boundary evidence
 
-Q01 **APPROVED FOR PROGRESS MVP BY BẢO**, Huy acknowledgment **PENDING**.
+Q01 **APPROVED FOR PROGRESS MVP BY BẢO**, cross-service APPROVED bởi Bảo thực hiện quyền Huy ủy quyền (ADR005).
 [UtcPolicyTests](../../src/Services/Progress/tests/Progress.IntegrationTests/UtcPolicyTests.cs)
 có 3 deterministic scenarios, bao phủ 12 assertion nhóm theo yêu cầu: water trước
 2026-10-24T23:59:59Z và sau 2026-10-25T00:00:00Z; today không leak ngày cũ; sleep
@@ -437,7 +454,7 @@ Không đổi public Dashboard DTO, shared contracts, Identity/Diet/Worker imple
 Q02 Height runtime/provider vẫn chờ Nguyên, Q10 Weight vẫn proposal/scaffolding như cũ.
 Diet PR #12 chưa merge; rollout writer/queue/replay/snapshot dữ liệu triển khai và
 completeness mechanism chưa được nghiệm thu. Không claim historical streak đầy đủ.
-Huy chưa acknowledge current-day UTC frontend/Diet; [tin nhắn bàn giao](handoffs/huy-q01-utc.md)
+Q01 current-day UTC đã được Bảo duyệt theo quyền Huy ủy quyền (ADR005); frontend rollout còn riêng; [tin nhắn bàn giao](handoffs/huy-q01-utc.md)
 được soạn cho Bảo tự gửi, không gửi thay hoặc fabricate approval.
 PR #13 tiếp tục Draft; không merge #12/#13, không push main/force-push.
 

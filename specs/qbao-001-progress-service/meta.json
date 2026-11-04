@@ -3,10 +3,10 @@
   "number": 1,
   "slug": "progress-service",
   "branch": "feat/progress-service",
-  "status": "open",
+  "status": "closed",
   "services": [
     "Progress"
   ],
-  "description": "PR #13 Draft: corrective Weight gRPC local829/829 và source CI verified; rollout external còn pending",
+  "description": "PR13 đã MERGED; T034/Q01 close-out được theo dõi trong qbao-002, không tiếp tục nhánh đã merged",
   "opened_at": "2026-10-24"
 }

@@ -5,6 +5,9 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Testcontainers.PostgreSql;
 
@@ -18,6 +21,7 @@ public sealed class DietApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
     public string? RabbitHost { get; set; }
     public ushort RabbitPort { get; set; }
+    public TimeProvider? Clock { get; set; }
 
     public Task InitializeAsync() => _postgres.StartAsync();
 
@@ -45,6 +49,8 @@ public sealed class DietApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("Jwt:KeyId", "diet-test-key");
         builder.UseSetting("Jwt:SigningPublicKey",
             Convert.ToBase64String(Encoding.UTF8.GetBytes(_key.ExportSubjectPublicKeyInfoPem())));
+        if (Clock is not null)
+            builder.ConfigureTestServices(services => services.Replace(ServiceDescriptor.Singleton(Clock)));
     }
 
     public HttpClient UserClient(Guid userId, string? subject = null)

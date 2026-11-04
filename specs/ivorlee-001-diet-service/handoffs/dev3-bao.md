@@ -42,9 +42,9 @@ EF bus outbox cùng transaction log/items; HTTP trả 201 không có nghĩa Prog
   MealLogId; nhiều log cùng BusinessDate vẫn một active day. Không lấy OccurredOn
   làm ngày ăn, không bỏ event backdate vì thời điểm nhận muộn.
 - Tính Streak từ các business date; gộp với metric activity mà không double-count.
-  Policy ngày metric/timezone vẫn cần Bảo/lead duyệt, Diet không áp UTC thay cho
-  BusinessDate client gửi. GET summary không truyền date hiện dùng UTC, frontend
-  muốn ngày local phải truyền date rõ.
+  Q01 đã được Bảo duyệt theo ủy quyền Huy (ADR005): metric UTC; Diet không đổi
+  BusinessDate client gửi. GET summary default UTC; UI automatic-today phải UTC,
+  date user chọn chủ động giữ nguyên. Không claim Huy trực tiếp ký ADR.
 - v1 create-only. Diet chưa có edit/delete/change-date. Nếu mở lifecycle đó, phải
   version/revision/tombstone và kế hoạch consumer mới; không tự giả là được hỗ trợ.
 

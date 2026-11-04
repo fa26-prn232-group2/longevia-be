@@ -1,0 +1,13 @@
+{
+  "owner": "qbao",
+  "number": 2,
+  "slug": "progress-benchmark-utc-closeout",
+  "branch": "feat/progress-benchmark-utc-closeout",
+  "status": "open",
+  "services": [
+    "Progress",
+    "Diet"
+  ],
+  "description": "Close-out T034/SC-006 và Q01 delegated UTC approval, kế thừa qbao-001",
+  "opened_at": "2026-11-04"
+}

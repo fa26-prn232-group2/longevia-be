@@ -66,6 +66,11 @@ public sealed class UtcPolicyTests(ProgressFixture fixture)
         await consumer.ProcessMealLoggedAsync(meal, default);
         Assert.Equal(MealProcessingResult.AlreadyProcessed, await consumer.ProcessMealLoggedAsync(meal with { OccurredOn = midnight.AddDays(40) }, default));
         Assert.Equal(meal.BusinessDate, (await db.ActivityContributions.SingleAsync(x => x.SourceLogId == id.ToString())).Date);
+        var persistedMeal = await db.ProcessedMealEvents.AsNoTracking().SingleAsync(x => x.EventId == id);
+        Assert.Equal(meal.BusinessDate, persistedMeal.BusinessDate);
+        var historicalMetric = await db.BodyMetricLogs.AsNoTracking().SingleAsync(x => x.UserId == user && x.LoggedAt == before);
+        Assert.Equal(175m, historicalMetric.HeightUsedCm);
+        Assert.Equal(22.86m, historicalMetric.Bmi);
         using var client = fixture.Factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create(fixture, "valid", user));
         var summary = await client.GetFromJsonAsync<DashboardSummaryResponse>("/dashboard/summary", Json);

@@ -1,3 +1,20 @@
+# Close-out hiện hành — 2026-11-04
+
+**Q01 — APPROVED FOR MVP CROSS-SERVICE UTC POLICY** (Q01 — APPROVED, CROSS-SERVICE MVP UTC).
+Bảo quyết định theo quyền Q01 do Huy ủy quyền, được Bảo xác nhận trực tiếp;
+không tuyên bố Huy tự ký ADR hoặc review PR. [ADR005](../../docs/decisions/005-mvp-utc-business-calendar.md)
+là quyết định hiện hành, thay các pending Q01 approval trong phần lịch sử bên dưới.
+Server-derived dates/today/week/history dùng UTC; Diet DateOnly/BusinessDate do
+client chọn giữ nguyên qua event/replay. UI tự chọn hôm nay dùng UTC. Việt Nam
+05/11/2026 00:30(+07) vẫn là04/11 UTC;07:00(+07) mới sang05/11 UTC.
+Không rebucket lịch sử/BMI snapshots. Huy vẫn phụ trách frontend/Diet alignment;
+approval không đồng nghĩa frontend đã deploy, replay production đầy đủ hay
+Dashboard completeness được nghiệm thu. Q02 auth và rollout blockers giữ riêng.
+
+T034/SC-006 **DONE** cho Progress trong cấu hình đo ngày2026-11-04:3/3run PASS, readp95<150ms/writep95<250ms/successfulRPS>=100,0HTTPfail/drop. [Số đo và môi trường](../qbao-002-progress-benchmark-utc-closeout/benchmark-report.md), [machine evidence](../qbao-002-progress-benchmark-utc-closeout/benchmark-evidence.json). Measured source c795500; performance là local controlled run, không phải CI benchmark.
+
+---
+
 ## Trạng thái Q02 hiện hành (2026-10-26)
 
 Functional GetUserHeight đã VERIFIED với provider thật, 17 scoped scenarios. Những mô tả Q02 schema/provider PENDING của thiết kế Phase 2 bên dưới là lịch sử, được thay thế bởi mục Q02 tích hợp PR #14. Secure readiness vẫn BLOCKED vì chưa có authenticated service caller. Không thay Q01 UTC/Q10.
@@ -22,13 +39,13 @@ Functional GetUserHeight đã VERIFIED với provider thật, 17 scoped scenario
 - Việt Nam 00:30 ngày 25/10 vẫn là UTC ngày 24/10. MVP không có user-local midnight,
   không cần timezone Identity. Chuyển IANA timezone là quyết định versioned riêng,
   phải có migration/rebucketing và phê duyệt liên service.
-- **Cross-service acknowledgment: PENDING Huy** cho Diet/frontend tự chọn ngày hiện tại
-  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy đã approve.
+- **Cross-service Q01: APPROVED bởi Bảo theo quyền Huy ủy quyền (ADR005)** cho Diet/frontend tự chọn ngày hiện tại
+  theo UTC; client chọn ngày lịch sử được giữ nguyên. Không claim Huy trực tiếp ký ADR hoặc review PR.
 - Q02 functional Height integration đã verified trong lượt hiện hành; service-caller auth còn BLOCKED. Q10 Weight không đổi.
 
 Chi tiết reconciliation và cách tái lập: [corrective-reconciliation.md](corrective-reconciliation.md).
 Các mô tả Q01 PENDING ở phần lịch sử bên dưới được thay thế bởi quyết định này
-cho nội bộ Progress; compatibility liên service vẫn PENDING.
+cho nội bộ Progress; approval liên service có hiệu lực theo ADR005; rollout compatibility còn phải kiểm chứng.
 
 **Nhánh**: `feat/progress-service` | **Feature**: `qbao-001-progress-service`
 **Ngày**: 2026-10-24 | **Đầu vào**: [spec.md](spec.md)
@@ -121,7 +138,7 @@ Path trong tasks là path dự kiến, không tuyên bố file đã tồn tại.
 - Water append/SUM tránh lost update; sleep xử lý instant đầy đủ. Ngày/zone Q01
   phải dùng thống nhất trong body activity, water, sleep và meal projection.
 - MealLog.Date là DateOnly client cấp; CreatedAt là UTC, summary default UTC.
-  Streak dùng business date, không publish/receive timestamp. Metric dùng UTC calendar theo Bảo phê duyệt MVP; Diet DateOnly giữ nguyên, Huy xác nhận frontend còn PENDING.
+  Streak dùng business date, không publish/receive timestamp. Metric dùng UTC calendar theo Bảo phê duyệt MVP; Diet DateOnly giữ nguyên; Q01 cross-service đã được Bảo duyệt theo quyền Huy ủy quyền (ADR005), frontend rollout còn riêng.
 - BMI lưu height/BMI/category snapshot + provenance tại ghi (BR-05), không tính lại khi GET.
 - Dashboard đọc snapshot và union active day; current/best và window Q06 phải duyệt.
   Không ship metrics-only streak như hoàn chỉnh hoặc đoán số 0 khi meal thiếu.

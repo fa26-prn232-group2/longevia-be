@@ -76,16 +76,34 @@ def counters(ids):
     return result
 
 
+def resource_sample(ids):
+    listing = ['docker', 'ps', '--filter', f'label=com.docker.compose.project={PROJECT}', '-q']
+    current = capture(listing).splitlines()
+    if not set(ids).issubset(current):
+        raise ValueError('Persistent benchmark container stopped during measurement')
+    stats = ['docker', 'stats', '--no-stream', '--format', '{{json .}}']
+    generator_exited = False
+    try:
+        raw = capture([*stats, *current])
+    except subprocess.CalledProcessError:
+        transient = set(current) - set(ids)
+        # --rm may remove k6 between ps and stats at the end of the bounded drain.
+        # Retry persistent services only after proving the transient container exited.
+        if not transient or transient.intersection(capture(listing).splitlines()):
+            raise
+        raw = capture([*stats, *ids])
+        generator_exited = True
+    return {'utc': dt.datetime.now(dt.timezone.utc).isoformat(),
+            'containers': [json.loads(line) for line in raw.splitlines()],
+            'generatorExitedDuringSample': generator_exited}
+
+
 def monitor(ids, stop, samples):
     while not stop.is_set():
         try:
-            # Include the transient generator, not just the five persistent services.
-            current = capture(['docker', 'ps', '--filter', f'label=com.docker.compose.project={PROJECT}', '-q']).splitlines()
-            raw = capture(['docker', 'stats', '--no-stream', '--format', '{{json .}}', *current])
-            samples.append({'utc': dt.datetime.now(dt.timezone.utc).isoformat(),
-                            'containers': [json.loads(line) for line in raw.splitlines()]})
-        except subprocess.CalledProcessError:
-            samples.append({'error': 'docker stats unavailable'})
+            samples.append(resource_sample(ids))
+        except (OSError, ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            samples.append({'error': 'docker stats unavailable', 'utc': dt.datetime.now(dt.timezone.utc).isoformat()})
         stop.wait(2)
 
 
@@ -178,7 +196,10 @@ def main():
                        'dataset': dataset, 'resourceSamples': samples, 'cpuCountersBefore': before,
                        'cpuCountersAfter': counters(ids), 'containersAfter': resources(ids)})
         expected_metrics = result.get('statuses', {}).get('201', 0) + result.get('warmupStatuses', {}).get('201', 0)
-        if (exit_code != 0 or not samples or any('error' in sample for sample in samples)
+        generator_samples = sum('generator' in container.get('Name', '')
+                                for sample in samples for container in sample.get('containers', []))
+        result['generatorResourceSamples'] = generator_samples
+        if (exit_code != 0 or not samples or generator_samples == 0 or any('error' in sample for sample in samples)
                 or result['persistence']['measuredMetrics'] != expected_metrics
                 or any(x['oomKilled'] for x in result['containersAfter'])):
             result['verdict'] = 'INCONCLUSIVE'

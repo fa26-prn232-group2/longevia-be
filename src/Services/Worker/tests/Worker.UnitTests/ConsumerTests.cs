@@ -1,6 +1,8 @@
 using Longevia.Shared.Events;
 using Longevia.Worker.Consumers;
+using Longevia.Worker.Templates;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Worker.UnitTests.Fakes;
 
 namespace Worker.UnitTests;
@@ -130,7 +132,7 @@ public sealed class ConsumerTests
         FakeEmailSender sender, CaptureLoggerProvider logs)
     {
         using var factory = LoggerFactory.Create(builder => builder.AddProvider(logs));
-        return new UserRegisteredConsumer(sender, new InMemoryIdempotencyStore(), factory.CreateLogger<UserRegisteredConsumer>());
+        return new UserRegisteredConsumer(sender, new InMemoryIdempotencyStore(), factory.CreateLogger<UserRegisteredConsumer>(), Options.Create(new FrontendOptions()));
     }
 
     private static PasswordResetRequestedConsumer CreatePasswordResetConsumer(

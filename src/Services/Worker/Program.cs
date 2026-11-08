@@ -9,10 +9,16 @@ using Longevia.Worker.Adapters.Email;
 using Longevia.Worker.Consumers;
 using Longevia.Worker.Idempotency;
 using Longevia.Worker.Messaging;
+using Longevia.Worker.Templates;
 using MassTransit;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOptions<FrontendOptions>()
+    .Bind(builder.Configuration.GetSection(FrontendOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // -- SMTP (Mailpit local / Brevo relay prod): 100% env-driven, no hardcoded hosts.
 builder.Services.AddOptions<SmtpOptions>()

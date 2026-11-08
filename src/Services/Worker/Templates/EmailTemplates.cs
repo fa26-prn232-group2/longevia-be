@@ -13,14 +13,10 @@ namespace Longevia.Worker.Templates;
 /// </summary>
 public static class EmailTemplates
 {
-    // Gateway base URL owned by compose (GATEWAY_PORT); the verify path is
-    // mandated by data-model §2.2.
-    private const string VerifyBaseUrl = "http://localhost:8080/api/identity/auth/verify";
-
-    /// <summary>Account-verification email with an activation link.</summary>
-    public static EmailMessage Verification(string toEmail, string toName, string token)
+    /// <summary>Account-verification email with a frontend activation link.</summary>
+    public static EmailMessage Verification(string toEmail, string toName, string token, string frontendBaseUrl)
     {
-        var link = $"{VerifyBaseUrl}?token={Uri.EscapeDataString(token)}";
+        var link = $"{frontendBaseUrl.TrimEnd('/')}/verify-email?token={Uri.EscapeDataString(token)}";
         var body = Layout(
             "Xác minh tài khoản Longevia",
             $"Chào {WebUtility.HtmlEncode(toName)},",

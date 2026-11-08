@@ -9,19 +9,20 @@ public sealed class EmailTemplatesTests
     public void Verification_ContainsSubjectLinkAndToken()
     {
         const string token = "verify-token-123";
-        var email = EmailTemplates.Verification("user@example.com", "Nguyen Van A", token);
+        var email = EmailTemplates.Verification("user@example.com", "Nguyen Van A", token, "http://localhost:3000");
 
         Assert.Equal("user@example.com", email.ToEmail);
         Assert.Equal("Xác minh tài khoản Longevia", email.Subject);
         Assert.Contains("Kích hoạt tài khoản", email.HtmlBody);
         Assert.Contains($"token={token}", email.HtmlBody);
-        Assert.Contains("http://localhost:8080/api/identity/auth/verify", email.HtmlBody);
+        Assert.Contains("http://localhost:3000/verify-email?token=", email.HtmlBody);
+        Assert.DoesNotContain("http://localhost:8080/api/identity/auth/verify", email.HtmlBody);
     }
 
     [Fact]
     public void Verification_HtmlEncodesUserInput()
     {
-        var email = EmailTemplates.Verification("user@example.com", "<script>alert(1)</script>", "t");
+        var email = EmailTemplates.Verification("user@example.com", "<script>alert(1)</script>", "t", "http://localhost:3000");
 
         Assert.DoesNotContain("<script>", email.HtmlBody);
         Assert.Contains("&lt;script&gt;", email.HtmlBody);
@@ -30,7 +31,7 @@ public sealed class EmailTemplatesTests
     [Fact]
     public void Verification_UrlEncodesToken()
     {
-        var email = EmailTemplates.Verification("user@example.com", "A", "a+b/c?d=e&f");
+        var email = EmailTemplates.Verification("user@example.com", "A", "a+b/c?d=e&f", "http://localhost:3000");
 
         Assert.Contains($"token={Uri.EscapeDataString("a+b/c?d=e&f")}", email.HtmlBody);
         Assert.DoesNotContain("token=a+b/c?d=e&f", email.HtmlBody);

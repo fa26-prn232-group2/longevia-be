@@ -34,7 +34,7 @@
 | POST | `/api/identity/auth/forgot-password` | added | Public; luôn trả `202` không body; chỉ account Active phát event reset. |
 | POST | `/api/identity/auth/reset-password` | added | Public; token + mật khẩu mới; thành công `204`, token không hợp lệ `400 identity.invalid_password_reset_token`. |
 
-Route xác minh email dùng GET trực tiếp như link trong email Worker hiện có. Trình quét link email có thể tự kích hoạt tài khoản khi mở link; đây là hành vi đã được chọn.
+Route xác minh email dùng GET trực tiếp từ trang `/verify-email` của frontend. Worker tạo link `{Frontend:BaseUrl}/verify-email?token=...`; frontend gọi API này sau khi người dùng mở trang. Trình quét link email không tự kích hoạt tài khoản khi kiểm tra email.
 
 ## 4. DTOs, enums, errors, compatibility
 

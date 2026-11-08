@@ -4,6 +4,7 @@ using Longevia.Worker.Idempotency;
 using Longevia.Worker.Templates;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Longevia.Worker.Consumers;
 
@@ -17,7 +18,8 @@ namespace Longevia.Worker.Consumers;
 public sealed class UserRegisteredConsumer(
     IEmailSender emailSender,
     IIdempotencyStore idempotency,
-    ILogger<UserRegisteredConsumer> logger) : IConsumer<UserRegisteredEvent>
+    ILogger<UserRegisteredConsumer> logger,
+    IOptions<FrontendOptions> frontendOptions) : IConsumer<UserRegisteredEvent>
 {
     private static readonly TimeSpan DedupTtl = TimeSpan.FromDays(7);
 
@@ -38,7 +40,7 @@ public sealed class UserRegisteredConsumer(
             return;
         }
 
-        var email = EmailTemplates.Verification(message.Email, message.FullName, message.VerificationToken);
+        var email = EmailTemplates.Verification(message.Email, message.FullName, message.VerificationToken, frontendOptions.Value.BaseUrl);
         try
         {
             await emailSender.SendAsync(email, cancellationToken);

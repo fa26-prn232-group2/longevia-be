@@ -340,6 +340,7 @@ services:
       SMTP__USER: ${SMTP__USER:-}
       SMTP__PASSWORD: ${SMTP__PASSWORD:-}
       SMTP__SENDER_EMAIL: ${SMTP__SENDER_EMAIL:-no-reply@longevia.local}
+      Frontend__BaseUrl: ${FRONTEND_BASE_URL:-http://localhost:3000}
       REDIS__HOST: redis
       REDIS__PORT: ${REDIS_PORT:-6379}
     depends_on:

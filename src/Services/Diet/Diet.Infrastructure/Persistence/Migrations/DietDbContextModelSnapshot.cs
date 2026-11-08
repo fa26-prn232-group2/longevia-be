@@ -102,6 +102,7 @@ namespace Diet.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-4111-8111-111111111111"),
+                            Allergens = new string[0],
                             Category = "Meat",
                             Name = "Ức gà (demo)",
                             ServingSize = 100m,
@@ -110,6 +111,7 @@ namespace Diet.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("22222222-2222-4222-8222-222222222222"),
+                            Allergens = new string[0],
                             Category = "Grains",
                             Name = "Cơm trắng (demo)",
                             ServingSize = 100m,
@@ -118,10 +120,371 @@ namespace Diet.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("33333333-3333-4333-8333-333333333333"),
+                            Allergens = new string[0],
                             Category = "Beverage",
                             Name = "Nước lọc (demo)",
                             ServingSize = 100m,
                             ServingUnit = "ml"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000001"),
+                            Allergens = new string[0],
+                            Category = "Grains",
+                            Name = "Cơm gạo lứt",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000002"),
+                            Allergens = new[] { "gluten", "lúa mì", "wheat" },
+                            Category = "Grains",
+                            Name = "Yến mạch cán",
+                            ServingSize = 40m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000003"),
+                            Allergens = new[] { "gluten", "lúa mì", "wheat" },
+                            Category = "Grains",
+                            Name = "Bánh mì nguyên cám",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000004"),
+                            Allergens = new string[0],
+                            Category = "Grains",
+                            Name = "Bún tươi",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000005"),
+                            Allergens = new string[0],
+                            Category = "Grains",
+                            Name = "Bánh phở tươi",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000006"),
+                            Allergens = new string[0],
+                            Category = "Grains",
+                            Name = "Khoai lang luộc",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000007"),
+                            Allergens = new string[0],
+                            Category = "Grains",
+                            Name = "Ngô luộc",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000011"),
+                            Allergens = new string[0],
+                            Category = "Meat",
+                            Name = "Thịt heo nạc",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000012"),
+                            Allergens = new string[0],
+                            Category = "Meat",
+                            Name = "Thịt bò nạc",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000013"),
+                            Allergens = new string[0],
+                            Category = "Meat",
+                            Name = "Đùi gà bỏ da",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000021"),
+                            Allergens = new[] { "cá", "fish", "hải sản" },
+                            Category = "Seafood",
+                            Name = "Cá hồi",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000022"),
+                            Allergens = new[] { "cá", "fish", "hải sản" },
+                            Category = "Seafood",
+                            Name = "Cá thu",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000023"),
+                            Allergens = new[] { "cá", "fish", "hải sản" },
+                            Category = "Seafood",
+                            Name = "Cá basa",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000024"),
+                            Allergens = new[] { "giáp xác", "hải sản", "shellfish", "tôm" },
+                            Category = "Seafood",
+                            Name = "Tôm",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000025"),
+                            Allergens = new[] { "hải sản", "mollusc", "mực", "nhuyễn thể" },
+                            Category = "Seafood",
+                            Name = "Mực",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000031"),
+                            Allergens = new[] { "egg", "trứng" },
+                            Category = "Eggs",
+                            Name = "Trứng gà luộc",
+                            ServingSize = 50m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000032"),
+                            Allergens = new[] { "soy", "đậu nành" },
+                            Category = "Legumes",
+                            Name = "Đậu phụ",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000033"),
+                            Allergens = new string[0],
+                            Category = "Legumes",
+                            Name = "Đậu xanh nấu chín",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000034"),
+                            Allergens = new string[0],
+                            Category = "Legumes",
+                            Name = "Đậu đen nấu chín",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000041"),
+                            Allergens = new[] { "lactose", "milk", "sữa" },
+                            Category = "Dairy",
+                            Name = "Sữa tươi không đường",
+                            ServingSize = 100m,
+                            ServingUnit = "ml"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000042"),
+                            Allergens = new[] { "lactose", "milk", "sữa" },
+                            Category = "Dairy",
+                            Name = "Sữa chua không đường",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000043"),
+                            Allergens = new[] { "soy", "đậu nành" },
+                            Category = "Beverage",
+                            Name = "Sữa đậu nành không đường",
+                            ServingSize = 100m,
+                            ServingUnit = "ml"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000044"),
+                            Allergens = new string[0],
+                            Category = "Beverage",
+                            Name = "Trà xanh không đường",
+                            ServingSize = 100m,
+                            ServingUnit = "ml"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000051"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Rau muống luộc",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000052"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Cải bó xôi",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000053"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Bông cải xanh",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000054"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Cà chua",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000055"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Cà rốt",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000056"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Bí đỏ",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000057"),
+                            Allergens = new string[0],
+                            Category = "Vegetables",
+                            Name = "Nấm rơm",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000061"),
+                            Allergens = new string[0],
+                            Category = "Fruits",
+                            Name = "Chuối",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000062"),
+                            Allergens = new string[0],
+                            Category = "Fruits",
+                            Name = "Cam",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000063"),
+                            Allergens = new string[0],
+                            Category = "Fruits",
+                            Name = "Táo",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000064"),
+                            Allergens = new string[0],
+                            Category = "Fruits",
+                            Name = "Bơ",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000065"),
+                            Allergens = new string[0],
+                            Category = "Fruits",
+                            Name = "Đu đủ",
+                            ServingSize = 100m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000071"),
+                            Allergens = new[] { "hạt cây", "hạt điều", "tree_nut" },
+                            Category = "Nuts",
+                            Name = "Hạt điều",
+                            ServingSize = 30m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000072"),
+                            Allergens = new[] { "hạnh nhân", "hạt cây", "tree_nut" },
+                            Category = "Nuts",
+                            Name = "Hạnh nhân",
+                            ServingSize = 30m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000073"),
+                            Allergens = new[] { "hạt cây", "tree_nut", "óc chó" },
+                            Category = "Nuts",
+                            Name = "Óc chó",
+                            ServingSize = 30m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000074"),
+                            Allergens = new[] { "lạc", "peanut", "đậu phộng" },
+                            Category = "Nuts",
+                            Name = "Đậu phộng rang",
+                            ServingSize = 30m,
+                            ServingUnit = "g"
+                        },
+                        new
+                        {
+                            Id = new Guid("d1e70000-0000-4000-8000-000000000075"),
+                            Allergens = new[] { "mè", "sesame", "vừng" },
+                            Category = "Nuts",
+                            Name = "Mè đen",
+                            ServingSize = 10m,
+                            ServingUnit = "g"
                         });
                 });
 
@@ -480,6 +843,366 @@ namespace Diet.Infrastructure.Persistence.Migrations
                                     FatGrams = 0m,
                                     FiberGrams = 0m,
                                     ProteinGrams = 0m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000001"),
+                                    Calories = 112m,
+                                    CarbsGrams = 23.5m,
+                                    FatGrams = 0.8m,
+                                    FiberGrams = 1.8m,
+                                    ProteinGrams = 2.3m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000002"),
+                                    Calories = 156m,
+                                    CarbsGrams = 26.5m,
+                                    FatGrams = 2.8m,
+                                    FiberGrams = 4.2m,
+                                    ProteinGrams = 6.8m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000003"),
+                                    Calories = 247m,
+                                    CarbsGrams = 41m,
+                                    FatGrams = 3.4m,
+                                    FiberGrams = 7m,
+                                    ProteinGrams = 13m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000004"),
+                                    Calories = 109m,
+                                    CarbsGrams = 25m,
+                                    FatGrams = 0.2m,
+                                    FiberGrams = 1m,
+                                    ProteinGrams = 0.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000005"),
+                                    Calories = 141m,
+                                    CarbsGrams = 32m,
+                                    FatGrams = 0.3m,
+                                    FiberGrams = 0.6m,
+                                    ProteinGrams = 1.8m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000006"),
+                                    Calories = 86m,
+                                    CarbsGrams = 20.1m,
+                                    FatGrams = 0.1m,
+                                    FiberGrams = 3m,
+                                    ProteinGrams = 1.6m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000007"),
+                                    Calories = 96m,
+                                    CarbsGrams = 21m,
+                                    FatGrams = 1.5m,
+                                    FiberGrams = 2.4m,
+                                    ProteinGrams = 3.4m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000011"),
+                                    Calories = 143m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 4.3m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 26m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000012"),
+                                    Calories = 150m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 7m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 21m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000013"),
+                                    Calories = 121m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 4.1m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 19.7m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000021"),
+                                    Calories = 208m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 13m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 20m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000022"),
+                                    Calories = 205m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 13.9m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 19m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000023"),
+                                    Calories = 90m,
+                                    CarbsGrams = 0m,
+                                    FatGrams = 3.2m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 15m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000024"),
+                                    Calories = 99m,
+                                    CarbsGrams = 0.2m,
+                                    FatGrams = 0.3m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 24m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000025"),
+                                    Calories = 92m,
+                                    CarbsGrams = 3.1m,
+                                    FatGrams = 1.4m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 15.6m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000031"),
+                                    Calories = 78m,
+                                    CarbsGrams = 0.6m,
+                                    FatGrams = 5.3m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 6.3m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000032"),
+                                    Calories = 76m,
+                                    CarbsGrams = 1.9m,
+                                    FatGrams = 4.8m,
+                                    FiberGrams = 0.3m,
+                                    ProteinGrams = 8m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000033"),
+                                    Calories = 105m,
+                                    CarbsGrams = 19m,
+                                    FatGrams = 0.4m,
+                                    FiberGrams = 7.6m,
+                                    ProteinGrams = 7m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000034"),
+                                    Calories = 132m,
+                                    CarbsGrams = 23.7m,
+                                    FatGrams = 0.5m,
+                                    FiberGrams = 8.7m,
+                                    ProteinGrams = 8.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000041"),
+                                    Calories = 61m,
+                                    CarbsGrams = 4.8m,
+                                    FatGrams = 3.3m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 3.2m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000042"),
+                                    Calories = 61m,
+                                    CarbsGrams = 4.7m,
+                                    FatGrams = 3.3m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 3.5m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000043"),
+                                    Calories = 33m,
+                                    CarbsGrams = 1.7m,
+                                    FatGrams = 1.6m,
+                                    FiberGrams = 0.4m,
+                                    ProteinGrams = 2.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000044"),
+                                    Calories = 1m,
+                                    CarbsGrams = 0.2m,
+                                    FatGrams = 0m,
+                                    FiberGrams = 0m,
+                                    ProteinGrams = 0m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000051"),
+                                    Calories = 19m,
+                                    CarbsGrams = 3.1m,
+                                    FatGrams = 0.2m,
+                                    FiberGrams = 2.1m,
+                                    ProteinGrams = 2.6m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000052"),
+                                    Calories = 23m,
+                                    CarbsGrams = 3.6m,
+                                    FatGrams = 0.4m,
+                                    FiberGrams = 2.2m,
+                                    ProteinGrams = 2.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000053"),
+                                    Calories = 34m,
+                                    CarbsGrams = 6.6m,
+                                    FatGrams = 0.4m,
+                                    FiberGrams = 2.6m,
+                                    ProteinGrams = 2.8m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000054"),
+                                    Calories = 18m,
+                                    CarbsGrams = 3.9m,
+                                    FatGrams = 0.2m,
+                                    FiberGrams = 1.2m,
+                                    ProteinGrams = 0.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000055"),
+                                    Calories = 41m,
+                                    CarbsGrams = 9.6m,
+                                    FatGrams = 0.2m,
+                                    FiberGrams = 2.8m,
+                                    ProteinGrams = 0.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000056"),
+                                    Calories = 26m,
+                                    CarbsGrams = 6.5m,
+                                    FatGrams = 0.1m,
+                                    FiberGrams = 0.5m,
+                                    ProteinGrams = 1m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000057"),
+                                    Calories = 32m,
+                                    CarbsGrams = 4.6m,
+                                    FatGrams = 0.7m,
+                                    FiberGrams = 2.5m,
+                                    ProteinGrams = 3.8m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000061"),
+                                    Calories = 89m,
+                                    CarbsGrams = 22.8m,
+                                    FatGrams = 0.3m,
+                                    FiberGrams = 2.6m,
+                                    ProteinGrams = 1.1m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000062"),
+                                    Calories = 47m,
+                                    CarbsGrams = 11.8m,
+                                    FatGrams = 0.1m,
+                                    FiberGrams = 2.4m,
+                                    ProteinGrams = 0.9m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000063"),
+                                    Calories = 52m,
+                                    CarbsGrams = 13.8m,
+                                    FatGrams = 0.2m,
+                                    FiberGrams = 2.4m,
+                                    ProteinGrams = 0.3m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000064"),
+                                    Calories = 160m,
+                                    CarbsGrams = 8.5m,
+                                    FatGrams = 14.7m,
+                                    FiberGrams = 6.7m,
+                                    ProteinGrams = 2m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000065"),
+                                    Calories = 43m,
+                                    CarbsGrams = 10.8m,
+                                    FatGrams = 0.3m,
+                                    FiberGrams = 1.7m,
+                                    ProteinGrams = 0.5m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000071"),
+                                    Calories = 166m,
+                                    CarbsGrams = 9m,
+                                    FatGrams = 13.2m,
+                                    FiberGrams = 1m,
+                                    ProteinGrams = 5.5m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000072"),
+                                    Calories = 174m,
+                                    CarbsGrams = 6.5m,
+                                    FatGrams = 15m,
+                                    FiberGrams = 3.8m,
+                                    ProteinGrams = 6.4m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000073"),
+                                    Calories = 196m,
+                                    CarbsGrams = 4.1m,
+                                    FatGrams = 19.6m,
+                                    FiberGrams = 2m,
+                                    ProteinGrams = 4.6m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000074"),
+                                    Calories = 176m,
+                                    CarbsGrams = 6.5m,
+                                    FatGrams = 14.9m,
+                                    FiberGrams = 2.6m,
+                                    ProteinGrams = 7.1m
+                                },
+                                new
+                                {
+                                    FoodItemId = new Guid("d1e70000-0000-4000-8000-000000000075"),
+                                    Calories = 57m,
+                                    CarbsGrams = 2.3m,
+                                    FatGrams = 5m,
+                                    FiberGrams = 1.2m,
+                                    ProteinGrams = 1.8m
                                 });
                         });
 

@@ -18,7 +18,7 @@ khai là /api/diet. Schema thuộc diet_db và được tạo bởi EF Code Firs
 - Decimal input tối đa 3 số thập phân; snapshot 8 số. Ngày nhật ký DateOnly;
   timestamp UTC, ngày mặc định UTC. Summary dùng target hiện tại; remaining âm
   biểu thị vượt mục tiêu. Không tự đổi đơn vị vật lý.
-- Seed gồm ba món demo, ID cố định trong migration, không nhân bản khi startup.
+- Seed gồm 43 món minh họa (3 món demo ban đầu + 40 món Việt phổ biến, migration `ExpandFoodCatalogSeed`), ID cố định trong migration, không nhân bản khi startup. Mọi món seed đều khai báo `allergens` (mảng rỗng nếu không có dị nguyên phổ biến) để được xét làm ứng viên gợi ý AI; tag dị ứng gồm tên tiếng Anh và từ tiếng Việt thường gặp (vd. `peanut`, `đậu phộng`, `lạc`) vì so khớp với dị ứng tự do trong hồ sơ là bằng nhau không phân biệt hoa thường. Giá trị dinh dưỡng là ước lượng tham khảo, không phải catalog sản xuất.
 
 ## API và phụ thuộc
 

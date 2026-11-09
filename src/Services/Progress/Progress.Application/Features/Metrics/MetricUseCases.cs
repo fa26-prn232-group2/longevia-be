@@ -84,7 +84,7 @@ public sealed class MetricUseCases(
         await uow.SaveChangesAsync(ct);
     }
 
-    private static BodyMetricResponse ToResponse(BodyMetricLog log) =>        new(
+    private static BodyMetricResponse ToResponse(BodyMetricLog log) => new(
             log.Id,
             log.LoggedAt,
             log.WeightKg,

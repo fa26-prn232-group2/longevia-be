@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Diet.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
 
 namespace Diet.Infrastructure.Persistence.Configurations;
 

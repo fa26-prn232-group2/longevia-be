@@ -28,9 +28,15 @@ public sealed class WorkoutPlan
         ArgumentException.ThrowIfNullOrWhiteSpace(planJson);
         return new()
         {
-            Id = Guid.NewGuid(), UserId = userId, WeekStartDate = weekStartDate, Days = days,
-            SessionsPerWeek = sessionsPerWeek, MinutesPerSession = minutesPerSession, Goal = goal,
-            PlanJson = planJson, GeneratedAt = generatedAt,
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            WeekStartDate = weekStartDate,
+            Days = days,
+            SessionsPerWeek = sessionsPerWeek,
+            MinutesPerSession = minutesPerSession,
+            Goal = goal,
+            PlanJson = planJson,
+            GeneratedAt = generatedAt,
         };
     }
 

@@ -1,4 +1,6 @@
 using Google.GenAI;
+using Longevia.Shared.Auth;
+using Longevia.Shared.Observability;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -18,8 +20,6 @@ using Recommendation.Application.Features.Search;
 using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
-using Longevia.Shared.Observability;
-using Longevia.Shared.Auth;
 
 namespace Recommendation.Api;
 

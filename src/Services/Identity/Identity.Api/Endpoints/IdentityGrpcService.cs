@@ -68,7 +68,7 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
         };
     }
 
-    public override async Task<GetUserHeightResponse> GetUserHeight(        GetUserHeightRequest request,
+    public override async Task<GetUserHeightResponse> GetUserHeight(GetUserHeightRequest request,
         ServerCallContext context)
     {
         if (!Guid.TryParse(request.UserId, out var userId) || userId == Guid.Empty)

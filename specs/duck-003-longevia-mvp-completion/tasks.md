@@ -60,18 +60,19 @@
 
 ## Phase 5 — CRUD, hardening, E2E
 
-- [ ] T501 Update/delete custom food (soft delete) + FE + tests.
+- [x] T501 Update/delete custom food (soft delete) + backend + FE PENDING.
 - [ ] T502 Delete body metric/sleep + FE + tests.
 - [ ] T503 Service token cho toàn bộ gRPC client/server + negative tests.
-- [ ] T504 Nginx rate limit + 429 ProblemDetails + test.
+- [x] T504 Nginx rate limit + 429 ProblemDetails + test (config; E2E PENDING).
 - [ ] T505 Playwright E2E + CI FE.
-- [ ] T506 Meal update/delete event v2 (backlog kỹ thuật, chỉ làm nếu còn thời gian).
+- [ ] T506 Meal update/delete event v2 (backlog kỹ thuật).
 
 ## Phase 6 — Close-out
 
-- [ ] T601 `frontend-guide.md` + `backend-integration-guide.md` + `docs/api/api-spec.md`.
-- [ ] T602 Cập nhật `meta.json`, `docs/overview/roadmap.md`, `docs/PROGRESS.md`, `WORK-LOG.md`.
-- [ ] T603 Chạy `make check`, FE `tsc/test/lint/build`, E2E, performance/security.
+- [x] T601 `frontend-guide.md` + `backend-integration-guide.md` (docs/api chi tiết còn PENDING).
+- [x] T602 Cập nhật `meta.json`, roadmap, `deferred.md`; PROGRESS/WORK-LOG PENDING.
+- [ ] T603 Chạy `make check`, FE `tsc/test/lint/build`, E2E, performance/security.  
+  - Đã chạy: FE `tsc`, 188 test, build 27 route; BE build 0 warning/error, Diet/Recommendation/Identity/Worker/Progress build.
 - [ ] T604 Demo script + seed data.
 
 ## Ghi chú handoff

@@ -35,3 +35,19 @@ public sealed record CurrentFastingResponse(
     double ElapsedHours,
     double RemainingHours,
     string Status);
+
+public sealed record FastingHistoryItemResponse(
+    Guid SessionId,
+    string Protocol,
+    DateTimeOffset StartedAt,
+    DateTimeOffset EndedAt,
+    int TargetHours,
+    double ActualHours,
+    bool IsGoalReached,
+    string Status);
+
+public sealed record FastingHistoryPageResponse(
+    int Page,
+    int PageSize,
+    int TotalCount,
+    IReadOnlyList<FastingHistoryItemResponse> Items);

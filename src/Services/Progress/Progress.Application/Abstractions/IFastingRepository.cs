@@ -10,4 +10,6 @@ public interface IFastingRepository
     Task<FastingSession?> GetByIdAsync(Guid id, Guid userId, CancellationToken ct);
     Task<FastingSession?> EndSessionWithLockAsync(Guid sessionId, Guid userId, DateTimeOffset endedAt, CancellationToken ct);
     Task<IReadOnlyList<FastingSession>> GetCompletedSessionsInWeekAsync(Guid userId, DateTimeOffset weekStartUtc, DateTimeOffset weekEndUtc, CancellationToken ct);
+    Task<IReadOnlyList<FastingSession>> GetCompletedPageAsync(Guid userId, int skip, int take, CancellationToken ct);
+    Task<int> CountCompletedAsync(Guid userId, CancellationToken ct);
 }

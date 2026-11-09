@@ -41,5 +41,11 @@ public static class FastingEndpoints
         .Produces(StatusCodes.Status204NoContent)
         .WithName("GetCurrentFasting")
         .WithSummary("Lấy thông tin phiên nhịn ăn đang hoạt động (204 khi chưa có phiên)");
+
+        group.MapGet("/history", async (int? page, int? pageSize, FastingUseCases useCases,
+            CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetHistoryAsync(page ?? 1, pageSize ?? 20, ct)))
+            .WithName("GetFastingHistory")
+            .WithSummary("Lịch sử các phiên nhịn ăn đã kết thúc (phân trang, mới nhất trước)");
     }
 }

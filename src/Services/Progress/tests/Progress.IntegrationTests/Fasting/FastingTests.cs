@@ -52,6 +52,20 @@ public sealed class FastingTests(ProgressFixture fixture)
         using var afterEndCurrent = await client.GetAsync("/fasting/current");
         Assert.Equal(HttpStatusCode.NoContent, afterEndCurrent.StatusCode);
         Assert.Equal(string.Empty, await afterEndCurrent.Content.ReadAsStringAsync());
+
+        // 5. Lịch sử có phiên vừa kết thúc và phân trang đúng.
+        using var historyResponse = await client.GetAsync("/fasting/history?page=1&pageSize=20");
+        Assert.Equal(HttpStatusCode.OK, historyResponse.StatusCode);
+        var history = await historyResponse.Content.ReadFromJsonAsync<FastingHistoryPageResponse>(JsonOpts);
+        Assert.NotNull(history);
+        Assert.True(history.TotalCount >= 1);
+        Assert.Contains(history.Items, item => item.SessionId == started.SessionId);
+        Assert.All(history.Items, item => Assert.Equal("Completed", item.Status));
+
+        using var emptyPage = await client.GetAsync("/fasting/history?page=999&pageSize=20");
+        var empty = await emptyPage.Content.ReadFromJsonAsync<FastingHistoryPageResponse>(JsonOpts);
+        Assert.NotNull(empty);
+        Assert.Empty(empty.Items);
     }
 
     [Fact]

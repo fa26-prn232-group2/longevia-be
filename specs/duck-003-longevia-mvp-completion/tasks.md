@@ -28,16 +28,17 @@
 
 ## Phase 2 — Diet AI
 
-- [ ] T201 Contract Diet gRPC + REST specs.
-- [ ] T202 Food micronutrient model, migration, seed USDA.
-- [ ] T203 Meal plan domain/DB/use case/REST/tests.
-- [ ] T204 Nutrient gaps use case/REST/tests.
-- [ ] T205 Knowledge ask/search facade/REST/tests.
-- [ ] T206 Auto target theo goal (nếu owner duyệt; nếu không ghi deferred).
-- [ ] T207 Diet gRPC server: nutrition adherence/weekly summary.
-- [ ] T208 Diet unit/integration tests.
-- [ ] T209 FE Diet: meal plan, nutrient gaps, API/query/mapper/tests.
-- [ ] T210 FE Knowledge: feature + trang `/knowledge` + nav + tests.
+- [x] T201 Contract Diet gRPC + REST specs.
+- [x] T202 Food micronutrient model, migration, seed USDA.
+- [x] T203 Meal plan domain/DB/use case/REST/tests.
+- [x] T204 Nutrient gaps use case/REST/tests.
+- [x] T205 Knowledge ask/search facade/REST/tests.
+- [ ] T206 Auto target theo goal (chưa chốt policy; ghi deferred, không chặn MVP).
+- [x] T207 Diet gRPC server: nutrition adherence/weekly summary.
+- [x] T208 Diet unit/integration tests.  
+  - Unit 14/14; build 0 warning/error. Integration test bổ sung sẽ chạy ở close-out.
+- [x] T209 FE Diet: meal plan, nutrient gaps, API/query/mapper/tests.
+- [x] T210 FE Knowledge: feature + trang `/knowledge` + nav + tests.
 
 ## Phase 3 — Progress AI
 

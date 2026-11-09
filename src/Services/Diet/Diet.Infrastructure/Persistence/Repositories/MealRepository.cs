@@ -11,4 +11,9 @@ public sealed class MealRepository(DietDbContext db) : IMealRepository
     public async Task<IReadOnlyList<MealLog>> GetDailyAsync(Guid userId, DateOnly date, CancellationToken ct) =>
         await db.MealLogs.AsNoTracking().Include(x => x.Items)
             .Where(x => x.UserId == userId && x.Date == date).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<MealLog>> GetRangeAsync(Guid userId, DateOnly from, DateOnly to, CancellationToken ct) =>
+        await db.MealLogs.AsNoTracking().Include(x => x.Items)
+            .Where(x => x.UserId == userId && x.Date >= from && x.Date <= to)
+            .OrderBy(x => x.Date).ToListAsync(ct);
 }

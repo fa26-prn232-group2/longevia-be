@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<ITargetRepository, TargetRepository>();
         services.AddScoped<IMealRepository, MealRepository>();
+        services.AddScoped<IMealPlanRepository, MealPlanRepository>();
         services.AddSingleton(_ =>
         {
             var address = config["ProgressGrpc:Address"] ?? "http://progress:50051";
@@ -38,6 +39,9 @@ public static class DependencyInjection
         services.AddSingleton(provider => new Longevia.Recommendation.Contracts.V1.RecommendationService.RecommendationServiceClient(
             provider.GetRequiredKeyedService<GrpcChannel>("recommendation")));
         services.AddScoped<IMealRecommendationProvider, MealRecommendationProvider>();
+        services.AddScoped<IMealPlanProvider, MealPlanProvider>();
+        services.AddScoped<INutrientGapProvider, NutrientGapProvider>();
+        services.AddScoped<IKnowledgeProvider, KnowledgeProvider>();
         services.AddKeyedSingleton<GrpcChannel>("identity", (_, _) =>
             GrpcChannel.ForAddress(config["IdentityGrpc:Address"] ?? "http://identity:50051"));
         services.AddSingleton(provider => new Longevia.Identity.Contracts.V1.IdentityService.IdentityServiceClient(

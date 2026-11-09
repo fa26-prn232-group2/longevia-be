@@ -4,6 +4,7 @@ COPY Directory.Build.props Directory.Packages.props ./
 COPY contracts/recommendation/ ./contracts/recommendation/
 COPY contracts/identity/ ./contracts/identity/
 COPY contracts/progress/ ./contracts/progress/
+COPY contracts/diet/ ./contracts/diet/
 COPY src/Shared/ ./src/Shared/
 COPY src/Services/Diet/Diet.Domain/ ./src/Services/Diet/Diet.Domain/
 COPY src/Services/Diet/Diet.Application/ ./src/Services/Diet/Diet.Application/
@@ -15,5 +16,5 @@ WORKDIR /app
 COPY --from=build /app/publish ./
 USER app
 ENV ASPNETCORE_HTTP_PORTS=8080
-EXPOSE 8080
+EXPOSE 8080 50051
 ENTRYPOINT ["./Diet.Api"]

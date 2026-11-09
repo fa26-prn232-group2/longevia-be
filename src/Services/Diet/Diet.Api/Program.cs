@@ -1,5 +1,6 @@
 using Diet.Api;
 using Diet.Api.Endpoints;
+using Diet.Api.Grpc;
 using Diet.Application;
 using Diet.Application.Common;
 using Diet.Infrastructure;
@@ -7,10 +8,19 @@ using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Observability;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var httpPort = ResolvePort(builder.Configuration["DIET:HTTP_PORT"], 8080);
+var grpcPort = ResolvePort(builder.Configuration["DIET:GRPC_PORT"], 50051);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort, listen => listen.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(grpcPort, listen => listen.Protocols = HttpProtocols.Http2);
+});
 
 builder.Services.AddDietApplication();
 builder.Services.AddDietInfrastructure(builder.Configuration);
@@ -58,6 +68,10 @@ app.UseAuthorization();
 app.MapFoodEndpoints();
 app.MapTargetEndpoints();
 app.MapMealEndpoints();
+app.MapMealPlanEndpoints();
+app.MapNutritionEndpoints();
+app.MapKnowledgeEndpoints();
+app.MapGrpcService<DietGrpcService>();
 app.MapGet("/health", async (DietDbContext db, CancellationToken ct) =>
     await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503));
 app.MapGet("/alive", () => TypedResults.Ok(new { status = "ok" }));
@@ -76,5 +90,8 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.Run();
+
+static int ResolvePort(string? raw, int fallback) =>
+    int.TryParse(raw, out var port) && port is > 0 and <= 65535 ? port : fallback;
 
 public partial class Program;

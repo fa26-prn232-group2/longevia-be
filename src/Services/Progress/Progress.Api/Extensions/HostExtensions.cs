@@ -56,6 +56,8 @@ public static class HostExtensions
         app.MapSleepEndpoints();
         app.MapMetricEndpoints();
         app.MapDashboardEndpoints();
+        app.MapWorkoutPlanEndpoints();
+        app.MapLongevityEndpoints();
         app.MapGrpcService<ProgressGrpcService>();
         return app;
     }

@@ -42,21 +42,21 @@
 
 ## Phase 3 — Progress AI
 
-- [ ] T301 Progress gRPC clients + `internal_net` config.
-- [ ] T302 Workout plan domain/DB/use case/REST/tests.
-- [ ] T303 Longevity habits use case/REST + Diet gRPC client/tests.
-- [ ] T304 Weekly digest scheduler + event + tests.
-- [ ] T305 FE Progress: workout/longevity pages + tests.
-- [ ] T306 (chuyển sang Phase 4) Digest opt-in.
+- [x] T301 Progress gRPC clients + `internal_net` config.
+- [x] T302 Workout plan domain/DB/use case/REST/tests.
+- [x] T303 Longevity habits use case/REST + Diet gRPC client/tests.
+- [x] T304 Weekly digest scheduler + event + tests.
+- [x] T305 FE Progress: workout/longevity pages + tests.
+- [x] T306 (chuyển sang Phase 4) Digest opt-in.
 
 ## Phase 4 — Identity/Worker
 
-- [ ] T306 Identity `receiveWeeklyDigest` preference + endpoint + FE toggle.
-- [ ] T401 `UserVerifiedEvent` + outbox + tests.
-- [ ] T402 Worker welcome consumer + tests.
-- [ ] T403 Worker weekly digest consumer + tests.
-- [ ] T404 Identity `GetUserContact` gRPC + tests.
-- [ ] T405 Compose/env/docs cho digest và gRPC address.
+- [x] T306 Identity `receiveWeeklyDigest` preference + endpoint + FE toggle.
+- [x] T401 `UserVerifiedEvent` + outbox + tests.
+- [x] T402 Worker welcome consumer + tests.
+- [x] T403 Worker weekly digest consumer + tests.
+- [x] T404 Identity `GetUserContact` gRPC + tests.
+- [x] T405 Compose/env/docs cho digest và gRPC address.
 
 ## Phase 5 — CRUD, hardening, E2E
 

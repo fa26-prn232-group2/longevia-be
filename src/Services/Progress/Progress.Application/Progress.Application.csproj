@@ -1,9 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Progress.Domain/Progress.Domain.csproj" />
     <ProjectReference Include="../../../Shared/Longevia.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="../../../../contracts/recommendation/v1/recommendation.proto" GrpcServices="Client" />
+    <Protobuf Include="../../../../contracts/diet/v1/diet.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

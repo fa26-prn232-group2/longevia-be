@@ -1,5 +1,7 @@
 using Grpc.Net.Client;
+using Longevia.Diet.Contracts.V1;
 using Longevia.Identity.Contracts.V1;
+using Longevia.Recommendation.Contracts.V1;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IWaterRepository, Repositories.WaterRepository>();
         services.AddScoped<ISleepRepository, Repositories.SleepRepository>();
         services.AddScoped<IBodyMetricRepository, Repositories.BodyMetricRepository>();
+        services.AddScoped<IWorkoutPlanRepository, Repositories.WorkoutPlanRepository>();
         services.AddOptions<IdentityGrpcOptions>().Bind(config.GetSection("IdentityGrpc"))
             .Validate(options => options.IsValid(), "IdentityGrpc requires an HTTP(S) address and deadline of 50–10000 ms.")
             .ValidateOnStart();
@@ -39,8 +42,22 @@ public static class DependencyInjection
             }));
         services.AddSingleton(provider => new IdentityService.IdentityServiceClient(provider.GetRequiredService<GrpcChannel>()));
         services.AddScoped<IBodyProfileProvider, BodyProfileProvider>();
+        services.AddScoped<IUserProfileProvider, UserProfileProvider>();
+        services.AddScoped<IUserContactProvider, UserContactProvider>();
+        services.AddKeyedSingleton<GrpcChannel>("recommendation", (_, _) => GrpcChannel.ForAddress(
+            config["RecommendationGrpc:Address"] ?? "http://recommendation:50051"));
+        services.AddSingleton(provider => new RecommendationService.RecommendationServiceClient(
+            provider.GetRequiredKeyedService<GrpcChannel>("recommendation")));
+        services.AddScoped<IWorkoutPlanProvider, WorkoutPlanProvider>();
+        services.AddScoped<ILongevityProvider, LongevityProvider>();
+        services.AddKeyedSingleton<GrpcChannel>("diet", (_, _) => GrpcChannel.ForAddress(
+            config["DietGrpc:Address"] ?? "http://diet:50051"));
+        services.AddSingleton(provider => new DietService.DietServiceClient(
+            provider.GetRequiredKeyedService<GrpcChannel>("diet")));
+        services.AddScoped<INutritionAdherenceProvider, NutritionAdherenceProvider>();
         services.AddScoped<IActivityContributionRepository, Repositories.ActivityContributionRepository>();
         services.AddProgressMessaging(config);
+        services.AddHostedService<WeeklyDigestScheduler>();
         return services;
     }
 }

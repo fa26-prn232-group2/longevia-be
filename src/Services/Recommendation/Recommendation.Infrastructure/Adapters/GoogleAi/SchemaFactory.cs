@@ -18,6 +18,8 @@ public static class SchemaFactory
         StructuredResponseKind.NutrientGapAnalysis => NutrientGapAnalysisSchema(),
         StructuredResponseKind.MealPlanSelection => MealPlanSelectionSchema(),
         StructuredResponseKind.WorkoutPlanSelection => WorkoutPlanSelectionSchema(),
+        StructuredResponseKind.LongevityTip => LongevityTipSchema(),
+        StructuredResponseKind.NutritionTargetSuggestion => NutritionTargetSuggestionSchema(),
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind),
             kind,
@@ -204,6 +206,44 @@ public static class SchemaFactory
             },
         },
         ["required"] = new JsonArray("days"),
+    };
+
+    private static JsonObject LongevityTipSchema() => new()
+    {
+        ["type"] = "object",
+        ["properties"] = new JsonObject
+        {
+            ["tip"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Mẹo tiếng Việt 1–2 câu, chỉ diễn giải nội dung trong CONTEXT.",
+            },
+        },
+        ["required"] = new JsonArray("tip"),
+    };
+
+    private static JsonObject NutritionTargetSuggestionSchema() => new()
+    {
+        ["type"] = "object",
+        ["properties"] = new JsonObject
+        {
+            ["protein_grams"] = new JsonObject
+            {
+                ["type"] = "number",
+                ["description"] = "Tổng protein mỗi ngày (g), trong khoảng an toàn đã nêu.",
+            },
+            ["fat_grams"] = new JsonObject
+            {
+                ["type"] = "number",
+                ["description"] = "Tổng chất béo mỗi ngày (g), trong khoảng an toàn đã nêu.",
+            },
+            ["rationale"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Giải thích tiếng Việt ngắn (markdown nhẹ), không nêu số calo khác với CALO MỤC TIÊU.",
+            },
+        },
+        ["required"] = new JsonArray("protein_grams", "fat_grams", "rationale"),
     };
 
     private static JsonObject CitationArraySchema() => new()

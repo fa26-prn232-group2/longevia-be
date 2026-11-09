@@ -1091,6 +1091,18 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
   (server streaming) với `ConversationTurn history`,
   `AskLongevityQuestionEvent { delta | citation | done | error }`. Lịch sử hội
   thoại lưu ở Diet DB (`knowledge_conversations`, `knowledge_messages`).
+- **Gợi ý mục tiêu dinh dưỡng**:
+  - `POST /api/diet/targets/me/suggest` — body `{ description?, goal? }`
+    (`goal`: LoseWeight | Maintain | BuildMuscle | Longevity). Trả
+    `{ targetCalories, targetProteinGrams, targetCarbsGrams, targetFatGrams,
+    rationale, source (ai|formula), safetyNote }`; **không ghi DB**, người dùng
+    bấm lưu qua `PUT /targets/me`.
+  - gRPC mới `RecommendationService.SuggestNutritionTargets`: calo do code tính
+    (Mifflin-St Jeor + TDEE + điều chỉnh mục tiêu), AI chỉ tinh chỉnh
+    protein/fat trong khoảng an toàn và viết `rationale`.
+- **Mẹo trường thọ**: `MealSelector` diễn giải đoạn sách qua prompt
+  `LongevityTip` (1–2 câu tiếng Việt); abstain/lỗi dùng câu curate sẵn, citation
+  vẫn giữ nguyên đoạn gốc.
 
 ### 7.5 Ghi chú vận hành
 

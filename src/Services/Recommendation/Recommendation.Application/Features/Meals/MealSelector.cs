@@ -74,9 +74,18 @@ public sealed partial class MealSelector(
             return new LongevityTip { Text = fallbackTip };
         }
 
+        var prompt = promptBuilder.BuildLongevityTip(
+            chunk,
+            MealSlotLabels.Vietnamese(request.MealSlot),
+            request.Goal);
+        var completion = await chatModel.CompleteAsync(prompt, cancellationToken).ConfigureAwait(false);
+        var tip = completion is { Abstained: false, Payload: not null }
+            ? ReadTip(completion.Payload)
+            : string.Empty;
+
         return new LongevityTip
         {
-            Text = quote,
+            Text = tip.Length == 0 ? fallbackTip : tip,
             Citations =
             [
                 new Citation
@@ -92,6 +101,13 @@ public sealed partial class MealSelector(
             ],
         };
     }
+
+    private static string ReadTip(System.Text.Json.Nodes.JsonObject payload) =>
+        payload["tip"] is System.Text.Json.Nodes.JsonValue value
+        && value.TryGetValue<string>(out var text)
+        && !string.IsNullOrWhiteSpace(text)
+            ? text.Trim()
+            : string.Empty;
 
     private Task<IReadOnlyList<RetrievedChunk>> RetrieveAsync(
         string query,

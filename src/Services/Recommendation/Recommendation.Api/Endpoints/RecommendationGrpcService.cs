@@ -6,6 +6,7 @@ using Recommendation.Application.Features.MealPlans;
 using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.Targets;
 using Recommendation.Application.Features.WorkoutPlans;
 using Contracts = Longevia.Recommendation.Contracts.V1;
 
@@ -23,7 +24,8 @@ internal sealed partial class RecommendationGrpcService(
     AskStreamingUseCase askStreaming,
     SearchLongevityKnowledgeUseCase searchLongevityKnowledge,
     GenerateMealPlanUseCase generateMealPlan,
-    GenerateWorkoutPlanUseCase generateWorkoutPlan)
+    GenerateWorkoutPlanUseCase generateWorkoutPlan,
+    SuggestNutritionTargetsUseCase suggestNutritionTargets)
     : Contracts.RecommendationService.RecommendationServiceBase
 {
     /// <summary>Gợi ý bữa ăn trong danh mục an toàn do caller gửi (US1).</summary>
@@ -180,4 +182,17 @@ internal sealed partial class RecommendationGrpcService(
             },
             _ => null,
         };
+
+    /// <summary>Gợi ý mục tiêu dinh dưỡng từ hồ sơ + mô tả người dùng.</summary>
+    public override async Task<Contracts.SuggestNutritionTargetsResponse> SuggestNutritionTargets(
+        Contracts.SuggestNutritionTargetsRequest request,
+        ServerCallContext context)
+    {
+        var applicationRequest = NutritionTargetMapper.ToApplicationRequest(request);
+        var result = await suggestNutritionTargets
+            .ExecuteAsync(applicationRequest, context.CancellationToken)
+            .ConfigureAwait(false);
+
+        return NutritionTargetMapper.ToProtoResponse(result);
+    }
 }

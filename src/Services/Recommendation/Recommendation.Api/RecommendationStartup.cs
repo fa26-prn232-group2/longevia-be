@@ -17,6 +17,7 @@ using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Plans;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.Targets;
 using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
@@ -311,6 +312,7 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<SafetyGuard>();
         builder.Services.AddScoped<AskLongevityQuestionUseCase>();
         builder.Services.AddScoped<AskStreamingUseCase>();
+        builder.Services.AddScoped<SuggestNutritionTargetsUseCase>();
 
         // Tra cứu đoạn sách (US4): use case phụ thuộc IKnowledgeStore (scoped) nên
         // cũng phải scoped.

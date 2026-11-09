@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IMealRepository, MealRepository>();
         services.AddScoped<IMealPlanRepository, MealPlanRepository>();
         services.AddScoped<IKnowledgeConversationRepository, KnowledgeConversationRepository>();
+        services.AddScoped<ITargetSuggestionProvider, TargetSuggestionProvider>();
         services.AddSingleton(_ =>
         {
             var address = config["ProgressGrpc:Address"] ?? "http://progress:50051";

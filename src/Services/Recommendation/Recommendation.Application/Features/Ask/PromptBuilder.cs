@@ -134,6 +134,86 @@ public sealed class PromptBuilder
         return (StreamingSystemInstruction, builder.ToString());
     }
 
+    /// <summary>
+    /// Diễn giải một đoạn sách thành mẹo ngắn cho người đọc: chỉ dùng nội dung
+    /// đoạn được cung cấp, không thêm số liệu hay khuyến nghị y tế mới.
+    /// </summary>
+    public StructuredPrompt BuildLongevityTip(KnowledgeChunk chunk, string mealSlotLabel, string goal)
+    {
+        ArgumentNullException.ThrowIfNull(chunk);
+
+        var userPrompt = new StringBuilder()
+            .AppendLine("[BEGIN CORPUS DATA]")
+            .AppendLine(chunk.Content)
+            .AppendLine("[END CORPUS DATA]")
+            .AppendLine()
+            .AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"BỐI CẢNH: bữa {mealSlotLabel}, mục tiêu {goal}."))
+            .Append("Viết 1–2 câu tiếng Việt diễn giải đoạn trên thành mẹo dễ áp dụng; không thêm số liệu mới, không khuyến nghị thuốc.")
+            .ToString();
+
+        return new StructuredPrompt
+        {
+            SystemInstruction = LongevityTipInstruction,
+            UserPrompt = userPrompt,
+            ResponseKind = StructuredResponseKind.LongevityTip,
+        };
+    }
+
+    private const string LongevityTipInstruction = """
+        Bạn là biên tập viên của Longevia. Nhiệm vụ: diễn giải MỘT đoạn sách thành mẹo
+        trường thọ ngắn, dễ hiểu, tự nhiên như người viết cho người đọc.
+        RÀNG BUỘC:
+        1. Chỉ dùng thông tin trong [BEGIN CORPUS DATA]…[END CORPUS DATA]; không thêm số liệu,
+        tên nghiên cứu hay khuyến nghị y tế mới.
+        2. Không đưa khuyến nghị về thuốc, liều thuốc, chẩn đoán hoặc thay thế điều trị.
+        3. Tối đa 2 câu, tiếng Việt, giọng thân thiện; không mở đầu bằng "Theo sách".
+        4. Trả JSON đúng schema: {"tip": "..."}.
+        """;
+
+    /// <summary>Dựng prompt cho gợi ý mục tiêu dinh dưỡng (calo do code tính).</summary>
+    public StructuredPrompt BuildNutritionTargetSuggestion(
+        UserProfile profile,
+        string goal,
+        string description,
+        int targetCalories)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        var userPrompt = new StringBuilder()
+            .AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"HỒ SƠ: tuổi {profile.Age} | giới {profile.Sex} | cao {profile.HeightCm:0.#} cm | nặng {profile.WeightKg:0.#} kg | vận động {profile.ActivityLevel}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"MỤC TIÊU: {goal} | CALO MỤC TIÊU (code đã tính, KHÔNG đổi): {targetCalories} kcal"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"KHOẢNG AN TOÀN: protein {Math.Round(profile.WeightKg * 1.0, 0)}–{Math.Round(profile.WeightKg * 2.4, 0)} g | chất béo {Math.Round(targetCalories * 0.20 / 9, 0)}–{Math.Round(targetCalories * 0.35 / 9, 0)} g"))
+            .AppendLine(description.Length == 0
+                ? "MÔ TẢ NGƯỜI DÙNG: (không có)"
+                : $"MÔ TẢ NGƯỜI DÙNG: {description}")
+            .Append("Chọn protein_grams và fat_grams trong khoảng an toàn, rồi viết rationale 2–4 câu tiếng Việt giải thích cách chia macro.")
+            .ToString();
+
+        return new StructuredPrompt
+        {
+            SystemInstruction = NutritionTargetInstruction,
+            UserPrompt = userPrompt,
+            ResponseKind = StructuredResponseKind.NutritionTargetSuggestion,
+        };
+    }
+
+    private const string NutritionTargetInstruction = """
+        Bạn là chuyên gia dinh dưỡng của Longevia. Calo mục tiêu đã được hệ thống tính từ
+        BMR/TDEE và mục tiêu cân nặng; bạn KHÔNG được đổi calo.
+        RÀNG BUỘC:
+        1. protein_grams và fat_grams phải nằm trong KHOẢNG AN TOÀN được cung cấp.
+        2. Không đưa khuyến nghị về thuốc, liều thuốc, chẩn đoán hay thay thế điều trị.
+           Nếu hồ sơ có dấu hiệu cần bác sĩ (tuổi < 18, mô tả bệnh nền), nhắc người dùng
+           tham khảo bác sĩ trong rationale.
+        3. rationale bằng tiếng Việt, markdown nhẹ (đoạn ngắn/gạch đầu dòng), 2–4 câu,
+           không nêu con số calo khác CALO MỤC TIÊU.
+        4. Trả JSON đúng schema: {"protein_grams": number, "fat_grams": number, "rationale": string}.
+        """;
+
     /// <summary>Dựng prompt từ câu hỏi và các đoạn đã truy xuất.</summary>
     public StructuredPrompt Build(string question, IReadOnlyList<RetrievedChunk> chunks)
     {

@@ -29,6 +29,11 @@ service RecommendationService {
   // Sinh kế hoạch tập luyện theo tuần; hoạt động/thời lượng/cường độ chỉ từ
   // chương 5 và giới hạn caller, fallback skeleton khi provider lỗi.
   rpc GenerateWorkoutPlan (GenerateWorkoutPlanRequest) returns (GenerateWorkoutPlanResponse);
+
+  // Gợi ý mục tiêu dinh dưỡng từ hồ sơ + mô tả của người dùng; số liệu nằm
+  // trong khoảng an toàn do code kiểm tra, AI chỉ diễn giải và tinh chỉnh macro.
+  rpc SuggestNutritionTargets (SuggestNutritionTargetsRequest)
+      returns (SuggestNutritionTargetsResponse);
 }
 
 enum MealType {
@@ -261,6 +266,26 @@ message AskLongevityQuestionDone {
 message AskLongevityQuestionError {
   string code = 1;
   string message = 2;
+}
+
+// ---- 4b. Gợi ý mục tiêu dinh dưỡng ----
+
+message SuggestNutritionTargetsRequest {
+  UserProfile profile = 1;
+  string goal = 2;      // LOSE_WEIGHT | MAINTAIN | BUILD_MUSCLE | LONGEVITY
+  string description = 3; // mô tả mong muốn hiện tại, có thể rỗng
+  int32 current_calories = 4; // mục tiêu calo hiện tại, 0 nếu chưa có
+  string locale = 5;
+}
+
+message SuggestNutritionTargetsResponse {
+  int32 calories = 1;
+  double protein_grams = 2;
+  double carbs_grams = 3;
+  double fat_grams = 4;
+  string rationale = 5;    // markdown tiếng Việt, giải thích ngắn
+  string source = 6;       // formula | ai
+  string safety_note = 7;
 }
 
 // ---- 5. Tra cứu tri thức ----

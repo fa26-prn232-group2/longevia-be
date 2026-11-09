@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<NutrientGapUseCase>();
         services.AddScoped<KnowledgeUseCases>();
         services.AddScoped<KnowledgeConversationUseCases>();
+        services.AddScoped<SuggestTargetsUseCases>();
         return services;
     }
 }

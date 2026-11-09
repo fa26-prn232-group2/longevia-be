@@ -1,6 +1,6 @@
 # ADR 005 - Lịch nghiệp vụ UTC cho MVP
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR 006](006-business-timezone-vietnam.md)
 - **Decision Date**: 2026-11-04
 - **Decision Maker**: Bảo — owner Progress, thực hiện quyền quyết định Q01 do Huy (owner Diet) ủy quyền, theo xác nhận trực tiếp của Bảo trong yêu cầu close-out.
 

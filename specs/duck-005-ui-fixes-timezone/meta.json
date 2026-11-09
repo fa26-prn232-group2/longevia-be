@@ -1,0 +1,10 @@
+{
+  "owner": "duck",
+  "number": 5,
+  "slug": "ui-fixes-timezone",
+  "branch": "feat/longevia-mvp-completion",
+  "status": "implemented",
+  "services": ["Diet", "Progress", "Recommendation", "Shared"],
+  "description": "UI fixes, reliable meal-plan generation, fasting history, business timezone ADR006",
+  "opened_at": "2026-11-09"
+}

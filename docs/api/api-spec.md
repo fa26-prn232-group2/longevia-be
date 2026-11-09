@@ -1051,6 +1051,8 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.
 - `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
 - `GET /api/progress/fasting/current` — **204 No Content** khi chưa có phiên (thay cho 200 body rỗng trước đây).
+- `GET /api/progress/fasting/history?page=1&pageSize=20` — lịch sử phiên đã kết thúc,
+  mới nhất trước; `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }`.
 - `GET/PUT /api/identity/users/me/preferences` — `{ receiveWeeklyDigest }`, mặc định false.
 
 ### 7.2 gRPC mới
@@ -1105,6 +1107,10 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
   vẫn giữ nguyên đoạn gốc.
 
 ### 7.5 Ghi chú vận hành
+
+- **Ngày nghiệp vụ (ADR006)**: mặc định `Asia/Ho_Chi_Minh`, cấu hình `APP_TIMEZONE`.
+  Timestamp vẫn UTC; water/dashboard/meal summary/longevity/digest reset theo ngày
+  địa phương. Không backfill dữ liệu cũ.
 
 - Progress tham gia `internal_net`; Diet mở HTTP/2 `50051`.
 - gRPC nội bộ dùng metadata `x-service-token` (`SERVICE__TOKEN`).

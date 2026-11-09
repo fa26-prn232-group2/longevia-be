@@ -26,6 +26,8 @@ public sealed class MealAiClientTests
         var context = new MealRecommendationInput(user, 2, 2, new(30, true, 175, 70, "Sedentary", "None", []),
             100, 2000, 100, 200, 50, [food, unknown, privateFood]);
         var result = await provider.GetAsync(context, DateTimeOffset.UtcNow.AddSeconds(3), default);
+        Assert.NotNull(invoker.Deadline);
+        Assert.True(invoker.Deadline.Value > DateTime.UtcNow.AddSeconds(2.5));
         Assert.Single(invoker.Request!.CandidateFoods);
         Assert.Equal(food.Id.ToString(), invoker.Request.CandidateFoods[0].FoodId);
         var suggestion = Assert.Single(result.Meals);

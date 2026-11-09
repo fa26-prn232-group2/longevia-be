@@ -3,13 +3,16 @@ using Diet.Application.Common;
 using Diet.Domain;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Errors;
+using Microsoft.Extensions.Options;
 
 namespace Diet.Application.Features.Meals;
 
 public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeightProvider weights,
     IMealRecommendationProvider recommendations, IFoodRepository foods, DailySummaryUseCase summaries,
-    ICurrentUser user, TimeProvider time)
+    ICurrentUser user, TimeProvider time, IOptions<RecommendationBudgetOptions> budgetOptions)
 {
+    private readonly int _deadlineMilliseconds = budgetOptions.Value.DeadlineMilliseconds;
+
     public async Task<MealRecommendationsResponse> ExecuteAsync(string mealType, string goal, CancellationToken ct)
     {
         var meal = Array.IndexOf(MealTypes.All.ToArray(), mealType) + 1;
@@ -17,8 +20,8 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
         if (meal == 0 || goalValue == 0)
             throw AppException.BadRequest("mealType hoặc goal không hợp lệ.", "diet.invalid_recommendation_query");
         using var budget = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        budget.CancelAfter(TimeSpan.FromMilliseconds(2800));
-        var deadline = time.GetUtcNow().AddMilliseconds(2800);
+        budget.CancelAfter(TimeSpan.FromMilliseconds(_deadlineMilliseconds));
+        var deadline = time.GetUtcNow().AddMilliseconds(_deadlineMilliseconds);
         try { return await ResolveAsync(meal, goalValue, deadline, budget.Token); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

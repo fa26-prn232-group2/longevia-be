@@ -151,6 +151,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Recommendation__DeadlineMilliseconds: ${DIET_RECOMMENDATION_DEADLINE_MS:-20000}
       Diet__ReplayMealActivitiesOnStart: ${DIET_REPLAY_MEAL_ACTIVITIES:-false}
     depends_on:
       postgres:
@@ -371,6 +372,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - edge
+      - internal_net
 
   grafana:
     image: grafana/grafana:13.2.4

@@ -18,6 +18,7 @@ using Recommendation.Application.Features.Search;
 using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
+using Longevia.Shared.Observability;
 
 namespace Recommendation.Api;
 
@@ -60,6 +61,7 @@ public static class RecommendationStartup
         ConfigureKestrel(builder);
         ConfigureServices(builder);
         ConfigureGrpc(builder);
+        builder.Services.AddObservability("RecommendationService");
     }
 
     /// <summary>Chạy migration rồi thoát, không mở cổng phục vụ request.</summary>
@@ -146,6 +148,7 @@ public static class RecommendationStartup
         app.MapGrpcService<RecommendationGrpcService>();
         app.MapGrpcHealthChecksService();
         app.MapHealthChecks("/health");
+        app.MapPrometheusScrapingEndpoint();
     }
 
     // Kho tri thức rỗng là trạng thái hợp lệ của database nhưng làm mọi câu trả lời

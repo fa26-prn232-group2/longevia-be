@@ -103,7 +103,10 @@ make check                      # close-out gate
 | Gateway (Nginx) | http://localhost:8080 |
 | Gateway health | http://localhost:8080/healthz |
 | RabbitMQ UI | http://localhost:15672 |
-| PostgreSQL | localhost:5432 |
+| PostgreSQL | localhost:5432 (host port theo `POSTGRES_PORT`) |
+| Prometheus | http://localhost:9090 (target `recommendation` scrape `recommendation:8080/metrics`) |
+| Grafana | http://localhost:3001 |
+| Mailpit | http://localhost:8025 |
 
 ## Xử lý sự cố
 

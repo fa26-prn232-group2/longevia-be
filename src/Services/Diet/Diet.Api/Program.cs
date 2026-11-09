@@ -1,6 +1,7 @@
 using Diet.Api;
 using Diet.Api.Endpoints;
 using Diet.Application;
+using Diet.Application.Common;
 using Diet.Infrastructure;
 using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
@@ -13,6 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDietApplication();
 builder.Services.AddDietInfrastructure(builder.Configuration);
+builder.Services.AddOptions<RecommendationBudgetOptions>()
+    .Bind(builder.Configuration.GetSection(RecommendationBudgetOptions.SectionName))
+    .Validate(options => RecommendationBudgetOptions.IsValidDeadline(options.DeadlineMilliseconds),
+        "Recommendation:DeadlineMilliseconds phải nằm trong khoảng 1.000..60.000 ms.")
+    .ValidateOnStart();
 builder.Services.AddOptions<JwtOptions>().Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .Validate(options => !string.IsNullOrWhiteSpace(options.SigningPublicKey),
         "Diet yêu cầu Jwt:SigningPublicKey.").ValidateOnStart();

@@ -1,0 +1,10 @@
+{
+  "owner": "duck",
+  "number": 4,
+  "slug": "ui-ux-knowledge-chat",
+  "branch": "feat/longevia-mvp-completion",
+  "status": "implemented",
+  "services": ["Diet", "Recommendation", "Progress"],
+  "description": "UI/UX polish + knowledge chat streaming, AI tips, nutrition target suggestion, fasting state fix",
+  "opened_at": "2026-11-09"
+}

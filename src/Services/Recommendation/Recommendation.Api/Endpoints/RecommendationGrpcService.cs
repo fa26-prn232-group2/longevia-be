@@ -20,6 +20,7 @@ internal sealed partial class RecommendationGrpcService(
     AnalyzeNutrientGapsUseCase analyzeNutrientGaps,
     EvaluateLongevityHabitsUseCase evaluateLongevityHabits,
     AskLongevityQuestionUseCase askLongevityQuestion,
+    AskStreamingUseCase askStreaming,
     SearchLongevityKnowledgeUseCase searchLongevityKnowledge,
     GenerateMealPlanUseCase generateMealPlan,
     GenerateWorkoutPlanUseCase generateWorkoutPlan)
@@ -115,4 +116,68 @@ internal sealed partial class RecommendationGrpcService(
 
         return SearchKnowledgeMapper.ToProtoResponse(result);
     }
+
+    /// <summary>Hỏi sách dạng chat, stream từng đoạn câu trả lời (US4/US7).</summary>
+    public override async Task AskLongevityQuestionStream(
+        Contracts.AskLongevityQuestionStreamRequest request,
+        IServerStreamWriter<Contracts.AskLongevityQuestionEvent> responseStream,
+        ServerCallContext context)
+    {
+        var applicationRequest = new AskStreamRequest(
+            request.Question,
+            request.ChapterFilter,
+            request.History
+                .Select(turn => new ConversationTurn(turn.Role, turn.Content))
+                .ToList());
+
+        await foreach (var streamEvent in askStreaming
+                           .ExecuteAsync(applicationRequest, context.CancellationToken)
+                           .ConfigureAwait(false))
+        {
+            var message = ToProtoEvent(streamEvent);
+            if (message is null)
+            {
+                continue;
+            }
+
+            await responseStream.WriteAsync(message).ConfigureAwait(false);
+        }
+    }
+
+    private static Contracts.AskLongevityQuestionEvent? ToProtoEvent(AskStreamEvent streamEvent) =>
+        streamEvent switch
+        {
+            AskDeltaEvent delta => new Contracts.AskLongevityQuestionEvent { Delta = delta.Text },
+            AskCitationEvent citation => new Contracts.AskLongevityQuestionEvent
+            {
+                Citation = new Contracts.Citation
+                {
+                    ChapterNumber = citation.Citation.ChapterNumber,
+                    ChapterTitle = citation.Citation.ChapterTitle,
+                    BookPage = citation.Citation.BookPage,
+                    PdfPage = citation.Citation.PdfPage,
+                    Quote = citation.Citation.Quote,
+                    Verified = citation.Citation.Verified,
+                    SourceFile = citation.Citation.SourceFile,
+                },
+            },
+            AskDoneEvent done => new Contracts.AskLongevityQuestionEvent
+            {
+                Done = new Contracts.AskLongevityQuestionDone
+                {
+                    Abstained = done.Abstained,
+                    AbstainReason = done.AbstainReason,
+                    Disclaimer = new Contracts.Disclaimer { Text = done.Disclaimer },
+                },
+            },
+            AskErrorEvent error => new Contracts.AskLongevityQuestionEvent
+            {
+                Error = new Contracts.AskLongevityQuestionError
+                {
+                    Code = error.Code,
+                    Message = error.Message,
+                },
+            },
+            _ => null,
+        };
 }

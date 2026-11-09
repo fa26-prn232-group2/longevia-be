@@ -1078,6 +1078,19 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
   `WorkoutPlanDay.activity_label = 9` — tất cả additive, tương thích ngược.
 - `rationale` của meal/workout plan không còn dùng từ "caller" và dùng nhãn hoạt
   động tiếng Việt.
+- **Chat hỏi sách (SSE)**:
+  - `POST /api/diet/knowledge/ask/stream` — body
+    `{ conversationId?: uuid, question, chapterFilter? }`, trả `text/event-stream` với
+    các event `delta` (`{ text }`), `citation` (một citation), `done`
+    (`{ conversationId, messageId, abstained, abstainReason, disclaimer }`),
+    `error` (`{ code, message }`). Nginx location riêng tắt `proxy_buffering`.
+  - `GET /api/diet/knowledge/conversations` — danh sách hội thoại kèm `messageCount`.
+  - `GET /api/diet/knowledge/conversations/{id}` — chi tiết + messages (citation JSON).
+  - `DELETE /api/diet/knowledge/conversations/{id}` — xoá hội thoại của owner.
+- gRPC mới (additive): `RecommendationService.AskLongevityQuestionStream`
+  (server streaming) với `ConversationTurn history`,
+  `AskLongevityQuestionEvent { delta | citation | done | error }`. Lịch sử hội
+  thoại lưu ở Diet DB (`knowledge_conversations`, `knowledge_messages`).
 
 ### 7.5 Ghi chú vận hành
 

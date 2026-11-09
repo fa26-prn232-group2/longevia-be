@@ -2,6 +2,8 @@ namespace Diet.Application.Features.Knowledge;
 
 public sealed record AskKnowledgeRequest(string Question, int? ChapterFilter);
 
+public sealed record AskKnowledgeStreamRequest(Guid? ConversationId, string Question, int? ChapterFilter);
+
 public sealed record KnowledgeCitationResponse(int ChapterNumber, string ChapterTitle, int BookPage,
     int PdfPage, string Quote, bool Verified, string SourceFile);
 

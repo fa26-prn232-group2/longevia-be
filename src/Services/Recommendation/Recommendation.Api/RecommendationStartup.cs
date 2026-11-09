@@ -310,6 +310,7 @@ public static class RecommendationStartup
         // IKnowledgeStore (scoped) nên use case phải scoped.
         builder.Services.AddSingleton<SafetyGuard>();
         builder.Services.AddScoped<AskLongevityQuestionUseCase>();
+        builder.Services.AddScoped<AskStreamingUseCase>();
 
         // Tra cứu đoạn sách (US4): use case phụ thuộc IKnowledgeStore (scoped) nên
         // cũng phải scoped.

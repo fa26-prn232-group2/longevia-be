@@ -36,6 +36,48 @@ public sealed class KnowledgeProvider(RecommendationService.RecommendationServic
         catch (RpcException ex) { throw Map(ex); }
     }
 
+    public async IAsyncEnumerable<AskLongevityQuestionEvent> AskStreamAsync(
+        AskLongevityQuestionStreamRequest request,
+        DateTimeOffset deadline,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (deadline <= time.GetUtcNow()) throw Timeout();
+
+        using var call = client.AskLongevityQuestionStream(request,
+            deadline: deadline.UtcDateTime, cancellationToken: ct);
+
+        while (true)
+        {
+            var (moved, current) = await MoveNextAsync(call.ResponseStream, ct);
+            if (!moved)
+            {
+                yield break;
+            }
+
+            yield return current!;
+        }
+    }
+
+    private async Task<(bool Moved, AskLongevityQuestionEvent? Current)> MoveNextAsync(
+        IAsyncStreamReader<AskLongevityQuestionEvent> stream,
+        CancellationToken ct)
+    {
+        try
+        {
+            var moved = await stream.MoveNext(ct);
+            return (moved, moved ? stream.Current : null);
+        }
+        catch (RpcException) when (ct.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(ct);
+        }
+        catch (RpcException ex)
+        {
+            throw Map(ex);
+        }
+    }
+
     private static AppException Map(RpcException ex) => ex.StatusCode switch
     {
         StatusCode.DeadlineExceeded => Timeout(),

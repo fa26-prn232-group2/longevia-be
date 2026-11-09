@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<MealPlanUseCases>();
         services.AddScoped<NutrientGapUseCase>();
         services.AddScoped<KnowledgeUseCases>();
+        services.AddScoped<KnowledgeConversationUseCases>();
         return services;
     }
 }

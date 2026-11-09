@@ -16,6 +16,9 @@ service RecommendationService {
   rpc EvaluateLongevityHabits  (LongevityHabitRequest)       returns (LongevityHabitResponse);
   // Hỏi tri thức trong sách, có trích dẫn; abstain khi corpus không đủ căn cứ.
   rpc AskLongevityQuestion     (AskLongevityQuestionRequest)  returns (AskLongevityQuestionResponse);
+  // Hỏi sách dạng chat: stream từng đoạn câu trả lời (delta) rồi gửi citation/done.
+  rpc AskLongevityQuestionStream (AskLongevityQuestionStreamRequest)
+      returns (stream AskLongevityQuestionEvent);
   // Tra cứu các đoạn trong sách theo truy vấn.
   rpc SearchLongevityKnowledge (SearchKnowledgeRequest)       returns (SearchKnowledgeResponse);
 
@@ -224,6 +227,40 @@ message AskLongevityQuestionResponse {
   bool abstained = 3;                  // true = corpus không đủ căn cứ
   string abstain_reason = 4;
   Disclaimer disclaimer = 5;
+}
+
+// Lượt hội thoại trước đó (chat nhiều lượt); role = "user" | "assistant".
+message ConversationTurn {
+  string role = 1;
+  string content = 2;
+}
+
+message AskLongevityQuestionStreamRequest {
+  string user_id = 1;
+  string question = 2;
+  UserProfile profile = 3;
+  int32 chapter_filter = 4;            // 0 = tất cả
+  repeated ConversationTurn history = 5;
+}
+
+message AskLongevityQuestionEvent {
+  oneof event {
+    string delta = 1;                  // một đoạn markdown của câu trả lời
+    Citation citation = 2;             // gửi sau khi stream xong
+    AskLongevityQuestionDone done = 3;
+    AskLongevityQuestionError error = 4;
+  }
+}
+
+message AskLongevityQuestionDone {
+  bool abstained = 1;
+  string abstain_reason = 2;
+  Disclaimer disclaimer = 3;
+}
+
+message AskLongevityQuestionError {
+  string code = 1;
+  string message = 2;
 }
 
 // ---- 5. Tra cứu tri thức ----

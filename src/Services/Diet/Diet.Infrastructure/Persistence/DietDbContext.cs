@@ -12,6 +12,8 @@ public sealed class DietDbContext(DbContextOptions<DietDbContext> options) : DbC
     public DbSet<MealLog> MealLogs => Set<MealLog>();
     public DbSet<MealLogItem> MealLogItems => Set<MealLogItem>();
     public DbSet<MealPlan> MealPlans => Set<MealPlan>();
+    public DbSet<KnowledgeConversation> KnowledgeConversations => Set<KnowledgeConversation>();
+    public DbSet<KnowledgeMessage> KnowledgeMessages => Set<KnowledgeMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

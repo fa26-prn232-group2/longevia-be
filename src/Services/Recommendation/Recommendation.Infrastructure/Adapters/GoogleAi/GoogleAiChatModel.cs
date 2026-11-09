@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Google.GenAI;
@@ -18,7 +19,7 @@ namespace Recommendation.Infrastructure.Adapters.GoogleAi;
 /// Retry 2 lần với exponential backoff; lỗi provider hoặc JSON không đọc được
 /// được trả về dưới dạng tín hiệu abstain, không ném ra ngoài (D-12).
 /// </summary>
-public sealed class GoogleAiChatModel : IChatModel
+public sealed class GoogleAiChatModel : IChatModel, IChatStreamModel
 {
     private const double Temperature = 0.1;
 
@@ -113,4 +114,42 @@ public sealed class GoogleAiChatModel : IChatModel
 
     private static ChatCompletion Abstain(string reason) =>
         new() { Abstained = true, AbstainReason = reason };
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<string> StreamTextAsync(
+        string systemInstruction,
+        string userPrompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var config = new GenerateContentConfig
+        {
+            SystemInstruction = new Content
+            {
+                Parts = [new Part { Text = systemInstruction }],
+            },
+            Temperature = Temperature,
+        };
+
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(_options.TimeoutMs);
+
+        await using var stream = _client.Models
+            .GenerateContentStreamAsync(_options.ChatModel, userPrompt, config, timeoutSource.Token)
+            .GetAsyncEnumerator(timeoutSource.Token);
+
+        while (true)
+        {
+            var moved = await stream.MoveNextAsync().ConfigureAwait(false);
+            if (!moved)
+            {
+                yield break;
+            }
+
+            var text = stream.Current.Text;
+            if (!string.IsNullOrEmpty(text))
+            {
+                yield return text;
+            }
+        }
+    }
 }

@@ -12,4 +12,6 @@
 - [x] Timezone ADR006 + `APP_TIMEZONE` + FE business dates.
 - [x] Tests: Recommendation 388 unit, Progress 152 integration, Diet 47 integration,
       FE 216 test.
-- [ ] `make check` full (chờ kết quả cuối).
+- [x] `make check` full: format PASS, Release build 0 warning/error, **895/895 test**,
+      vulnerability scan 28 project sạch.
+- [x] `make docker-up`: 13 container Up, smoke water/meal/fasting endpoints OK.

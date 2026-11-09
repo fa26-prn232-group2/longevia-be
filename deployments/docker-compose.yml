@@ -140,6 +140,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       DIET__HTTP_PORT: 8080
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
       DIET__GRPC_PORT: 50051
       SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       ConnectionStrings__Diet: Host=postgres;Port=5432;Database=${DIET_DB:-diet_db};Username=diet_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
@@ -155,6 +156,7 @@ services:
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
       Recommendation__DeadlineMilliseconds: ${DIET_RECOMMENDATION_DEADLINE_MS:-20000}
+      Recommendation__MealPlanDeadlineMilliseconds: ${DIET_MEAL_PLAN_DEADLINE_MS:-90000}
       Diet__ReplayMealActivitiesOnStart: ${DIET_REPLAY_MEAL_ACTIVITIES:-false}
     depends_on:
       postgres:
@@ -175,6 +177,7 @@ services:
       ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       PROGRESS__HTTP_PORT: 8080
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
       PROGRESS__GRPC_PORT: 50051
       IdentityGrpc__Address: http://identity:50051
       IdentityGrpc__DeadlineMilliseconds: "2000"

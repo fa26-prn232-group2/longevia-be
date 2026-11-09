@@ -15,6 +15,9 @@ public static class PlanWarningCodes
     /// <summary>Candidate không đủ để đạt ±10% ngân sách ngày.</summary>
     public const string TargetNotMet = "target_not_met";
 
+    /// <summary>Calo đạt nhưng macro lệch mục tiêu; không fallback, chỉ cảnh báo.</summary>
+    public const string MacroTargetMissed = "macro_target_missed";
+
     /// <summary>Tổng fiber ngày thấp hơn mục tiêu fiber caller gửi; không phải gate cứng ±10%.</summary>
     public const string FiberBelowTarget = "fiber_below_target";
 

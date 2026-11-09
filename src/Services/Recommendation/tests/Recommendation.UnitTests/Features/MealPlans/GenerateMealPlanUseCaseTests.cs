@@ -222,6 +222,22 @@ public sealed class GenerateMealPlanUseCaseTests
         Assert.DoesNotContain("liều thuốc", text, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task FallsBackOnlyForDaysWithoutAiSelection()
+    {
+        var useCase = CreateUseCase(new FirstCallChatModel(SelectionFor(7)), new StubKnowledgeStore());
+
+        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+
+        Assert.True(result.UsedFallback);
+        var dayFallbacks = result.Warnings
+            .Where(warning => warning.Code == PlanWarningCodes.AiFallbackUsed)
+            .ToList();
+        Assert.Equal(6, dayFallbacks.Count);
+        Assert.All(dayFallbacks, warning => Assert.False(string.IsNullOrWhiteSpace(warning.Scope)));
+        Assert.Equal(7, result.Days.Count);
+    }
+
     private static GenerateMealPlanUseCase CreateUseCase(IChatModel chatModel, IKnowledgeStore knowledgeStore) =>
         new(
             new PlanRequestValidator(),
@@ -233,7 +249,8 @@ public sealed class GenerateMealPlanUseCaseTests
             new MealPlanFallbackSelector(new PlanRationaleBuilder(new SafetyGuard())),
             new MealPlanSuggestionBuilder(new SafetyGuard()),
             knowledgeStore,
-            chatModel);
+            chatModel,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GenerateMealPlanUseCase>.Instance);
 
     private static GenerateMealPlanRequest Request() => new()
     {
@@ -332,6 +349,19 @@ public sealed class GenerateMealPlanUseCaseTests
         },
         Score = 0.9,
     };
+
+    private sealed class FirstCallChatModel(ChatCompletion first) : IChatModel
+    {
+        private int _calls;
+
+        public Task<ChatCompletion> CompleteAsync(StructuredPrompt prompt, CancellationToken cancellationToken)
+        {
+            _calls++;
+            return Task.FromResult(_calls == 1
+                ? first
+                : new ChatCompletion { Abstained = true, AbstainReason = "provider_unavailable" });
+        }
+    }
 
     private sealed class StubChatModel : IChatModel
     {

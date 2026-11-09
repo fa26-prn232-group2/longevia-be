@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using Recommendation.Application.Abstractions;
 using Recommendation.Application.Common.Errors;
 using Recommendation.Application.Features.Plans;
@@ -24,9 +25,11 @@ public sealed class GenerateMealPlanUseCase(
     MealPlanFallbackSelector fallbackSelector,
     MealPlanSuggestionBuilder suggestionBuilder,
     IKnowledgeStore knowledgeStore,
-    IChatModel chatModel)
+    IChatModel chatModel,
+    ILogger<GenerateMealPlanUseCase> logger)
 {
     private const int ContextTopK = 8;
+    private const int MaxCandidatesPerDayPrompt = 40;
 
     // Truy vấn hẹp, chỉ nhắm đoạn nước/trà thảo mộc không đường của chương 11
     // dùng cho suggestions ngày chạm trần (FR-023).
@@ -76,27 +79,60 @@ public sealed class GenerateMealPlanUseCase(
 
         var usedFallback = false;
         var fallbackReason = string.Empty;
-        var selection = await SelectDaysAsync(
-                request,
-                candidates,
-                budget,
-                chunks,
-                cappedDates,
-                cancellationToken)
-            .ConfigureAwait(false);
-        var selectedDays = selection.Days;
+        var selectedDays = new List<MealPlanDay>();
 
-        if (selectedDays is null && cappedDates.Count < dates.Count)
+        // Prompt gọn cho từng ngày: giới hạn candidate vài chục món để model dễ
+        // chọn đúng ngân sách ±10%, thay vì một lời gọi cho cả tuần.
+        var dayCandidates = candidates
+            .OrderBy(food => MealPlanCandidateFilter.MacroFitScore(food, request))
+            .ThenBy(food => food.FoodId, StringComparer.Ordinal)
+            .Take(MaxCandidatesPerDayPrompt)
+            .ToList();
+
+        foreach (var budgetDay in budget.Days)
         {
-            var fallback = fallbackSelector.Select(request, budget, candidates, cappedDates);
-            selectedDays = fallback.Days;
+            if (cappedDates.Contains(budgetDay.Date))
+            {
+                continue;
+            }
+
+            var selection = await SelectDayAsync(
+                    request,
+                    budgetDay,
+                    dayCandidates,
+                    chunks,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (selection.Days is { Count: > 0 } day)
+            {
+                selectedDays.AddRange(day);
+                foreach (var macroWarning in selection.MacroWarnings)
+                {
+                    warnings.Add(new PlanWarning
+                    {
+                        Code = PlanWarningCodes.MacroTargetMissed,
+                        Message = macroWarning,
+                        Scope = budgetDay.Date,
+                    });
+                }
+
+                continue;
+            }
+
+            var dayBudget = new WeeklyBudget { Days = [budgetDay] };
+            var fallback = fallbackSelector.Select(request, dayBudget, candidates, cappedDates);
+            selectedDays.AddRange(fallback.Days);
             usedFallback = true;
-            fallbackReason = selection.Reason ?? "invalid_model_output";
+            fallbackReason = string.IsNullOrEmpty(fallbackReason)
+                ? selection.Reason ?? "invalid_model_output"
+                : fallbackReason;
 
             warnings.Add(new PlanWarning
             {
                 Code = PlanWarningCodes.AiFallbackUsed,
-                Message = "Không dùng được kết quả AI nên đã chọn phương án dự phòng xác định từ danh mục ứng viên.",
+                Message = $"Ngày {budgetDay.Date}: không dùng được kết quả AI nên đã chọn phương án dự phòng cho riêng ngày này.",
+                Scope = budgetDay.Date,
             });
 
             if (fallback.TargetNotMet)
@@ -104,12 +140,11 @@ public sealed class GenerateMealPlanUseCase(
                 warnings.Add(new PlanWarning
                 {
                     Code = PlanWarningCodes.TargetNotMet,
-                    Message = "Danh mục ứng viên không đủ để đạt ±10% mục tiêu ngày; kế hoạch là phương án gần nhất.",
+                    Message = $"Danh mục ứng viên không đủ để đạt ±10% mục tiêu ngày {budgetDay.Date}; đây là phương án gần nhất.",
+                    Scope = budgetDay.Date,
                 });
             }
         }
-
-        selectedDays ??= [];
 
         var days = MergeDays(budget, cappedDates, selectedDays, chunks, warnings);
         AddFiberWarnings(request, days, warnings);
@@ -133,46 +168,185 @@ public sealed class GenerateMealPlanUseCase(
         };
     }
 
-    private async Task<(IReadOnlyList<MealPlanDay>? Days, string? Reason)> SelectDaysAsync(
+    private async Task<(IReadOnlyList<MealPlanDay>? Days, string? Reason, IReadOnlyList<string> MacroWarnings)>
+        SelectDayAsync(
         GenerateMealPlanRequest request,
+        WeeklyBudget.DayBudget budgetDay,
         IReadOnlyList<CandidateFood> candidates,
-        WeeklyBudget budget,
         IReadOnlyList<RetrievedChunk> chunks,
-        IReadOnlySet<string> cappedDates,
         CancellationToken cancellationToken)
     {
-        if (cappedDates.Count == budget.Days.Count)
-        {
-            return ([], null);
-        }
-
+        var dayBudget = new WeeklyBudget { Days = [budgetDay] };
+        var dayRequest = request with { WeekStartDate = budgetDay.Date, Days = 1 };
         var mealChunks = MealChunks(chunks);
-        var prompt = promptBuilder.Build(request, candidates, budget, mealChunks);
+        string? feedback = null;
 
-        ChatCompletion completion;
-        try
+        for (var attempt = 1; attempt <= 2; attempt++)
         {
-            completion = await chatModel.CompleteAsync(prompt, cancellationToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception)
-        {
-            // Provider lỗi/timeout: use case vẫn trả fallback thay vì làm hỏng request.
-            return (null, "provider_unavailable");
+            var prompt = promptBuilder.Build(dayRequest, candidates, dayBudget, mealChunks, feedback);
+
+            ChatCompletion completion;
+            try
+            {
+                completion = await chatModel.CompleteAsync(prompt, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                LogFallback(budgetDay, "provider_unavailable", null, candidates.Count,
+                    prompt.UserPrompt.Length, attempt, exception);
+                return (null, "provider_unavailable", []);
+            }
+
+            if (completion is not { Abstained: false, Payload: not null })
+            {
+                var reason = completion.AbstainReason ?? "provider_unavailable";
+                LogFallback(budgetDay, reason, completion.AbstainReason, candidates.Count,
+                    prompt.UserPrompt.Length, attempt, null);
+                return (null, reason, []);
+            }
+
+            var parsed = parser.Parse(completion.Payload, candidates, mealChunks, dayBudget, null);
+            var scaled = ScaleToBudget(parsed, budgetDay.TargetCalories, out var scaleReason);
+            if (scaled is null)
+            {
+                if (attempt < 2)
+                {
+                    feedback = $"Tổng calo của lần chọn trước không thể điều chỉnh khẩu phần ({scaleReason}). Hãy chọn lại món/khẩu phần để tổng calo gần {budgetDay.TargetCalories} kcal hơn.";
+                    continue;
+                }
+
+                LogFallback(budgetDay, "invalid_model_output", scaleReason, candidates.Count,
+                    prompt.UserPrompt.Length, attempt, null);
+                return (null, "invalid_model_output", []);
+            }
+
+            var validation = validator.Validate(dayRequest, dayBudget, scaled, candidates);
+            if (validation.IsValid)
+            {
+                return (scaled, null, validation.MacroWarnings);
+            }
+
+            if (attempt < 2)
+            {
+                feedback = BuildFeedback(parsed, budgetDay);
+                continue;
+            }
+
+            LogFallback(budgetDay, "invalid_model_output", validation.FailureReason,
+                candidates.Count, prompt.UserPrompt.Length, attempt, null);
+            return (null, "invalid_model_output", []);
         }
 
-        if (completion is not { Abstained: false, Payload: not null })
+        return (null, "invalid_model_output", []);
+    }
+
+    /// <summary>
+    /// Co giãn khẩu phần của cả ngày theo một hệ số chung để tổng calo khớp mục
+    /// tiêu. Chỉ chấp nhận hệ số 0.5–1.8; ngoài khoảng đó coi là model chọn sai
+    /// món và để lần chọn sau/fallback xử lý.
+    /// </summary>
+    private static IReadOnlyList<MealPlanDay>? ScaleToBudget(
+        IReadOnlyList<MealPlanDay> days,
+        int targetCalories,
+        out string? reason)
+    {
+        reason = null;
+        var foods = days.SelectMany(day => day.Meals).SelectMany(meal => meal.Foods).ToList();
+        var total = foods.Sum(food => food.Calories);
+        if (total <= 0)
         {
-            return (null, completion.AbstainReason ?? "provider_unavailable");
+            reason = "không có món";
+            return null;
         }
 
-        var parsed = parser.Parse(completion.Payload, candidates, mealChunks, budget, cappedDates);
-        return validator.Validate(request, budget, parsed, candidates, cappedDates).IsValid
-            ? (parsed, null)
-            : (null, "invalid_model_output");
+        var factor = (double)targetCalories / total;
+        if (factor is < 0.5 or > 1.8)
+        {
+            reason = string.Create(CultureInfo.InvariantCulture,
+                $"tổng {total} kcal so với mục tiêu {targetCalories} kcal cần hệ số {factor:0.00}×");
+            return null;
+        }
+
+        if (Math.Abs(factor - 1) < 0.02)
+        {
+            return days;
+        }
+
+        return days
+            .Select(day =>
+            {
+                var meals = day.Meals.Select(meal => meal with
+                {
+                    Foods = meal.Foods.Select(food => food with
+                    {
+                        ServingSize = ScaleServingSize(food.ServingSize, factor),
+                        Calories = (int)Math.Round(food.Calories * factor,
+                            MidpointRounding.AwayFromZero),
+                        ProteinGrams = Math.Round(food.ProteinGrams * factor, 1),
+                        CarbsGrams = Math.Round(food.CarbsGrams * factor, 1),
+                        FatGrams = Math.Round(food.FatGrams * factor, 1),
+                        FiberGrams = Math.Round(food.FiberGrams * factor, 1),
+                    }).ToList(),
+                }).ToList();
+
+                var scaledFoods = meals.SelectMany(meal => meal.Foods).ToList();
+                return day with
+                {
+                    Meals = meals,
+                    TotalCalories = scaledFoods.Sum(food => food.Calories),
+                    TotalProteinGrams = Math.Round(scaledFoods.Sum(food => food.ProteinGrams), 1),
+                    TotalCarbsGrams = Math.Round(scaledFoods.Sum(food => food.CarbsGrams), 1),
+                    TotalFatGrams = Math.Round(scaledFoods.Sum(food => food.FatGrams), 1),
+                    TotalFiberGrams = Math.Round(scaledFoods.Sum(food => food.FiberGrams), 1),
+                };
+            })
+            .ToList();
+    }
+
+    private static string ScaleServingSize(string servingSize, double factor) =>
+        double.TryParse(servingSize, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
+            ? (size * factor).ToString("0.#", CultureInfo.InvariantCulture)
+            : servingSize;
+
+    /// <summary>
+    /// Tổng hiện tại so với mục tiêu để model tự sửa ở lần chọn thứ hai, thay vì
+    /// nới lỏng gate ±10% (FR-019).
+    /// </summary>
+    private static string BuildFeedback(IReadOnlyList<MealPlanDay> parsed,
+        WeeklyBudget.DayBudget budgetDay)
+    {
+        var foods = parsed.SelectMany(day => day.Meals).SelectMany(meal => meal.Foods).ToList();
+        var calories = foods.Sum(food => food.Calories);
+        var protein = foods.Sum(food => food.ProteinGrams);
+        var carbs = foods.Sum(food => food.CarbsGrams);
+        var fat = foods.Sum(food => food.FatGrams);
+
+        return FormattableString.Invariant(
+            $"Lần trước: {calories} kcal, protein {protein:0.#} g, carb {carbs:0.#} g, chất béo {fat:0.#} g. Mục tiêu ngày: {budgetDay.TargetCalories} kcal, protein {budgetDay.TargetProteinGrams:0.#} g, carb {budgetDay.TargetCarbsGrams:0.#} g, chất béo {budgetDay.TargetFatGrams:0.#} g. Chọn lại trong cùng danh sách ứng viên sao cho calo nằm trong ±10% mục tiêu; nếu calo thấp hơn hãy thêm món, nếu cao hơn hãy bớt món hoặc chọn món ít calo hơn. Được phép dùng lại một món ở bữa khác.");
+    }
+
+    private void LogFallback(
+        WeeklyBudget.DayBudget day,
+        string reason,
+        string? detail,
+        int candidateCount,
+        int promptChars,
+        int attempt,
+        Exception? exception)
+    {
+        logger.LogWarning(exception,
+            "Meal plan day {Date} dùng fallback: reason={Reason} detail={Detail} candidates={Candidates} promptChars={PromptChars} attempt={Attempt} traceId={TraceId}",
+            day.Date,
+            reason,
+            detail ?? string.Empty,
+            candidateCount,
+            promptChars,
+            attempt,
+            System.Diagnostics.Activity.Current?.TraceId.ToString() ?? string.Empty);
     }
 
     private static HashSet<string> ResolveCappedDates(

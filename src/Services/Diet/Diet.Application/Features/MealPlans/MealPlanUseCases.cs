@@ -28,7 +28,7 @@ public sealed class MealPlanUseCases(IMealPlanRepository plans, IMealPlanProvide
 
         var userId = user.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Longevia.Shared.Time.BusinessTime.ToDate(now);
         var profile = await profiles.GetAsync(userId, ct);
         if (profile.DietaryPreference is null || profile.Allergies is null)
             throw AppException.ServiceUnavailable("Hồ sơ chưa cung cấp chế độ ăn và dị ứng.",
@@ -61,7 +61,7 @@ public sealed class MealPlanUseCases(IMealPlanRepository plans, IMealPlanProvide
             request.WeekStartDate, request.Days, request.MealsPerDay, candidates,
             request.ExcludedFoodIds ?? [], consumedCalories, consumedDate);
 
-        var deadline = now.AddMilliseconds(budget.Value.DeadlineMilliseconds);
+        var deadline = now.AddMilliseconds(budget.Value.MealPlanDeadlineMilliseconds);
         var generated = await provider.GenerateAsync(input, deadline, ct);
         if (string.IsNullOrWhiteSpace(generated.Disclaimer?.Text))
             throw new AppException("Kế hoạch thiếu disclaimer an toàn.", 502,

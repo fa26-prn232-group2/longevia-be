@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+Longevia.Shared.Time.BusinessTime.Configure(builder.Configuration["APP_TIMEZONE"]);
 
 var httpPort = ResolvePort(builder.Configuration["DIET:HTTP_PORT"], 8080);
 var grpcPort = ResolvePort(builder.Configuration["DIET:GRPC_PORT"], 50051);
@@ -43,6 +44,9 @@ builder.Services.AddOptions<RecommendationBudgetOptions>()
     .Bind(builder.Configuration.GetSection(RecommendationBudgetOptions.SectionName))
     .Validate(options => RecommendationBudgetOptions.IsValidDeadline(options.DeadlineMilliseconds),
         "Recommendation:DeadlineMilliseconds phải nằm trong khoảng 1.000..60.000 ms.")
+    .Validate(options => RecommendationBudgetOptions.IsValidMealPlanDeadline(
+            options.MealPlanDeadlineMilliseconds),
+        "Recommendation:MealPlanDeadlineMilliseconds phải nằm trong khoảng 1.000..120.000 ms.")
     .ValidateOnStart();
 builder.Services.AddOptions<JwtOptions>().Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .Validate(options => !string.IsNullOrWhiteSpace(options.SigningPublicKey),

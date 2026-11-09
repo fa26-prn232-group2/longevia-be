@@ -27,7 +27,8 @@ public sealed class MealPlanPromptBuilder(PlanPromptFormatter formatter)
         GenerateMealPlanRequest request,
         IReadOnlyList<CandidateFood> candidates,
         WeeklyBudget budget,
-        IReadOnlyList<RetrievedChunk> chunks)
+        IReadOnlyList<RetrievedChunk> chunks,
+        string? feedback = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(candidates);
@@ -114,6 +115,13 @@ public sealed class MealPlanPromptBuilder(PlanPromptFormatter formatter)
         if (corpus.Length > 0)
         {
             userPrompt.AppendLine(corpus);
+        }
+
+        if (!string.IsNullOrWhiteSpace(feedback))
+        {
+            userPrompt.AppendLine();
+            userPrompt.AppendLine("PHẢN HỒI CHO LẦN CHỌN TRƯỚC (phải sửa đúng các điểm này):");
+            userPrompt.AppendLine(feedback.Trim());
         }
 
         return new StructuredPrompt

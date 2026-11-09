@@ -46,6 +46,8 @@ public sealed class MealPlanValidator(PlanAllergenFilter allergenFilter)
 
         var candidateById = candidates.ToDictionary(food => food.FoodId, StringComparer.Ordinal);
 
+        var macroWarnings = new List<string>();
+
         foreach (var budgetDay in expected)
         {
             if (!lookup.TryGetValue(budgetDay.Date, out var day))
@@ -65,16 +67,29 @@ public sealed class MealPlanValidator(PlanAllergenFilter allergenFilter)
             var carbs = totals.Sum(food => food.CarbsGrams);
             var fat = totals.Sum(food => food.FatGrams);
 
-            if (!IsWithinDailyTolerance(calories, protein, carbs, fat, budgetDay))
+            // Calo vẫn là gate cứng: sai lệch năng lượng là lỗi nghiêm trọng.
+            if (!Within(calories, budgetDay.TargetCalories))
             {
                 return Invalid(
                     string.Create(
                         CultureInfo.InvariantCulture,
-                        $"Ngày {budgetDay.Date} lệch quá ±10% ngân sách calo/macro."));
+                        $"Ngày {budgetDay.Date} lệch quá ±10% ngân sách calo."));
+            }
+
+            // Macro là cảnh báo: với khẩu phần cố định trong danh mục, có những
+            // tổ hợp mục tiêu không thể đạt đồng thời ±10% cả 4 chỉ số.
+            if (!Within(protein, budgetDay.TargetProteinGrams)
+                || !Within(carbs, budgetDay.TargetCarbsGrams)
+                || !Within(fat, budgetDay.TargetFatGrams))
+            {
+                macroWarnings.Add(
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Ngày {budgetDay.Date} lệch macro so với mục tiêu: protein {protein:0.#}/{budgetDay.TargetProteinGrams:0.#} g, carb {carbs:0.#}/{budgetDay.TargetCarbsGrams:0.#} g, chất béo {fat:0.#}/{budgetDay.TargetFatGrams:0.#} g."));
             }
         }
 
-        return MealPlanValidationResult.Valid();
+        return new MealPlanValidationResult { IsValid = true, MacroWarnings = macroWarnings };
     }
 
     /// <summary>
@@ -156,11 +171,14 @@ public sealed class MealPlanValidator(PlanAllergenFilter allergenFilter)
 /// <summary>Kết quả kiểm tra kế hoạch do AI trả về.</summary>
 public sealed record MealPlanValidationResult
 {
-    /// <summary>Kế hoạch đạt toàn bộ ràng buộc cấu trúc và ±10%.</summary>
+    /// <summary>Kế hoạch đạt toàn bộ ràng buộc cấu trúc và ±10% calo.</summary>
     public required bool IsValid { get; init; }
 
     /// <summary>Lý do nội bộ khi không hợp lệ; không trả cho caller.</summary>
     public string? FailureReason { get; init; }
+
+    /// <summary>Cảnh báo macro lệch (calo đã đạt); người dùng vẫn thấy kế hoạch.</summary>
+    public IReadOnlyList<string> MacroWarnings { get; init; } = [];
 
     /// <summary>Kết quả hợp lệ dùng lại cho nhiều nhánh.</summary>
     public static MealPlanValidationResult Valid() => new() { IsValid = true };

@@ -92,12 +92,24 @@ public sealed class MealPlanValidatorTests
         Assert.False(result.IsValid);
     }
 
+    [Fact]
+    public void RejectsCalorieDeviationBeyondTenPercent()
+    {
+        var food = Food(calories: 2300, protein: 100, carbs: 250, fat: 67);
+        var request = Request(candidates: [food]);
+        var budget = _splitter.Split(request);
+        var day = BuildDay(budget.Days[0], food);
+
+        var result = _validator.Validate(request, budget, [day], request.CandidateFoods);
+
+        Assert.False(result.IsValid);
+    }
+
     [Theory]
-    [InlineData(2300, 100, 250, 67)]
     [InlineData(2000, 120, 250, 67)]
     [InlineData(2000, 100, 300, 67)]
     [InlineData(2000, 100, 250, 90)]
-    public void RejectsDeviationBeyondTenPercent(
+    public void AcceptsMacroDeviationButReportsWarning(
         int calories,
         double protein,
         double carbs,
@@ -110,7 +122,8 @@ public sealed class MealPlanValidatorTests
 
         var result = _validator.Validate(request, budget, [day], request.CandidateFoods);
 
-        Assert.False(result.IsValid);
+        Assert.True(result.IsValid);
+        Assert.NotEmpty(result.MacroWarnings);
     }
 
     [Fact]

@@ -17,14 +17,14 @@ public sealed class LongevityUseCase(IFastingRepository fasting, ISleepRepositor
             throw AppException.BadRequest("days phải nằm trong 1..7.", "progress.invalid_days");
         var userId = currentUser.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Progress.Domain.UtcCalendar.Day(now);
         var from = today.AddDays(-(days - 1));
         var profile = await profiles.GetAsync(userId, ct);
         var weight = await metrics.GetLatestAsync(userId, ct);
 
         var sessions = await fasting.GetCompletedSessionsInWeekAsync(userId,
-            new DateTimeOffset(from.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
-            new DateTimeOffset(today.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), ct);
+            Progress.Domain.UtcCalendar.StartOfDayUtc(from),
+            Progress.Domain.UtcCalendar.StartOfDayUtc(today.AddDays(1)), ct);
         var averageFastingHours = sessions.Count == 0 ? 0 : sessions
             .Where(x => x.EndedAt is not null)
             .Select(x => (x.EndedAt!.Value - x.StartedAt).TotalHours)

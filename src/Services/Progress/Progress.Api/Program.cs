@@ -20,6 +20,9 @@ if (args is ["--health-check", var address])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+Longevia.Shared.Time.BusinessTime.Configure(builder.Configuration["APP_TIMEZONE"]);
+Progress.Domain.UtcCalendar.Configure(
+    Longevia.Shared.Time.BusinessTime.Resolve(builder.Configuration["APP_TIMEZONE"]));
 
 var httpPort = builder.Configuration.GetValue("PROGRESS:HTTP_PORT", 8080);
 var grpcPort = builder.Configuration.GetValue("PROGRESS:GRPC_PORT", 50051);

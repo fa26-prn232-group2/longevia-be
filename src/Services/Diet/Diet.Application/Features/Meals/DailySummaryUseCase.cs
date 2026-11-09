@@ -11,7 +11,7 @@ public sealed class DailySummaryUseCase(IMealRepository meals, ITargetRepository
     public async Task<DailySummaryResponse> ExecuteAsync(DateOnly? date, CancellationToken ct)
     {
         var userId = user.RequiredId();
-        var day = date ?? DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
+        var day = date ?? Longevia.Shared.Time.BusinessTime.ToDate(time.GetUtcNow());
         var target = await targets.GetAsync(userId, ct) ?? throw DietErrors.MissingTarget();
         var logs = await meals.GetDailyAsync(userId, day, ct);
         var nutrients = logs.SelectMany(x => x.Items).Select(x => x.Nutrition).ToList();

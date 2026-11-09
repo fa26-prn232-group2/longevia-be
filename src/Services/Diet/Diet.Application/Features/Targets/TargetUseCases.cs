@@ -22,7 +22,7 @@ public sealed class TargetUseCases(ITargetRepository targets, ICurrentUser user,
                 "Bạn chưa ghi nhận cân nặng.", "diet.weight_not_found");
         var calculation = new EnergyCalculation(weight.WeightKg, weight.MeasuredAt,
             weight.SourceMetricId, weight.RequestedAsOf, profile.HeightCm,
-            profile.AgeOn(DateOnly.FromDateTime(now.UtcDateTime)), profile.IsMale, profile.ActivityFactor, now);
+            profile.AgeOn(Longevia.Shared.Time.BusinessTime.ToDate(now)), profile.IsMale, profile.ActivityFactor, now);
         if (calculation.Bmr <= 0)
             throw Longevia.Shared.Errors.AppException.Unprocessable(
                 "Hồ sơ chưa phù hợp để tính nhu cầu năng lượng.", "diet.profile_not_supported");

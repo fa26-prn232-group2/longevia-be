@@ -17,7 +17,7 @@ public sealed class UserProfileProvider(IdentityService.IdentityServiceClient cl
                 cancellationToken: ct).ResponseAsync;
             if (!DateOnly.TryParseExact(reply.BirthDate, "yyyy-MM-dd", out var birthDate))
                 throw new InvalidOperationException("Identity birth_date không hợp lệ.");
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = Progress.Domain.UtcCalendar.Day(DateTimeOffset.UtcNow);
             var age = today.Year - birthDate.Year - (today < birthDate.AddYears(today.Year - birthDate.Year) ? 1 : 0);
             var male = string.Equals(reply.BiologicalSex, "Male", StringComparison.OrdinalIgnoreCase);
             return new(age, male, Math.Round(reply.HeightCmX100 / 100m, 2), reply.ActivityLevel,

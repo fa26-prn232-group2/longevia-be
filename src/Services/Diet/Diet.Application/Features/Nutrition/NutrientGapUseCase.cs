@@ -19,7 +19,7 @@ public sealed class NutrientGapUseCase(IMealRepository meals, IFoodRepository fo
 
         var userId = user.RequiredId();
         var now = time.GetUtcNow();
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var today = Longevia.Shared.Time.BusinessTime.ToDate(now);
         var from = today.AddDays(-(days - 1));
         var target = await targets.GetAsync(userId, ct) ?? throw DietErrors.MissingTarget();
         var profile = await profiles.GetAsync(userId, ct);

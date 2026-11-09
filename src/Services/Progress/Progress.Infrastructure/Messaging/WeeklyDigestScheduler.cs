@@ -55,7 +55,7 @@ public sealed class WeeklyDigestScheduler(IServiceScopeFactory scopeFactory, ICo
         var adherence = scope.ServiceProvider.GetRequiredService<INutritionAdherenceProvider>();
         var publish = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = Progress.Domain.UtcCalendar.Day(DateTimeOffset.UtcNow);
         var from = today.AddDays(-6);
         var userIds = await db.ActivityContributions
             .Where(x => x.Date >= from && x.Date <= today)
@@ -115,8 +115,15 @@ public sealed class WeeklyDigestScheduler(IServiceScopeFactory scopeFactory, ICo
     private static async Task DelayUntilNextMondayAsync(CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        var days = ((int)DayOfWeek.Monday - (int)now.DayOfWeek + 7) % 7;
-        var next = now.Date.AddDays(days == 0 && now.TimeOfDay > TimeSpan.Zero ? 7 : days);
+        var today = Progress.Domain.UtcCalendar.Day(now);
+        var days = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+        var nextMonday = today.AddDays(days);
+        var next = Progress.Domain.UtcCalendar.StartOfDayUtc(nextMonday);
+        if (next <= now)
+        {
+            next = Progress.Domain.UtcCalendar.StartOfDayUtc(nextMonday.AddDays(7));
+        }
+
         var delay = next - now;
         if (delay > TimeSpan.Zero) await Task.Delay(delay, ct);
     }

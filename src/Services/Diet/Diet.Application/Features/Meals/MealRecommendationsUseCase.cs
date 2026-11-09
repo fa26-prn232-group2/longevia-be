@@ -33,7 +33,8 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
     {
         var userId = user.RequiredId();
         var now = time.GetUtcNow();
-        var summary = await summaries.ExecuteAsync(DateOnly.FromDateTime(now.UtcDateTime), ct);
+        var summary = await summaries.ExecuteAsync(
+            Longevia.Shared.Time.BusinessTime.ToDate(now), ct);
         var profile = await profiles.GetAsync(userId, ct);
         if (profile.DietaryPreference is null || profile.Allergies is null)
             throw AppException.ServiceUnavailable("Hồ sơ chưa cung cấp thông tin chế độ ăn và dị ứng.", "diet.profile_incomplete");
@@ -43,7 +44,7 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
         if (candidates.Count == 0 && summary.ConsumedCalories < summary.TargetCalories * 1.05m)
             throw AppException.Unprocessable("Chưa có món đủ thông tin dị ứng để gợi ý.", "diet.no_safe_candidate");
         var result = await recommendations.GetAsync(new(userId, meal, goal,
-            new(profile.AgeOn(DateOnly.FromDateTime(now.UtcDateTime)), profile.IsMale, profile.HeightCm,
+            new(profile.AgeOn(Longevia.Shared.Time.BusinessTime.ToDate(now)), profile.IsMale, profile.HeightCm,
                 weight.WeightKg, profile.ActivityLevel, profile.DietaryPreference, profile.Allergies),
             checked((int)decimal.Round(summary.ConsumedCalories, 0, MidpointRounding.AwayFromZero)),
             checked((int)decimal.Round(summary.TargetCalories, 0, MidpointRounding.AwayFromZero)),

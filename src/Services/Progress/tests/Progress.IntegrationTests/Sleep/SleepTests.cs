@@ -29,7 +29,7 @@ public sealed class SleepTests(ProgressFixture fixture)
         Assert.NotNull(result);
         Assert.Equal(8.0, result.DurationHours);
         Assert.Equal("Good", result.SleepQuality);
-        Assert.Equal(DateOnly.FromDateTime(wokeAt.UtcDateTime), result.Date);
+        Assert.Equal(Progress.Domain.UtcCalendar.Day(wokeAt), result.Date);
     }
 
     [Fact]

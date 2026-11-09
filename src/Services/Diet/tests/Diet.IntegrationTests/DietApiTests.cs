@@ -5,6 +5,7 @@ using Diet.Application.Features.Foods;
 using Diet.Application.Features.Meals;
 using Diet.Application.Features.Targets;
 using Diet.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -199,6 +200,18 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         };
         var schemas = swagger.RootElement.GetProperty("components").GetProperty("schemas");
         Assert.Equal(100, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+    }
+
+    [Fact]
+    public async Task Host_ServiceTokenConfigured_StartsAndServesHealth()
+    {
+        // Regression: the service token interceptor used to be registered inside
+        // the AddGrpc options delegate, which runs after the service collection is
+        // read-only. Docker sets SERVICE__TOKEN, so every API crashed on startup.
+        using var tokenFactory = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("SERVICE:TOKEN", "diet-integration-service-token"));
+        using var client = tokenFactory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
     }
 
     private static async Task<FoodResponse> CreateFood(HttpClient client)

@@ -24,12 +24,18 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddDietApplication();
 builder.Services.AddDietInfrastructure(builder.Configuration);
+// The interceptor instance must be registered before AddGrpc: the options
+// delegate runs when GrpcServiceOptions is resolved, at which point the service
+// collection is already read-only.
+var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+if (!string.IsNullOrWhiteSpace(serviceToken))
+{
+    builder.Services.AddSingleton(new ServiceTokenServerInterceptor(serviceToken));
+}
 builder.Services.AddGrpc(options =>
 {
-    var serviceToken = builder.Configuration["SERVICE:TOKEN"];
     if (!string.IsNullOrWhiteSpace(serviceToken))
     {
-        builder.Services.AddSingleton(new ServiceTokenServerInterceptor(serviceToken));
         options.Interceptors.Add<ServiceTokenServerInterceptor>();
     }
 });

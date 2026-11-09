@@ -11,6 +11,7 @@ using Identity.Application.Features.Users;
 using Identity.Domain.Constants;
 using Identity.Infrastructure.Persistence;
 using Longevia.Shared.Events;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -20,6 +21,18 @@ namespace Identity.IntegrationTests;
 public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
 {
     private readonly HttpClient _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Host_ServiceTokenConfigured_StartsAndServesHealth()
+    {
+        // Regression: the service token interceptor used to be registered inside
+        // the AddGrpc options delegate, which runs after the service collection is
+        // read-only. Docker sets SERVICE__TOKEN, so every API crashed on startup.
+        using var tokenFactory = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("SERVICE:TOKEN", "identity-integration-service-token"));
+        using var client = tokenFactory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
+    }
 
     [Fact]
     public async Task Startup_AppliesMigrationsIdempotently_AndCreatesExpectedSchema()

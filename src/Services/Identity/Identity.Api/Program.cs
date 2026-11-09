@@ -20,12 +20,18 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddIdentityApplication();
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+// The interceptor instance must be registered before AddGrpc: the options
+// delegate runs when GrpcServiceOptions is resolved, at which point the service
+// collection is already read-only.
+var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+if (!string.IsNullOrWhiteSpace(serviceToken))
+{
+    builder.Services.AddSingleton(new Longevia.Shared.Auth.ServiceTokenServerInterceptor(serviceToken));
+}
 builder.Services.AddGrpc(options =>
 {
-    var serviceToken = builder.Configuration["SERVICE:TOKEN"];
     if (!string.IsNullOrWhiteSpace(serviceToken))
     {
-        builder.Services.AddSingleton(new Longevia.Shared.Auth.ServiceTokenServerInterceptor(serviceToken));
         options.Interceptors.Add<Longevia.Shared.Auth.ServiceTokenServerInterceptor>();
     }
 });

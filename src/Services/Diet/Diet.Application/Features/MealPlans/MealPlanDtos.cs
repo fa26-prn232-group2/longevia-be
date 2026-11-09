@@ -24,7 +24,8 @@ public sealed record MealPlanDayResponse(string Date, int TargetCalories, double
 
 public sealed record MealPlanResponse(Guid Id, string WeekStartDate, int DaysRequested, int MealsPerDay,
     int WeeklyTargetCalories, double WeeklyTargetProteinGrams, double WeeklyTargetCarbsGrams,
-    double WeeklyTargetFatGrams, double WeeklyTargetFiberGrams, bool UsedFallback, string Disclaimer,
+    double WeeklyTargetFatGrams, double WeeklyTargetFiberGrams, bool UsedFallback,
+    string UsedFallbackReason, string Disclaimer,
     IReadOnlyList<MealPlanWarningResponse> Warnings, IReadOnlyList<MealPlanDayResponse> Days,
     DateTimeOffset GeneratedAt);
 
@@ -41,7 +42,7 @@ internal static class MealPlanMapper
         new(id, value.WeekStartDate, value.DaysRequested, mealsPerDay,
             value.WeeklyTargetCalories, value.WeeklyTargetProteinGrams, value.WeeklyTargetCarbsGrams,
             value.WeeklyTargetFatGrams, value.WeeklyTargetFiberGrams, value.UsedFallback,
-            value.Disclaimer?.Text ?? string.Empty,
+            value.UsedFallbackReason, value.Disclaimer?.Text ?? string.Empty,
             value.Warnings.Select(x => new MealPlanWarningResponse(x.Code, x.Message, x.Scope)).ToArray(),
             value.Days.Select(Day).ToArray(), generatedAt);
 

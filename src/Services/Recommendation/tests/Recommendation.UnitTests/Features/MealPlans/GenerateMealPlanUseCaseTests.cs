@@ -77,6 +77,7 @@ public sealed class GenerateMealPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.UsedFallback);
+        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
         Assert.Equal(7, result.Days.Count);
         Assert.All(result.Days, day => Assert.Single(day.Meals));
@@ -90,6 +91,7 @@ public sealed class GenerateMealPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.UsedFallback);
+        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
         Assert.Equal(7, result.Days.Count);
     }

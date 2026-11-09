@@ -61,6 +61,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.UsedFallback);
+        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
         Assert.Equal(3, result.SessionsScheduled);
         Assert.All(result.Days.Where(day => !day.RestDay), day => Assert.NotEmpty(day.Citations));
@@ -74,6 +75,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.UsedFallback);
+        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
         Assert.Equal(3, result.SessionsScheduled);
         Assert.Equal(7, result.Days.Count);
@@ -87,6 +89,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
         Assert.True(result.UsedFallback);
+        Assert.Equal("invalid_model_output", result.UsedFallbackReason);
         Assert.All(result.Days.Where(day => !day.RestDay), day => Assert.Equal("walking", day.Activity));
     }
 
@@ -144,6 +147,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
 
         Assert.Equal(3, result.SessionsScheduled);
         Assert.True(result.UsedFallback);
+        Assert.Equal("corpus_missing", result.UsedFallbackReason);
         Assert.Empty(result.Citations);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.CorpusNotLoaded);
         Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.ActivitySourceUnverified);
@@ -224,6 +228,19 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         Assert.Equal(
             new[] { "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01" },
             result.Days.Select(day => day.Date));
+    }
+
+    [Fact]
+    public async Task RationaleUsesVietnameseActivityLabel()
+    {
+        var useCase = CreateUseCase(new StubChatModel(Selection()), new StubKnowledgeStore([ChapterFiveChunk()]));
+
+        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+        var rationale = string.Join(' ', result.Days.Select(day => day.Rationale));
+
+        Assert.Contains("Đi bộ", rationale, StringComparison.Ordinal);
+        Assert.DoesNotContain("walking", rationale, StringComparison.Ordinal);
+        Assert.DoesNotContain("caller", rationale, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -280,6 +280,7 @@ message GenerateMealPlanResponse {
   double weekly_target_carbs_grams = 10;
   double weekly_target_fat_grams = 11;
   double weekly_target_fiber_grams = 12;    // 0 nếu không gửi
+  string used_fallback_reason = 13;         // rỗng khi không fallback; provider_timeout | provider_unavailable | invalid_model_output
 }
 
 message MealPlanDay {
@@ -356,6 +357,7 @@ message GenerateWorkoutPlanResponse {
   int32 days_requested = 7;                 // số ngày caller yêu cầu
   int32 sessions_scheduled = 8;             // số buổi thực tế sau mặc định/giới hạn
   int32 minutes_per_session = 9;
+  string used_fallback_reason = 10;         // rỗng khi không fallback; provider_timeout | provider_unavailable | invalid_model_output | corpus_missing | no_safe_activity
 }
 
 message WorkoutPlanDay {
@@ -367,4 +369,5 @@ message WorkoutPlanDay {
   repeated string equipment_used = 6;
   string rationale = 7;                     // do code dựng từ request/citation
   repeated Citation citations = 8;          // đã verify; rỗng nếu rest_day/corpus rỗng
+  string activity_label = 9;                // nhãn tiếng Việt của activity; rỗng nếu rest_day
 }

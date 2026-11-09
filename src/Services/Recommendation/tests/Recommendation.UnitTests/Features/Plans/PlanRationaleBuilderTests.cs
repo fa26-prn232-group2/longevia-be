@@ -45,23 +45,25 @@ public sealed class PlanRationaleBuilderTests
     public void WorkoutRationaleUsesActivityDurationAndLimitations()
     {
         var rationale = _builder.BuildWorkoutRationale(
-            "walking",
+            "Đi bộ",
             30,
             ["đau lưng"],
             [Citation("Đi bộ là hoạt động nhẹ nhàng, an toàn cho nhiều người.")]);
 
-        Assert.Contains("walking", rationale, StringComparison.Ordinal);
+        Assert.Contains("Đi bộ", rationale, StringComparison.Ordinal);
+        Assert.DoesNotContain("walking", rationale, StringComparison.Ordinal);
         Assert.Contains("30 phút", rationale, StringComparison.Ordinal);
         Assert.Contains("đau lưng", rationale, StringComparison.Ordinal);
         Assert.Contains("Đi bộ là hoạt động nhẹ nhàng", rationale, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void WorkoutRationaleWithoutLimitationsStatesAssumption()
+    public void WorkoutRationaleWithoutLimitationsStatesGeneralGuidance()
     {
-        var rationale = _builder.BuildWorkoutRationale("walking", 30, [], []);
+        var rationale = _builder.BuildWorkoutRationale("Đi bộ", 30, [], []);
 
-        Assert.Contains("chưa khai giới hạn sức khỏe", rationale, StringComparison.Ordinal);
+        Assert.Contains("ở mức hướng dẫn chung", rationale, StringComparison.Ordinal);
+        Assert.DoesNotContain("chưa khai giới hạn sức khỏe", rationale, StringComparison.Ordinal);
         Assert.DoesNotContain("khỏe mạnh", rationale, StringComparison.Ordinal);
         Assert.DoesNotContain("chấn thương", rationale, StringComparison.Ordinal);
     }

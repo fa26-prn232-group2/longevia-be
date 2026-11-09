@@ -62,7 +62,7 @@ public sealed class WorkoutPlanSelectionParser(
                 Rationale = activity is null
                     ? "Chưa xác định được hoạt động an toàn cho buổi tập này."
                     : rationaleBuilder.BuildWorkoutRationale(
-                        activity.Key,
+                        activity.DisplayName,
                         skeleton.MinutesPerSession,
                         appliedLimitations,
                         citations),

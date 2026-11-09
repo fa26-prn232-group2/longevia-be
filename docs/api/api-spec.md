@@ -1050,6 +1050,7 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `GET /api/progress/longevity-habits?days=7` — điểm thói quen trường thọ.
 - `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.
 - `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
+- `GET /api/progress/fasting/current` — **204 No Content** khi chưa có phiên (thay cho 200 body rỗng trước đây).
 - `GET/PUT /api/identity/users/me/preferences` — `{ receiveWeeklyDigest }`, mặc định false.
 
 ### 7.2 gRPC mới
@@ -1063,7 +1064,22 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `UserVerifiedEvent` — `identity.user.verified` (Identity → Worker).
 - `WeeklyDigestReadyEvent` — `progress.weekly-digest.ready` (Progress → Worker).
 
-### 7.4 Ghi chú vận hành
+### 7.4 Bổ sung hợp đồng cho giai đoạn UI/UX
+
+- `MealPlanResponse.usedFallbackReason` (string, additive): rỗng khi không fallback;
+  `provider_timeout | provider_unavailable | invalid_model_output`.
+- `WorkoutPlanResponse.usedFallbackReason` (string, additive): như trên, thêm
+  `corpus_missing | no_safe_activity`.
+- `WorkoutPlanDayResponse.activityLabel` (string, additive): nhãn tiếng Việt của
+  `activity`; rỗng ở ngày nghỉ.
+- gRPC tương ứng (`contracts/recommendation/v1/recommendation.proto`):
+  `GenerateMealPlanResponse.used_fallback_reason = 13`,
+  `GenerateWorkoutPlanResponse.used_fallback_reason = 10`,
+  `WorkoutPlanDay.activity_label = 9` — tất cả additive, tương thích ngược.
+- `rationale` của meal/workout plan không còn dùng từ "caller" và dùng nhãn hoạt
+  động tiếng Việt.
+
+### 7.5 Ghi chú vận hành
 
 - Progress tham gia `internal_net`; Diet mở HTTP/2 `50051`.
 - gRPC nội bộ dùng metadata `x-service-token` (`SERVICE__TOKEN`).

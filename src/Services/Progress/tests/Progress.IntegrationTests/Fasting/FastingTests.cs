@@ -48,11 +48,10 @@ public sealed class FastingTests(ProgressFixture fixture)
         Assert.True(ended.IsGoalReached);
         Assert.Equal("Completed", ended.Status);
 
-        // 4. Current should now be null
+        // 4. Current should now be 204 No Content (chưa có phiên là trạng thái hợp lệ)
         using var afterEndCurrent = await client.GetAsync("/fasting/current");
-        Assert.Equal(HttpStatusCode.OK, afterEndCurrent.StatusCode);
-        var content = await afterEndCurrent.Content.ReadAsStringAsync();
-        Assert.True(string.IsNullOrWhiteSpace(content) || content == "null");
+        Assert.Equal(HttpStatusCode.NoContent, afterEndCurrent.StatusCode);
+        Assert.Equal(string.Empty, await afterEndCurrent.Content.ReadAsStringAsync());
     }
 
     [Fact]

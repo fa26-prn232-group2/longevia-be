@@ -42,33 +42,32 @@ public sealed class PlanRationaleBuilder
 
         var text = string.Create(
             CultureInfo.InvariantCulture,
-            $"{sentenceStart} chọn {foods.Count} món trong danh mục caller gửi, "
-            + $"cung cấp {protein:0.#} g protein và {calories} kcal theo khẩu phần đã khai.");
+            $"{sentenceStart} chọn {foods.Count} món, cung cấp {protein:0.#} g protein và {calories} kcal theo khẩu phần đã chọn.");
 
         return AppendCitations(text, citations);
     }
 
     /// <summary>
-    /// Rationale của một buổi tập: activity key, thời lượng caller gửi, giới hạn
-    /// caller khai và trích dẫn sách đã verify (nếu có).
+    /// Rationale của một buổi tập: nhãn hoạt động (tiếng Việt), thời lượng caller
+    /// gửi, giới hạn caller khai và trích dẫn sách đã verify (nếu có).
     /// </summary>
     public string BuildWorkoutRationale(
-        string activityKey,
+        string activityLabel,
         int durationMinutes,
         IReadOnlyList<string> limitations,
         IReadOnlyList<Citation> citations)
     {
-        ArgumentNullException.ThrowIfNull(activityKey);
+        ArgumentNullException.ThrowIfNull(activityLabel);
         ArgumentNullException.ThrowIfNull(limitations);
         ArgumentNullException.ThrowIfNull(citations);
 
         var limitationText = limitations.Count == 0
-            ? "chưa khai giới hạn sức khỏe nên chỉ dùng hướng dẫn chung"
+            ? "ở mức hướng dẫn chung"
             : $"phù hợp với giới hạn đã khai ({string.Join(", ", limitations)})";
 
         var text = string.Create(
             CultureInfo.InvariantCulture,
-            $"Buổi tập {activityKey} kéo dài {durationMinutes} phút, {limitationText}.");
+            $"Buổi tập {activityLabel} kéo dài {durationMinutes} phút, {limitationText}.");
 
         return AppendCitations(text, citations);
     }

@@ -128,6 +128,18 @@ public static class WorkoutActivities
         return null;
     }
 
+    /// <summary>
+    /// Nhãn tiếng Việt của hoạt động để hiển thị cho người dùng. Key lạ (dữ liệu
+    /// cũ hoặc ngoài danh mục) được trả nguyên văn thay vì rỗng để không mất dấu.
+    /// </summary>
+    public static string DisplayNameFor(string? key)
+    {
+        var definition = FindByKey(key);
+        return definition is not null
+            ? definition.DisplayName
+            : (key ?? string.Empty).Trim();
+    }
+
     /// <summary><c>true</c> khi giá trị caller gửi khớp key hoặc alias của hoạt động.</summary>
     public static bool MatchesAlias(WorkoutActivityDefinition definition, string? value)
     {

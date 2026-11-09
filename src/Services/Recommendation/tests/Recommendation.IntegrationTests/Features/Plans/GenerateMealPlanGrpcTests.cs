@@ -98,6 +98,7 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
         var response = await fixture.Client.GenerateMealPlanAsync(BuildRequest());
 
         Assert.True(response.UsedFallback);
+        Assert.Equal("provider_unavailable", response.UsedFallbackReason);
         Assert.Contains(response.Warnings, warning => warning.Code == "ai_fallback_used");
         Assert.Equal(7, response.Days.Count);
         Assert.All(response.Days, day => Assert.NotEmpty(day.Meals));

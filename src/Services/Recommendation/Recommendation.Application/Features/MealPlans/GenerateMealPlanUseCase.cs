@@ -75,7 +75,8 @@ public sealed class GenerateMealPlanUseCase(
         }
 
         var usedFallback = false;
-        var selectedDays = await SelectDaysAsync(
+        var fallbackReason = string.Empty;
+        var selection = await SelectDaysAsync(
                 request,
                 candidates,
                 budget,
@@ -83,12 +84,14 @@ public sealed class GenerateMealPlanUseCase(
                 cappedDates,
                 cancellationToken)
             .ConfigureAwait(false);
+        var selectedDays = selection.Days;
 
         if (selectedDays is null && cappedDates.Count < dates.Count)
         {
             var fallback = fallbackSelector.Select(request, budget, candidates, cappedDates);
             selectedDays = fallback.Days;
             usedFallback = true;
+            fallbackReason = selection.Reason ?? "invalid_model_output";
 
             warnings.Add(new PlanWarning
             {
@@ -126,10 +129,11 @@ public sealed class GenerateMealPlanUseCase(
             Warnings = Deduplicate(warnings),
             Disclaimer = DisclaimerText.Value,
             UsedFallback = usedFallback,
+            UsedFallbackReason = fallbackReason,
         };
     }
 
-    private async Task<IReadOnlyList<MealPlanDay>?> SelectDaysAsync(
+    private async Task<(IReadOnlyList<MealPlanDay>? Days, string? Reason)> SelectDaysAsync(
         GenerateMealPlanRequest request,
         IReadOnlyList<CandidateFood> candidates,
         WeeklyBudget budget,
@@ -139,7 +143,7 @@ public sealed class GenerateMealPlanUseCase(
     {
         if (cappedDates.Count == budget.Days.Count)
         {
-            return [];
+            return ([], null);
         }
 
         var mealChunks = MealChunks(chunks);
@@ -157,18 +161,18 @@ public sealed class GenerateMealPlanUseCase(
         catch (Exception)
         {
             // Provider lỗi/timeout: use case vẫn trả fallback thay vì làm hỏng request.
-            return null;
+            return (null, "provider_unavailable");
         }
 
         if (completion is not { Abstained: false, Payload: not null })
         {
-            return null;
+            return (null, completion.AbstainReason ?? "provider_unavailable");
         }
 
         var parsed = parser.Parse(completion.Payload, candidates, mealChunks, budget, cappedDates);
         return validator.Validate(request, budget, parsed, candidates, cappedDates).IsValid
-            ? parsed
-            : null;
+            ? (parsed, null)
+            : (null, "invalid_model_output");
     }
 
     private static HashSet<string> ResolveCappedDates(

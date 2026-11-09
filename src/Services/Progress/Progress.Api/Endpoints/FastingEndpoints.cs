@@ -33,9 +33,13 @@ public static class FastingEndpoints
         group.MapGet("/current", async (FastingUseCases useCases, CancellationToken ct) =>
         {
             var result = await useCases.GetCurrentAsync(ct);
-            return Results.Json(result);
+            // Chưa có phiên là trạng thái hợp lệ: 204 để client phân biệt với lỗi
+            // và không phải parse body rỗng.
+            IResult response = result is null ? TypedResults.NoContent() : TypedResults.Ok(result);
+            return response;
         })
+        .Produces(StatusCodes.Status204NoContent)
         .WithName("GetCurrentFasting")
-        .WithSummary("Lấy thông tin phiên nhịn ăn đang hoạt động");
+        .WithSummary("Lấy thông tin phiên nhịn ăn đang hoạt động (204 khi chưa có phiên)");
     }
 }

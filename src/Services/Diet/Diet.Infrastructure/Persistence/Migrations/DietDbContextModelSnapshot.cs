@@ -72,6 +72,11 @@ namespace Diet.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Micronutrients")
                         .HasColumnType("jsonb")
                         .HasColumnName("Micronutrients");

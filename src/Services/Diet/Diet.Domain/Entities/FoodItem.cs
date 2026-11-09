@@ -18,6 +18,8 @@ public sealed class FoodItem
     /// </summary>
     public IReadOnlyDictionary<string, decimal>? Micronutrients { get; private set; }
 
+    public bool IsDeleted { get; private set; }
+
     private FoodItem() { }
 
     public static FoodItem Create(Guid? userId, string name, string category,
@@ -54,4 +56,20 @@ public sealed class FoodItem
             Micronutrients = micronutrients?.ToDictionary(x => x.Key.Trim(), x => x.Value, StringComparer.OrdinalIgnoreCase),
         };
     }
+
+    public void Update(string name, string category, decimal servingSize, string servingUnit,
+        NutritionValues nutrition, IReadOnlyList<string>? allergens)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(servingSize);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Name = name.Trim();
+        Category = category.Trim();
+        ServingSize = servingSize;
+        ServingUnit = servingUnit.Trim();
+        Nutrition = nutrition;
+        Allergens = allergens?.Select(x => x.Trim().ToLowerInvariant()).Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal).ToArray();
+    }
+
+    public void SoftDelete() => IsDeleted = true;
 }

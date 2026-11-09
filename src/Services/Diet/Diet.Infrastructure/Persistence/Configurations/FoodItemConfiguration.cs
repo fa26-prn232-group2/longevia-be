@@ -27,6 +27,8 @@ public sealed class FoodItemConfiguration : IEntityTypeConfiguration<FoodItem>
                 value => string.IsNullOrWhiteSpace(value)
                     ? null
                     : JsonSerializer.Deserialize<Dictionary<string, decimal>>(value, JsonOptions));
+        builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+        builder.HasQueryFilter(x => !x.IsDeleted);
         builder.OwnsOne(x => x.Nutrition, NutritionMapping.Configure);
         builder.Navigation(x => x.Nutrition).IsRequired();
     }

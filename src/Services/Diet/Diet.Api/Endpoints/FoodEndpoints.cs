@@ -20,5 +20,14 @@ public static class FoodEndpoints
             return TypedResults.Created($"/api/diet/foods?search={Uri.EscapeDataString(result.Name)}", result);
         }).AddEndpointFilter<ValidationFilter<CreateFoodRequest>>()
             .WithName("CreateFood").WithSummary("Tạo món tùy chỉnh cá nhân");
+        group.MapPut("/{id:guid}", async (Guid id, CreateFoodRequest request, FoodUseCases useCases,
+            CancellationToken ct) => TypedResults.Ok(await useCases.UpdateAsync(id, request, ct)))
+            .AddEndpointFilter<ValidationFilter<CreateFoodRequest>>()
+            .WithName("UpdateFood").WithSummary("Sửa món tùy chỉnh của bạn");
+        group.MapDelete("/{id:guid}", async (Guid id, FoodUseCases useCases, CancellationToken ct) =>
+        {
+            await useCases.DeleteAsync(id, ct);
+            return TypedResults.NoContent();
+        }).WithName("DeleteFood").WithSummary("Xoá mềm món tùy chỉnh của bạn");
     }
 }

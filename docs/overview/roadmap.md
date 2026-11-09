@@ -5,12 +5,12 @@ Kế hoạch phân bổ và triển khai được tổ chức thành 6 giai đo�
 | Giai đoạn | Nội dung chính | Trạng thái |
 | :--- | :--- | :--- |
 | **Giai đoạn 0** | Hoàn thiện repo, hạ tầng Docker, Central Package Management, bộ tài liệu BRD/PRD | Đã hoàn thành |
-| **Giai đoạn 1** | **Shared Foundation & Identity Service**: Thư viện `Longevia.Shared` (AppException, JWT ES256 handler), AuthN/AuthZ, User Profile | Đang chuẩn bị |
-| **Giai đoạn 2** | **Background Worker & Messaging**: Tích hợp MassTransit RabbitMQ, Brevo Email Adapter cho email xác thực | Kế tiếp |
-| **Giai đoạn 3** | **Diet Service**: Thư viện món ăn, tính toán TDEE/Macro, Nhật ký bữa ăn 4 buổi, gRPC Client | Kế tiếp |
-| **Giai đoạn 4** | **Progress Service**: Nhật ký chỉ số cơ thể, Fasting Timer (16:8), log nước & giấc ngủ, Dashboard Streaks | Kế tiếp |
-| **Giai đoạn 5** | **Recommendation Service & AI Integration**: Khởi tạo gRPC Server, Google AI Gemini Adapter, RAG trên tri thức sách (`recommendation_db` + pipeline ingest `scripts/book-kb`), 5 hàm gợi ý / phân tích / tra cứu | Kế tiếp |
-| **Giai đoạn 6** | **Tích hợp toàn diện & Gate Close-out**: Cấu hình Nginx gateway, Swagger UI gộp, Docker Compose multi-service, E2E Smoke Tests | Kế tiếp |
+| **Giai đoạn 1** | **Shared Foundation & Identity Service**: Thư viện `Longevia.Shared` (AppException, JWT ES256 handler), AuthN/AuthZ, User Profile | Đã hoàn thành (MVP lõi) |
+| **Giai đoạn 2** | **Background Worker & Messaging**: Tích hợp MassTransit RabbitMQ, Brevo Email Adapter cho email xác thực | Đã hoàn thành (email xác thực/reset); welcome + weekly digest đang trong `duck-003` |
+| **Giai đoạn 3** | **Diet Service**: Thư viện món ăn, tính toán TDEE/Macro, Nhật ký bữa ăn 4 buổi, gRPC Client | Đã hoàn thành (MVP lõi); meal plan/nutrient gaps/knowledge đang trong `duck-003` |
+| **Giai đoạn 4** | **Progress Service**: Nhật ký chỉ số cơ thể, Fasting Timer (16:8), log nước & giấc ngủ, Dashboard Streaks | Đã hoàn thành (MVP lõi); workout/longevity/digest đang trong `duck-003` |
+| **Giai đoạn 5** | **Recommendation Service & AI Integration**: Khởi tạo gRPC Server, Google AI Gemini Adapter, RAG trên tri thức sách (`recommendation_db` + pipeline ingest `scripts/book-kb`), 5 hàm gợi ý / phân tích / tra cứu | Đã hoàn thành 7 RPC; 5 RPC chưa có caller/UI đang trong `duck-003` |
+| **Giai đoạn 6** | **Tích hợp toàn diện & Gate Close-out**: Cấu hình Nginx gateway, Swagger UI gộp, Docker Compose multi-service, E2E Smoke Tests | Đang thực hiện; deploy production là backlog |
 
 ## Quy tắc thực hiện
 

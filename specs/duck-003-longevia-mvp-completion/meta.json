@@ -1,0 +1,10 @@
+{
+  "owner": "duck",
+  "number": 3,
+  "slug": "longevia-mvp-completion",
+  "branch": "feat/longevia-mvp-completion",
+  "status": "open",
+  "services": ["Identity", "Diet", "Progress", "Recommendation", "Worker", "Shared"],
+  "description": "Hoan thien MVP Longevia: AI reliability, Diet/Progress AI features, email, CRUD, hardening (deploy backlog)",
+  "opened_at": "2026-11-09"
+}

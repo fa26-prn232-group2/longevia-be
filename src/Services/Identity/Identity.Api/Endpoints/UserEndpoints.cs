@@ -33,6 +33,15 @@ public static class UserEndpoints
         .WithName("UpdateProfile")
         .WithSummary("Cập nhật hồ sơ thể chất cơ bản & dị ứng");
 
+        group.MapGet("/me/preferences", async (PreferenceUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetAsync(ct)))
+            .WithName("GetPreferences").WithSummary("Lấy tùy chọn nhận báo cáo tuần");
+
+        group.MapPut("/me/preferences", async (UpdatePreferencesRequest request,
+            PreferenceUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.UpdateAsync(request, ct)))
+            .WithName("UpdatePreferences").WithSummary("Bật/tắt nhận báo cáo tuần");
+
         return app;
     }
 }

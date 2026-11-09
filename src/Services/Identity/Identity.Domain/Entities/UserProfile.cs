@@ -12,6 +12,7 @@ public sealed class UserProfile
     public string ActivityLevel { get; private set; } = Constants.ActivityLevel.Sedentary;
     public string DietaryPreference { get; private set; } = Constants.DietaryPreference.None;
     public List<string> Allergies { get; private set; } = [];
+    public bool ReceiveWeeklyDigest { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
     private UserProfile()
@@ -43,6 +44,12 @@ public sealed class UserProfile
             Allergies = allergies?.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).Distinct().ToList() ?? [],
             UpdatedAt = now,
         };
+    }
+
+    public void SetWeeklyDigest(bool enabled, DateTimeOffset now)
+    {
+        ReceiveWeeklyDigest = enabled;
+        UpdatedAt = now;
     }
 
     public void Update(

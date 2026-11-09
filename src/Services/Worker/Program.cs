@@ -52,6 +52,8 @@ builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<UserRegisteredConsumer>();
     bus.AddConsumer<PasswordResetRequestedConsumer>();
+    bus.AddConsumer<UserVerifiedConsumer>();
+    bus.AddConsumer<WeeklyDigestConsumer>();
 
     bus.UsingRabbitMq((context, cfg) =>
     {
@@ -71,12 +73,18 @@ builder.Services.AddMassTransit(bus =>
 
         cfg.Message<UserRegisteredEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
         cfg.Message<PasswordResetRequestedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
+        cfg.Message<UserVerifiedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
+        cfg.Message<WeeklyDigestReadyEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
 
         cfg.Publish<UserRegisteredEvent>(p => p.ExchangeType = "topic");
         cfg.Publish<PasswordResetRequestedEvent>(p => p.ExchangeType = "topic");
+        cfg.Publish<UserVerifiedEvent>(p => p.ExchangeType = "topic");
+        cfg.Publish<WeeklyDigestReadyEvent>(p => p.ExchangeType = "topic");
 
         cfg.Send<UserRegisteredEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.UserRegisteredRoutingKey));
         cfg.Send<PasswordResetRequestedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.PasswordResetRoutingKey));
+        cfg.Send<UserVerifiedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.UserVerifiedRoutingKey));
+        cfg.Send<WeeklyDigestReadyEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.WeeklyDigestRoutingKey));
 
         cfg.ReceiveEndpoint(WorkerTopology.EmailQueue, endpoint =>
         {
@@ -86,6 +94,8 @@ builder.Services.AddMassTransit(bus =>
 
             endpoint.Bind<UserRegisteredEvent>(b => b.RoutingKey = WorkerTopology.UserRegisteredRoutingKey);
             endpoint.Bind<PasswordResetRequestedEvent>(b => b.RoutingKey = WorkerTopology.PasswordResetRoutingKey);
+            endpoint.Bind<UserVerifiedEvent>(b => b.RoutingKey = WorkerTopology.UserVerifiedRoutingKey);
+            endpoint.Bind<WeeklyDigestReadyEvent>(b => b.RoutingKey = WorkerTopology.WeeklyDigestRoutingKey);
 
             // Retry 3x (2s, 5s, 10s per spec Q3); then to worker.email.dlx/.dlq.
             endpoint.UseMessageRetry(r => r.Intervals(WorkerTopology.RetryIntervals));
@@ -93,6 +103,8 @@ builder.Services.AddMassTransit(bus =>
 
             endpoint.ConfigureConsumer<UserRegisteredConsumer>(context);
             endpoint.ConfigureConsumer<PasswordResetRequestedConsumer>(context);
+            endpoint.ConfigureConsumer<UserVerifiedConsumer>(context);
+            endpoint.ConfigureConsumer<WeeklyDigestConsumer>(context);
         });
     });
 });

@@ -176,6 +176,10 @@ services:
       PROGRESS__GRPC_PORT: 50051
       IdentityGrpc__Address: http://identity:50051
       IdentityGrpc__DeadlineMilliseconds: "2000"
+      RecommendationGrpc__Address: http://recommendation:50051
+      DietGrpc__Address: http://diet:50051
+      DIGEST__ENABLED: ${DIGEST_ENABLED:-true}
+      DIGEST__RUN_ON_START: ${DIGEST_RUN_ON_START:-false}
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: "5672"
       RabbitMQ__User: ${RABBITMQ_USER:?Set explicit RabbitMQ user for Progress}
@@ -195,6 +199,7 @@ services:
     networks:
       - edge
       - data_net
+      - internal_net
     healthcheck:
       test: ["CMD", "./Progress.Api", "--health-check", "http://127.0.0.1:8080/health"]
       interval: 10s

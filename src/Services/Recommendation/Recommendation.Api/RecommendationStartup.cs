@@ -19,6 +19,7 @@ using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
 using Longevia.Shared.Observability;
+using Longevia.Shared.Auth;
 
 namespace Recommendation.Api;
 
@@ -365,6 +366,12 @@ public static class RecommendationStartup
         {
             options.Interceptors.Add<GrpcExceptionInterceptor>();
             options.Interceptors.Add<ServerDeadlineInterceptor>();
+            var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+            if (!string.IsNullOrWhiteSpace(serviceToken))
+            {
+                builder.Services.AddSingleton(new ServiceTokenServerInterceptor(serviceToken));
+                options.Interceptors.Add<ServiceTokenServerInterceptor>();
+            }
         });
 
         builder.Services.AddGrpcHealthChecks(options =>

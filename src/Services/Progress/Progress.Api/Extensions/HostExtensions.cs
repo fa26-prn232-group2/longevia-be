@@ -12,7 +12,15 @@ public static class HostExtensions
 {
     public static IServiceCollection AddProgressHost(this IServiceCollection services, IConfiguration config)
     {
-        services.AddGrpc();
+        services.AddGrpc(options =>
+        {
+            var serviceToken = config["SERVICE:TOKEN"];
+            if (!string.IsNullOrWhiteSpace(serviceToken))
+            {
+                services.AddSingleton(new Longevia.Shared.Auth.ServiceTokenServerInterceptor(serviceToken));
+                options.Interceptors.Add<Longevia.Shared.Auth.ServiceTokenServerInterceptor>();
+            }
+        });
         services.AddProgressAuthentication(config);
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
             context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);

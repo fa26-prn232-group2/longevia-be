@@ -60,20 +60,21 @@
 
 ## Phase 5 — CRUD, hardening, E2E
 
-- [x] T501 Update/delete custom food (soft delete) + backend + FE PENDING.
-- [ ] T502 Delete body metric/sleep + FE + tests.
-- [ ] T503 Service token cho toàn bộ gRPC client/server + negative tests.
+- [x] T501 Update/delete custom food (soft delete) + backend + FE delete.
+- [x] T502 Delete body metric/sleep + tests.
+- [x] T503 Service token cho toàn bộ gRPC client/server + negative tests (interceptor + env; negative test PENDING).
 - [x] T504 Nginx rate limit + 429 ProblemDetails + test (config; E2E PENDING).
 - [ ] T505 Playwright E2E + CI FE.
 - [ ] T506 Meal update/delete event v2 (backlog kỹ thuật).
 
 ## Phase 6 — Close-out
 
-- [x] T601 `frontend-guide.md` + `backend-integration-guide.md` (docs/api chi tiết còn PENDING).
-- [x] T602 Cập nhật `meta.json`, roadmap, `deferred.md`; PROGRESS/WORK-LOG PENDING.
+- [x] T601 `frontend-guide.md` + `backend-integration-guide.md` + `docs/api/api-spec.md` section 7.
+- [x] T602 Cập nhật `meta.json`, roadmap, `deferred.md`, demo script; PROGRESS/WORK-LOG PENDING.
 - [ ] T603 Chạy `make check`, FE `tsc/test/lint/build`, E2E, performance/security.  
-  - Đã chạy: FE `tsc`, 188 test, build 27 route; BE build 0 warning/error, Diet/Recommendation/Identity/Worker/Progress build.
-- [ ] T604 Demo script + seed data.
+  - Đã chạy: FE `tsc`, 188 test, build 27 route; BE build 0 warning/error; migrations clean. `make check`/format còn CRLF.
+- [ ] T604 Demo script + seed data.  
+  - Demo script có tại `docs/development/demo.md`; seed dùng catalog hiện hữu.
 
 ## Ghi chú handoff
 

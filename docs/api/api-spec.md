@@ -1032,3 +1032,40 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
   ```
 - **Schema version**: v1 (`src/Shared/Events/PasswordResetRequestedEvent.cs`).
 - **Hành động**: Worker gửi email chứa mã/link đặt lại mật khẩu có hạn 15 phút qua SMTP relay cấu hình (Mailpit local, Brevo production).
+
+---
+
+## 7. MVP completion (duck-003)
+
+### 7.1 REST mới
+
+- `POST /api/diet/meal-plans` — `{ weekStartDate, days, mealsPerDay }`, lưu kế hoạch tuần.
+- `GET /api/diet/meal-plans/{weekStartDate}` — đọc kế hoạch đã lưu.
+- `GET /api/diet/nutrition/nutrient-gaps?days=7` — phân tích vi chất; `dataWarnings` khi thiếu dữ liệu.
+- `POST /api/diet/knowledge/ask` — `{ question, chapterFilter? }`.
+- `GET /api/diet/knowledge/search?query=&chapterFilter=&topK=` — `topK` 1..20.
+- `PUT/DELETE /api/diet/foods/{id}` — sửa/xoá mềm custom food của owner.
+- `POST /api/progress/workout-plans` — `{ weekStartDate, goal, days, sessionsPerWeek, minutesPerSession }`.
+- `GET /api/progress/workout-plans/{weekStartDate}` — đọc kế hoạch tập.
+- `GET /api/progress/longevity-habits?days=7` — điểm thói quen trường thọ.
+- `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.
+- `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
+- `GET/PUT /api/identity/users/me/preferences` — `{ receiveWeeklyDigest }`, mặc định false.
+
+### 7.2 gRPC mới
+
+- `DietService.GetNutritionAdherence`
+- `DietService.GetWeeklyNutritionSummary`
+- `IdentityService.GetUserContact`
+
+### 7.3 Event mới
+
+- `UserVerifiedEvent` — `identity.user.verified` (Identity → Worker).
+- `WeeklyDigestReadyEvent` — `progress.weekly-digest.ready` (Progress → Worker).
+
+### 7.4 Ghi chú vận hành
+
+- Progress tham gia `internal_net`; Diet mở HTTP/2 `50051`.
+- gRPC nội bộ dùng metadata `x-service-token` (`SERVICE__TOKEN`).
+- Nginx rate limit: 30 r/s chung, 5 r/s cho `/api/identity/auth/`; vượt ngưỡng trả 429 ProblemDetails.
+- Digest chỉ gửi cho user đã bật `receiveWeeklyDigest`; mặc định thứ Hai 00:00 UTC.

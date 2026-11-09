@@ -20,7 +20,15 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddIdentityApplication();
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+    var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+    if (!string.IsNullOrWhiteSpace(serviceToken))
+    {
+        builder.Services.AddSingleton(new Longevia.Shared.Auth.ServiceTokenServerInterceptor(serviceToken));
+        options.Interceptors.Add<Longevia.Shared.Auth.ServiceTokenServerInterceptor>();
+    }
+});
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorization();
 

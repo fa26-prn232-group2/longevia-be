@@ -46,5 +46,13 @@ public static class SleepEndpoints
         .AddEndpointFilter<ValidationFilter<LogSleepRequest>>()
         .WithName("LogSleep")
         .WithSummary("Ghi nhận thông tin giấc ngủ");
+
+        group.MapDelete("/{id:guid}", async (Guid id, SleepUseCases useCases, CancellationToken ct) =>
+        {
+            await useCases.DeleteAsync(id, ct);
+            return TypedResults.NoContent();
+        })
+        .WithName("DeleteSleepLog")
+        .WithSummary("Xoá bản ghi giấc ngủ của bạn");
     }
 }

@@ -77,4 +77,12 @@ public sealed class BodyMetricRepository(ProgressDbContext db) : IBodyMetricRepo
 
         return dates.Select(Progress.Domain.UtcCalendar.Day).Distinct().ToList();
     }
+
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct)
+    {
+        var log = await db.BodyMetricLogs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        if (log is null) return false;
+        db.BodyMetricLogs.Remove(log);
+        return true;
+    }
 }

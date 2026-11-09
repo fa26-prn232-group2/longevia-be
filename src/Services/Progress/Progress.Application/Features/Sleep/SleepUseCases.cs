@@ -7,6 +7,7 @@ namespace Progress.Application.Features.Sleep;
 
 public sealed class SleepUseCases(
     ISleepRepository sleepRepo,
+    IUnitOfWork unitOfWork,
     ICurrentUser currentUser)
 {
     public async Task<SleepResponse> LogAsync(LogSleepRequest request, CancellationToken ct)
@@ -32,5 +33,14 @@ public sealed class SleepUseCases(
             log.SleepQuality,
             log.DurationHours,
             log.Date);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct)
+    {
+        var userId = currentUser.RequiredId();
+        if (!await sleepRepo.DeleteAsync(id, userId, ct))
+            throw Longevia.Shared.Errors.AppException.NotFound("Không tìm thấy bản ghi giấc ngủ.",
+                "progress.sleep_not_found");
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

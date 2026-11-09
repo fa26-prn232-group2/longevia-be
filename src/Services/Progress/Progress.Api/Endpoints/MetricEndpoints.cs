@@ -35,5 +35,13 @@ public static class MetricEndpoints
         })
         .WithName("GetMetricsHistory")
         .WithSummary("Tra cứu lịch sử chỉ số cơ thể có phân trang");
+
+        group.MapDelete("/{id:guid}", async (Guid id, MetricUseCases useCases, CancellationToken ct) =>
+        {
+            await useCases.DeleteAsync(id, ct);
+            return TypedResults.NoContent();
+        })
+        .WithName("DeleteBodyMetric")
+        .WithSummary("Xoá bản ghi chỉ số cơ thể của bạn");
     }
 }

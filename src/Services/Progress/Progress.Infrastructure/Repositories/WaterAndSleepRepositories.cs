@@ -72,4 +72,12 @@ public sealed class SleepRepository(ProgressDbContext db) : ISleepRepository
             .OrderByDescending(x => x.WokeAt)
             .ToListAsync(ct);
     }
+
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct)
+    {
+        var log = await db.SleepLogs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        if (log is null) return false;
+        db.SleepLogs.Remove(log);
+        return true;
+    }
 }

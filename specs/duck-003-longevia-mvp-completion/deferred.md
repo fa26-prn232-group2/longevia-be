@@ -13,3 +13,9 @@
 ## D-03 — Meal edit/delete
 
 - Cần event v2 + reconciliation với Progress; chưa làm trong đợt này.
+
+## D-04 — Playwright E2E
+
+- Đưa vào backlog theo yêu cầu: chưa thêm Playwright config/bộ test E2E trong đợt này.
+- Điều kiện mở lại: stack Docker ổn định, có seed demo; thêm `@playwright/test`, config webServer và bộ smoke auth/diet/progress/AI.
+

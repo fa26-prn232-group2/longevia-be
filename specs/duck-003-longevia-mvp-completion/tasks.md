@@ -64,7 +64,7 @@
 - [x] T502 Delete body metric/sleep + tests.
 - [x] T503 Service token cho toàn bộ gRPC client/server + negative tests (interceptor + env; negative test PENDING).
 - [x] T504 Nginx rate limit + 429 ProblemDetails + test (config; E2E PENDING).
-- [ ] T505 Playwright E2E + CI FE.
+- [ ] T505 Playwright E2E + CI FE — **backlog** (xem `deferred.md` D-04).
 - [ ] T506 Meal update/delete event v2 (backlog kỹ thuật).
 
 ## Phase 6 — Close-out

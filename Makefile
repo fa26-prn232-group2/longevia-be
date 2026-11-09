@@ -119,7 +119,7 @@ test:
 	$(DOTNET) test $(TEST_SCOPE)
 
 test-all:
-	$(DOTNET) test $(SLN_OR_DIR) -c Release
+	$(DOTNET) test $(SLN_OR_DIR) -c Release -m:1
 
 vuln:
 	$(DOTNET) list $(SLN_OR_DIR) package --vulnerable --include-transitive

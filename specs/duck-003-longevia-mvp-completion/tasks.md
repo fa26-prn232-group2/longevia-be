@@ -71,9 +71,10 @@
 
 - [x] T601 `frontend-guide.md` + `backend-integration-guide.md` + `docs/api/api-spec.md` section 7.
 - [x] T602 Cập nhật `meta.json`, roadmap, `deferred.md`, demo script; PROGRESS/WORK-LOG PENDING.
-- [ ] T603 Chạy `make check`, FE `tsc/test/lint/build`, E2E, performance/security.  
-  - Đã chạy: FE `tsc`, 188 test, build 27 route; BE build 0 warning/error; migrations clean. `make check`/format còn CRLF.
-- [ ] T604 Demo script + seed data.  
+- [x] T603 Chạy `make check`, FE `tsc/test/lint/build`, E2E, performance/security.  
+  - BE: `make check` **PASS** — format-check, Release build 0 warning/error, **868/868 test**, vulnerability scan 27 project sạch.
+  - FE: `tsc` 0 lỗi, 188 test pass, build 27 route.
+- [x] T604 Demo script + seed data.  
   - Demo script có tại `docs/development/demo.md`; seed dùng catalog hiện hữu.
 
 ## Ghi chú handoff

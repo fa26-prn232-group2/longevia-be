@@ -140,7 +140,10 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
     public async Task Endpoints_WithoutToken_ReturnUnauthorized(string method, string route)
     {
         using var client = factory.CreateClient();
-        var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), route));
+        var message = new HttpRequestMessage(new HttpMethod(method), route);
+        if (method is "POST" or "PUT")
+            message.Content = JsonContent.Create(new { });
+        var response = await client.SendAsync(message);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -185,7 +188,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.Contains("http_server", await client.GetStringAsync("/metrics"));
         using var swagger = JsonDocument.Parse(await client.GetStringAsync("/swagger/v1/swagger.json"));
         var paths = swagger.RootElement.GetProperty("paths");
-        Assert.Equal(8, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
+        Assert.Equal(15, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
             !x.Name.StartsWith("/alive") && !x.Name.StartsWith("/metrics")).Sum(x => x.Value.EnumerateObject().Count()));
         var schemaNames = new[]
         {

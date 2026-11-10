@@ -4,6 +4,7 @@
 .DESCRIPTION
     Verifies that Nginx API Gateway, Prometheus, Grafana, and Mailpit are responding
     with correct HTTP statuses, RFC 7807 ProblemDetails UTF-8 payloads, and health checks.
+    Run `make docker-up-monitoring` first; Prometheus/Grafana are opt-in.
     Returns exit code 0 on all passes; exit code 1 on any failure.
 .PARAMETER GatewayUrl
     Base URL for the Nginx API Gateway (default: http://localhost:8080).

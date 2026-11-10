@@ -98,6 +98,9 @@ make check                      # close-out gate
 
 ## 6. Cổng & điểm truy cập
 
+> Prometheus/Grafana là **opt-in** (profile `monitoring`). `make docker-up` không bật;
+> chạy `make docker-up-monitoring` khi cần dashboard/metrics.
+
 | Thứ | Địa chỉ |
 | --- | --- |
 | Gateway (Nginx) | http://localhost:8080 |

@@ -371,9 +371,10 @@ services:
   # every 10s; Grafana serves provisioned dashboards on host 3001 (3000 stays
   # reserved for the frontend). Both join `edge` only (plan.md section 7) and
   # are fully provisioned from mounted files - zero manual setup (SC-004).
-  # `infra-up` lists explicit services so these never leak into it; the full
-  # `docker-up` (up -d --build) picks them up automatically.
+  # `infra-up` lists explicit services so these never leak into it; `docker-up`
+  # also skips them. Start on demand with `make docker-up-monitoring`.
   prometheus:
+    profiles: ["monitoring"]
     image: prom/prometheus:v3.15.1
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -389,6 +390,7 @@ services:
       - internal_net
 
   grafana:
+    profiles: ["monitoring"]
     image: grafana/grafana:13.2.4
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"

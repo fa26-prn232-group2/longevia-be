@@ -12,5 +12,5 @@
 10. `/knowledge`: hỏi sách, kiểm tra citation/abstain.
 11. `/progress`: xem dashboard; `/progress/workout`, `/progress/longevity`.
 12. `/profile`: bật “Nhận báo cáo tuần”; xem toggle lưu qua API.
-13. Swagger `http://localhost:8080/swagger`: 32+ endpoint; Prometheus `:9090` target `recommendation` UP; Grafana `:3001`.
+13. Swagger `http://localhost:8080/swagger`: 32+ endpoint. Muốn xem Prometheus/Grafana thì chạy thêm `make docker-up-monitoring`; Prometheus `:9090` target `recommendation` UP, Grafana `:3001`.
 14. Kiểm tra rate limit: gọi liên tục `/api/identity/auth/login` đến khi nhận 429 ProblemDetails.

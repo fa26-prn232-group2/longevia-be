@@ -43,4 +43,34 @@ public sealed class SleepUseCases(
                 "progress.sleep_not_found");
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    /// <summary>Lịch sử giấc ngủ, mới nhất trước, có phân trang.</summary>
+    public async Task<SleepHistoryPageResponse> GetHistoryAsync(int page, int pageSize,
+        CancellationToken ct)
+    {
+        if (page < 1)
+        {
+            throw Longevia.Shared.Errors.AppException.BadRequest("page phải >= 1.",
+                "progress.invalid_page");
+        }
+
+        var size = Math.Clamp(pageSize, 1, 50);
+        var userId = currentUser.RequiredId();
+        var skip = checked((page - 1) * size);
+
+        var items = await sleepRepo.GetPageAsync(userId, skip, size, ct);
+        var total = await sleepRepo.CountAsync(userId, ct);
+
+        return new SleepHistoryPageResponse(
+            page,
+            size,
+            total,
+            items.Select(log => new SleepResponse(
+                log.Id,
+                log.SleptAt,
+                log.WokeAt,
+                log.SleepQuality,
+                log.DurationHours,
+                log.Date)).ToArray());
+    }
 }

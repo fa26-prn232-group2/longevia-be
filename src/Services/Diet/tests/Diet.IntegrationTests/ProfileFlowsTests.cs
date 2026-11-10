@@ -74,7 +74,7 @@ public sealed class ProfileFlowsTests(DietApiFactory factory) : IClassFixture<Di
         var foodResponse = await client.PostAsJsonAsync("/foods", new CreateFoodRequest(
             "Flow rice", "Grains", 100, "g", 130, 3, 28, 1, 1, []));
         var food = (await foodResponse.Content.ReadFromJsonAsync<FoodResponse>())!;
-        await client.PostAsJsonAsync("/meals", new LogMealRequest(DateOnly.FromDateTime(DateTime.UtcNow), "Lunch", [new(food.Id, 100)]));
+        await client.PostAsJsonAsync("/meals", new LogMealRequest(Longevia.Shared.Time.BusinessTime.ToDate(DateTimeOffset.UtcNow), "Lunch", [new(food.Id, 100)]));
         await client.PostAsJsonAsync("/foods", new CreateFoodRequest("Allergen rice", "Grains", 100, "g", 130, 3, 28, 1, 1, ["peanuts"]));
         using var foreignToken = factory.UserClient(Guid.NewGuid());
         using var foreign = host.CreateClient();
@@ -147,6 +147,46 @@ public sealed class ProfileFlowsTests(DietApiFactory factory) : IClassFixture<Di
     {
         public Task<WeightSnapshot?> GetLatestAsync(Guid userId, DateTimeOffset asOf, CancellationToken ct) => Task.FromResult<WeightSnapshot?>(null);
     }
+    [Fact]
+    public async Task ManualSave_WithProfileAndWeight_AttachesBmrAndTdee()
+    {
+        using var host = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.AddScoped<IProfileProvider, ProfileStub>();
+            services.AddScoped<IWeightProvider, WeightStub>();
+        }));
+        using var tokenClient = factory.UserClient(Guid.NewGuid());
+        using var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = tokenClient.DefaultRequestHeaders.Authorization;
+
+        var response = await client.PutAsJsonAsync("/targets/me", new UpdateTargetRequest(2000, 125, 250, 55));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content.ReadFromJsonAsync<TargetResponse>())!;
+        Assert.Equal(1648.75m, result.Bmr);
+        Assert.Equal(2555.5625m, result.Tdee);
+        Assert.Equal(2000m, result.TargetCalories);
+    }
+
+    [Fact]
+    public async Task ManualSave_WithoutWeight_StillSavesTargetWithoutSnapshot()
+    {
+        using var host = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.AddScoped<IProfileProvider, ProfileStub>();
+            services.AddScoped<IWeightProvider, MissingWeight>();
+        }));
+        using var tokenClient = factory.UserClient(Guid.NewGuid());
+        using var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = tokenClient.DefaultRequestHeaders.Authorization;
+
+        var response = await client.PutAsJsonAsync("/targets/me", new UpdateTargetRequest(2000, 125, 250, 55));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content.ReadFromJsonAsync<TargetResponse>())!;
+        Assert.Null(result.Bmr);
+        Assert.Null(result.Tdee);
+        Assert.Equal(2000m, result.TargetCalories);
+    }
+
     private sealed class RecommendationStub : IMealRecommendationProvider
     {
         public MealRecommendationInput? Input { get; private set; }

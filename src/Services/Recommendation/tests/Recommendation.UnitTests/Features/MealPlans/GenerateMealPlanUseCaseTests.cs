@@ -70,30 +70,27 @@ public sealed class GenerateMealPlanUseCaseTests
     }
 
     [Fact]
-    public async Task FallsBackWhenProviderAbstains()
+    public async Task ThrowsWhenProviderAbstains()
     {
         var useCase = CreateUseCase(new StubChatModel(null), new StubKnowledgeStore());
 
-        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+        var error = await Assert.ThrowsAsync<AppException>(
+            () => useCase.ExecuteAsync(Request(), CancellationToken.None));
 
-        Assert.True(result.UsedFallback);
-        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
-        Assert.Equal(7, result.Days.Count);
-        Assert.All(result.Days, day => Assert.Single(day.Meals));
+        Assert.Equal(503, error.Status);
+        Assert.Equal("recommendation.plan_generation_failed", error.Code);
     }
 
     [Fact]
-    public async Task FallsBackWhenProviderThrowsTransportException()
+    public async Task ThrowsWhenProviderThrowsTransportException()
     {
         var useCase = CreateUseCase(new StubChatModel(throwOnCall: true), new StubKnowledgeStore());
 
-        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+        var error = await Assert.ThrowsAsync<AppException>(
+            () => useCase.ExecuteAsync(Request(), CancellationToken.None));
 
-        Assert.True(result.UsedFallback);
-        Assert.Equal("provider_unavailable", result.UsedFallbackReason);
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
-        Assert.Equal(7, result.Days.Count);
+        Assert.Equal(503, error.Status);
+        Assert.Equal("recommendation.plan_generation_failed", error.Code);
     }
 
     [Fact]
@@ -186,7 +183,7 @@ public sealed class GenerateMealPlanUseCaseTests
     }
 
     [Fact]
-    public async Task FallsBackWithTargetNotMetWhenCandidatesAreInsufficient()
+    public async Task ThrowsWhenCandidatesCannotSatisfyBudget()
     {
         var useCase = CreateUseCase(new StubChatModel(SelectionFor(1)), new StubKnowledgeStore());
         var request = Request() with
@@ -194,11 +191,11 @@ public sealed class GenerateMealPlanUseCaseTests
             CandidateFoods = [Food("f-tiny", calories: 10, protein: 1, carbs: 1, fat: 1)],
         };
 
-        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+        var error = await Assert.ThrowsAsync<AppException>(
+            () => useCase.ExecuteAsync(request, CancellationToken.None));
 
-        Assert.True(result.UsedFallback);
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.AiFallbackUsed);
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.TargetNotMet);
+        Assert.Equal(503, error.Status);
+        Assert.Equal("recommendation.plan_generation_failed", error.Code);
     }
 
     [Fact]
@@ -223,19 +220,15 @@ public sealed class GenerateMealPlanUseCaseTests
     }
 
     [Fact]
-    public async Task FallsBackOnlyForDaysWithoutAiSelection()
+    public async Task ThrowsWhenLaterDayHasNoAiSelection()
     {
         var useCase = CreateUseCase(new FirstCallChatModel(SelectionFor(7)), new StubKnowledgeStore());
 
-        var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
+        var error = await Assert.ThrowsAsync<AppException>(
+            () => useCase.ExecuteAsync(Request(), CancellationToken.None));
 
-        Assert.True(result.UsedFallback);
-        var dayFallbacks = result.Warnings
-            .Where(warning => warning.Code == PlanWarningCodes.AiFallbackUsed)
-            .ToList();
-        Assert.Equal(6, dayFallbacks.Count);
-        Assert.All(dayFallbacks, warning => Assert.False(string.IsNullOrWhiteSpace(warning.Scope)));
-        Assert.Equal(7, result.Days.Count);
+        Assert.Equal(503, error.Status);
+        Assert.Equal("recommendation.plan_generation_failed", error.Code);
     }
 
     private static GenerateMealPlanUseCase CreateUseCase(IChatModel chatModel, IKnowledgeStore knowledgeStore) =>
@@ -246,7 +239,6 @@ public sealed class GenerateMealPlanUseCaseTests
             new MealPlanPromptBuilder(new PlanPromptFormatter()),
             new MealPlanSelectionParser(new CitationResolver(), new PlanRationaleBuilder(new SafetyGuard())),
             new MealPlanValidator(new PlanAllergenFilter()),
-            new MealPlanFallbackSelector(new PlanRationaleBuilder(new SafetyGuard())),
             new MealPlanSuggestionBuilder(new SafetyGuard()),
             knowledgeStore,
             chatModel,
@@ -322,7 +314,7 @@ public sealed class GenerateMealPlanUseCaseTests
                     new JsonObject
                     {
                         ["meal_type"] = "LUNCH",
-                        ["food_indices"] = new JsonArray(0),
+                        ["food_indices"] = new JsonArray(0, 1, 2),
                         ["citations"] = new JsonArray(),
                     },
                 },

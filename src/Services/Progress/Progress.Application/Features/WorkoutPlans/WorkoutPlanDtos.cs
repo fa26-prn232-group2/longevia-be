@@ -14,7 +14,9 @@ public sealed record WorkoutWarningResponse(string Code, string Message, string 
 public sealed record WorkoutPlanResponse(Guid Id, string WeekStartDate, int DaysRequested,
     int SessionsScheduled, int MinutesPerSession, bool UsedFallback, string UsedFallbackReason,
     string Disclaimer, IReadOnlyList<WorkoutWarningResponse> Warnings,
-    IReadOnlyList<WorkoutPlanDayResponse> Days, DateTimeOffset GeneratedAt);
+    IReadOnlyList<WorkoutPlanDayResponse> Days, DateTimeOffset GeneratedAt,
+    IReadOnlyList<string> ActivityPreference, IReadOnlyList<string> EquipmentAvailable,
+    IReadOnlyList<string> Limitations);
 
 public sealed record GenerateWorkoutPlanRequest(string WeekStartDate, string Goal, int Days = 7,
     int SessionsPerWeek = 3, int MinutesPerSession = 30, IReadOnlyList<string>? ActivityPreference = null,
@@ -33,5 +35,6 @@ internal static class WorkoutPlanMapper
             value.Warnings.Select(x => new WorkoutWarningResponse(x.Code, x.Message, x.Scope)).ToArray(),
             value.Days.Select(day => new WorkoutPlanDayResponse(day.Date, day.RestDay, day.Activity,
                 day.ActivityLabel, day.DurationMinutes, day.Intensity, day.EquipmentUsed.ToArray(),
-                day.Rationale, day.Citations.Select(Citation).ToArray())).ToArray(), generatedAt);
+                day.Rationale, day.Citations.Select(Citation).ToArray())).ToArray(), generatedAt,
+            [], [], []);
 }

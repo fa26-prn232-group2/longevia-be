@@ -20,7 +20,8 @@ public sealed class WorkoutPlanRepository(ProgressDbContext db) : IWorkoutPlanRe
             db.WorkoutPlans.Add(plan);
             return plan;
         }
-        existing.Replace(plan.PlanJson, plan.GeneratedAt);
+        existing.Replace(plan.Days, plan.SessionsPerWeek, plan.MinutesPerSession, plan.Goal,
+            plan.PlanJson, plan.GeneratedAt);
         return existing;
     }
 }

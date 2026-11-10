@@ -24,8 +24,10 @@ khai là /api/diet. Schema thuộc diet_db và được tạo bởi EF Code Firs
 ## API và phụ thuộc
 
 Tám operation theo [API §3](../api/api-spec.md).
-Target nhập tay có bmr/tdee null; thiếu target trả 404 diet.target_not_found.
-BMR/TDEE và AI sử dụng Identity.GetUserProfile (ADR 004) cùng Progress.GetLatestWeight.
+Target nhập tay tự đính kèm bmr/tdee khi có hồ sơ + cân nặng; thiếu dữ liệu thì vẫn lưu
+và `bmr/tdee` null. Thiếu target trả 404 diet.target_not_found. Endpoint calculate giữ
+cho tương thích client cũ. BMR/TDEE và AI sử dụng Identity.GetUserProfile (ADR 004)
+cùng Progress.GetLatestWeight.
 Không có lời gọi DB hoặc source nội bộ của Identity/Progress/Recommendation.
 Diet cung cấp MealLoggedEvent v1 qua EF bus outbox trong cùng transaction meal.
 Contract ở src/Shared/Events/MealLoggedEvent.cs, topic exchange longevia.events,

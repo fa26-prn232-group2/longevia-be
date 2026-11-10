@@ -26,6 +26,12 @@ public static class RecommendationErrors
         AppException.ServiceUnavailable("Dịch vụ AI tạm thời không khả dụng.")
             .WithCode("recommendation.provider_unavailable");
 
+    /// <summary>AI không tạo được kế hoạch hợp lệ sau khi đã thử lại; không dùng fallback.</summary>
+    public static AppException PlanGenerationFailed(string? detail) =>
+        AppException.ServiceUnavailable(
+                "Chưa tạo được kế hoạch từ AI. Bạn thử lại sau ít phút nhé.")
+            .WithCode("recommendation.plan_generation_failed");
+
     /// <summary>Câu hỏi rỗng hoặc vượt giới hạn độ dài.</summary>
     public static AppException InvalidQuestion() =>
         AppException.BadRequest("Câu hỏi không hợp lệ.")

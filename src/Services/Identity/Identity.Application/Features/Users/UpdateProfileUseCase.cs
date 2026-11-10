@@ -41,6 +41,7 @@ public sealed class UpdateProfileUseCase(
                 request.ActivityLevel,
                 request.DietaryPreference,
                 request.Allergies,
+                request.HealthLimitations,
                 now);
 
             user.SetProfile(newProfile);
@@ -55,6 +56,7 @@ public sealed class UpdateProfileUseCase(
                 request.ActivityLevel,
                 request.DietaryPreference,
                 request.Allergies,
+                request.HealthLimitations,
                 now);
         }
 

@@ -49,7 +49,7 @@ public sealed class GenerateWorkoutPlanUseCase(
             warnings.Add(new PlanWarning
             {
                 Code = PlanWarningCodes.NoLimitationsAssumed,
-                Message = "Caller chưa khai giới hạn sức khỏe nên chỉ dùng hướng dẫn chung của chương 5, không giả định khỏe mạnh hay chấn thương.",
+                Message = "Bạn chưa khai giới hạn sức khỏe nên lịch tập chỉ dùng hướng dẫn chung, không giả định bạn khỏe mạnh hay đang chấn thương. Cập nhật ở Hồ sơ cá nhân để lịch tập sát hơn.",
             });
         }
 

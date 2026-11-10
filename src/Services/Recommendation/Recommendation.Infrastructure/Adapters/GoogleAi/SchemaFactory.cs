@@ -156,8 +156,10 @@ public static class SchemaFactory
                                     ["food_indices"] = new JsonObject
                                     {
                                         ["type"] = "array",
-                                        ["description"] = "Chỉ số món trong danh mục ứng viên (bắt đầu từ 0), tối đa 5 và không trùng.",
+                                        ["description"] = "Chỉ số món trong danh mục ứng viên (bắt đầu từ 0); 3–5 món khác nhau mỗi bữa.",
                                         ["items"] = new JsonObject { ["type"] = "integer" },
+                                        ["minItems"] = 3,
+                                        ["maxItems"] = 5,
                                     },
                                     ["citations"] = CitationArraySchema(),
                                 },

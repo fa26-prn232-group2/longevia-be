@@ -14,5 +14,6 @@ public static class ProfileMapper
             profile.ActivityLevel,
             profile.DietaryPreference,
             profile.Allergies,
+            profile.HealthLimitations,
             profile.UpdatedAt);
 }

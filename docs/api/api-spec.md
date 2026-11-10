@@ -210,7 +210,8 @@
     "heightCm": 175.5,
     "activityLevel": "ModeratelyActive",
     "dietaryPreference": "Mediterranean",
-    "allergies": ["Peanuts", "Shellfish"]
+    "allergies": ["Peanuts", "Shellfish"],
+    "healthLimitations": ["joint_pain"]
   }
   ```
 - **Validation**:
@@ -218,7 +219,8 @@
   - `heightCm`: Số thực từ 50.00 đến 250.00 cm, tối đa 2 chữ số thập phân.
   - `activityLevel`: Một trong các giá trị `["Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive"]`.
   - `dietaryPreference`: Một trong `["None", "Keto", "Vegan", "Mediterranean", "LowCarb"]`.
-- **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies` và `updatedAt`; `heightCm` là số thực.
+  - `healthLimitations`: tối đa 8 mục, hiện chỉ nhận `"joint_pain"` (đau/tổn thương khớp).
+- **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies`, `healthLimitations` và `updatedAt`; `heightCm` là số thực.
 
 ---
 
@@ -321,7 +323,10 @@
   ```
 - **Validation**:
   - Tổng năng lượng từ macro `(protein*4 + carbs*4 + fat*9)` không được lệch quá 5% so với `targetCalories`.
-- **Response `200 OK`**: Trả về mục tiêu dinh dưỡng mới.
+- **Hành vi**: nếu lấy được hồ sơ + cân nặng gần nhất, BE tự tính và lưu kèm snapshot
+  BMR/TDEE; thiếu dữ liệu hoặc provider lỗi tạm thời thì vẫn lưu mục tiêu và giữ snapshot
+  cũ nếu có. Không chặn lưu chỉ vì thiếu BMR/TDEE.
+- **Response `200 OK`**: Trả về mục tiêu dinh dưỡng mới; `bmr`/`tdee` có thể `null`.
 
 ---
 
@@ -409,10 +414,12 @@
 - Lấy ngày sinh/giới tính/chiều cao/activity từ Identity.GetUserProfile và cân
   nặng từ Progress.GetLatestWeight. Mifflin-St Jeor: 10W+6.25H−5A+5 (nam),
   10W+6.25H−5A−161 (nữ). Hệ số 1.2/1.375/1.55/1.725 tương ứng bốn activity
-  level canonical. Tuổi đủ năm theo ngày UTC; profile chưa hỗ trợ trả 422.
+  level canonical. Tuổi đủ năm theo ngày nghiệp vụ (ADR006, mặc định giờ Việt Nam);
+  profile chưa hỗ trợ trả 422.
 - Response `TargetResponse` giống GET/PUT, `bmr`/`tdee` có giá trị. Lưu input,
   provenance cân nặng và kết quả cùng target atomically; giữ ID khi tính lại.
-  Profile/cân nặng thay đổi không sửa target cũ. PUT nhập tay clear snapshot.
+  Profile/cân nặng thay đổi không sửa target cũ. Từ đợt này `PUT /targets/me` cũng
+  tự đính kèm snapshot khi có dữ liệu, nên endpoint này chỉ còn dùng cho client cũ.
   Calo/macro do user chọn; không tự áp dụng deficit/surplus hoặc tỷ lệ macro.
 - Lỗi 422 `diet.profile_not_found`, `diet.profile_not_supported`, `diet.weight_not_found`;
   503 `diet.profile_unavailable`, `diet.weight_unavailable`;
@@ -536,6 +543,27 @@
   }
   ```
 
+### 4.5b `GET /api/progress/water/history` — Lịch sử uống nước theo ngày
+- **Xác thực**: Bearer JWT
+- **Query**: `days` (1..90, mặc định 30); ngày tính theo múi giờ nghiệp vụ (ADR006).
+- **Response `200 OK`**:
+  ```json
+  {
+    "days": 7,
+    "targetMl": 2500,
+    "items": [
+      {
+        "date": "2026-11-09",
+        "consumedMl": 2500,
+        "targetMl": 2500,
+        "percentComplete": 100.0,
+        "goalReached": true
+      }
+    ]
+  }
+  ```
+- `days` ngoài khoảng trả 400 `progress.invalid_days`.
+
 ---
 
 ### 4.6 `GET /api/progress/dashboard/summary` — Tổng quan thể trạng & Streaks
@@ -559,7 +587,7 @@
 ## 5. Recommendation Service gRPC API (Dev 4 phụ trách)
 > **Giao thức**: gRPC Protobuf | **Cổng nội bộ**: `:50051` | **Mạng**: `internal_net` (Không expose ra Nginx)
 > **Tri thức**: RAG trên corpus *Chế độ ăn trường thọ* — mọi khuyến nghị phải có `citations[]` (chương + trang sách bản in + trích đoạn) hoặc phải `abstained`.
-> **Kế hoạch tuần**: `GenerateMealPlan`/`GenerateWorkoutPlan` không có trường `abstained`; khi corpus rỗng hoặc provider lỗi, service trả kế hoạch degraded/tất định kèm `warnings[]` và `used_fallback`, chỉ rõ nguồn không kiểm chứng được.
+> **Kế hoạch tuần**: `GenerateWorkoutPlan` vẫn có thể trả kế hoạch degraded kèm `warnings[]`/`used_fallback`. `GenerateMealPlan` **không dùng fallback**: hết retry mà AI vẫn không hợp lệ/provider lỗi thì trả `recommendation.plan_generation_failed` (503) để caller báo thử lại.
 
 File hợp đồng: [`contracts/recommendation/v1/recommendation.proto`](../../contracts/recommendation/v1/recommendation.proto)
 
@@ -1045,11 +1073,15 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `POST /api/diet/knowledge/ask` — `{ question, chapterFilter? }`.
 - `GET /api/diet/knowledge/search?query=&chapterFilter=&topK=` — `topK` 1..20.
 - `PUT/DELETE /api/diet/foods/{id}` — sửa/xoá mềm custom food của owner.
-- `POST /api/progress/workout-plans` — `{ weekStartDate, goal, days, sessionsPerWeek, minutesPerSession }`.
-- `GET /api/progress/workout-plans/{weekStartDate}` — đọc kế hoạch tập.
+- `POST /api/progress/workout-plans` — `{ weekStartDate, goal, days, sessionsPerWeek, minutesPerSession, activityPreference?, equipmentAvailable?, limitations? }`.
+  `limitations = null` dùng giới hạn trong hồ sơ; list rỗng nghĩa là người dùng chủ động bỏ hết.
+  Response echo lại các input đã dùng để FE hiển thị khi mở lại.
+- `GET /api/progress/workout-plans/{weekStartDate}` — đọc kế hoạch tập đã lưu.
 - `GET /api/progress/longevity-habits?days=7` — điểm thói quen trường thọ.
 - `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.
 - `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
+- `GET /api/progress/sleep/history?page=1&pageSize=10` — lịch sử giấc ngủ, mới nhất trước,
+  `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }` với cùng shape `SleepResponse`.
 - `GET /api/progress/fasting/current` — **204 No Content** khi chưa có phiên (thay cho 200 body rỗng trước đây).
 - `GET /api/progress/fasting/history?page=1&pageSize=20` — lịch sử phiên đã kết thúc,
   mới nhất trước; `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }`.

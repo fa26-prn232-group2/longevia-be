@@ -49,8 +49,13 @@ public sealed class GrpcExceptionInterceptor(ILogger<GrpcExceptionInterceptor> l
         var trailers = new Metadata
         {
             { CodeMetadataKey, ex.Code },
-            { TitleMetadataKey, ex.Title },
         };
+
+        // gRPC metadata chỉ nhận ASCII; title tiếng Việt phải bỏ để tránh HTTP 500.
+        if (ex.Title.All(char.IsAscii))
+        {
+            trailers.Add(TitleMetadataKey, ex.Title);
+        }
 
         if (ex.Errors is { Count: > 0 })
         {

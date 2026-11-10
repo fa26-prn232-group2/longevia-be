@@ -29,6 +29,11 @@ public static class WaterEndpoints
         })
         .WithName("GetWaterToday")
         .WithSummary("Lấy tổng lượng nước uống hôm nay");
+
+        group.MapGet("/history", async (int? days, WaterUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetHistoryAsync(days ?? 30, ct)))
+            .WithName("GetWaterHistory")
+            .WithSummary("Lịch sử uống nước theo ngày (1..90 ngày, cũ → mới)");
     }
 }
 
@@ -54,5 +59,11 @@ public static class SleepEndpoints
         })
         .WithName("DeleteSleepLog")
         .WithSummary("Xoá bản ghi giấc ngủ của bạn");
+
+        group.MapGet("/history", async (int? page, int? pageSize, SleepUseCases useCases,
+            CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetHistoryAsync(page ?? 1, pageSize ?? 10, ct)))
+            .WithName("GetSleepHistory")
+            .WithSummary("Lịch sử giấc ngủ (phân trang, mới nhất trước)");
     }
 }

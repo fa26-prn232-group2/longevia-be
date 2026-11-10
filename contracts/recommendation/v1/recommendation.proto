@@ -109,6 +109,7 @@ message CandidateFood {
   double fat_grams = 8;
   double fiber_grams = 9;
   repeated string allergens = 10;      // đã chuẩn hoá lowercase
+  string category = 11;                // Meat | Seafood | Vegetables | Grains | Legumes | Eggs | Dairy | Fruits | Nuts | Beverage
 }
 
 message MealRecommendationRequest {

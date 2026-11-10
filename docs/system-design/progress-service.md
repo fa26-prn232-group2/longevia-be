@@ -90,6 +90,12 @@ Diet BusinessDate tiêu thụ nguyên văn, không suy từ CreatedAt/OccurredOn
 Xem [ADR006](../decisions/006-business-timezone-vietnam.md). UI tự chọn current meal
 date gửi ngày địa phương.
 
+Lịch sử đọc: `GET /water/history?days` trả tổng theo ngày (1..90, cũ → mới);
+`GET /sleep/history?page&pageSize` trả bản ghi mới nhất trước. Workout plan nhận
+`activityPreference/equipmentAvailable/limitations` (null = lấy từ hồ sơ Identity,
+list rỗng = người dùng bỏ hết), echo lại input trong response và lưu cùng `plan_json`;
+upsert cập nhật cả metadata ngày/buổi/phút/goal thay vì chỉ JSON.
+
 Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,
 reject conflicting duplicate và repair partial pair chỉ từ valid replay. Rabbit
 credentials phải explicit; retry hữu hạn đưa consumer fault vào MassTransit _error,

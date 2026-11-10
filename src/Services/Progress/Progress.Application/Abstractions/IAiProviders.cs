@@ -16,7 +16,8 @@ public interface IUserContactProvider
 public sealed record UserContactResult(string Email, string FullName, string Status, bool ReceiveWeeklyDigest);
 
 public sealed record UserProfileResult(int Age, bool IsMale, decimal HeightCm, string ActivityLevel,
-    string DietaryPreference, IReadOnlyList<string> Allergies);
+    string DietaryPreference, IReadOnlyList<string> Allergies,
+    IReadOnlyList<string> HealthLimitations);
 
 public interface IWorkoutPlanProvider
 {

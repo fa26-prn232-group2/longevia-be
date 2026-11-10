@@ -31,17 +31,28 @@ public sealed class WorkoutPlanUseCases(IWorkoutPlanRepository plans, IWorkoutPl
         var weight = await metrics.GetLatestAsync(userId, ct)
             ?? throw AppException.Unprocessable("Bạn chưa ghi nhận cân nặng.", "progress.weight_not_found");
         var now = time.GetUtcNow();
+
+        // Chưa gửi limitations -> dùng hồ sơ; gửi list rỗng -> người dùng chủ động bỏ hết.
+        var limitations = request.Limitations ?? profile.HealthLimitations;
+        var activityPreference = request.ActivityPreference ?? [];
+        var equipmentAvailable = request.EquipmentAvailable ?? [];
+
         var generated = await provider.GenerateAsync(new WorkoutPlanInput(userId, profile, request.Goal,
             weight.WeightKg, request.WeekStartDate, request.Days, request.SessionsPerWeek,
-            request.MinutesPerSession, request.ActivityPreference ?? [], request.EquipmentAvailable ?? [],
-            request.Limitations ?? []), now.AddSeconds(90), ct);
+            request.MinutesPerSession, activityPreference, equipmentAvailable,
+            limitations), now.AddSeconds(90), ct);
         if (string.IsNullOrWhiteSpace(generated.Disclaimer?.Text))
             throw new AppException("Kế hoạch tập thiếu disclaimer an toàn.", 502,
                 "Dịch vụ gợi ý trả dữ liệu không hợp lệ.", "progress.ai_integration_failed");
 
         var draft = WorkoutPlan.Create(userId, weekStart, request.Days, request.SessionsPerWeek,
             request.MinutesPerSession, request.Goal, "{}", now);
-        var response = WorkoutPlanMapper.From(draft.Id, now, generated);
+        var response = WorkoutPlanMapper.From(draft.Id, now, generated) with
+        {
+            ActivityPreference = activityPreference,
+            EquipmentAvailable = equipmentAvailable,
+            Limitations = limitations,
+        };
         var json = JsonSerializer.Serialize(response, JsonOptions);
         var saved = await plans.UpsertAsync(WorkoutPlan.Create(userId, weekStart, request.Days,
             request.SessionsPerWeek, request.MinutesPerSession, request.Goal, json, now), ct);

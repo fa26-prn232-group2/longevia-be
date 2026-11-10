@@ -98,6 +98,7 @@ internal static class MealPlanMapper
         FatGrams = food.FatGrams,
         FiberGrams = food.FiberGrams,
         Allergens = food.Allergens.ToList(),
+        Category = food.Category,
     };
 
     private static Contracts.MealPlanDay ToProtoDay(MealPlanDay day)

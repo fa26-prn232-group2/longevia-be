@@ -12,6 +12,7 @@ public sealed class UserProfile
     public string ActivityLevel { get; private set; } = Constants.ActivityLevel.Sedentary;
     public string DietaryPreference { get; private set; } = Constants.DietaryPreference.None;
     public List<string> Allergies { get; private set; } = [];
+    public List<string> HealthLimitations { get; private set; } = [];
     public bool ReceiveWeeklyDigest { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -28,6 +29,7 @@ public sealed class UserProfile
         string activityLevel,
         string dietaryPreference,
         IEnumerable<string>? allergies,
+        IEnumerable<string>? healthLimitations,
         DateTimeOffset now)
     {
         Validate(heightCm, biologicalSex, activityLevel, dietaryPreference);
@@ -42,6 +44,7 @@ public sealed class UserProfile
             ActivityLevel = activityLevel,
             DietaryPreference = dietaryPreference,
             Allergies = allergies?.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).Distinct().ToList() ?? [],
+            HealthLimitations = NormalizeLimitations(healthLimitations),
             UpdatedAt = now,
         };
     }
@@ -59,6 +62,7 @@ public sealed class UserProfile
         string activityLevel,
         string dietaryPreference,
         IEnumerable<string>? allergies,
+        IEnumerable<string>? healthLimitations,
         DateTimeOffset now)
     {
         Validate(heightCm, biologicalSex, activityLevel, dietaryPreference);
@@ -69,7 +73,26 @@ public sealed class UserProfile
         ActivityLevel = activityLevel;
         DietaryPreference = dietaryPreference;
         Allergies = allergies?.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).Distinct().ToList() ?? [];
+        HealthLimitations = NormalizeLimitations(healthLimitations);
         UpdatedAt = now;
+    }
+
+    /// <summary>Chuẩn hoá danh sách giới hạn sức khỏe theo allowlist canonical.</summary>
+    private static List<string> NormalizeLimitations(IEnumerable<string>? limitations)
+    {
+        var normalized = limitations?
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList() ?? [];
+
+        if (normalized.Count > Constants.HealthLimitation.MaxItems
+            || normalized.Any(item => !Constants.HealthLimitation.All.Contains(item)))
+        {
+            throw new ArgumentException("Giới hạn sức khỏe không hợp lệ.", nameof(limitations));
+        }
+
+        return normalized;
     }
 
     private static void Validate(

@@ -21,7 +21,8 @@ public sealed class UserProfileProvider(IdentityService.IdentityServiceClient cl
             var age = today.Year - birthDate.Year - (today < birthDate.AddYears(today.Year - birthDate.Year) ? 1 : 0);
             var male = string.Equals(reply.BiologicalSex, "Male", StringComparison.OrdinalIgnoreCase);
             return new(age, male, Math.Round(reply.HeightCmX100 / 100m, 2), reply.ActivityLevel,
-                reply.DietaryPreference ?? "None", reply.Allergies.ToArray());
+                reply.DietaryPreference ?? "None", reply.Allergies.ToArray(),
+                reply.HealthLimitations.ToArray());
         }
         catch (RpcException ex)
         {

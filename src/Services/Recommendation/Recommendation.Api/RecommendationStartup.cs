@@ -333,7 +333,6 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<MealPlanPromptBuilder>();
         builder.Services.AddSingleton<MealPlanSelectionParser>();
         builder.Services.AddSingleton<MealPlanValidator>();
-        builder.Services.AddSingleton<MealPlanFallbackSelector>();
         builder.Services.AddSingleton<MealPlanSuggestionBuilder>();
         builder.Services.AddScoped<GenerateMealPlanUseCase>();
 

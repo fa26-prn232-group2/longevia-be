@@ -48,6 +48,7 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
             DietaryPreference = profile.DietaryPreference,
         };
         response.Allergies.AddRange(profile.Allergies);
+        response.HealthLimitations.AddRange(profile.HealthLimitations);
         return response;
     }
 

@@ -57,6 +57,7 @@ public sealed class MealPlanProvider(RecommendationService.RecommendationService
                 CarbsGrams = (double)food.Nutrition.CarbsGrams,
                 FatGrams = (double)food.Nutrition.FatGrams,
                 FiberGrams = (double)food.Nutrition.FiberGrams,
+                Category = food.Category,
             };
             candidate.Allergens.AddRange(food.Allergens ?? []);
             request.CandidateFoods.Add(candidate);

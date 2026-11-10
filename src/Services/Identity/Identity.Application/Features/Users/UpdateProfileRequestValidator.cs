@@ -31,6 +31,12 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
             .NotEmpty().WithMessage("Chế độ ăn uống không được để trống.")
             .Must(pref => DietaryPreference.All.Contains(pref))
             .WithMessage("Chế độ ăn uống không hợp lệ.");
+
+        RuleFor(x => x.HealthLimitations)
+            .Must(items => items is null || items.Count <= HealthLimitation.MaxItems)
+            .WithMessage($"Tối đa {HealthLimitation.MaxItems} giới hạn sức khỏe.")
+            .Must(items => items is null || items.All(item => HealthLimitation.All.Contains(item)))
+            .WithMessage("Giới hạn sức khỏe không hợp lệ.");
     }
 
     private static bool BeAtLeast13YearsOld(DateOnly birthDate)

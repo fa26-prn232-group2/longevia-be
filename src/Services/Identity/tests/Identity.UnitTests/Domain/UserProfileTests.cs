@@ -11,7 +11,7 @@ public sealed class UserProfileTests
         var profile = UserProfile.Create(
             Guid.NewGuid(), Guid.NewGuid(), new DateOnly(1995, 5, 20), BiologicalSex.Female,
             175.55m, ActivityLevel.LightlyActive, DietaryPreference.Vegan,
-            [" Seafood ", "Seafood", " ", "Peanuts"], DateTimeOffset.UtcNow);
+            [" Seafood ", "Seafood", " ", "Peanuts"], [], DateTimeOffset.UtcNow);
 
         Assert.Equal(175.55m, profile.HeightCm);
         Assert.Equal(["Seafood", "Peanuts"], profile.Allergies);
@@ -26,7 +26,7 @@ public sealed class UserProfileTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => UserProfile.Create(
             Guid.NewGuid(), Guid.NewGuid(), new DateOnly(1995, 5, 20), BiologicalSex.Male,
-            height, ActivityLevel.Sedentary, DietaryPreference.None, [], DateTimeOffset.UtcNow));
+            height, ActivityLevel.Sedentary, DietaryPreference.None, [], [], DateTimeOffset.UtcNow));
     }
 
     [Fact]
@@ -34,6 +34,6 @@ public sealed class UserProfileTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => UserProfile.Create(
             Guid.NewGuid(), Guid.NewGuid(), new DateOnly(1995, 5, 20), BiologicalSex.Male,
-            175.555m, ActivityLevel.Sedentary, DietaryPreference.None, [], DateTimeOffset.UtcNow));
+            175.555m, ActivityLevel.Sedentary, DietaryPreference.None, [], [], DateTimeOffset.UtcNow));
     }
 }

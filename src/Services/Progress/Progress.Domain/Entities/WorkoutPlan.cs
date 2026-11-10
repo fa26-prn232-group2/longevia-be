@@ -40,9 +40,15 @@ public sealed class WorkoutPlan
         };
     }
 
-    public void Replace(string planJson, DateTimeOffset generatedAt)
+    public void Replace(int days, int sessionsPerWeek, int minutesPerSession, string goal,
+        string planJson, DateTimeOffset generatedAt)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(goal);
         ArgumentException.ThrowIfNullOrWhiteSpace(planJson);
+        Days = days;
+        SessionsPerWeek = sessionsPerWeek;
+        MinutesPerSession = minutesPerSession;
+        Goal = goal;
         PlanJson = planJson;
         GeneratedAt = generatedAt;
     }

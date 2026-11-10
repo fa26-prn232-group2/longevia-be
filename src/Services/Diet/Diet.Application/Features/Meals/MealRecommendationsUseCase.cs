@@ -3,13 +3,16 @@ using Diet.Application.Common;
 using Diet.Domain;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Errors;
+using Microsoft.Extensions.Options;
 
 namespace Diet.Application.Features.Meals;
 
 public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeightProvider weights,
     IMealRecommendationProvider recommendations, IFoodRepository foods, DailySummaryUseCase summaries,
-    ICurrentUser user, TimeProvider time)
+    ICurrentUser user, TimeProvider time, IOptions<RecommendationBudgetOptions> budgetOptions)
 {
+    private readonly int _deadlineMilliseconds = budgetOptions.Value.DeadlineMilliseconds;
+
     public async Task<MealRecommendationsResponse> ExecuteAsync(string mealType, string goal, CancellationToken ct)
     {
         var meal = Array.IndexOf(MealTypes.All.ToArray(), mealType) + 1;
@@ -17,8 +20,8 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
         if (meal == 0 || goalValue == 0)
             throw AppException.BadRequest("mealType hoặc goal không hợp lệ.", "diet.invalid_recommendation_query");
         using var budget = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        budget.CancelAfter(TimeSpan.FromMilliseconds(2800));
-        var deadline = time.GetUtcNow().AddMilliseconds(2800);
+        budget.CancelAfter(TimeSpan.FromMilliseconds(_deadlineMilliseconds));
+        var deadline = time.GetUtcNow().AddMilliseconds(_deadlineMilliseconds);
         try { return await ResolveAsync(meal, goalValue, deadline, budget.Token); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -30,7 +33,8 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
     {
         var userId = user.RequiredId();
         var now = time.GetUtcNow();
-        var summary = await summaries.ExecuteAsync(DateOnly.FromDateTime(now.UtcDateTime), ct);
+        var summary = await summaries.ExecuteAsync(
+            Longevia.Shared.Time.BusinessTime.ToDate(now), ct);
         var profile = await profiles.GetAsync(userId, ct);
         if (profile.DietaryPreference is null || profile.Allergies is null)
             throw AppException.ServiceUnavailable("Hồ sơ chưa cung cấp thông tin chế độ ăn và dị ứng.", "diet.profile_incomplete");
@@ -40,7 +44,7 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
         if (candidates.Count == 0 && summary.ConsumedCalories < summary.TargetCalories * 1.05m)
             throw AppException.Unprocessable("Chưa có món đủ thông tin dị ứng để gợi ý.", "diet.no_safe_candidate");
         var result = await recommendations.GetAsync(new(userId, meal, goal,
-            new(profile.AgeOn(DateOnly.FromDateTime(now.UtcDateTime)), profile.IsMale, profile.HeightCm,
+            new(profile.AgeOn(Longevia.Shared.Time.BusinessTime.ToDate(now)), profile.IsMale, profile.HeightCm,
                 weight.WeightKg, profile.ActivityLevel, profile.DietaryPreference, profile.Allergies),
             checked((int)decimal.Round(summary.ConsumedCalories, 0, MidpointRounding.AwayFromZero)),
             checked((int)decimal.Round(summary.TargetCalories, 0, MidpointRounding.AwayFromZero)),

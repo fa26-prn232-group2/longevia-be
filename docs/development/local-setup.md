@@ -98,12 +98,18 @@ make check                      # close-out gate
 
 ## 6. Cổng & điểm truy cập
 
+> Prometheus/Grafana là **opt-in** (profile `monitoring`). `make docker-up` không bật;
+> chạy `make docker-up-monitoring` khi cần dashboard/metrics.
+
 | Thứ | Địa chỉ |
 | --- | --- |
 | Gateway (Nginx) | http://localhost:8080 |
 | Gateway health | http://localhost:8080/healthz |
 | RabbitMQ UI | http://localhost:15672 |
-| PostgreSQL | localhost:5432 |
+| PostgreSQL | localhost:5432 (host port theo `POSTGRES_PORT`) |
+| Prometheus | http://localhost:9090 (target `recommendation` scrape `recommendation:8080/metrics`) |
+| Grafana | http://localhost:3001 |
+| Mailpit | http://localhost:8025 |
 
 ## Xử lý sự cố
 

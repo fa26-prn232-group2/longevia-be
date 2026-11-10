@@ -139,6 +139,10 @@ services:
       dockerfile: src/Services/Diet/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      DIET__HTTP_PORT: 8080
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+      DIET__GRPC_PORT: 50051
+      SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       ConnectionStrings__Diet: Host=postgres;Port=5432;Database=${DIET_DB:-diet_db};Username=diet_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       # Map external env names to the property names consumed by Shared auth.
       Jwt__Issuer: ${JWT__ISSUER:-longevia}
@@ -151,6 +155,8 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Recommendation__DeadlineMilliseconds: ${DIET_RECOMMENDATION_DEADLINE_MS:-20000}
+      Recommendation__MealPlanDeadlineMilliseconds: ${DIET_MEAL_PLAN_DEADLINE_MS:-90000}
       Diet__ReplayMealActivitiesOnStart: ${DIET_REPLAY_MEAL_ACTIVITIES:-false}
     depends_on:
       postgres:
@@ -169,10 +175,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
+      SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       PROGRESS__HTTP_PORT: 8080
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
       PROGRESS__GRPC_PORT: 50051
       IdentityGrpc__Address: http://identity:50051
       IdentityGrpc__DeadlineMilliseconds: "2000"
+      RecommendationGrpc__Address: http://recommendation:50051
+      DietGrpc__Address: http://diet:50051
+      DIGEST__ENABLED: ${DIGEST_ENABLED:-true}
+      DIGEST__RUN_ON_START: ${DIGEST_RUN_ON_START:-false}
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: "5672"
       RabbitMQ__User: ${RABBITMQ_USER:?Set explicit RabbitMQ user for Progress}
@@ -192,6 +204,7 @@ services:
     networks:
       - edge
       - data_net
+      - internal_net
     healthcheck:
       test: ["CMD", "./Progress.Api", "--health-check", "http://127.0.0.1:8080/health"]
       interval: 10s
@@ -208,6 +221,7 @@ services:
     environment:
       IDENTITY__HTTP_PORT: ${IDENTITY__HTTP_PORT:-8080}
       IDENTITY__GRPC_PORT: ${IDENTITY__GRPC_PORT:-50051}
+      SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -243,6 +257,7 @@ services:
     # (ADR 001 section 2.1).
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
       ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:-change-me}
       GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:-}
       GOOGLE_AI__CHAT_MODEL: ${GOOGLE_AI__CHAT_MODEL:-gemini-3.5-flash-lite}
@@ -356,9 +371,10 @@ services:
   # every 10s; Grafana serves provisioned dashboards on host 3001 (3000 stays
   # reserved for the frontend). Both join `edge` only (plan.md section 7) and
   # are fully provisioned from mounted files - zero manual setup (SC-004).
-  # `infra-up` lists explicit services so these never leak into it; the full
-  # `docker-up` (up -d --build) picks them up automatically.
+  # `infra-up` lists explicit services so these never leak into it; `docker-up`
+  # also skips them. Start on demand with `make docker-up-monitoring`.
   prometheus:
+    profiles: ["monitoring"]
     image: prom/prometheus:v3.15.1
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -371,8 +387,10 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - edge
+      - internal_net
 
   grafana:
+    profiles: ["monitoring"]
     image: grafana/grafana:13.2.4
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"

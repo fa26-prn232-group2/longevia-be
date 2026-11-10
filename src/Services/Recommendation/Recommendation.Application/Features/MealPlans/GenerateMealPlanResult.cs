@@ -44,6 +44,9 @@ public sealed record GenerateMealPlanResult
 
     /// <summary><c>true</c> khi đã dùng phương án dự phòng xác định.</summary>
     public bool UsedFallback { get; init; }
+
+    /// <summary>Lý do fallback để client hiển thị đúng nguyên nhân; rỗng khi không fallback.</summary>
+    public string UsedFallbackReason { get; init; } = string.Empty;
 }
 
 /// <summary>Một ngày của kế hoạch ăn uống (data-model §4.1).</summary>

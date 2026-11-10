@@ -21,7 +21,7 @@ public sealed class UtcPolicyTests(ProgressFixture fixture)
     [Fact]
     public async Task UtcMidnight_WaterTodayChanges_WithoutLeakingPreviousDay()
     {
-        var clock = new MutableClock { Now = DateTimeOffset.Parse("2026-10-24T23:59:59Z") };
+        var clock = new MutableClock { Now = DateTimeOffset.Parse("2026-10-24T16:59:59Z") };
         await using var factory = new ProgressApiFactory(fixture, time: clock);
         using var client = factory.CreateClient();
         var user = Guid.NewGuid();
@@ -29,22 +29,22 @@ public sealed class UtcPolicyTests(ProgressFixture fixture)
         var first = await client.PostAsJsonAsync("/water/log", new { amountMl = 350 });
         first.EnsureSuccessStatusCode();
         Assert.Equal(new DateOnly(2026, 10, 24), (await first.Content.ReadFromJsonAsync<WaterSummaryResponse>(Json))!.Date);
-        clock.Now = DateTimeOffset.Parse("2026-10-25T00:00:00Z");
+        clock.Now = DateTimeOffset.Parse("2026-10-24T17:00:00Z");
         var today = await client.GetFromJsonAsync<WaterSummaryResponse>("/water/today", Json);
         Assert.Equal(new DateOnly(2026, 10, 25), today!.Date);
         Assert.Equal(0, today.ConsumedMl);
         var second = await client.PostAsJsonAsync("/water/log", new { amountMl = 650 });
         second.EnsureSuccessStatusCode();
         Assert.Equal(650, (await second.Content.ReadFromJsonAsync<WaterSummaryResponse>(Json))!.ConsumedMl);
-        // Vietnam 00:30 is still the previous UTC day, by deliberate MVP policy.
-        Assert.Equal(new DateOnly(2026, 10, 24), UtcCalendar.Day(DateTimeOffset.Parse("2026-10-25T00:30:00+07:00")));
+        // 00:30 giờ Việt Nam đã sang ngày mới theo ADR006.
+        Assert.Equal(new DateOnly(2026, 10, 25), UtcCalendar.Day(DateTimeOffset.Parse("2026-10-25T00:30:00+07:00")));
     }
 
     [Fact]
     public async Task UtcPolicy_SleepMetricHistoryMealReplayAndDashboard_PreserveCanonicalDays()
     {
-        var before = DateTimeOffset.Parse("2026-10-24T23:59:59Z");
-        var midnight = DateTimeOffset.Parse("2026-10-25T00:00:00Z");
+        var before = DateTimeOffset.Parse("2026-10-24T16:59:59Z");
+        var midnight = DateTimeOffset.Parse("2026-10-25T16:59:59Z");
         var user = Guid.NewGuid();
         var sleep = SleepLog.Create(user, before.AddHours(-8), before, "Good");
         var overnight = SleepLog.Create(user, midnight.AddHours(-8), midnight, "Good");
@@ -76,8 +76,8 @@ public sealed class UtcPolicyTests(ProgressFixture fixture)
         var summary = await client.GetFromJsonAsync<DashboardSummaryResponse>("/dashboard/summary", Json);
         Assert.Equal(2, summary!.CurrentStreakDays);
         Assert.Equal(2, summary.BestStreakDays);
-        Assert.Equal(DateTimeOffset.Parse("2026-10-19T00:00:00Z"), UtcCalendar.StartOfWeek(before));
-        Assert.Equal(DateTimeOffset.Parse("2026-10-26T00:00:00Z"), UtcCalendar.StartOfWeek(DateTimeOffset.Parse("2026-10-26T07:00:00+07:00")));
+        Assert.Equal(DateTimeOffset.Parse("2026-10-18T17:00:00Z"), UtcCalendar.StartOfWeek(before));
+        Assert.Equal(DateTimeOffset.Parse("2026-10-25T17:00:00Z"), UtcCalendar.StartOfWeek(DateTimeOffset.Parse("2026-10-26T07:00:00+07:00")));
     }
 
     private sealed class MutableClock : TimeProvider
@@ -87,9 +87,9 @@ public sealed class UtcPolicyTests(ProgressFixture fixture)
     }
 
     [Fact]
-    public async Task FastingWeek_MondayUtc_IncludesStartAndExcludesNextMonday()
+    public async Task FastingWeek_MondayBusinessTime_IncludesStartAndExcludesNextMonday()
     {
-        var monday = DateTimeOffset.Parse("2026-10-26T00:00:00Z");
+        var monday = DateTimeOffset.Parse("2026-10-25T17:00:00Z");
         var user = Guid.NewGuid();
         using var scope = fixture.Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();

@@ -75,8 +75,16 @@ public sealed class MetricUseCases(
             totalPages);
     }
 
-    private static BodyMetricResponse ToResponse(BodyMetricLog log) =>
-        new(
+    public async Task DeleteAsync(Guid id, CancellationToken ct)
+    {
+        var userId = currentUser.RequiredId();
+        if (!await metricRepo.DeleteAsync(id, userId, ct))
+            throw Longevia.Shared.Errors.AppException.NotFound("Không tìm thấy bản ghi chỉ số.",
+                "progress.metric_not_found");
+        await uow.SaveChangesAsync(ct);
+    }
+
+    private static BodyMetricResponse ToResponse(BodyMetricLog log) => new(
             log.Id,
             log.LoggedAt,
             log.WeightKg,

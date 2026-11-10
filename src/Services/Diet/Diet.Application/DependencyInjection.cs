@@ -1,5 +1,8 @@
 using Diet.Application.Features.Foods;
+using Diet.Application.Features.Knowledge;
+using Diet.Application.Features.MealPlans;
 using Diet.Application.Features.Meals;
+using Diet.Application.Features.Nutrition;
 using Diet.Application.Features.Targets;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +20,11 @@ public static class DependencyInjection
         services.AddScoped<MealUseCases>();
         services.AddScoped<DailySummaryUseCase>();
         services.AddScoped<MealRecommendationsUseCase>();
+        services.AddScoped<MealPlanUseCases>();
+        services.AddScoped<NutrientGapUseCase>();
+        services.AddScoped<KnowledgeUseCases>();
+        services.AddScoped<KnowledgeConversationUseCases>();
+        services.AddScoped<SuggestTargetsUseCases>();
         return services;
     }
 }

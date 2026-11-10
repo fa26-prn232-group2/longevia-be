@@ -31,6 +31,8 @@
        Exclude them from the Worker build; the test project compiles them. -->
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
+    <Content Remove="tests/**" />
+    <None Remove="tests/**" />
   </ItemGroup>
 
 </Project>

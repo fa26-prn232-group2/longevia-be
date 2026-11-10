@@ -10,6 +10,7 @@ service IdentityService
 {
   rpc GetUserHeight(GetUserHeightRequest) returns (GetUserHeightResponse);
   rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc GetUserContact(GetUserContactRequest) returns (GetUserContactResponse);
 }
 
 message GetUserHeightRequest
@@ -44,4 +45,20 @@ message GetUserProfileResponse
   optional string dietary_preference = 5;
   // Empty means the existing profile declares no allergies; never inferred by the caller.
   repeated string allergies = 6;
+  // Canonical limitations supported by Recommendation; empty means none declared.
+  // Current canonical value: "joint_pain".
+  repeated string health_limitations = 7;
+}
+
+message GetUserContactRequest
+{
+  string user_id = 1;
+}
+
+message GetUserContactResponse
+{
+  string email = 1;
+  string full_name = 2;
+  string status = 3;
+  bool receive_weekly_digest = 4;
 }

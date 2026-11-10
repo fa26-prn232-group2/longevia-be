@@ -210,7 +210,8 @@
     "heightCm": 175.5,
     "activityLevel": "ModeratelyActive",
     "dietaryPreference": "Mediterranean",
-    "allergies": ["Peanuts", "Shellfish"]
+    "allergies": ["Peanuts", "Shellfish"],
+    "healthLimitations": ["joint_pain"]
   }
   ```
 - **Validation**:
@@ -218,7 +219,8 @@
   - `heightCm`: Số thực từ 50.00 đến 250.00 cm, tối đa 2 chữ số thập phân.
   - `activityLevel`: Một trong các giá trị `["Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive"]`.
   - `dietaryPreference`: Một trong `["None", "Keto", "Vegan", "Mediterranean", "LowCarb"]`.
-- **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies` và `updatedAt`; `heightCm` là số thực.
+  - `healthLimitations`: tối đa 8 mục, mỗi mục tối đa 50 ký tự; nhập tự do (ví dụ “đau lưng”, “thoát vị đĩa đệm”). Không còn allowlist cứng; giá trị được đưa vào ngữ cảnh cho LLM khi tạo lịch tập.
+- **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies`, `healthLimitations` và `updatedAt`; `heightCm` là số thực.
 
 ---
 
@@ -321,7 +323,10 @@
   ```
 - **Validation**:
   - Tổng năng lượng từ macro `(protein*4 + carbs*4 + fat*9)` không được lệch quá 5% so với `targetCalories`.
-- **Response `200 OK`**: Trả về mục tiêu dinh dưỡng mới.
+- **Hành vi**: nếu lấy được hồ sơ + cân nặng gần nhất, BE tự tính và lưu kèm snapshot
+  BMR/TDEE; thiếu dữ liệu hoặc provider lỗi tạm thời thì vẫn lưu mục tiêu và giữ snapshot
+  cũ nếu có. Không chặn lưu chỉ vì thiếu BMR/TDEE.
+- **Response `200 OK`**: Trả về mục tiêu dinh dưỡng mới; `bmr`/`tdee` có thể `null`.
 
 ---
 
@@ -370,12 +375,20 @@
       {
         "mealType": "Breakfast",
         "totalCalories": 450,
-        "itemsCount": 2
-      },
-      {
-        "mealType": "Lunch",
-        "totalCalories": 1000,
-        "itemsCount": 3
+        "itemsCount": 2,
+        "items": [
+          {
+            "foodId": "…",
+            "name": "Yến mạch",
+            "servingUnit": "g",
+            "quantity": 50,
+            "calories": 190,
+            "proteinGrams": 7,
+            "carbsGrams": 33,
+            "fatGrams": 3,
+            "fiberGrams": 5
+          }
+        ]
       }
     ]
   }
@@ -409,10 +422,12 @@
 - Lấy ngày sinh/giới tính/chiều cao/activity từ Identity.GetUserProfile và cân
   nặng từ Progress.GetLatestWeight. Mifflin-St Jeor: 10W+6.25H−5A+5 (nam),
   10W+6.25H−5A−161 (nữ). Hệ số 1.2/1.375/1.55/1.725 tương ứng bốn activity
-  level canonical. Tuổi đủ năm theo ngày UTC; profile chưa hỗ trợ trả 422.
+  level canonical. Tuổi đủ năm theo ngày nghiệp vụ (ADR006, mặc định giờ Việt Nam);
+  profile chưa hỗ trợ trả 422.
 - Response `TargetResponse` giống GET/PUT, `bmr`/`tdee` có giá trị. Lưu input,
   provenance cân nặng và kết quả cùng target atomically; giữ ID khi tính lại.
-  Profile/cân nặng thay đổi không sửa target cũ. PUT nhập tay clear snapshot.
+  Profile/cân nặng thay đổi không sửa target cũ. Từ đợt này `PUT /targets/me` cũng
+  tự đính kèm snapshot khi có dữ liệu, nên endpoint này chỉ còn dùng cho client cũ.
   Calo/macro do user chọn; không tự áp dụng deficit/surplus hoặc tỷ lệ macro.
 - Lỗi 422 `diet.profile_not_found`, `diet.profile_not_supported`, `diet.weight_not_found`;
   503 `diet.profile_unavailable`, `diet.weight_unavailable`;
@@ -536,6 +551,27 @@
   }
   ```
 
+### 4.5b `GET /api/progress/water/history` — Lịch sử uống nước theo ngày
+- **Xác thực**: Bearer JWT
+- **Query**: `days` (1..90, mặc định 30); ngày tính theo múi giờ nghiệp vụ (ADR006).
+- **Response `200 OK`**:
+  ```json
+  {
+    "days": 7,
+    "targetMl": 2500,
+    "items": [
+      {
+        "date": "2026-11-09",
+        "consumedMl": 2500,
+        "targetMl": 2500,
+        "percentComplete": 100.0,
+        "goalReached": true
+      }
+    ]
+  }
+  ```
+- `days` ngoài khoảng trả 400 `progress.invalid_days`.
+
 ---
 
 ### 4.6 `GET /api/progress/dashboard/summary` — Tổng quan thể trạng & Streaks
@@ -559,7 +595,7 @@
 ## 5. Recommendation Service gRPC API (Dev 4 phụ trách)
 > **Giao thức**: gRPC Protobuf | **Cổng nội bộ**: `:50051` | **Mạng**: `internal_net` (Không expose ra Nginx)
 > **Tri thức**: RAG trên corpus *Chế độ ăn trường thọ* — mọi khuyến nghị phải có `citations[]` (chương + trang sách bản in + trích đoạn) hoặc phải `abstained`.
-> **Kế hoạch tuần**: `GenerateMealPlan`/`GenerateWorkoutPlan` không có trường `abstained`; khi corpus rỗng hoặc provider lỗi, service trả kế hoạch degraded/tất định kèm `warnings[]` và `used_fallback`, chỉ rõ nguồn không kiểm chứng được.
+> **Kế hoạch tuần**: `GenerateWorkoutPlan` vẫn có thể trả kế hoạch degraded kèm `warnings[]`/`used_fallback`. `GenerateMealPlan` **không dùng fallback**: hết retry mà AI vẫn không hợp lệ/provider lỗi thì trả `recommendation.plan_generation_failed` (503) để caller báo thử lại.
 
 File hợp đồng: [`contracts/recommendation/v1/recommendation.proto`](../../contracts/recommendation/v1/recommendation.proto)
 
@@ -972,10 +1008,8 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 | `unsupported_locale` | `plan` | `locale` khác `vi-VN`; service dùng `vi-VN` |
 | `consumed_date_outside_plan` | `plan` | `consumed_date` ngoài tuần nên bỏ qua rule 105% |
 | `suggestion_source_missing` | ngày | Ngày chạm trần nhưng không có căn cứ sách cho `suggestions` |
-| `no_limitations_assumed` | `plan` | `limitations` rỗng; chỉ dùng hướng dẫn chung |
 | `unsupported_activity_preference` | `plan` | Preference không có trong catalog hoặc không khả thi với thiết bị |
 | `no_safe_activity` | ngày | Limitations/thiết bị loại hết hoạt động an toàn của ngày |
-| `unsupported_limitation` | `plan` | Limitation không khớp bảng ánh xạ đóng nên bị bỏ qua |
 | `intensity_unverified` | ngày | Không có câu chương 5 hỗ trợ cường độ nên `intensity` rỗng |
 | `activity_source_unverified` | `plan`/ngày | Corpus rỗng, hoạt động/thời lượng chỉ lấy từ dữ liệu caller gửi |
 
@@ -1032,3 +1066,96 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
   ```
 - **Schema version**: v1 (`src/Shared/Events/PasswordResetRequestedEvent.cs`).
 - **Hành động**: Worker gửi email chứa mã/link đặt lại mật khẩu có hạn 15 phút qua SMTP relay cấu hình (Mailpit local, Brevo production).
+
+---
+
+## 7. MVP completion (duck-003)
+
+### 7.1 REST mới
+
+- `POST /api/diet/meal-plans` — `{ weekStartDate, days, mealsPerDay }`, lưu kế hoạch tuần.
+- `GET /api/diet/meal-plans/{weekStartDate}` — đọc kế hoạch đã lưu.
+- `GET /api/diet/nutrition/nutrient-gaps?days=7` — phân tích vi chất; `dataWarnings` khi thiếu dữ liệu.
+- `POST /api/diet/knowledge/ask` — `{ question, chapterFilter? }`.
+- `GET /api/diet/knowledge/search?query=&chapterFilter=&topK=` — `topK` 1..20.
+- `PUT/DELETE /api/diet/foods/{id}` — sửa/xoá mềm custom food của owner.
+- `POST /api/progress/workout-plans` — `{ weekStartDate, goal, days, sessionsPerWeek, minutesPerSession, activityPreference?, equipmentAvailable?, limitations? }`.
+  `limitations = null` dùng giới hạn trong hồ sơ; list rỗng nghĩa là người dùng chủ động bỏ hết.
+  `limitations` là text tự do, được đưa vào prompt để LLM cân nhắc; chỉ `joint_pain` có rule lọc
+  xác định. Mỗi buổi có **1–3 hoạt động**: `activities[]` (phần tử đầu là bài chính), thời lượng
+  chia theo 65/35 hoặc 60/30/10, tổng bằng `minutesPerSession`.
+  Goal ảnh hưởng thứ tự ưu tiên: `BuildMuscle` ưu tiên strength; `LoseWeight` ưu tiên cardio;
+  `Longevity` ưu tiên vận động nhẹ. Response echo lại input đã dùng để FE hiển thị khi mở lại.
+- `GET /api/progress/workout-plans/{weekStartDate}` — đọc kế hoạch tập đã lưu.
+- `GET /api/progress/longevity-habits?days=7` — điểm thói quen trường thọ.
+- `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.
+- `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
+- `GET /api/progress/sleep/history?page=1&pageSize=10` — lịch sử giấc ngủ, mới nhất trước,
+  `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }` với cùng shape `SleepResponse`.
+- `GET /api/progress/sleep/today` — giấc ngủ đêm qua (ngày thức dậy hôm nay), 204 nếu chưa ghi.
+- `GET /api/progress/fasting/current` — **204 No Content** khi chưa có phiên (thay cho 200 body rỗng trước đây).
+- `GET /api/progress/fasting/history?page=1&pageSize=20` — lịch sử phiên đã kết thúc,
+  mới nhất trước; `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }`.
+- `GET/PUT /api/identity/users/me/preferences` — `{ receiveWeeklyDigest }`, mặc định false.
+
+### 7.2 gRPC mới
+
+- `DietService.GetNutritionAdherence`
+- `DietService.GetWeeklyNutritionSummary`
+- `IdentityService.GetUserContact`
+
+### 7.3 Event mới
+
+- `UserVerifiedEvent` — `identity.user.verified` (Identity → Worker).
+- `WeeklyDigestReadyEvent` — `progress.weekly-digest.ready` (Progress → Worker).
+
+### 7.4 Bổ sung hợp đồng cho giai đoạn UI/UX
+
+- `MealPlanResponse.usedFallbackReason` (string, additive): rỗng khi không fallback;
+  `provider_timeout | provider_unavailable | invalid_model_output`.
+- `WorkoutPlanResponse.usedFallbackReason` (string, additive): như trên, thêm
+  `corpus_missing | no_safe_activity`.
+- `WorkoutPlanDayResponse.activityLabel` (string, additive): nhãn tiếng Việt của
+  `activity`; rỗng ở ngày nghỉ.
+- gRPC tương ứng (`contracts/recommendation/v1/recommendation.proto`):
+  `GenerateMealPlanResponse.used_fallback_reason = 13`,
+  `GenerateWorkoutPlanResponse.used_fallback_reason = 10`,
+  `WorkoutPlanDay.activity_label = 9` — tất cả additive, tương thích ngược.
+- `rationale` của meal/workout plan không còn dùng từ "caller" và dùng nhãn hoạt
+  động tiếng Việt.
+- **Chat hỏi sách (SSE)**:
+  - `POST /api/diet/knowledge/ask/stream` — body
+    `{ conversationId?: uuid, question, chapterFilter? }`, trả `text/event-stream` với
+    các event `delta` (`{ text }`), `citation` (một citation), `done`
+    (`{ conversationId, messageId, abstained, abstainReason, disclaimer }`),
+    `error` (`{ code, message }`). Nginx location riêng tắt `proxy_buffering`.
+  - `GET /api/diet/knowledge/conversations` — danh sách hội thoại kèm `messageCount`.
+  - `GET /api/diet/knowledge/conversations/{id}` — chi tiết + messages (citation JSON).
+  - `DELETE /api/diet/knowledge/conversations/{id}` — xoá hội thoại của owner.
+- gRPC mới (additive): `RecommendationService.AskLongevityQuestionStream`
+  (server streaming) với `ConversationTurn history`,
+  `AskLongevityQuestionEvent { delta | citation | done | error }`. Lịch sử hội
+  thoại lưu ở Diet DB (`knowledge_conversations`, `knowledge_messages`).
+- **Gợi ý mục tiêu dinh dưỡng**:
+  - `POST /api/diet/targets/me/suggest` — body `{ description?, goal? }`
+    (`goal`: LoseWeight | Maintain | BuildMuscle | Longevity). Trả
+    `{ targetCalories, targetProteinGrams, targetCarbsGrams, targetFatGrams,
+    rationale, source (ai|formula), safetyNote }`; **không ghi DB**, người dùng
+    bấm lưu qua `PUT /targets/me`.
+  - gRPC mới `RecommendationService.SuggestNutritionTargets`: calo do code tính
+    (Mifflin-St Jeor + TDEE + điều chỉnh mục tiêu), AI chỉ tinh chỉnh
+    protein/fat trong khoảng an toàn và viết `rationale`.
+- **Mẹo trường thọ**: `MealSelector` diễn giải đoạn sách qua prompt
+  `LongevityTip` (1–2 câu tiếng Việt); abstain/lỗi dùng câu curate sẵn, citation
+  vẫn giữ nguyên đoạn gốc.
+
+### 7.5 Ghi chú vận hành
+
+- **Ngày nghiệp vụ (ADR006)**: mặc định `Asia/Ho_Chi_Minh`, cấu hình `APP_TIMEZONE`.
+  Timestamp vẫn UTC; water/dashboard/meal summary/longevity/digest reset theo ngày
+  địa phương. Không backfill dữ liệu cũ.
+
+- Progress tham gia `internal_net`; Diet mở HTTP/2 `50051`.
+- gRPC nội bộ dùng metadata `x-service-token` (`SERVICE__TOKEN`).
+- Nginx rate limit: 30 r/s chung, 5 r/s cho `/api/identity/auth/`; vượt ngưỡng trả 429 ProblemDetails.
+- Digest chỉ gửi cho user đã bật `receiveWeeklyDigest`; mặc định thứ Hai 00:00 UTC.

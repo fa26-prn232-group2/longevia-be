@@ -20,7 +20,7 @@ public sealed class MealRecommendationProvider(RecommendationService.Recommendat
             string.IsNullOrWhiteSpace(input.Profile.ActivityLevel) || string.IsNullOrWhiteSpace(input.Profile.DietaryPreference))
             throw new ArgumentException("Invalid meal recommendation context.", nameof(input));
         var now = time.GetUtcNow();
-        var expires = deadline < now.AddSeconds(2) ? deadline : now.AddSeconds(2);
+        var expires = deadline;
         if (expires <= now) throw Timeout();
         var foods = input.Foods.Where(x => x.Allergens is not null &&
             (x.UserId is null || x.UserId == input.UserId) &&

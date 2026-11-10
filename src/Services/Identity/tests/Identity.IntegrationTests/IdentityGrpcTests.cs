@@ -175,6 +175,7 @@ public sealed class IdentityGrpcTests(IdentityGrpcApiFixture fixture) : IClassFi
                 activityLevel,
                 dietaryPreference,
                 allergies ?? [],
+                [],
                 DateTimeOffset.UtcNow));
         }
 

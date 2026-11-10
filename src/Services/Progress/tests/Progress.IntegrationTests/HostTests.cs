@@ -45,6 +45,21 @@ public sealed class HostTests(ProgressFixture fixture)
     }
 
     [Fact]
+    public async Task Host_ServiceTokenConfigured_StartsAndServesLiveness()
+    {
+        // Regression: the service token interceptor used to be registered inside
+        // the AddGrpc options delegate, which runs after the service collection is
+        // read-only. Docker sets SERVICE__TOKEN, so every API crashed on startup.
+        await using var factory = new ProgressApiFactory(fixture, new Dictionary<string, string?>
+        {
+            ["SERVICE:TOKEN"] = "progress-integration-service-token",
+        });
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/alive");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task DatabaseInitializer_CanceledStartup_DoesNotContinue()
     {
         using var cancellation = new CancellationTokenSource();

@@ -12,6 +12,9 @@ public static class PlanDefaults
     /// <summary>Số món tối đa trong một bữa.</summary>
     public const int MaxFoodsPerMeal = 5;
 
+    /// <summary>Số món tối thiểu trong một bữa để đủ đa dạng và khớp calo.</summary>
+    public const int MinFoodsPerMeal = 3;
+
     /// <summary>Số ngày tối thiểu của một kế hoạch.</summary>
     public const int MinDays = 1;
 

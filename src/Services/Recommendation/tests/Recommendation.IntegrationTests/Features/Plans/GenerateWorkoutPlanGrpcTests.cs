@@ -69,11 +69,11 @@ public sealed class GenerateWorkoutPlanGrpcTests(RecommendationApiFixture fixtur
     }
 
     [Fact]
-    public async Task AddsNoLimitationsAssumedWarning()
+    public async Task OmitsNoLimitationsWarning()
     {
         var response = await fixture.Client.GenerateWorkoutPlanAsync(BuildRequest());
 
-        Assert.Contains(response.Warnings, warning => warning.Code == "no_limitations_assumed");
+        Assert.DoesNotContain(response.Warnings, warning => warning.Code == "no_limitations_assumed");
     }
 
     [Fact]
@@ -86,7 +86,22 @@ public sealed class GenerateWorkoutPlanGrpcTests(RecommendationApiFixture fixtur
         Assert.Contains(response.Warnings, warning => warning.Code == "activity_source_unverified");
         Assert.Contains(response.Warnings, warning => warning.Code == "intensity_unverified");
         Assert.True(response.UsedFallback);
+        Assert.Equal("corpus_missing", response.UsedFallbackReason);
         Assert.All(response.Days.Where(day => !day.RestDay), day => Assert.Empty(day.Citations));
+    }
+
+    [Fact]
+    public async Task WorkoutDaysExposeVietnameseActivityLabel()
+    {
+        var response = await fixture.Client.GenerateWorkoutPlanAsync(BuildRequest());
+
+        var workoutDays = response.Days.Where(day => !day.RestDay).ToList();
+        Assert.NotEmpty(workoutDays);
+        foreach (var day in workoutDays)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(day.ActivityLabel));
+            Assert.NotEqual(day.Activity, day.ActivityLabel);
+        }
     }
 
     [Fact]
@@ -158,14 +173,14 @@ public sealed class GenerateWorkoutPlanGrpcTests(RecommendationApiFixture fixtur
     }
 
     [Fact]
-    public async Task AddsUnsupportedLimitationWarning()
+    public async Task FreeTextLimitationIsAcceptedWithoutWarning()
     {
         var request = BuildRequest();
         request.Limitations.Add("bệnh tim");
 
         var response = await fixture.Client.GenerateWorkoutPlanAsync(request);
 
-        Assert.Contains(response.Warnings, warning => warning.Code == "unsupported_limitation");
+        Assert.DoesNotContain(response.Warnings, warning => warning.Code == "unsupported_limitation");
         Assert.Equal(3, response.SessionsScheduled);
     }
 

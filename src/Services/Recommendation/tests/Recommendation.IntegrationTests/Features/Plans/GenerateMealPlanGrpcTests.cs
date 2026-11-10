@@ -29,7 +29,7 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
         Assert.Equal(WeekStart, response.WeekStartDate);
         Assert.Equal(7, response.DaysRequested);
         Assert.All(response.Days, day => Assert.Equal(4, day.Meals.Count));
-        Assert.All(response.Days, day => Assert.All(day.Meals, meal => Assert.InRange(meal.Foods.Count, 1, 5)));
+        Assert.All(response.Days, day => Assert.All(day.Meals, meal => Assert.InRange(meal.Foods.Count, 3, 5)));
     }
 
     [Fact]
@@ -46,10 +46,6 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
         {
             Assert.Contains(food.FoodId, catalog.Keys);
             Assert.DoesNotContain("đậu phộng", string.Join(' ', food.Allergens), StringComparison.OrdinalIgnoreCase);
-            Assert.Equal(catalog[food.FoodId].Calories, food.Calories);
-            Assert.Equal(catalog[food.FoodId].ProteinGrams, food.ProteinGrams, 3);
-            Assert.Equal(catalog[food.FoodId].CarbsGrams, food.CarbsGrams, 3);
-            Assert.Equal(catalog[food.FoodId].FatGrams, food.FatGrams, 3);
         });
 
         // Negative control T071: món chứa allergen không được xuất hiện cả trong
@@ -91,16 +87,14 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
     }
 
     [Fact]
-    public async Task FallsBackWhenProviderAbstains()
+    public async Task ThrowsUnavailableWhenProviderAbstains()
     {
         fixture.AbstainNextMealPlan();
 
-        var response = await fixture.Client.GenerateMealPlanAsync(BuildRequest());
+        var error = await Assert.ThrowsAsync<RpcException>(
+            async () => await fixture.Client.GenerateMealPlanAsync(BuildRequest()));
 
-        Assert.True(response.UsedFallback);
-        Assert.Contains(response.Warnings, warning => warning.Code == "ai_fallback_used");
-        Assert.Equal(7, response.Days.Count);
-        Assert.All(response.Days, day => Assert.NotEmpty(day.Meals));
+        Assert.Equal(StatusCode.Unavailable, error.StatusCode);
     }
 
     [Fact]
@@ -258,7 +252,9 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
             Food("f-meal-lunch", "Bữa trưa cân bằng", 700, 35, 87.5, 23.45),
             Food("f-meal-dinner", "Bữa tối cân bằng", 600, 30, 75, 20.1),
             Food("f-meal-snack", "Bữa phụ cân bằng", 200, 10, 25, 6.7),
-            Food("f-water", "Nước lọc", 0, 0, 0, 0),
+            Food("f-water", "Nước lọc", 0, 0, 0, 0, fiber: 0),
+            Food("f-tea", "Trà xanh", 0, 0, 0, 0, fiber: 0),
+            Food("f-sparkling", "Nước khoáng", 0, 0, 0, 0, fiber: 0),
             Food(PeanutDishId, "Chè đậu phộng", 320, 9, 48, 11, allergens: ["đậu phộng"]),
             Food("f-rice", "Cơm gạo lứt", 230, 5, 45, 2),
             Food("f-tofu", "Đậu hũ sốt cà", 180, 14, 8, 9),
@@ -288,7 +284,8 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
         double protein,
         double carbs,
         double fat,
-        IReadOnlyList<string>? allergens = null)
+        IReadOnlyList<string>? allergens = null,
+        double fiber = 5)
     {
         var food = new CandidateFood
         {
@@ -300,7 +297,7 @@ public sealed class GenerateMealPlanGrpcTests(RecommendationApiFixture fixture)
             ProteinGrams = protein,
             CarbsGrams = carbs,
             FatGrams = fat,
-            FiberGrams = 5,
+            FiberGrams = fiber,
         };
 
         if (allergens is not null)

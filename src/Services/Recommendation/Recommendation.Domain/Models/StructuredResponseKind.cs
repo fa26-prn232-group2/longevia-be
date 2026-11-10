@@ -33,4 +33,16 @@ public enum StructuredResponseKind
     /// catalog đóng + trích dẫn. Không có thời lượng/cường độ/bài tập mới.
     /// </summary>
     WorkoutPlanSelection = 4,
+
+    /// <summary>
+    /// Diễn giải một đoạn sách thành mẹo ngắn cho người đọc: chỉ dùng nội dung
+    /// đoạn được cung cấp, không thêm số liệu hay khuyến nghị y tế mới.
+    /// </summary>
+    LongevityTip = 5,
+
+    /// <summary>
+    /// Tinh chỉnh macro + giải thích cho mục tiêu dinh dưỡng; calo do code tính,
+    /// mô hình không được đổi calo hay thêm khuyến nghị y tế.
+    /// </summary>
+    NutritionTargetSuggestion = 6,
 }

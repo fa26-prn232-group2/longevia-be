@@ -48,11 +48,28 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
             DietaryPreference = profile.DietaryPreference,
         };
         response.Allergies.AddRange(profile.Allergies);
+        response.HealthLimitations.AddRange(profile.HealthLimitations);
         return response;
     }
 
-    public override async Task<GetUserHeightResponse> GetUserHeight(
-        GetUserHeightRequest request,
+    public override async Task<GetUserContactResponse> GetUserContact(
+        GetUserContactRequest request, ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId) || userId == Guid.Empty)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "user_id must be a non-empty GUID."));
+        var user = await userRepository.GetByIdWithProfileAsync(userId, context.CancellationToken)
+            .ConfigureAwait(false);
+        if (user is null) throw new RpcException(new Status(StatusCode.NotFound, "User was not found."));
+        return new GetUserContactResponse
+        {
+            Email = user.Email,
+            FullName = user.FullName,
+            Status = user.Status,
+            ReceiveWeeklyDigest = user.Profile?.ReceiveWeeklyDigest ?? false,
+        };
+    }
+
+    public override async Task<GetUserHeightResponse> GetUserHeight(GetUserHeightRequest request,
         ServerCallContext context)
     {
         if (!Guid.TryParse(request.UserId, out var userId) || userId == Guid.Empty)

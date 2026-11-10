@@ -16,7 +16,7 @@ TEST_SCOPE := $(if $(PROJECTS),$(PROJECTS),$(SLN_OR_DIR))
 
 .PHONY: help restore format format-check build build-release lint test test-all vuln check ef-add ef-update jwt-keys clean team-check \
 	up bootstrap down \
-	infra-up infra-down docker-up docker-down docker-stop docker-logs \
+	infra-up infra-down docker-up docker-up-monitoring docker-down docker-stop docker-logs \
 	book-ocr-build book-ocr-info book-ocr-render book-ocr-vision book-ocr-ocr book-ocr-assemble book-ocr-qa \
 	book-ocr-coverage book-ocr-night book-ocr-resume book-ocr-logs book-ocr-status book-ocr-clean \
 	kb-build kb-load kb-verify kb-eval kb-seed kb-ensure kb-smoke
@@ -67,7 +67,8 @@ help:
 	@echo.
 	@echo   infra-up         start core infra only (postgres redis rabbitmq mailpit nginx swagger-ui)
 	@echo   infra-down       remove core infra containers, KEEP volumes (data preserved)
-	@echo   docker-up        build + start the full stack
+	@echo   docker-up        build + start the app stack (no Prometheus/Grafana)
+	@echo   docker-up-monitoring  start Prometheus + Grafana on demand
 	@echo   docker-down      full cleanup: remove containers AND volumes
 	@echo   docker-stop      stop all containers, keep data
 	@echo   docker-logs      follow logs, filter with SERVICE=name
@@ -119,7 +120,7 @@ test:
 	$(DOTNET) test $(TEST_SCOPE)
 
 test-all:
-	$(DOTNET) test $(SLN_OR_DIR) -c Release
+	$(DOTNET) test $(SLN_OR_DIR) -c Release -m:1
 
 vuln:
 	$(DOTNET) list $(SLN_OR_DIR) package --vulnerable --include-transitive
@@ -155,19 +156,24 @@ infra-up:
 infra-down:
 	-$(COMPOSE) rm -f -s $(INFRA_SERVICES)
 
-# Full stack: builds app images (identity/worker once their Dockerfiles land in
-# Phase 4) and starts everything, including monitoring (Phase 6).
+# Full app stack. Observability is opt-in: Prometheus/Grafana have the
+# `monitoring` profile, so `up -d --build` skips them. Stop any leftovers from
+# older runs and start them explicitly with `make docker-up-monitoring`.
 docker-up:
 	$(COMPOSE) up -d --build
+	-$(COMPOSE) --profile monitoring stop prometheus grafana
+
+docker-up-monitoring:
+	$(COMPOSE) --profile monitoring up -d prometheus grafana
 
 # Full cleanup: containers AND volumes are removed. Postgres init scripts and
 # Mailpit/Redis contents start from scratch on next up.
 docker-down:
-	$(COMPOSE) down -v
+	$(COMPOSE) --profile monitoring down -v
 
 # Stops containers without removing them or their volumes.
 docker-stop:
-	$(COMPOSE) stop
+	$(COMPOSE) --profile monitoring stop
 
 # Follows logs; scope with SERVICE=name (e.g. make docker-logs SERVICE=mailpit).
 docker-logs:

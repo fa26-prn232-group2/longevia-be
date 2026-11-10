@@ -11,7 +11,7 @@ public sealed class DailySummaryUseCase(IMealRepository meals, ITargetRepository
     public async Task<DailySummaryResponse> ExecuteAsync(DateOnly? date, CancellationToken ct)
     {
         var userId = user.RequiredId();
-        var day = date ?? DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
+        var day = date ?? Longevia.Shared.Time.BusinessTime.ToDate(time.GetUtcNow());
         var target = await targets.GetAsync(userId, ct) ?? throw DietErrors.MissingTarget();
         var logs = await meals.GetDailyAsync(userId, day, ct);
         var nutrients = logs.SelectMany(x => x.Items).Select(x => x.Nutrition).ToList();
@@ -22,8 +22,10 @@ public sealed class DailySummaryUseCase(IMealRepository meals, ITargetRepository
             Progress(nutrients.Sum(x => x.FatGrams), target.TargetFatGrams));
         var summaries = logs.GroupBy(x => x.MealType)
             .OrderBy(x => Array.IndexOf(MealTypes.All.ToArray(), x.Key))
-            .Select(g => new MealSummary(g.Key, g.Sum(x => x.Items.Sum(i => i.Nutrition.Calories)),
-                g.Sum(x => x.Items.Count))).ToList();
+            .Select(g => new MealSummary(g.Key,
+                g.Sum(x => x.Items.Sum(i => i.Nutrition.Calories)),
+                g.Sum(x => x.Items.Count),
+                g.SelectMany(x => x.Items).Select(MealItemResponse.From).ToList())).ToList();
         return new(day, target.TargetCalories, calories, target.TargetCalories - calories, macros, summaries);
     }
 

@@ -22,7 +22,7 @@ public sealed class WorkoutPromptTests
         var prompt = _builder.Build(context.Request, context.Skeleton, context.Catalog, context.Chunks);
 
         Assert.Equal(StructuredResponseKind.WorkoutPlanSelection, prompt.ResponseKind);
-        Assert.Contains("activity_index", prompt.SystemInstruction, StringComparison.Ordinal);
+        Assert.Contains("activity_indices", prompt.SystemInstruction, StringComparison.Ordinal);
         Assert.Contains("citation", prompt.SystemInstruction, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("không viết thời lượng", prompt.SystemInstruction, StringComparison.OrdinalIgnoreCase);
 
@@ -69,6 +69,29 @@ public sealed class WorkoutPromptTests
 
         Assert.Contains("ngày nghỉ", restLine, StringComparison.Ordinal);
         Assert.DoesNotContain("buổi tập", restLine, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildMusclePromptPrioritizesStrengthAndMultipleActivities()
+    {
+        var context = BuildContext();
+        var request = context.Request with { Goal = "BUILD_MUSCLE", ActivityPreference = [] };
+        var catalog = new WorkoutActivityCatalog
+        {
+            Activities =
+            [
+                new WorkoutActivity { Key = "walking", DisplayName = "Đi bộ" },
+                new WorkoutActivity { Key = "strength", DisplayName = "Tập tạ", EquipmentUsed = ["gym"] },
+            ],
+        };
+        var skeleton = new WorkoutPlanSkeletonBuilder(new PlanRequestValidator(), new PlanDateRange())
+            .Build(request, catalog);
+
+        var prompt = _builder.Build(request, skeleton, catalog, context.Chunks);
+
+        Assert.Contains("Bắt buộc có bài tập tạ", prompt.UserPrompt, StringComparison.Ordinal);
+        Assert.Contains("gợi ý chính: Tập tạ", prompt.UserPrompt, StringComparison.Ordinal);
+        Assert.Contains("1–3 activity_indices", prompt.SystemInstruction, StringComparison.Ordinal);
     }
 
     private static PromptContext BuildContext()

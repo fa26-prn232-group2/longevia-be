@@ -16,15 +16,18 @@ khai là /api/diet. Schema thuộc diet_db và được tạo bởi EF Code Firs
 - DailyDietTarget có unique UserId. PUT dùng một upsert PostgreSQL có parameter,
   giữ ID và không tạo hai target khi request đầu tiên đến đồng thời.
 - Decimal input tối đa 3 số thập phân; snapshot 8 số. Ngày nhật ký DateOnly;
-  timestamp UTC, ngày mặc định UTC. Summary dùng target hiện tại; remaining âm
+  timestamp UTC, ngày mặc định theo business timezone (`APP_TIMEZONE`, mặc định
+  `Asia/Ho_Chi_Minh` — ADR006). Summary dùng target hiện tại; remaining âm
   biểu thị vượt mục tiêu. Không tự đổi đơn vị vật lý.
 - Seed gồm 43 món minh họa (3 món demo ban đầu + 40 món Việt phổ biến, migration `ExpandFoodCatalogSeed`), ID cố định trong migration, không nhân bản khi startup. Mọi món seed đều khai báo `allergens` (mảng rỗng nếu không có dị nguyên phổ biến) để được xét làm ứng viên gợi ý AI; tag dị ứng gồm tên tiếng Anh và từ tiếng Việt thường gặp (vd. `peanut`, `đậu phộng`, `lạc`) vì so khớp với dị ứng tự do trong hồ sơ là bằng nhau không phân biệt hoa thường. Giá trị dinh dưỡng là ước lượng tham khảo, không phải catalog sản xuất.
 
 ## API và phụ thuộc
 
 Tám operation theo [API §3](../api/api-spec.md).
-Target nhập tay có bmr/tdee null; thiếu target trả 404 diet.target_not_found.
-BMR/TDEE và AI sử dụng Identity.GetUserProfile (ADR 004) cùng Progress.GetLatestWeight.
+Target nhập tay tự đính kèm bmr/tdee khi có hồ sơ + cân nặng; thiếu dữ liệu thì vẫn lưu
+và `bmr/tdee` null. Thiếu target trả 404 diet.target_not_found. Endpoint calculate giữ
+cho tương thích client cũ. BMR/TDEE và AI sử dụng Identity.GetUserProfile (ADR 004)
+cùng Progress.GetLatestWeight.
 Không có lời gọi DB hoặc source nội bộ của Identity/Progress/Recommendation.
 Diet cung cấp MealLoggedEvent v1 qua EF bus outbox trong cùng transaction meal.
 Contract ở src/Shared/Events/MealLoggedEvent.cs, topic exchange longevia.events,
@@ -103,6 +106,6 @@ Map food ID về catalog, serving/nutrition lấy từ catalog; citation verifie
 deadline504. Deadline min(caller budget, now+2s), không retry. Diet join internal_net
 để gọi Recommendation:50051 theo ADR001; không route Recommendation qua gateway.
 GET /meals/ai-recommendations yêu cầu mealType/goal; dùng profile/cân nặng hiện tại,
-summary UTC và tối đa 100 candidate có metadata thuộc user/catalog chung. Ngân sách
+summary theo ngày nghiệp vụ và tối đa 100 candidate có metadata thuộc user/catalog chung. Ngân sách
 tổng 2.8 giây; thiếu metadata server cũ trả 503, không giả không dị ứng.
 DTO HTTP riêng, giữ citation/disclaimer/degraded response từ Recommendation.

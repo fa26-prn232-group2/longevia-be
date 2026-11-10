@@ -11,4 +11,5 @@ public interface IBodyMetricRepository
     Task<(IReadOnlyList<BodyMetricLog> Items, int TotalCount)> GetHistoryAsync(
         Guid userId, DateOnly? fromDate, DateOnly? toDate, int pageNumber, int pageSize, CancellationToken ct);
     Task<IReadOnlyList<DateOnly>> GetActiveMetricDatesAsync(Guid userId, CancellationToken ct);
+    Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct);
 }

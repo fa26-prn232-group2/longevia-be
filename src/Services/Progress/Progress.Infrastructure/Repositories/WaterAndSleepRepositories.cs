@@ -18,6 +18,16 @@ public sealed class WaterRepository(ProgressDbContext db) : IWaterRepository
             .Where(x => x.UserId == userId && x.Date == date)
             .SumAsync(x => x.AmountMl, ct);
     }
+
+    public async Task<IReadOnlyList<DailyWaterTotal>> GetDailyTotalsAsync(
+        Guid userId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        return await db.WaterLogs.AsNoTracking()
+            .Where(x => x.UserId == userId && x.Date >= from && x.Date <= to)
+            .GroupBy(x => x.Date)
+            .Select(group => new DailyWaterTotal(group.Key, group.Sum(x => x.AmountMl)))
+            .ToListAsync(ct);
+    }
 }
 
 public sealed class SleepRepository(ProgressDbContext db) : ISleepRepository
@@ -71,5 +81,27 @@ public sealed class SleepRepository(ProgressDbContext db) : ISleepRepository
             .Where(x => x.UserId == userId && x.Date >= fromDate && x.Date <= toDate)
             .OrderByDescending(x => x.WokeAt)
             .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<SleepLog>> GetPageAsync(
+        Guid userId, int skip, int take, CancellationToken ct)
+    {
+        return await db.SleepLogs.AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.WokeAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(Guid userId, CancellationToken ct) =>
+        db.SleepLogs.CountAsync(x => x.UserId == userId, ct);
+
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct)
+    {
+        var log = await db.SleepLogs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        if (log is null) return false;
+        db.SleepLogs.Remove(log);
+        return true;
     }
 }

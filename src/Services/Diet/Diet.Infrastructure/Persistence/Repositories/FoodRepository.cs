@@ -34,6 +34,9 @@ public sealed class FoodRepository(DietDbContext db) : IFoodRepository
         await db.FoodItems.AsNoTracking()
             .Where(x => ids.Contains(x.Id) && (x.UserId == null || x.UserId == userId)).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<FoodItem>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
+        await db.FoodItems.AsNoTracking().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
     public async Task<IReadOnlyList<FoodItem>> GetRecommendationCandidatesAsync(Guid userId,
         IReadOnlyList<string> allergies, CancellationToken ct)
     {

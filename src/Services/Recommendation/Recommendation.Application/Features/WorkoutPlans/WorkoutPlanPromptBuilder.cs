@@ -8,7 +8,7 @@ namespace Recommendation.Application.Features.WorkoutPlans;
 /// <summary>
 /// Dựng prompt cho <c>GenerateWorkoutPlan</c> (D-06/D-09): gửi skeleton, catalog
 /// đóng và chunk chương 5 trong khối corpus. Mô hình chỉ được chọn
-/// <c>activity_index</c> và citation; code quyết định thời lượng, cường độ và
+/// <c>activity_indices</c> và citation; code quyết định thời lượng, cường độ và
 /// rationale.
 /// </summary>
 public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
@@ -16,8 +16,10 @@ public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
     /// <summary>System instruction cấm bịa bài tập/số liệu/rationale.</summary>
     public const string SystemInstruction =
         "Bạn là trợ lý lập kế hoạch tập luyện dựa trên sách tham chiếu. "
-        + "Chỉ chọn activity_index có trong danh mục CATALOG được cung cấp; không tạo bài tập mới, "
+        + "Chỉ chọn activity_indices có trong danh mục CATALOG được cung cấp; không tạo bài tập mới, "
         + "không dùng thiết bị ngoài giới hạn caller. "
+        + "Mỗi buổi chọn 1–3 activity_indices khác nhau; activity_indices đầu tiên là bài chính. "
+        + "Ưu tiên hoạt động theo mục tiêu và gợi ý chính của SKELETON; không lặp cùng một bài chính ở mọi buổi. "
         + "Không viết thời lượng, không viết cường độ và không viết rationale; code sẽ dựng các phần đó. "
         + "Chỉ trả citation khi quote xuất hiện nguyên văn trong khối [BEGIN CORPUS DATA] và dùng đúng chunk_index. "
         + "Không trả ngày nghỉ; chỉ trả các ngày có buổi tập trong SKELETON.";
@@ -34,6 +36,7 @@ public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(chunks);
 
+        var guidance = WorkoutGoalGuidance.For(request.Goal);
         var prompt = new StringBuilder();
         prompt
             .Append("Kế hoạch tập luyện ")
@@ -45,11 +48,13 @@ public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
             .AppendLine(" phút (thời lượng do code quyết định).")
             .Append("Mục tiêu: ")
             .AppendLine(request.Goal)
+            .Append("Ưu tiên theo mục tiêu: ")
+            .AppendLine(guidance.Instruction)
             .Append("Giới hạn caller: ")
-            .AppendLine(FormatList(request.Limitations, "chưa khai"))
+            .AppendLine(FormatList(request.Limitations, "không có"))
             .Append("Thiết bị sẵn có: ")
             .AppendLine(FormatList(request.EquipmentAvailable, "không có"))
-            .AppendLine("CATALOG (chỉ được chọn activity_index trong danh sách này):");
+            .AppendLine("CATALOG (chỉ được chọn activity_indices trong danh sách này):");
 
         for (var index = 0; index < catalog.Activities.Count; index++)
         {
@@ -64,7 +69,11 @@ public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
                 .Append("; equipment=")
                 .Append(activity.EquipmentUsed.Count == 0 ? "none" : string.Join('|', activity.EquipmentUsed))
                 .Append("; intensity=")
-                .AppendLine(activity.Intensity.Length == 0 ? "unverified" : activity.Intensity);
+                .Append(activity.Intensity.Length == 0 ? "unverified" : activity.Intensity)
+                .Append("; goal_fit=")
+                .AppendLine(guidance.PreferredKeys.Contains(activity.Key, StringComparer.Ordinal)
+                    ? "high"
+                    : "normal");
         }
 
         prompt.AppendLine("SKELETON (mỗi ngày tối đa một buổi; ngày nghỉ không chọn hoạt động):");
@@ -73,7 +82,9 @@ public sealed class WorkoutPlanPromptBuilder(PlanPromptFormatter formatter)
             prompt
                 .Append(day.Date)
                 .Append(": ")
-                .AppendLine(day.Activity is null ? "ngày nghỉ" : "buổi tập");
+                .AppendLine(day.Activity is null
+                    ? "ngày nghỉ"
+                    : $"buổi tập — gợi ý chính: {day.Activity.DisplayName}");
         }
 
         var corpus = formatter.FormatCorpus(chunks);

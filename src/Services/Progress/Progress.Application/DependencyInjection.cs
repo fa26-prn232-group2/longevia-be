@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddScoped<Features.Metrics.MetricUseCases>();
         services.AddScoped<Features.Metrics.IWeightQueryService, Features.Metrics.WeightQueryService>();
         services.AddScoped<Features.Dashboard.DashboardUseCases>();
+        services.AddScoped<Features.WorkoutPlans.WorkoutPlanUseCases>();
+        services.AddScoped<Features.Longevity.LongevityUseCase>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

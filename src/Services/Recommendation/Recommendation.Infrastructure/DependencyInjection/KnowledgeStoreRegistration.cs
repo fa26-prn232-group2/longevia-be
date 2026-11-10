@@ -44,7 +44,9 @@ public static class KnowledgeStoreRegistration
         services.AddKnowledgeDbContext();
 
         services.AddSingleton<IEmbeddingProvider, GoogleAiEmbeddingProvider>();
-        services.AddSingleton<IChatModel, GoogleAiChatModel>();
+        services.AddSingleton<GoogleAiChatModel>();
+        services.AddSingleton<IChatModel>(sp => sp.GetRequiredService<GoogleAiChatModel>());
+        services.AddSingleton<IChatStreamModel>(sp => sp.GetRequiredService<GoogleAiChatModel>());
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IKnowledgeStore, PgKnowledgeStore>();
         services.AddSingleton<PromptBuilder>();

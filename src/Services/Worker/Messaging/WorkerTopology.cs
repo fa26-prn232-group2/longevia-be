@@ -27,6 +27,12 @@ public static class WorkerTopology
     /// <summary>Routing key for <c>PasswordResetRequestedEvent</c>.</summary>
     public const string PasswordResetRoutingKey = "identity.user.password-reset-requested";
 
+    /// <summary>Routing key for <c>UserVerifiedEvent</c>.</summary>
+    public const string UserVerifiedRoutingKey = "identity.user.verified";
+
+    /// <summary>Routing key for <c>WeeklyDigestReadyEvent</c>.</summary>
+    public const string WeeklyDigestRoutingKey = "progress.weekly-digest.ready";
+
     /// <summary>Prefetch limit so one consumer cannot hog the queue.</summary>
     public const int PrefetchCount = 10;
 

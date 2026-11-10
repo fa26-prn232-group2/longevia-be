@@ -8,4 +8,5 @@ public sealed record ProfileResponse(
     string ActivityLevel,
     string DietaryPreference,
     IReadOnlyList<string> Allergies,
+    IReadOnlyList<string> HealthLimitations,
     DateTimeOffset UpdatedAt);

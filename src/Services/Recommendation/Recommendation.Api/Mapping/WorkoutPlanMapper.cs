@@ -1,4 +1,5 @@
 using Recommendation.Application.Features.WorkoutPlans;
+using Recommendation.Domain.Constants;
 using Recommendation.Domain.Models;
 using Contracts = Longevia.Recommendation.Contracts.V1;
 
@@ -51,6 +52,7 @@ internal static class WorkoutPlanMapper
             MinutesPerSession = result.MinutesPerSession,
             Disclaimer = new Contracts.Disclaimer { Text = result.Disclaimer },
             UsedFallback = result.UsedFallback,
+            UsedFallbackReason = result.UsedFallbackReason,
         };
 
         response.Days.AddRange(result.Days.Select(ToProtoDay));
@@ -91,6 +93,7 @@ internal static class WorkoutPlanMapper
             Date = day.Date,
             RestDay = day.RestDay,
             Activity = day.Activity,
+            ActivityLabel = day.RestDay ? string.Empty : WorkoutActivities.DisplayNameFor(day.Activity),
             DurationMinutes = day.DurationMinutes,
             Intensity = day.Intensity,
             Rationale = day.Rationale,
@@ -98,6 +101,14 @@ internal static class WorkoutPlanMapper
 
         message.EquipmentUsed.AddRange(day.EquipmentUsed);
         message.Citations.AddRange(day.Citations.Select(ToProtoCitation));
+        message.Activities.AddRange(day.Activities.Select(activity => new Contracts.WorkoutActivity
+        {
+            Activity = activity.Activity,
+            ActivityLabel = activity.ActivityLabel,
+            DurationMinutes = activity.DurationMinutes,
+            Intensity = activity.Intensity,
+            EquipmentUsed = { activity.EquipmentUsed },
+        }));
 
         return message;
     }

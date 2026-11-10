@@ -81,13 +81,23 @@ Progress Service triển khai gRPC server cho contract canonical `contracts/prog
 
 ## Corrective PR #13
 
-Q01 được Bảo approve cho Progress MVP: UTC calendar cho server-derived days,
-TimeProvider cho current day, week Monday 00:00 UTC, history upper bound đầu ngày
-kế tiếp exclusive. Sleep lấy UTC WokeAt, metric activity lấy UTC LoggedAt; duration
-và overlap dùng full instants. Không rebucket dữ liệu/BMI snapshots đã lưu.
+ADR006 (thay ADR005): ngày nghiệp vụ cho server-derived days dùng timezone cấu hình
+`APP_TIMEZONE`, mặc định `Asia/Ho_Chi_Minh`; tuần bắt đầu thứ Hai 00:00 giờ địa
+phương, history upper bound đầu ngày kế tiếp exclusive. Sleep lấy ngày theo WokeAt
+quy đổi business timezone, metric activity lấy ngày theo LoggedAt; duration và
+overlap vẫn dùng full instants. Không rebucket dữ liệu/BMI snapshots đã lưu.
 Diet BusinessDate tiêu thụ nguyên văn, không suy từ CreatedAt/OccurredOn/receive time.
-Q01 cross-service đã được Bảo duyệt theo quyền Huy ủy quyền, xem [ADR005](../decisions/005-mvp-utc-business-calendar.md). UI tự chọn current meal date phải UTC; UTC-only
-không tương đương midnight local Việt Nam, không cần timezone từ Identity.
+Xem [ADR006](../decisions/006-business-timezone-vietnam.md). UI tự chọn current meal
+date gửi ngày địa phương.
+
+Lịch sử đọc: `GET /water/history?days` trả tổng theo ngày (1..90, cũ → mới);
+`GET /sleep/history?page&pageSize` trả bản ghi mới nhất trước. Workout plan nhận
+`activityPreference/equipmentAvailable/limitations` (null = lấy từ hồ sơ Identity,
+list rỗng = người dùng bỏ hết). `limitations` là text tự do cho LLM; chỉ `joint_pain`
+có rule lọc xác định. Mỗi buổi trả `activities[]` 1–3 bài (bài chính đầu tiên), tổng
+thời lượng bằng `minutesPerSession`; goal quyết định thứ tự ưu tiên (BuildMuscle →
+strength, LoseWeight → cardio, Longevity → vận động nhẹ). Upsert cập nhật cả metadata
+ngày/buổi/phút/goal thay vì chỉ JSON.
 
 Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,
 reject conflicting duplicate và repair partial pair chỉ từ valid replay. Rabbit

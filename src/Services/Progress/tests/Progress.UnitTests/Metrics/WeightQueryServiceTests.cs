@@ -29,6 +29,9 @@ public sealed class WeightQueryServiceTests
 
         public Task<IReadOnlyList<DateOnly>> GetActiveMetricDatesAsync(Guid userId, CancellationToken ct) =>
             throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct) =>
+            throw new NotImplementedException();
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

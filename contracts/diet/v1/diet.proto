@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package longevia.diet.v1;
+
+option csharp_namespace = "Longevia.Diet.Contracts.V1";
+
+// DietService là service nội bộ, gRPC-only. Recommendation không gọi service này;
+// Progress gọi để lấy dữ liệu dinh dưỡng đã tổng hợp cho longevity/digest.
+service DietService {
+  rpc GetNutritionAdherence (NutritionAdherenceRequest) returns (NutritionAdherenceResponse);
+  rpc GetWeeklyNutritionSummary (WeeklyNutritionSummaryRequest) returns (WeeklyNutritionSummaryResponse);
+}
+
+message NutritionAdherenceRequest {
+  string user_id = 1;
+  string from_date = 2; // ISO yyyy-MM-dd, inclusive
+  string to_date = 3;   // ISO yyyy-MM-dd, inclusive
+}
+
+message NutritionAdherenceResponse {
+  double adherence_rate = 1;  // 0..1
+  int32 days_with_target = 2;
+  int32 days_on_target = 3;
+}
+
+message WeeklyNutritionSummaryRequest {
+  string user_id = 1;
+  string week_start_date = 2; // ISO, Monday
+}
+
+message DailyNutritionPoint {
+  string date = 1;
+  int32 calories = 2;
+  double protein_grams = 3;
+  double carbs_grams = 4;
+  double fat_grams = 5;
+  double fiber_grams = 6;
+}
+
+message WeeklyNutritionSummaryResponse {
+  repeated DailyNutritionPoint days = 1;
+  int32 average_calories = 2;
+  double average_protein_grams = 3;
+  double average_carbs_grams = 4;
+  double average_fat_grams = 5;
+  double average_fiber_grams = 6;
+  int32 days_with_data = 7;
+}

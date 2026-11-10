@@ -41,6 +41,10 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
             .HasColumnType("text[]")
             .IsRequired();
 
+        builder.Property(p => p.HealthLimitations)
+            .HasColumnType("text[]")
+            .IsRequired();
+
         builder.Property(p => p.UpdatedAt)
             .IsRequired();
     }

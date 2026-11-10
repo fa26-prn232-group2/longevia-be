@@ -36,8 +36,10 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
                 .SetProperty(u => u.VerificationTokenConsumedAt, (DateTimeOffset?)verifiedAt)
                 .SetProperty(u => u.UpdatedAt, (DateTimeOffset?)verifiedAt), ct) == 1;
 
-    public async Task<bool> TryResetPasswordAsync(
-        string tokenHash,
+    public async Task<User?> GetByVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        await dbContext.Users.FirstOrDefaultAsync(u => u.VerificationTokenHash == tokenHash, ct);
+
+    public async Task<bool> TryResetPasswordAsync(string tokenHash,
         string passwordHash,
         DateTimeOffset resetAt,
         CancellationToken ct = default) =>

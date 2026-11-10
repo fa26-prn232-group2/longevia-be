@@ -52,6 +52,7 @@ internal static class MealPlanMapper
             WeeklyTargetFiberGrams = result.WeeklyTargetFiberGrams,
             Disclaimer = new Contracts.Disclaimer { Text = result.Disclaimer },
             UsedFallback = result.UsedFallback,
+            UsedFallbackReason = result.UsedFallbackReason,
         };
 
         response.Days.AddRange(result.Days.Select(ToProtoDay));
@@ -97,6 +98,7 @@ internal static class MealPlanMapper
         FatGrams = food.FatGrams,
         FiberGrams = food.FiberGrams,
         Allergens = food.Allergens.ToList(),
+        Category = food.Category,
     };
 
     private static Contracts.MealPlanDay ToProtoDay(MealPlanDay day)

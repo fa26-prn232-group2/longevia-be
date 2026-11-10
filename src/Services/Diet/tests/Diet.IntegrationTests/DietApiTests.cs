@@ -5,6 +5,7 @@ using Diet.Application.Features.Foods;
 using Diet.Application.Features.Meals;
 using Diet.Application.Features.Targets;
 using Diet.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -89,6 +90,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.Equal(1505m, summary.RemainingCalories);
         Assert.Equal(93m, summary.Macros.Protein.Consumed);
         Assert.Equal(2, summary.Meals.Single().ItemsCount);
+        Assert.Equal(2, summary.Meals.Single().Items.Count);
         using var stranger = factory.UserClient(Guid.NewGuid());
         await stranger.PutAsJsonAsync("/targets/me", Target);
         var empty = await stranger.GetFromJsonAsync<DailySummaryResponse>("/meals/daily-summary?date=2026-10-24");
@@ -140,7 +142,10 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
     public async Task Endpoints_WithoutToken_ReturnUnauthorized(string method, string route)
     {
         using var client = factory.CreateClient();
-        var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), route));
+        var message = new HttpRequestMessage(new HttpMethod(method), route);
+        if (method is "POST" or "PUT")
+            message.Content = JsonContent.Create(new { });
+        var response = await client.SendAsync(message);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -185,7 +190,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.Contains("http_server", await client.GetStringAsync("/metrics"));
         using var swagger = JsonDocument.Parse(await client.GetStringAsync("/swagger/v1/swagger.json"));
         var paths = swagger.RootElement.GetProperty("paths");
-        Assert.Equal(8, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
+        Assert.Equal(20, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
             !x.Name.StartsWith("/alive") && !x.Name.StartsWith("/metrics")).Sum(x => x.Value.EnumerateObject().Count()));
         var schemaNames = new[]
         {
@@ -195,7 +200,19 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
             "MealRecommendationsResponse", "MealSuggestionResponse", "MealCitationResponse",
         };
         var schemas = swagger.RootElement.GetProperty("components").GetProperty("schemas");
-        Assert.Equal(100, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+        Assert.Equal(101, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+    }
+
+    [Fact]
+    public async Task Host_ServiceTokenConfigured_StartsAndServesHealth()
+    {
+        // Regression: the service token interceptor used to be registered inside
+        // the AddGrpc options delegate, which runs after the service collection is
+        // read-only. Docker sets SERVICE__TOKEN, so every API crashed on startup.
+        using var tokenFactory = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("SERVICE:TOKEN", "diet-integration-service-token"));
+        using var client = tokenFactory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
     }
 
     private static async Task<FoodResponse> CreateFood(HttpClient client)

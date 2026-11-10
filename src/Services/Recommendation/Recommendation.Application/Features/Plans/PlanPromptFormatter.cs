@@ -27,7 +27,15 @@ public sealed class PlanPromptFormatter
     /// Trả khối corpus; mỗi đoạn gồm dòng metadata và nội dung nguyên văn.
     /// Corpus rỗng trả chuỗi rỗng để prompt không có khối dữ liệu giả.
     /// </summary>
-    public string FormatCorpus(IReadOnlyList<RetrievedChunk> chunks)
+    public string FormatCorpus(IReadOnlyList<RetrievedChunk> chunks) =>
+        FormatCorpus(chunks, int.MaxValue, int.MaxValue);
+
+    /// <summary>
+    /// Trả khối corpus có giới hạn số đoạn và độ dài mỗi đoạn (dùng cho meal plan
+    /// để giảm nhiễu prompt; citation vẫn đối chiếu trên nội dung gốc).
+    /// </summary>
+    public string FormatCorpus(IReadOnlyList<RetrievedChunk> chunks, int maxChunks,
+        int maxCharsPerChunk)
     {
         ArgumentNullException.ThrowIfNull(chunks);
 
@@ -39,9 +47,16 @@ public sealed class PlanPromptFormatter
         var builder = new StringBuilder();
         builder.AppendLine(CorpusBeginMarker);
 
-        for (var index = 0; index < chunks.Count; index++)
+        var count = Math.Min(chunks.Count, Math.Max(0, maxChunks));
+        for (var index = 0; index < count; index++)
         {
             var chunk = chunks[index].Chunk;
+            var content = chunk.Content.Trim();
+            if (content.Length > maxCharsPerChunk)
+            {
+                content = content[..Math.Max(0, maxCharsPerChunk)].TrimEnd() + "…";
+            }
+
             builder
                 .Append('[')
                 .Append(index.ToString(CultureInfo.InvariantCulture))
@@ -51,7 +66,7 @@ public sealed class PlanPromptFormatter
                 .Append(chunk.BookPageFrom.ToString(CultureInfo.InvariantCulture))
                 .Append("; status=")
                 .AppendLine(chunk.Verified ? VerifiedStatus : NeedsReviewStatus)
-                .AppendLine(chunk.Content.Trim());
+                .AppendLine(content);
         }
 
         builder.Append(CorpusEndMarker);

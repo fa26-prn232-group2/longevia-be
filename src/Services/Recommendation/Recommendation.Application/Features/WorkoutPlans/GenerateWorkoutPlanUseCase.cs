@@ -22,7 +22,7 @@ public sealed class GenerateWorkoutPlanUseCase(
     IKnowledgeStore knowledgeStore,
     IChatModel chatModel)
 {
-    private const int ContextTopK = 8;
+    private const int ContextTopK = 20;
 
     /// <summary>Chạy toàn bộ pipeline cho một lời gọi.</summary>
     public async Task<GenerateWorkoutPlanResult> ExecuteAsync(
@@ -41,15 +41,6 @@ public sealed class GenerateWorkoutPlanUseCase(
             {
                 Code = PlanWarningCodes.UnsupportedLocale,
                 Message = "Locale không được hỗ trợ nên nội dung dùng tiếng Việt (vi-VN).",
-            });
-        }
-
-        if (request.Limitations.Count == 0)
-        {
-            warnings.Add(new PlanWarning
-            {
-                Code = PlanWarningCodes.NoLimitationsAssumed,
-                Message = "Caller chưa khai giới hạn sức khỏe nên chỉ dùng hướng dẫn chung của chương 5, không giả định khỏe mạnh hay chấn thương.",
             });
         }
 
@@ -72,11 +63,12 @@ public sealed class GenerateWorkoutPlanUseCase(
         warnings.AddRange(skeleton.Warnings);
 
         var usedFallback = false;
+        var fallbackReason = string.Empty;
         IReadOnlyList<WorkoutPlanDay> days;
 
         if (corpusLoaded && !catalogResult.Catalog.IsEmpty)
         {
-            var selected = await TrySelectAsync(
+            var selection = await TrySelectAsync(
                     request,
                     skeleton,
                     catalogResult.Catalog,
@@ -85,9 +77,10 @@ public sealed class GenerateWorkoutPlanUseCase(
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            if (selected is null)
+            if (selection.Days is null)
             {
                 usedFallback = true;
+                fallbackReason = selection.Reason ?? "invalid_model_output";
                 warnings.Add(new PlanWarning
                 {
                     Code = PlanWarningCodes.AiFallbackUsed,
@@ -98,7 +91,7 @@ public sealed class GenerateWorkoutPlanUseCase(
             }
             else
             {
-                days = selected;
+                days = selection.Days;
             }
         }
         else
@@ -107,6 +100,7 @@ public sealed class GenerateWorkoutPlanUseCase(
             // trả đúng khung xác định đã dựng (FR-031/FR-033). Đây vẫn là
             // phương án dự phòng nên cờ used_fallback phải bật.
             usedFallback = true;
+            fallbackReason = corpusLoaded ? "no_safe_activity" : "corpus_missing";
             days = BuildSkeletonDays(skeleton, catalogResult.AppliedLimitations);
         }
 
@@ -131,10 +125,11 @@ public sealed class GenerateWorkoutPlanUseCase(
             Warnings = Deduplicate(warnings),
             Disclaimer = DisclaimerText.Value,
             UsedFallback = usedFallback,
+            UsedFallbackReason = fallbackReason,
         };
     }
 
-    private async Task<IReadOnlyList<WorkoutPlanDay>?> TrySelectAsync(
+    private async Task<(IReadOnlyList<WorkoutPlanDay>? Days, string? Reason)> TrySelectAsync(
         GenerateWorkoutPlanRequest request,
         WorkoutPlanSkeleton skeleton,
         WorkoutActivityCatalog catalog,
@@ -156,18 +151,18 @@ public sealed class GenerateWorkoutPlanUseCase(
         catch (Exception)
         {
             // Provider lỗi/timeout: use case vẫn trả skeleton thay vì làm hỏng request.
-            return null;
+            return (null, "provider_unavailable");
         }
 
         if (completion is not { Abstained: false, Payload: not null })
         {
-            return null;
+            return (null, completion.AbstainReason ?? "provider_unavailable");
         }
 
         var parsed = parser.Parse(completion.Payload, skeleton, catalog, chunks, appliedLimitations);
         return validator.Validate(request, skeleton, catalog, parsed, corpusLoaded: true).IsValid
-            ? parsed
-            : null;
+            ? (parsed, null)
+            : (null, "invalid_model_output");
     }
 
     private IReadOnlyList<WorkoutPlanDay> BuildSkeletonDays(
@@ -189,8 +184,19 @@ public sealed class GenerateWorkoutPlanUseCase(
                     DurationMinutes = skeleton.MinutesPerSession,
                     Intensity = day.Activity.Intensity,
                     EquipmentUsed = day.Activity.EquipmentUsed,
+                    Activities =
+                    [
+                        new PlannedWorkoutActivity
+                        {
+                            Activity = day.Activity.Key,
+                            ActivityLabel = day.Activity.DisplayName,
+                            DurationMinutes = skeleton.MinutesPerSession,
+                            Intensity = day.Activity.Intensity,
+                            EquipmentUsed = day.Activity.EquipmentUsed,
+                        },
+                    ],
                     Rationale = rationaleBuilder.BuildWorkoutRationale(
-                        day.Activity.Key,
+                        day.Activity.DisplayName,
                         skeleton.MinutesPerSession,
                         limitations,
                         day.Activity.Grounding is null
@@ -229,6 +235,7 @@ public sealed class GenerateWorkoutPlanUseCase(
             new[]
             {
                 "tập luyện thể dục tuổi thọ",
+                WorkoutGoalGuidance.For(request.Goal).VietnamesePhrase,
                 request.Goal,
                 request.Profile.ActivityLevel,
                 string.Join(' ', request.ActivityPreference),

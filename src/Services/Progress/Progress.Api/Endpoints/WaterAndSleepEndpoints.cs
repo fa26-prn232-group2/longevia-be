@@ -29,6 +29,11 @@ public static class WaterEndpoints
         })
         .WithName("GetWaterToday")
         .WithSummary("Lấy tổng lượng nước uống hôm nay");
+
+        group.MapGet("/history", async (int? days, WaterUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetHistoryAsync(days ?? 30, ct)))
+            .WithName("GetWaterHistory")
+            .WithSummary("Lịch sử uống nước theo ngày (1..90 ngày, cũ → mới)");
     }
 }
 
@@ -46,5 +51,29 @@ public static class SleepEndpoints
         .AddEndpointFilter<ValidationFilter<LogSleepRequest>>()
         .WithName("LogSleep")
         .WithSummary("Ghi nhận thông tin giấc ngủ");
+
+        group.MapGet("/today", async (SleepUseCases useCases, CancellationToken ct) =>
+        {
+            var result = await useCases.GetTodayAsync(ct);
+            IResult response = result is null ? TypedResults.NoContent() : TypedResults.Ok(result);
+            return response;
+        })
+        .Produces(StatusCodes.Status204NoContent)
+        .WithName("GetTodaySleep")
+        .WithSummary("Lấy giấc ngủ đêm qua (ngày thức dậy hôm nay; 204 nếu chưa có)");
+
+        group.MapDelete("/{id:guid}", async (Guid id, SleepUseCases useCases, CancellationToken ct) =>
+        {
+            await useCases.DeleteAsync(id, ct);
+            return TypedResults.NoContent();
+        })
+        .WithName("DeleteSleepLog")
+        .WithSummary("Xoá bản ghi giấc ngủ của bạn");
+
+        group.MapGet("/history", async (int? page, int? pageSize, SleepUseCases useCases,
+            CancellationToken ct) =>
+            TypedResults.Ok(await useCases.GetHistoryAsync(page ?? 1, pageSize ?? 10, ct)))
+            .WithName("GetSleepHistory")
+            .WithSummary("Lịch sử giấc ngủ (phân trang, mới nhất trước)");
     }
 }

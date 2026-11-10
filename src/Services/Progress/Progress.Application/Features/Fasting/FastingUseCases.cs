@@ -85,6 +85,38 @@ public sealed class FastingUseCases(
             session.Status.ToString());
     }
 
+    /// <summary>Lịch sử các phiên đã kết thúc, mới nhất trước, có phân trang.</summary>
+    public async Task<FastingHistoryPageResponse> GetHistoryAsync(int page, int pageSize,
+        CancellationToken ct)
+    {
+        if (page < 1)
+        {
+            throw Longevia.Shared.Errors.AppException.BadRequest("page phải >= 1.",
+                "progress.invalid_page");
+        }
+
+        var size = Math.Clamp(pageSize, 1, 50);
+        var userId = currentUser.RequiredId();
+        var skip = checked((page - 1) * size);
+
+        var items = await fastingRepo.GetCompletedPageAsync(userId, skip, size, ct);
+        var total = await fastingRepo.CountCompletedAsync(userId, ct);
+
+        return new FastingHistoryPageResponse(
+            page,
+            size,
+            total,
+            items.Select(session => new FastingHistoryItemResponse(
+                session.Id,
+                session.Protocol,
+                session.StartedAt,
+                session.EndedAt ?? session.StartedAt,
+                session.TargetHours,
+                Math.Round(session.ActualHours, 2),
+                session.IsGoalReached,
+                session.Status.ToString())).ToArray());
+    }
+
     private static bool IsUniqueConflict(Exception ex)
     {
         // Kiểm tra message hoặc inner exception liên quan unique violation

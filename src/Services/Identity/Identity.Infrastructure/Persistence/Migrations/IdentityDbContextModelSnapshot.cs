@@ -156,9 +156,16 @@ namespace Identity.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.PrimitiveCollection<List<string>>("HealthLimitations")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<decimal>("HeightCm")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
+
+                    b.Property<bool>("ReceiveWeeklyDigest")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

@@ -6,4 +6,5 @@ public sealed record UpdateProfileRequest(
     decimal HeightCm,
     string ActivityLevel,
     string DietaryPreference,
-    List<string>? Allergies);
+    List<string>? Allergies,
+    List<string>? HealthLimitations = null);

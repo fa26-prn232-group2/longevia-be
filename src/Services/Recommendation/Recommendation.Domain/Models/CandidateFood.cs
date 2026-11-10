@@ -35,4 +35,7 @@ public sealed record CandidateFood
 
     /// <summary>Thành phần gây dị ứng (đã chuẩn hoá lowercase).</summary>
     public IReadOnlyList<string> Allergens { get; init; } = [];
+
+    /// <summary>Nhóm món trong catalog (Meat, Grains, Vegetables…).</summary>
+    public string Category { get; init; } = string.Empty;
 }

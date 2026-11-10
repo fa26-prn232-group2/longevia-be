@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Recommendation.Application\Recommendation.Application.csproj" />
     <ProjectReference Include="..\Recommendation.Infrastructure\Recommendation.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Longevia.Shared.csproj" />
   </ItemGroup>
 
 </Project>

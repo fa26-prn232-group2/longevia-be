@@ -48,11 +48,24 @@ public sealed class FastingTests(ProgressFixture fixture)
         Assert.True(ended.IsGoalReached);
         Assert.Equal("Completed", ended.Status);
 
-        // 4. Current should now be null
+        // 4. Current should now be 204 No Content (chưa có phiên là trạng thái hợp lệ)
         using var afterEndCurrent = await client.GetAsync("/fasting/current");
-        Assert.Equal(HttpStatusCode.OK, afterEndCurrent.StatusCode);
-        var content = await afterEndCurrent.Content.ReadAsStringAsync();
-        Assert.True(string.IsNullOrWhiteSpace(content) || content == "null");
+        Assert.Equal(HttpStatusCode.NoContent, afterEndCurrent.StatusCode);
+        Assert.Equal(string.Empty, await afterEndCurrent.Content.ReadAsStringAsync());
+
+        // 5. Lịch sử có phiên vừa kết thúc và phân trang đúng.
+        using var historyResponse = await client.GetAsync("/fasting/history?page=1&pageSize=20");
+        Assert.Equal(HttpStatusCode.OK, historyResponse.StatusCode);
+        var history = await historyResponse.Content.ReadFromJsonAsync<FastingHistoryPageResponse>(JsonOpts);
+        Assert.NotNull(history);
+        Assert.True(history.TotalCount >= 1);
+        Assert.Contains(history.Items, item => item.SessionId == started.SessionId);
+        Assert.All(history.Items, item => Assert.Equal("Completed", item.Status));
+
+        using var emptyPage = await client.GetAsync("/fasting/history?page=999&pageSize=20");
+        var empty = await emptyPage.Content.ReadFromJsonAsync<FastingHistoryPageResponse>(JsonOpts);
+        Assert.NotNull(empty);
+        Assert.Empty(empty.Items);
     }
 
     [Fact]

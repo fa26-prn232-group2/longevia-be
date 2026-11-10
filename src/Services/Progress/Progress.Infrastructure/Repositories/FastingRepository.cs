@@ -89,4 +89,18 @@ public sealed class FastingRepository(ProgressDbContext db) : IFastingRepository
             .Where(x => x.UserId == userId && x.EndedAt != null && x.EndedAt >= weekStartUtc && x.EndedAt < weekEndUtc)
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<FastingSession>> GetCompletedPageAsync(
+        Guid userId, int skip, int take, CancellationToken ct)
+    {
+        return await db.FastingSessions.AsNoTracking()
+            .Where(x => x.UserId == userId && x.EndedAt != null)
+            .OrderByDescending(x => x.EndedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountCompletedAsync(Guid userId, CancellationToken ct) =>
+        db.FastingSessions.CountAsync(x => x.UserId == userId && x.EndedAt != null, ct);
 }

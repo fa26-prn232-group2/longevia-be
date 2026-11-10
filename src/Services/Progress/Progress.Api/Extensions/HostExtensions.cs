@@ -12,7 +12,21 @@ public static class HostExtensions
 {
     public static IServiceCollection AddProgressHost(this IServiceCollection services, IConfiguration config)
     {
-        services.AddGrpc();
+        // The interceptor instance must be registered before AddGrpc: the options
+        // delegate runs when GrpcServiceOptions is resolved, at which point the
+        // service collection is already read-only.
+        var serviceToken = config["SERVICE:TOKEN"];
+        if (!string.IsNullOrWhiteSpace(serviceToken))
+        {
+            services.AddSingleton(new Longevia.Shared.Auth.ServiceTokenServerInterceptor(serviceToken));
+        }
+        services.AddGrpc(options =>
+        {
+            if (!string.IsNullOrWhiteSpace(serviceToken))
+            {
+                options.Interceptors.Add<Longevia.Shared.Auth.ServiceTokenServerInterceptor>();
+            }
+        });
         services.AddProgressAuthentication(config);
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
             context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
@@ -56,6 +70,8 @@ public static class HostExtensions
         app.MapSleepEndpoints();
         app.MapMetricEndpoints();
         app.MapDashboardEndpoints();
+        app.MapWorkoutPlanEndpoints();
+        app.MapLongevityEndpoints();
         app.MapGrpcService<ProgressGrpcService>();
         return app;
     }

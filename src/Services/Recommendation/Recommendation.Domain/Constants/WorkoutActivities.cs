@@ -82,7 +82,7 @@ public static class WorkoutActivities
         {
             Key = "strength",
             DisplayName = "Tập tạ",
-            Aliases = ["strength", "strength training", "weight training", "tập tạ", "nâng tạ", "tạ", "chống đẩy"],
+            Aliases = ["strength", "strength training", "weight training", "tập tạ", "nâng tạ", "tạ", "chống đẩy", "bodyweight", "push-up", "push up"],
             EquipmentAliases = ["gym", "phòng gym", "phong gym", "weights", "dumbbell", "dumbbells", "tạ"],
             EquipmentUsed = ["gym"],
         },
@@ -106,6 +106,14 @@ public static class WorkoutActivities
             Intensity = "Trung bình (3-6 MET)",
             IntensityEvidence = "Làm vườn",
         },
+        new WorkoutActivityDefinition
+        {
+            Key = "stairs",
+            DisplayName = "Leo cầu thang",
+            Aliases = ["stairs", "stair climbing", "leo cầu thang", "cầu thang", "leo thang"],
+            Intensity = "Trung bình (3-6 MET)",
+            IntensityEvidence = "Leo cầu thang",
+        },
     ];
 
     /// <summary>Tìm hoạt động theo key ổn định; <c>null</c> khi không thuộc danh mục.</summary>
@@ -126,6 +134,18 @@ public static class WorkoutActivities
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Nhãn tiếng Việt của hoạt động để hiển thị cho người dùng. Key lạ (dữ liệu
+    /// cũ hoặc ngoài danh mục) được trả nguyên văn thay vì rỗng để không mất dấu.
+    /// </summary>
+    public static string DisplayNameFor(string? key)
+    {
+        var definition = FindByKey(key);
+        return definition is not null
+            ? definition.DisplayName
+            : (key ?? string.Empty).Trim();
     }
 
     /// <summary><c>true</c> khi giá trị caller gửi khớp key hoặc alias của hoạt động.</summary>

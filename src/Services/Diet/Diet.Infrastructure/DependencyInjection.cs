@@ -3,8 +3,10 @@ using Diet.Infrastructure.Grpc;
 using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Diet.Infrastructure.Persistence.Repositories;
+using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Longevia.Progress.Contracts.V1;
+using Longevia.Shared.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddDietInfrastructure(this IServiceCollection services, IConfiguration config)
     {
+        var serviceToken = config["SERVICE:TOKEN"] ?? string.Empty;
         var connection = config.GetConnectionString("Diet")
             ?? throw new InvalidOperationException("Thiếu ConnectionStrings: Diet.");
         services.AddDbContext<DietDbContext>(options => options.UseNpgsql(connection));
@@ -22,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<ITargetRepository, TargetRepository>();
         services.AddScoped<IMealRepository, MealRepository>();
+        services.AddScoped<IMealPlanRepository, MealPlanRepository>();
+        services.AddScoped<IKnowledgeConversationRepository, KnowledgeConversationRepository>();
+        services.AddScoped<ITargetSuggestionProvider, TargetSuggestionProvider>();
         services.AddSingleton(_ =>
         {
             var address = config["ProgressGrpc:Address"] ?? "http://progress:50051";
@@ -31,17 +37,22 @@ public static class DependencyInjection
             return GrpcChannel.ForAddress(uri);
         });
         services.AddSingleton(provider => new ProgressService.ProgressServiceClient(
-            provider.GetRequiredService<GrpcChannel>()));
+            provider.GetRequiredService<GrpcChannel>().Intercept(new ServiceTokenInterceptor(serviceToken))));
         services.AddScoped<IWeightProvider, ProgressWeightProvider>();
         services.AddKeyedSingleton<GrpcChannel>("recommendation", (_, _) =>
             GrpcChannel.ForAddress(config["RecommendationGrpc:Address"] ?? "http://recommendation:50051"));
         services.AddSingleton(provider => new Longevia.Recommendation.Contracts.V1.RecommendationService.RecommendationServiceClient(
-            provider.GetRequiredKeyedService<GrpcChannel>("recommendation")));
+            provider.GetRequiredKeyedService<GrpcChannel>("recommendation")
+                .Intercept(new ServiceTokenInterceptor(serviceToken))));
         services.AddScoped<IMealRecommendationProvider, MealRecommendationProvider>();
+        services.AddScoped<IMealPlanProvider, MealPlanProvider>();
+        services.AddScoped<INutrientGapProvider, NutrientGapProvider>();
+        services.AddScoped<IKnowledgeProvider, KnowledgeProvider>();
         services.AddKeyedSingleton<GrpcChannel>("identity", (_, _) =>
             GrpcChannel.ForAddress(config["IdentityGrpc:Address"] ?? "http://identity:50051"));
         services.AddSingleton(provider => new Longevia.Identity.Contracts.V1.IdentityService.IdentityServiceClient(
-            provider.GetRequiredKeyedService<GrpcChannel>("identity")));
+            provider.GetRequiredKeyedService<GrpcChannel>("identity")
+                .Intercept(new ServiceTokenInterceptor(serviceToken))));
         services.AddScoped<IProfileProvider, IdentityProfileProvider>();
         services.AddDietMessaging(config);
         return services;

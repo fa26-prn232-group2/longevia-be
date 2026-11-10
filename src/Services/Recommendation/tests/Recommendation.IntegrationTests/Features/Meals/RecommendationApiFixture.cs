@@ -142,7 +142,7 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
 
         public List<StructuredPrompt> Prompts { get; } = [];
 
-        public void AbstainNextMealPlan() => Interlocked.Exchange(ref _abstainNextMealPlan, 1);
+        public void AbstainNextMealPlan() => Interlocked.Increment(ref _abstainNextMealPlan);
 
         public void UseInvalidCitationForNextMealPlan() => Interlocked.Exchange(ref _invalidCitationNextMealPlan, 1);
 
@@ -168,8 +168,9 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
 
         private ChatCompletion CompleteMealPlan(string userPrompt)
         {
-            if (Interlocked.Exchange(ref _abstainNextMealPlan, 0) == 1)
+            if (Interlocked.CompareExchange(ref _abstainNextMealPlan, 0, 0) > 0)
             {
+                Interlocked.Decrement(ref _abstainNextMealPlan);
                 return new ChatCompletion { Abstained = true, AbstainReason = "provider_unavailable" };
             }
 
@@ -212,7 +213,7 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
                     meals.Add(new JsonObject
                     {
                         ["meal_type"] = mealType,
-                        ["food_indices"] = new JsonArray(0),
+                        ["food_indices"] = MealFoodIndices(mealType, userPrompt),
                         ["citations"] = CitationArray(quote),
                     });
                 }
@@ -259,7 +260,7 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
                 days.Add(new JsonObject
                 {
                     ["date"] = date,
-                    ["activity_index"] = 0,
+                    ["activity_indices"] = new JsonArray(0),
                     ["citations"] = CitationArray(quote),
                 });
             }
@@ -269,6 +270,49 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
                 Payload = new JsonObject { ["days"] = days },
             };
         }
+
+        /// <summary>
+        /// Mỗi bữa chọn món cân bằng của bữa đó + 2 món 0 calo để đủ tối thiểu
+        /// 3 món/bữa mà không lệch calo/macro của fixture.
+        /// </summary>
+        private static JsonArray MealFoodIndices(string mealType, string userPrompt)
+        {
+            var count = CandidateCount().Matches(userPrompt).Count;
+            if (count <= 1)
+            {
+                return new JsonArray(0);
+            }
+
+            if (count < 3)
+            {
+                var indices = new JsonArray();
+                for (var index = 0; index < count; index++)
+                {
+                    indices.Add(index);
+                }
+
+                return indices;
+            }
+
+            // Fixture lớn có món cân bằng ở 0..3 và 2 món 0 calo ở 4..5.
+            if (count >= 6)
+            {
+                var balanced = mealType switch
+                {
+                    "BREAKFAST" => 0,
+                    "LUNCH" => 1,
+                    "DINNER" => 2,
+                    "SNACK" => 3,
+                    _ => 0,
+                };
+                return new JsonArray(balanced, 4, 5);
+            }
+
+            return new JsonArray(0, 1, 2);
+        }
+
+        [GeneratedRegex(@"^\[\d+\] food_id=", RegexOptions.Multiline)]
+        private static partial Regex CandidateCount();
 
         private static IReadOnlyList<(string Date, string Segment)> SplitByDate(string userPrompt)
         {

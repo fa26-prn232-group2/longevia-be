@@ -12,3 +12,9 @@ public sealed record SleepResponse(
     string SleepQuality,
     double DurationHours,
     DateOnly Date);
+
+public sealed record SleepHistoryPageResponse(
+    int Page,
+    int PageSize,
+    int TotalCount,
+    IReadOnlyList<SleepResponse> Items);

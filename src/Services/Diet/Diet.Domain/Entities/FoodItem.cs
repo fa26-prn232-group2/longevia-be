@@ -12,10 +12,19 @@ public sealed class FoodItem
 
     public string[]? Allergens { get; private set; }
 
+    /// <summary>
+    /// Giá trị vi chất theo 100 đơn vị serving, ví dụ "Vitamin D" → µg.
+    /// Null/rỗng nghĩa là chưa có dữ liệu, không phải 0.
+    /// </summary>
+    public IReadOnlyDictionary<string, decimal>? Micronutrients { get; private set; }
+
+    public bool IsDeleted { get; private set; }
+
     private FoodItem() { }
 
     public static FoodItem Create(Guid? userId, string name, string category,
-        decimal servingSize, string servingUnit, NutritionValues nutrition, IReadOnlyList<string>? allergens = null)
+        decimal servingSize, string servingUnit, NutritionValues nutrition, IReadOnlyList<string>? allergens = null,
+        IReadOnlyDictionary<string, decimal>? micronutrients = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(servingSize);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -29,6 +38,11 @@ public sealed class FoodItem
         {
             throw new ArgumentException("Invalid allergen tags.", nameof(allergens));
         }
+        if (micronutrients is not null && (micronutrients.Count > 64 ||
+            micronutrients.Any(x => string.IsNullOrWhiteSpace(x.Key) || x.Key.Length > 60 || x.Value < 0)))
+        {
+            throw new ArgumentException("Invalid micronutrient values.", nameof(micronutrients));
+        }
         return new()
         {
             Id = Guid.NewGuid(),
@@ -39,6 +53,23 @@ public sealed class FoodItem
             ServingUnit = servingUnit.Trim(),
             Nutrition = nutrition,
             Allergens = allergens?.Select(x => x.Trim().ToLowerInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+            Micronutrients = micronutrients?.ToDictionary(x => x.Key.Trim(), x => x.Value, StringComparer.OrdinalIgnoreCase),
         };
     }
+
+    public void Update(string name, string category, decimal servingSize, string servingUnit,
+        NutritionValues nutrition, IReadOnlyList<string>? allergens)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(servingSize);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Name = name.Trim();
+        Category = category.Trim();
+        ServingSize = servingSize;
+        ServingUnit = servingUnit.Trim();
+        Nutrition = nutrition;
+        Allergens = allergens?.Select(x => x.Trim().ToLowerInvariant()).Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal).ToArray();
+    }
+
+    public void SoftDelete() => IsDeleted = true;
 }

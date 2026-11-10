@@ -17,6 +17,5 @@
   <ItemGroup>
     <Protobuf Include="../../../../contracts/identity/v1/identity.proto" GrpcServices="Client" />
     <Protobuf Include="../../../../contracts/progress/v1/progress.proto" GrpcServices="Client" />
-    <Protobuf Include="../../../../contracts/recommendation/v1/recommendation.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

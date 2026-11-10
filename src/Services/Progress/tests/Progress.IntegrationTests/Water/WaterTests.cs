@@ -91,4 +91,23 @@ public sealed class WaterTests(ProgressFixture fixture)
             "Bearer", TestTokens.Create(fixture, "valid", userId));
         return client;
     }
+
+    [Fact]
+    public async Task Water_History_ReturnsDailyTotalsForRequestedRange()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        await client.PostAsJsonAsync("/water/log", new LogWaterRequest(350));
+
+        var history = await client.GetFromJsonAsync<WaterHistoryResponse>("/water/history?days=7", JsonOpts);
+        Assert.NotNull(history);
+        Assert.Equal(7, history.Days);
+        Assert.Equal(7, history.Items.Count);
+        Assert.Equal(350, history.Items[^1].ConsumedMl);
+        Assert.False(history.Items[^1].GoalReached);
+
+        var invalid = await client.GetAsync("/water/history?days=0");
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
 }

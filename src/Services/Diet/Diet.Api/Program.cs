@@ -1,18 +1,53 @@
 using Diet.Api;
 using Diet.Api.Endpoints;
+using Diet.Api.Grpc;
 using Diet.Application;
+using Diet.Application.Common;
 using Diet.Infrastructure;
 using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
 using Longevia.Shared.Observability;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+Longevia.Shared.Time.BusinessTime.Configure(builder.Configuration["APP_TIMEZONE"]);
+
+var httpPort = ResolvePort(builder.Configuration["DIET:HTTP_PORT"], 8080);
+var grpcPort = ResolvePort(builder.Configuration["DIET:GRPC_PORT"], 50051);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort, listen => listen.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(grpcPort, listen => listen.Protocols = HttpProtocols.Http2);
+});
 
 builder.Services.AddDietApplication();
 builder.Services.AddDietInfrastructure(builder.Configuration);
+// The interceptor instance must be registered before AddGrpc: the options
+// delegate runs when GrpcServiceOptions is resolved, at which point the service
+// collection is already read-only.
+var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+if (!string.IsNullOrWhiteSpace(serviceToken))
+{
+    builder.Services.AddSingleton(new ServiceTokenServerInterceptor(serviceToken));
+}
+builder.Services.AddGrpc(options =>
+{
+    if (!string.IsNullOrWhiteSpace(serviceToken))
+    {
+        options.Interceptors.Add<ServiceTokenServerInterceptor>();
+    }
+});
+builder.Services.AddOptions<RecommendationBudgetOptions>()
+    .Bind(builder.Configuration.GetSection(RecommendationBudgetOptions.SectionName))
+    .Validate(options => RecommendationBudgetOptions.IsValidDeadline(options.DeadlineMilliseconds),
+        "Recommendation:DeadlineMilliseconds phải nằm trong khoảng 1.000..60.000 ms.")
+    .Validate(options => RecommendationBudgetOptions.IsValidMealPlanDeadline(
+            options.MealPlanDeadlineMilliseconds),
+        "Recommendation:MealPlanDeadlineMilliseconds phải nằm trong khoảng 1.000..120.000 ms.")
+    .ValidateOnStart();
 builder.Services.AddOptions<JwtOptions>().Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .Validate(options => !string.IsNullOrWhiteSpace(options.SigningPublicKey),
         "Diet yêu cầu Jwt:SigningPublicKey.").ValidateOnStart();
@@ -52,6 +87,10 @@ app.UseAuthorization();
 app.MapFoodEndpoints();
 app.MapTargetEndpoints();
 app.MapMealEndpoints();
+app.MapMealPlanEndpoints();
+app.MapNutritionEndpoints();
+app.MapKnowledgeEndpoints();
+app.MapGrpcService<DietGrpcService>();
 app.MapGet("/health", async (DietDbContext db, CancellationToken ct) =>
     await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503));
 app.MapGet("/alive", () => TypedResults.Ok(new { status = "ok" }));
@@ -70,5 +109,8 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.Run();
+
+static int ResolvePort(string? raw, int fallback) =>
+    int.TryParse(raw, out var port) && port is > 0 and <= 65535 ? port : fallback;
 
 public partial class Program;

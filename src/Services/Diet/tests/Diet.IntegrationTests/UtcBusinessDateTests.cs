@@ -12,7 +12,7 @@ public sealed class UtcBusinessDateTests
     [Fact]
     public async Task UtcToday_RollsAtUtcMidnight_ExplicitHistoricalMealRemainsUnchanged()
     {
-        var clock = new Clock { Now = DateTimeOffset.Parse("2026-11-04T23:59:59Z") };
+        var clock = new Clock { Now = DateTimeOffset.Parse("2026-11-04T16:59:59Z") };
         await using var factory = new DietApiFactory { Clock = clock };
         await factory.InitializeAsync();
         var user = Guid.NewGuid();
@@ -28,7 +28,7 @@ public sealed class UtcBusinessDateTests
         Assert.Equal(selected, meal.Date);
         var first = await client.GetFromJsonAsync<DailySummaryResponse>("/meals/daily-summary");
         Assert.Equal(new DateOnly(2026, 11, 4), first!.Date);
-        clock.Now = DateTimeOffset.Parse("2026-11-05T00:00:00Z");
+        clock.Now = DateTimeOffset.Parse("2026-11-04T17:00:00Z");
         var next = await client.GetFromJsonAsync<DailySummaryResponse>("/meals/daily-summary");
         Assert.Equal(new DateOnly(2026, 11, 5), next!.Date);
         var historical = await client.GetFromJsonAsync<DailySummaryResponse>("/meals/daily-summary?date=2026-10-01");
@@ -37,7 +37,7 @@ public sealed class UtcBusinessDateTests
         using var scope = factory.Services.CreateScope();
         var persisted = await scope.ServiceProvider.GetRequiredService<DietDbContext>().MealLogs.AsNoTracking().SingleAsync(x => x.Id == meal.Id);
         Assert.Equal(selected, persisted.Date);
-        Assert.Equal(DateTimeOffset.Parse("2026-11-04T23:59:59Z"), persisted.CreatedAt);
+        Assert.Equal(DateTimeOffset.Parse("2026-11-04T16:59:59Z"), persisted.CreatedAt);
     }
 
     private sealed class Clock : TimeProvider

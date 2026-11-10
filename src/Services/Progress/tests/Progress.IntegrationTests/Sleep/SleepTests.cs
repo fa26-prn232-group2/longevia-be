@@ -29,7 +29,7 @@ public sealed class SleepTests(ProgressFixture fixture)
         Assert.NotNull(result);
         Assert.Equal(8.0, result.DurationHours);
         Assert.Equal("Good", result.SleepQuality);
-        Assert.Equal(DateOnly.FromDateTime(wokeAt.UtcDateTime), result.Date);
+        Assert.Equal(Progress.Domain.UtcCalendar.Day(wokeAt), result.Date);
     }
 
     [Fact]
@@ -111,5 +111,49 @@ public sealed class SleepTests(ProgressFixture fixture)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer", TestTokens.Create(fixture, "valid", userId));
         return client;
+    }
+
+    [Fact]
+    public async Task Sleep_Today_ReturnsLatestRecordForWakeDate()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var empty = await client.GetAsync("/sleep/today");
+        Assert.Equal(HttpStatusCode.NoContent, empty.StatusCode);
+
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-9);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-1);
+        var logged = await client.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));
+        Assert.Equal(HttpStatusCode.Created, logged.StatusCode);
+        var created = await logged.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+
+        var today = await client.GetFromJsonAsync<SleepResponse>("/sleep/today", JsonOpts);
+        Assert.NotNull(today);
+        Assert.Equal(created!.Id, today.Id);
+    }
+
+    [Fact]
+    public async Task Sleep_History_ReturnsPagedRecentFirst()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var sleptAt = new FoundationTimeProvider().GetUtcNow().AddHours(-9);
+        var wokeAt = new FoundationTimeProvider().GetUtcNow().AddHours(-1);
+        var logged = await client.PostAsJsonAsync("/sleep/log", new LogSleepRequest(sleptAt, wokeAt, "Good"));
+        Assert.Equal(HttpStatusCode.Created, logged.StatusCode);
+        var created = await logged.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+
+        var history = await client.GetFromJsonAsync<SleepHistoryPageResponse>(
+            "/sleep/history?page=1&pageSize=10", JsonOpts);
+        Assert.NotNull(history);
+        Assert.True(history.TotalCount >= 1);
+        Assert.Contains(history.Items, item => item.Id == created!.Id);
+
+        var empty = await client.GetFromJsonAsync<SleepHistoryPageResponse>(
+            "/sleep/history?page=999&pageSize=10", JsonOpts);
+        Assert.NotNull(empty);
+        Assert.Empty(empty.Items);
     }
 }

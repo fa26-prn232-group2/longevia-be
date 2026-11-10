@@ -1,4 +1,6 @@
 using Google.GenAI;
+using Longevia.Shared.Auth;
+using Longevia.Shared.Observability;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -15,6 +17,7 @@ using Recommendation.Application.Features.Meals;
 using Recommendation.Application.Features.NutrientGaps;
 using Recommendation.Application.Features.Plans;
 using Recommendation.Application.Features.Search;
+using Recommendation.Application.Features.Targets;
 using Recommendation.Application.Features.WorkoutPlans;
 using Recommendation.Infrastructure.DependencyInjection;
 using Recommendation.Infrastructure.Options;
@@ -60,6 +63,7 @@ public static class RecommendationStartup
         ConfigureKestrel(builder);
         ConfigureServices(builder);
         ConfigureGrpc(builder);
+        builder.Services.AddObservability("RecommendationService");
     }
 
     /// <summary>Chạy migration rồi thoát, không mở cổng phục vụ request.</summary>
@@ -146,6 +150,7 @@ public static class RecommendationStartup
         app.MapGrpcService<RecommendationGrpcService>();
         app.MapGrpcHealthChecksService();
         app.MapHealthChecks("/health");
+        app.MapPrometheusScrapingEndpoint();
     }
 
     // Kho tri thức rỗng là trạng thái hợp lệ của database nhưng làm mọi câu trả lời
@@ -306,6 +311,8 @@ public static class RecommendationStartup
         // IKnowledgeStore (scoped) nên use case phải scoped.
         builder.Services.AddSingleton<SafetyGuard>();
         builder.Services.AddScoped<AskLongevityQuestionUseCase>();
+        builder.Services.AddScoped<AskStreamingUseCase>();
+        builder.Services.AddScoped<SuggestNutritionTargetsUseCase>();
 
         // Tra cứu đoạn sách (US4): use case phụ thuộc IKnowledgeStore (scoped) nên
         // cũng phải scoped.
@@ -326,7 +333,6 @@ public static class RecommendationStartup
         builder.Services.AddSingleton<MealPlanPromptBuilder>();
         builder.Services.AddSingleton<MealPlanSelectionParser>();
         builder.Services.AddSingleton<MealPlanValidator>();
-        builder.Services.AddSingleton<MealPlanFallbackSelector>();
         builder.Services.AddSingleton<MealPlanSuggestionBuilder>();
         builder.Services.AddScoped<GenerateMealPlanUseCase>();
 
@@ -358,10 +364,22 @@ public static class RecommendationStartup
         // gRPC service được resolve qua DI để tôn trọng constructor injection.
         builder.Services.AddScoped<RecommendationGrpcService>();
 
+        // The interceptor instance must be registered before AddGrpc: the options
+        // delegate runs when GrpcServiceOptions is resolved, at which point the
+        // service collection is already read-only.
+        var serviceToken = builder.Configuration["SERVICE:TOKEN"];
+        if (!string.IsNullOrWhiteSpace(serviceToken))
+        {
+            builder.Services.AddSingleton(new ServiceTokenServerInterceptor(serviceToken));
+        }
         builder.Services.AddGrpc(options =>
         {
             options.Interceptors.Add<GrpcExceptionInterceptor>();
             options.Interceptors.Add<ServerDeadlineInterceptor>();
+            if (!string.IsNullOrWhiteSpace(serviceToken))
+            {
+                options.Interceptors.Add<ServiceTokenServerInterceptor>();
+            }
         });
 
         builder.Services.AddGrpcHealthChecks(options =>

@@ -32,16 +32,6 @@ public sealed partial class WorkoutActivityCatalogBuilder(WorkoutLimitationRules
         var corpusLoaded = chapterChunks.Count > 0;
 
         var limitations = limitationRules.Apply(request.Limitations);
-        foreach (var unsupported in limitations.UnsupportedLimitations)
-        {
-            warnings.Add(new PlanWarning
-            {
-                Code = PlanWarningCodes.UnsupportedLimitation,
-                Message = string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"Giới hạn '{unsupported}' không thuộc bảng ánh xạ đóng nên đã bị bỏ qua."),
-            });
-        }
 
         var preferences = NormalizeValues(request.ActivityPreference);
         var equipment = NormalizeSet(request.EquipmentAvailable);

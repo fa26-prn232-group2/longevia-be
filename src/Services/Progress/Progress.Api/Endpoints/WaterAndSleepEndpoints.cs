@@ -52,6 +52,16 @@ public static class SleepEndpoints
         .WithName("LogSleep")
         .WithSummary("Ghi nhận thông tin giấc ngủ");
 
+        group.MapGet("/today", async (SleepUseCases useCases, CancellationToken ct) =>
+        {
+            var result = await useCases.GetTodayAsync(ct);
+            IResult response = result is null ? TypedResults.NoContent() : TypedResults.Ok(result);
+            return response;
+        })
+        .Produces(StatusCodes.Status204NoContent)
+        .WithName("GetTodaySleep")
+        .WithSummary("Lấy giấc ngủ đêm qua (ngày thức dậy hôm nay; 204 nếu chưa có)");
+
         group.MapDelete("/{id:guid}", async (Guid id, SleepUseCases useCases, CancellationToken ct) =>
         {
             await useCases.DeleteAsync(id, ct);

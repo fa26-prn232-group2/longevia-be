@@ -90,6 +90,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.Equal(1505m, summary.RemainingCalories);
         Assert.Equal(93m, summary.Macros.Protein.Consumed);
         Assert.Equal(2, summary.Meals.Single().ItemsCount);
+        Assert.Equal(2, summary.Meals.Single().Items.Count);
         using var stranger = factory.UserClient(Guid.NewGuid());
         await stranger.PutAsJsonAsync("/targets/me", Target);
         var empty = await stranger.GetFromJsonAsync<DailySummaryResponse>("/meals/daily-summary?date=2026-10-24");
@@ -199,7 +200,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
             "MealRecommendationsResponse", "MealSuggestionResponse", "MealCitationResponse",
         };
         var schemas = swagger.RootElement.GetProperty("components").GetProperty("schemas");
-        Assert.Equal(100, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
+        Assert.Equal(101, schemaNames.Sum(name => schemas.GetProperty(name).GetProperty("properties").EnumerateObject().Count()));
     }
 
     [Fact]

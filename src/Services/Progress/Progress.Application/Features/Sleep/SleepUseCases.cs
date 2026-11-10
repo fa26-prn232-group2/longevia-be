@@ -8,7 +8,8 @@ namespace Progress.Application.Features.Sleep;
 public sealed class SleepUseCases(
     ISleepRepository sleepRepo,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    TimeProvider time)
 {
     public async Task<SleepResponse> LogAsync(LogSleepRequest request, CancellationToken ct)
     {
@@ -33,6 +34,19 @@ public sealed class SleepUseCases(
             log.SleepQuality,
             log.DurationHours,
             log.Date);
+    }
+
+    /// <summary>Giấc ngủ đêm qua (ngày thức dậy = hôm nay), mới nhất; null nếu chưa ghi.</summary>
+    public async Task<SleepResponse?> GetTodayAsync(CancellationToken ct)
+    {
+        var userId = currentUser.RequiredId();
+        var today = Progress.Domain.UtcCalendar.Day(time.GetUtcNow());
+        var logs = await sleepRepo.GetSleepLogsInDateRangeAsync(userId, today, today, ct);
+        var log = logs.FirstOrDefault();
+        return log is null
+            ? null
+            : new SleepResponse(log.Id, log.SleptAt, log.WokeAt, log.SleepQuality,
+                log.DurationHours, log.Date);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)

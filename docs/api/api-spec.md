@@ -375,12 +375,20 @@
       {
         "mealType": "Breakfast",
         "totalCalories": 450,
-        "itemsCount": 2
-      },
-      {
-        "mealType": "Lunch",
-        "totalCalories": 1000,
-        "itemsCount": 3
+        "itemsCount": 2,
+        "items": [
+          {
+            "foodId": "…",
+            "name": "Yến mạch",
+            "servingUnit": "g",
+            "quantity": 50,
+            "calories": 190,
+            "proteinGrams": 7,
+            "carbsGrams": 33,
+            "fatGrams": 3,
+            "fiberGrams": 5
+          }
+        ]
       }
     ]
   }
@@ -1084,6 +1092,7 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `DELETE /api/progress/sleep/{id}` — xoá bản ghi giấc ngủ của owner.
 - `GET /api/progress/sleep/history?page=1&pageSize=10` — lịch sử giấc ngủ, mới nhất trước,
   `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }` với cùng shape `SleepResponse`.
+- `GET /api/progress/sleep/today` — giấc ngủ đêm qua (ngày thức dậy hôm nay), 204 nếu chưa ghi.
 - `GET /api/progress/fasting/current` — **204 No Content** khi chưa có phiên (thay cho 200 body rỗng trước đây).
 - `GET /api/progress/fasting/history?page=1&pageSize=20` — lịch sử phiên đã kết thúc,
   mới nhất trước; `pageSize` 1..50; trả `{ page, pageSize, totalCount, items[] }`.

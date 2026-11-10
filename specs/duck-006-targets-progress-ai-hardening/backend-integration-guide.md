@@ -5,12 +5,13 @@
 ## Contract thay đổi
 
 - `contracts/identity/v1/identity.proto`: `GetUserProfileResponse.health_limitations = 7`
-  (`repeated string`, giá trị canonical hiện tại `joint_pain`). Tương thích ngược.
-- `contracts/recommendation/v1/recommendation.proto`: `CandidateFood.category = 11`.
-  Diet gửi `FoodItem.Category`; Recommendation dùng để gợi ý nhóm bữa trong prompt.
-- REST Progress: thêm `GET /water/history`, `GET /sleep/history`; workout request/response
-  thêm `activityPreference/equipmentAvailable/limitations`.
-- REST Identity: profile có `healthLimitations`.
+  (`repeated string`, text tự do). Tương thích ngược.
+- `contracts/recommendation/v1/recommendation.proto`: `CandidateFood.category = 11`;
+  `WorkoutPlanDay.activities = 10` (1–3 hoạt động/buổi).
+- REST Progress: thêm `GET /water/history`, `GET /sleep/history`, `GET /sleep/today`;
+  workout request/response thêm `activityPreference/equipmentAvailable/limitations/activities`.
+- REST Diet: `DailySummaryResponse.Meals[].items[]` trả món đã ăn.
+- REST Identity: profile có `healthLimitations` text tự do.
 
 ## Hành vi quan trọng
 

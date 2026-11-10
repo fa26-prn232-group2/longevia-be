@@ -22,8 +22,10 @@ public sealed class DailySummaryUseCase(IMealRepository meals, ITargetRepository
             Progress(nutrients.Sum(x => x.FatGrams), target.TargetFatGrams));
         var summaries = logs.GroupBy(x => x.MealType)
             .OrderBy(x => Array.IndexOf(MealTypes.All.ToArray(), x.Key))
-            .Select(g => new MealSummary(g.Key, g.Sum(x => x.Items.Sum(i => i.Nutrition.Calories)),
-                g.Sum(x => x.Items.Count))).ToList();
+            .Select(g => new MealSummary(g.Key,
+                g.Sum(x => x.Items.Sum(i => i.Nutrition.Calories)),
+                g.Sum(x => x.Items.Count),
+                g.SelectMany(x => x.Items).Select(MealItemResponse.From).ToList())).ToList();
         return new(day, target.TargetCalories, calories, target.TargetCalories - calories, macros, summaries);
     }
 

@@ -9,8 +9,10 @@
 | PUT | `/api/diet/targets/me` | Tự đính kèm `bmr`/`tdee` khi có hồ sơ + cân nặng |
 | GET | `/api/progress/water/history?days=30` | Tổng theo ngày, `days` 1..90, cũ → mới |
 | GET | `/api/progress/sleep/history?page=1&pageSize=10` | Mới nhất trước |
-| PUT | `/api/identity/users/me/profile` | Thêm `healthLimitations: string[]` |
-| POST | `/api/progress/workout-plans` | Thêm `activityPreference`, `equipmentAvailable`, `limitations` |
+| GET | `/api/progress/sleep/today` | Giấc ngủ đêm qua; 204 nếu chưa ghi |
+| GET | `/api/diet/meals/daily-summary?date=` | `meals[].items[]` có tên món/khẩu phần/calo |
+| PUT | `/api/identity/users/me/profile` | Thêm `healthLimitations: string[]` tự do |
+| POST | `/api/progress/workout-plans` | Thêm activityPreference/equipmentAvailable/limitations |
 
 `healthLimitations` hiện chỉ nhận `joint_pain`.
 

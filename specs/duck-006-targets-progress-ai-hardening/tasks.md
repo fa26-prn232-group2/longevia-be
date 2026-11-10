@@ -15,9 +15,14 @@
       `no_limitations_assumed`/`unsupported_limitation`; truy xuất đủ chương 5.
 - [x] Mỗi buổi 1–3 hoạt động (`activities[]`): schema `activity_indices`, parser chia
       thời lượng, proto/DTO/FE render; goal ưu tiên strength/cardio/nhẹ; thêm `stairs`.
-- [x] Tests: Recommendation 382 unit + 66 integration; Diet 49 integration + 19 unit;
-      Progress 115 unit + 154 integration; Identity 73 unit + 22 integration; FE 221 test.
-- [x] `make lint` + `make check` PASS: 892/892 test, vulnerability scan 28 project sạch.
+- [x] Meal-plan một màn: bỏ tách Đã lưu/Tạo mới, tạo mới qua dialog.
+- [x] Workout card: ngày là tiêu đề, bài tập/thời lượng dùng foreground.
+- [x] `DailySummaryResponse.Meals[].items[]` + `GET /progress/sleep/today` (204 nếu chưa có).
+- [x] Trang `/today` + navbar “Hôm nay”: calo/bữa ăn, nước, nhịn ăn, giấc ngủ,
+      bài tập hôm nay, cân nặng/streak, thói quen; quick actions.
+- [x] Tests: Recommendation 383 unit + 66 integration; Diet 49 integration + 19 unit;
+      Progress 115 unit + 155 integration; Identity 73 unit + 22 integration; FE 222 test.
+- [x] `make lint` + `make check` PASS: 898/898 test, vulnerability scan 28 project sạch.
 - [x] Commit 1 lần/repo; chưa push.
 
 ## Contract impact

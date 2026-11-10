@@ -3,7 +3,7 @@
   "number": 6,
   "slug": "targets-progress-ai-hardening",
   "branch": "feat/longevia-mvp-completion",
-  "status": "implemented",
+  "status": "closed",
   "services": ["Diet", "Identity", "Progress", "Recommendation"],
   "description": "Targets BMR/TDEE on manual save, Progress history/workout UX, meal-plan AI-only hardening, profile health limitations",
   "opened_at": "2026-11-10"

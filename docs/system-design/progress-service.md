@@ -93,8 +93,11 @@ date gửi ngày địa phương.
 Lịch sử đọc: `GET /water/history?days` trả tổng theo ngày (1..90, cũ → mới);
 `GET /sleep/history?page&pageSize` trả bản ghi mới nhất trước. Workout plan nhận
 `activityPreference/equipmentAvailable/limitations` (null = lấy từ hồ sơ Identity,
-list rỗng = người dùng bỏ hết), echo lại input trong response và lưu cùng `plan_json`;
-upsert cập nhật cả metadata ngày/buổi/phút/goal thay vì chỉ JSON.
+list rỗng = người dùng bỏ hết). `limitations` là text tự do cho LLM; chỉ `joint_pain`
+có rule lọc xác định. Mỗi buổi trả `activities[]` 1–3 bài (bài chính đầu tiên), tổng
+thời lượng bằng `minutesPerSession`; goal quyết định thứ tự ưu tiên (BuildMuscle →
+strength, LoseWeight → cardio, Longevity → vận động nhẹ). Upsert cập nhật cả metadata
+ngày/buổi/phút/goal thay vì chỉ JSON.
 
 Consumer/inbox atomically persist trong progress_db, canonical EventId=MealLogId,
 reject conflicting duplicate và repair partial pair chỉ từ valid replay. Rabbit

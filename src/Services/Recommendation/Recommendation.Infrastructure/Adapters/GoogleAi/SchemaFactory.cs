@@ -196,14 +196,17 @@ public static class SchemaFactory
                             ["type"] = "string",
                             ["description"] = "Ngày ISO YYYY-MM-DD của buổi tập đã cho trong skeleton.",
                         },
-                        ["activity_index"] = new JsonObject
+                        ["activity_indices"] = new JsonObject
                         {
-                            ["type"] = "integer",
-                            ["description"] = "Chỉ số hoạt động trong catalog đã cho (bắt đầu từ 0).",
+                            ["type"] = "array",
+                            ["description"] = "1-3 chỉ số hoạt động trong catalog (bắt đầu từ 0); phần tử đầu là bài chính, không trùng.",
+                            ["items"] = new JsonObject { ["type"] = "integer" },
+                            ["minItems"] = 1,
+                            ["maxItems"] = 3,
                         },
                         ["citations"] = CitationArraySchema(),
                     },
-                    ["required"] = new JsonArray("date", "activity_index", "citations"),
+                    ["required"] = new JsonArray("date", "activity_indices", "citations"),
                 },
             },
         },

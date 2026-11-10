@@ -65,4 +65,26 @@ public sealed record WorkoutPlanDay
 
     /// <summary>Citation đã verify; rỗng khi <see cref="RestDay"/> hoặc corpus rỗng.</summary>
     public IReadOnlyList<Citation> Citations { get; init; } = [];
+
+    /// <summary>1–3 hoạt động của buổi; phần tử đầu là bài chính.</summary>
+    public IReadOnlyList<PlannedWorkoutActivity> Activities { get; init; } = [];
+}
+
+/// <summary>Một hoạt động trong buổi tập đã được phân bổ thời lượng.</summary>
+public sealed record PlannedWorkoutActivity
+{
+    /// <summary>Key hoạt động ổn định trong catalog.</summary>
+    public required string Activity { get; init; }
+
+    /// <summary>Nhãn tiếng Việt của hoạt động.</summary>
+    public required string ActivityLabel { get; init; }
+
+    /// <summary>Thời lượng của hoạt động trong buổi (phút).</summary>
+    public int DurationMinutes { get; init; }
+
+    /// <summary>Cường độ có căn cứ chương 5; rỗng khi không có.</summary>
+    public string Intensity { get; init; } = string.Empty;
+
+    /// <summary>Dụng cụ của hoạt động.</summary>
+    public IReadOnlyList<string> EquipmentUsed { get; init; } = [];
 }

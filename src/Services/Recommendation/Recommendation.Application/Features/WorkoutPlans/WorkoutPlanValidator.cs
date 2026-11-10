@@ -120,6 +120,63 @@ public sealed class WorkoutPlanValidator
                     CultureInfo.InvariantCulture,
                     $"Ngày {day.Date} có cường độ không có căn cứ trong chương 5."));
             }
+
+            if (day.Activities.Count is < 1 or > 3)
+            {
+                return Invalid(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Ngày {day.Date} phải có 1-3 hoạt động."));
+            }
+
+            if (day.Activities.Sum(item => item.DurationMinutes) != skeleton.MinutesPerSession
+                || day.Activities.Any(item => item.DurationMinutes < 5))
+            {
+                return Invalid(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Tổng thời lượng hoạt động ngày {day.Date} không khớp minutes_per_session."));
+            }
+
+            if (day.Activities.Select(item => item.Activity)
+                .Distinct(StringComparer.Ordinal).Count() != day.Activities.Count)
+            {
+                return Invalid(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Ngày {day.Date} có hoạt động trùng nhau."));
+            }
+
+            if (!string.Equals(day.Activity, day.Activities[0].Activity, StringComparison.Ordinal))
+            {
+                return Invalid(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Bài chính ngày {day.Date} không khớp hoạt động đầu tiên."));
+            }
+
+            foreach (var item in day.Activities)
+            {
+                var catalogActivity = catalog.Find(item.Activity);
+                if (catalogActivity is null)
+                {
+                    return Invalid(string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Hoạt động '{item.Activity}' ngày {day.Date} không thuộc catalog."));
+                }
+
+                if (item.EquipmentUsed.Any(equipment =>
+                        !catalogActivity.EquipmentUsed.Contains(equipment, StringComparer.Ordinal)))
+                {
+                    return Invalid(string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Hoạt động '{item.Activity}' ngày {day.Date} dùng thiết bị ngoài catalog."));
+                }
+
+                if (item.Intensity.Length > 0
+                    && !string.Equals(item.Intensity, catalogActivity.Intensity, StringComparison.Ordinal))
+                {
+                    return Invalid(string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Hoạt động '{item.Activity}' ngày {day.Date} có cường độ không có căn cứ."));
+                }
+            }
         }
 
         return WorkoutPlanValidationResult.Valid();
@@ -138,7 +195,8 @@ public sealed class WorkoutPlanValidator
             || day.DurationMinutes != 0
             || day.EquipmentUsed.Count > 0
             || day.Citations.Count > 0
-            || day.Intensity.Length > 0)
+            || day.Intensity.Length > 0
+            || day.Activities.Count > 0)
         {
             return Invalid(string.Create(
                 CultureInfo.InvariantCulture,

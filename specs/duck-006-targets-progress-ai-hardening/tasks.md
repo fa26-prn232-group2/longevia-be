@@ -11,8 +11,12 @@
 - [x] gRPC: `CandidateFood.category`; sửa trailer title non-ASCII gây HTTP 500.
 - [x] FE: WeekPicker, lịch sử nước/ngủ, hồ sơ giới hạn sức khỏe, workout prefill,
       timeout 150s, bỏ UI fallback meal-plan.
-- [x] Tests: Recommendation 381 unit + 66 integration; Diet 49 integration + 19 unit;
-      Progress 115 unit + 154 integration; Identity 70 unit + 22 integration; FE 221 test.
+- [x] Workout nâng cao: giới hạn sức khỏe nhập tự do + chọn nhanh; bỏ warning
+      `no_limitations_assumed`/`unsupported_limitation`; truy xuất đủ chương 5.
+- [x] Mỗi buổi 1–3 hoạt động (`activities[]`): schema `activity_indices`, parser chia
+      thời lượng, proto/DTO/FE render; goal ưu tiên strength/cardio/nhẹ; thêm `stairs`.
+- [x] Tests: Recommendation 382 unit + 66 integration; Diet 49 integration + 19 unit;
+      Progress 115 unit + 154 integration; Identity 73 unit + 22 integration; FE 221 test.
 - [x] `make lint` + `make check` PASS: 892/892 test, vulnerability scan 28 project sạch.
 - [x] Commit 1 lần/repo; chưa push.
 

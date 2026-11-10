@@ -260,7 +260,7 @@ public sealed partial class RecommendationApiFixture : IAsyncLifetime
                 days.Add(new JsonObject
                 {
                     ["date"] = date,
-                    ["activity_index"] = 0,
+                    ["activity_indices"] = new JsonArray(0),
                     ["citations"] = CitationArray(quote),
                 });
             }

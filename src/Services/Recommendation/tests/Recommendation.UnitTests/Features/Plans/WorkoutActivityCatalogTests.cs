@@ -103,14 +103,14 @@ public sealed class WorkoutActivityCatalogTests
     }
 
     [Fact]
-    public void UnsupportedLimitationIsIgnoredAndReported()
+    public void UnsupportedLimitationIsIgnoredSilently()
     {
         var request = Request() with { Limitations = ["bệnh tim bẩm sinh"] };
 
         var result = _builder.Build(request, [Chunk("Đi bộ nhanh mỗi ngày.")]);
 
         Assert.Contains(result.Catalog.Activities, activity => activity.Key == "walking");
-        Assert.Contains(
+        Assert.DoesNotContain(
             result.Warnings,
             warning => warning.Code == PlanWarningCodes.UnsupportedLimitation);
         Assert.Empty(result.AppliedLimitations);

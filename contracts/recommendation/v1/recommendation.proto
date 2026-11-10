@@ -426,11 +426,20 @@ message GenerateWorkoutPlanResponse {
 message WorkoutPlanDay {
   string date = 1;                          // ISO YYYY-MM-DD
   bool rest_day = 2;
-  string activity = 3;                      // rỗng nếu rest_day
-  int32 duration_minutes = 4;               // 0 nếu rest_day
-  string intensity = 5;                     // rỗng nếu không có căn cứ sách
-  repeated string equipment_used = 6;
+  string activity = 3;                      // bài chính; rỗng nếu rest_day
+  int32 duration_minutes = 4;               // tổng thời lượng buổi; 0 nếu rest_day
+  string intensity = 5;                     // cường độ bài chính; rỗng nếu không có căn cứ sách
+  repeated string equipment_used = 6;       // dụng cụ của cả buổi
   string rationale = 7;                     // do code dựng từ request/citation
   repeated Citation citations = 8;          // đã verify; rỗng nếu rest_day/corpus rỗng
-  string activity_label = 9;                // nhãn tiếng Việt của activity; rỗng nếu rest_day
+  string activity_label = 9;                // nhãn tiếng Việt của bài chính
+  repeated WorkoutActivity activities = 10; // 1-3 hoạt động của buổi; phần tử đầu là bài chính
+}
+
+message WorkoutActivity {
+  string activity = 1;
+  string activity_label = 2;
+  int32 duration_minutes = 3;
+  string intensity = 4;
+  repeated string equipment_used = 5;
 }

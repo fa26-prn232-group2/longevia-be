@@ -44,7 +44,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
                 Assert.NotEmpty(day.Citations);
                 Assert.False(string.IsNullOrWhiteSpace(day.Intensity));
             });
-        Assert.Contains(
+        Assert.DoesNotContain(
             result.Warnings,
             warning => warning.Code == PlanWarningCodes.NoLimitationsAssumed);
         Assert.DoesNotContain(
@@ -94,13 +94,13 @@ public sealed class GenerateWorkoutPlanUseCaseTests
     }
 
     [Fact]
-    public async Task EmptyLimitationsAssumeGeneralGuidance()
+    public async Task EmptyLimitationsAssumeGeneralGuidanceWithoutWarning()
     {
         var useCase = CreateUseCase(new StubChatModel(Selection()), new StubKnowledgeStore([ChapterFiveChunk()]));
 
         var result = await useCase.ExecuteAsync(Request(), CancellationToken.None);
 
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.NoLimitationsAssumed);
+        Assert.DoesNotContain(result.Warnings, warning => warning.Code == PlanWarningCodes.NoLimitationsAssumed);
         Assert.DoesNotContain(result.Warnings, warning => warning.Code == PlanWarningCodes.UnsupportedLimitation);
     }
 
@@ -126,14 +126,14 @@ public sealed class GenerateWorkoutPlanUseCaseTests
     }
 
     [Fact]
-    public async Task UnsupportedLimitationIsReportedWithoutMedicalInference()
+    public async Task FreeTextLimitationIsAcceptedWithoutWarningOrMedicalInference()
     {
         var request = Request() with { Limitations = ["bệnh tim"] };
         var useCase = CreateUseCase(new StubChatModel(Selection()), new StubKnowledgeStore([ChapterFiveChunk()]));
 
         var result = await useCase.ExecuteAsync(request, CancellationToken.None);
 
-        Assert.Contains(result.Warnings, warning => warning.Code == PlanWarningCodes.UnsupportedLimitation);
+        Assert.DoesNotContain(result.Warnings, warning => warning.Code == PlanWarningCodes.UnsupportedLimitation);
         Assert.Equal(3, result.SessionsScheduled);
         Assert.DoesNotContain("bệnh tim", string.Join(' ', result.Days.Select(day => day.Rationale)), StringComparison.OrdinalIgnoreCase);
     }
@@ -320,6 +320,54 @@ public sealed class GenerateWorkoutPlanUseCaseTests
         Score = 0.9,
     };
 
+    [Fact]
+    public async Task SupportsMultipleActivitiesPerSession()
+    {
+        var request = Request() with { ActivityPreference = [] };
+        var chunk = Chunk("Đi bộ nhanh và thái cực quyền đều tốt cho tim mạch.", 105);
+        var useCase = CreateUseCase(
+            new StubChatModel(SelectionWithIndices(0, 1)),
+            new StubKnowledgeStore([chunk]));
+
+        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+
+        var day = result.Days.First(item => !item.RestDay);
+        Assert.Equal(2, day.Activities.Count);
+        Assert.Equal(30, day.Activities.Sum(activity => activity.DurationMinutes));
+        Assert.Equal(day.Activities[0].Activity, day.Activity);
+        Assert.All(day.Activities, activity => Assert.True(activity.DurationMinutes >= 5));
+    }
+
+    private static ChatCompletion SelectionWithIndices(params int[] indices)
+    {
+        var days = new JsonArray();
+        foreach (var date in new[] { "2026-10-26", "2026-10-28", "2026-10-30" })
+        {
+            var values = new JsonArray();
+            foreach (var index in indices)
+            {
+                values.Add(index);
+            }
+
+            days.Add(new JsonObject
+            {
+                ["date"] = date,
+                ["activity_indices"] = values,
+                ["citations"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["chunk_index"] = 0,
+                        ["quote"] = "Đi bộ nhanh",
+                    },
+                },
+            });
+        }
+
+        return new ChatCompletion { Payload = new JsonObject { ["days"] = days } };
+    }
+
+
     private static ChatCompletion Selection(params string[] dates)
     {
         if (dates.Length == 0)
@@ -341,7 +389,7 @@ public sealed class GenerateWorkoutPlanUseCaseTests
             days.Add(new JsonObject
             {
                 ["date"] = date,
-                ["activity_index"] = index,
+                ["activity_indices"] = new JsonArray(index),
                 ["citations"] = new JsonArray
                 {
                     new JsonObject

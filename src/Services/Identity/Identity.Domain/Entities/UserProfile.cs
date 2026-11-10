@@ -83,11 +83,11 @@ public sealed class UserProfile
         var normalized = limitations?
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Select(item => item.Trim())
-            .Distinct(StringComparer.Ordinal)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
         if (normalized.Count > Constants.HealthLimitation.MaxItems
-            || normalized.Any(item => !Constants.HealthLimitation.All.Contains(item)))
+            || normalized.Any(item => item.Length > Constants.HealthLimitation.MaxLength))
         {
             throw new ArgumentException("Giới hạn sức khỏe không hợp lệ.", nameof(limitations));
         }

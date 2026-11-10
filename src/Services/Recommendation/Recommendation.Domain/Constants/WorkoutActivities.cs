@@ -82,7 +82,7 @@ public static class WorkoutActivities
         {
             Key = "strength",
             DisplayName = "Tập tạ",
-            Aliases = ["strength", "strength training", "weight training", "tập tạ", "nâng tạ", "tạ", "chống đẩy"],
+            Aliases = ["strength", "strength training", "weight training", "tập tạ", "nâng tạ", "tạ", "chống đẩy", "bodyweight", "push-up", "push up"],
             EquipmentAliases = ["gym", "phòng gym", "phong gym", "weights", "dumbbell", "dumbbells", "tạ"],
             EquipmentUsed = ["gym"],
         },
@@ -105,6 +105,14 @@ public static class WorkoutActivities
             Aliases = ["gardening", "garden", "làm vườn", "trồng trọt"],
             Intensity = "Trung bình (3-6 MET)",
             IntensityEvidence = "Làm vườn",
+        },
+        new WorkoutActivityDefinition
+        {
+            Key = "stairs",
+            DisplayName = "Leo cầu thang",
+            Aliases = ["stairs", "stair climbing", "leo cầu thang", "cầu thang", "leo thang"],
+            Intensity = "Trung bình (3-6 MET)",
+            IntensityEvidence = "Leo cầu thang",
         },
     ];
 

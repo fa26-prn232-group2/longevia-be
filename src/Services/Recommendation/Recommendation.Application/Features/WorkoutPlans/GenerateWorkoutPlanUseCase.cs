@@ -22,7 +22,7 @@ public sealed class GenerateWorkoutPlanUseCase(
     IKnowledgeStore knowledgeStore,
     IChatModel chatModel)
 {
-    private const int ContextTopK = 8;
+    private const int ContextTopK = 20;
 
     /// <summary>Chạy toàn bộ pipeline cho một lời gọi.</summary>
     public async Task<GenerateWorkoutPlanResult> ExecuteAsync(
@@ -41,15 +41,6 @@ public sealed class GenerateWorkoutPlanUseCase(
             {
                 Code = PlanWarningCodes.UnsupportedLocale,
                 Message = "Locale không được hỗ trợ nên nội dung dùng tiếng Việt (vi-VN).",
-            });
-        }
-
-        if (request.Limitations.Count == 0)
-        {
-            warnings.Add(new PlanWarning
-            {
-                Code = PlanWarningCodes.NoLimitationsAssumed,
-                Message = "Bạn chưa khai giới hạn sức khỏe nên lịch tập chỉ dùng hướng dẫn chung, không giả định bạn khỏe mạnh hay đang chấn thương. Cập nhật ở Hồ sơ cá nhân để lịch tập sát hơn.",
             });
         }
 
@@ -193,6 +184,17 @@ public sealed class GenerateWorkoutPlanUseCase(
                     DurationMinutes = skeleton.MinutesPerSession,
                     Intensity = day.Activity.Intensity,
                     EquipmentUsed = day.Activity.EquipmentUsed,
+                    Activities =
+                    [
+                        new PlannedWorkoutActivity
+                        {
+                            Activity = day.Activity.Key,
+                            ActivityLabel = day.Activity.DisplayName,
+                            DurationMinutes = skeleton.MinutesPerSession,
+                            Intensity = day.Activity.Intensity,
+                            EquipmentUsed = day.Activity.EquipmentUsed,
+                        },
+                    ],
                     Rationale = rationaleBuilder.BuildWorkoutRationale(
                         day.Activity.DisplayName,
                         skeleton.MinutesPerSession,
@@ -233,6 +235,7 @@ public sealed class GenerateWorkoutPlanUseCase(
             new[]
             {
                 "tập luyện thể dục tuổi thọ",
+                WorkoutGoalGuidance.For(request.Goal).VietnamesePhrase,
                 request.Goal,
                 request.Profile.ActivityLevel,
                 string.Join(' ', request.ActivityPreference),

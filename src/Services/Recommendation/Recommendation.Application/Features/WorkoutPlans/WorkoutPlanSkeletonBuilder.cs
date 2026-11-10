@@ -40,6 +40,7 @@ public sealed class WorkoutPlanSkeletonBuilder(
 
         var warnings = new List<PlanWarning>(sessions);
         var days = new List<WorkoutPlanSkeletonDay>(dates.Count);
+        var orderedActivities = WorkoutGoalGuidance.For(request.Goal).Prioritize(catalog.Activities);
         var ordinal = 0;
 
         foreach (var date in dates)
@@ -51,7 +52,9 @@ public sealed class WorkoutPlanSkeletonBuilder(
                 continue;
             }
 
-            var activity = catalog.IsEmpty ? null : catalog.Activities[ordinal % catalog.Activities.Count];
+            var activity = orderedActivities.Count == 0
+                ? null
+                : orderedActivities[ordinal % orderedActivities.Count];
             ordinal++;
 
             if (activity is null)

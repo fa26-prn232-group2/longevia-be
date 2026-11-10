@@ -7,7 +7,11 @@ public sealed record WorkoutCitationResponse(int ChapterNumber, string ChapterTi
 
 public sealed record WorkoutPlanDayResponse(string Date, bool RestDay, string Activity,
     string ActivityLabel, int DurationMinutes, string Intensity, IReadOnlyList<string> EquipmentUsed,
-    string Rationale, IReadOnlyList<WorkoutCitationResponse> Citations);
+    string Rationale, IReadOnlyList<WorkoutCitationResponse> Citations,
+    IReadOnlyList<WorkoutActivityResponse> Activities);
+
+public sealed record WorkoutActivityResponse(string Activity, string ActivityLabel,
+    int DurationMinutes, string Intensity, IReadOnlyList<string> EquipmentUsed);
 
 public sealed record WorkoutWarningResponse(string Code, string Message, string Scope);
 
@@ -35,6 +39,9 @@ internal static class WorkoutPlanMapper
             value.Warnings.Select(x => new WorkoutWarningResponse(x.Code, x.Message, x.Scope)).ToArray(),
             value.Days.Select(day => new WorkoutPlanDayResponse(day.Date, day.RestDay, day.Activity,
                 day.ActivityLabel, day.DurationMinutes, day.Intensity, day.EquipmentUsed.ToArray(),
-                day.Rationale, day.Citations.Select(Citation).ToArray())).ToArray(), generatedAt,
+                day.Rationale, day.Citations.Select(Citation).ToArray(),
+                day.Activities.Select(activity => new WorkoutActivityResponse(activity.Activity,
+                    activity.ActivityLabel, activity.DurationMinutes, activity.Intensity,
+                    activity.EquipmentUsed.ToArray())).ToArray())).ToArray(), generatedAt,
             [], [], []);
 }

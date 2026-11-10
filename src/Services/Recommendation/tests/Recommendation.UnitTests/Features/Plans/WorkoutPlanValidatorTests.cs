@@ -285,6 +285,16 @@ public sealed class WorkoutPlanValidatorTests
         EquipmentUsed = [],
         Rationale = "Buổi tập theo hướng dẫn chung.",
         Citations = [Citation()],
+        Activities =
+        [
+            new PlannedWorkoutActivity
+            {
+                Activity = "walking",
+                ActivityLabel = "Đi bộ",
+                DurationMinutes = 30,
+                Intensity = "Trung bình (3-6 MET)",
+            },
+        ],
     };
 
     private static Citation Citation() => new()

@@ -101,6 +101,14 @@ internal static class WorkoutPlanMapper
 
         message.EquipmentUsed.AddRange(day.EquipmentUsed);
         message.Citations.AddRange(day.Citations.Select(ToProtoCitation));
+        message.Activities.AddRange(day.Activities.Select(activity => new Contracts.WorkoutActivity
+        {
+            Activity = activity.Activity,
+            ActivityLabel = activity.ActivityLabel,
+            DurationMinutes = activity.DurationMinutes,
+            Intensity = activity.Intensity,
+            EquipmentUsed = { activity.EquipmentUsed },
+        }));
 
         return message;
     }

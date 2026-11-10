@@ -96,7 +96,7 @@ public sealed class WorkoutPlanCitationGrpcTests(RecommendationApiFixture fixtur
     }
 
     [Fact]
-    public async Task UnsupportedLimitationIsReported()
+    public async Task FreeTextLimitationDoesNotWarn()
     {
         await EnsureChapterFiveAsync(fixture);
         var request = BuildRequest();
@@ -104,7 +104,7 @@ public sealed class WorkoutPlanCitationGrpcTests(RecommendationApiFixture fixtur
 
         var response = await fixture.Client.GenerateWorkoutPlanAsync(request);
 
-        Assert.Contains(response.Warnings, warning => warning.Code == "unsupported_limitation");
+        Assert.DoesNotContain(response.Warnings, warning => warning.Code == "unsupported_limitation");
         Assert.Equal(3, response.SessionsScheduled);
     }
 

@@ -219,7 +219,7 @@
   - `heightCm`: Số thực từ 50.00 đến 250.00 cm, tối đa 2 chữ số thập phân.
   - `activityLevel`: Một trong các giá trị `["Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive"]`.
   - `dietaryPreference`: Một trong `["None", "Keto", "Vegan", "Mediterranean", "LowCarb"]`.
-  - `healthLimitations`: tối đa 8 mục, hiện chỉ nhận `"joint_pain"` (đau/tổn thương khớp).
+  - `healthLimitations`: tối đa 8 mục, mỗi mục tối đa 50 ký tự; nhập tự do (ví dụ “đau lưng”, “thoát vị đĩa đệm”). Không còn allowlist cứng; giá trị được đưa vào ngữ cảnh cho LLM khi tạo lịch tập.
 - **Response `200 OK`**: `ProfileResponse` gồm `id`, `birthDate`, `biologicalSex`, `heightCm`, `activityLevel`, `dietaryPreference`, `allergies`, `healthLimitations` và `updatedAt`; `heightCm` là số thực.
 
 ---
@@ -1000,10 +1000,8 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 | `unsupported_locale` | `plan` | `locale` khác `vi-VN`; service dùng `vi-VN` |
 | `consumed_date_outside_plan` | `plan` | `consumed_date` ngoài tuần nên bỏ qua rule 105% |
 | `suggestion_source_missing` | ngày | Ngày chạm trần nhưng không có căn cứ sách cho `suggestions` |
-| `no_limitations_assumed` | `plan` | `limitations` rỗng; chỉ dùng hướng dẫn chung |
 | `unsupported_activity_preference` | `plan` | Preference không có trong catalog hoặc không khả thi với thiết bị |
 | `no_safe_activity` | ngày | Limitations/thiết bị loại hết hoạt động an toàn của ngày |
-| `unsupported_limitation` | `plan` | Limitation không khớp bảng ánh xạ đóng nên bị bỏ qua |
 | `intensity_unverified` | ngày | Không có câu chương 5 hỗ trợ cường độ nên `intensity` rỗng |
 | `activity_source_unverified` | `plan`/ngày | Corpus rỗng, hoạt động/thời lượng chỉ lấy từ dữ liệu caller gửi |
 
@@ -1075,7 +1073,11 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - `PUT/DELETE /api/diet/foods/{id}` — sửa/xoá mềm custom food của owner.
 - `POST /api/progress/workout-plans` — `{ weekStartDate, goal, days, sessionsPerWeek, minutesPerSession, activityPreference?, equipmentAvailable?, limitations? }`.
   `limitations = null` dùng giới hạn trong hồ sơ; list rỗng nghĩa là người dùng chủ động bỏ hết.
-  Response echo lại các input đã dùng để FE hiển thị khi mở lại.
+  `limitations` là text tự do, được đưa vào prompt để LLM cân nhắc; chỉ `joint_pain` có rule lọc
+  xác định. Mỗi buổi có **1–3 hoạt động**: `activities[]` (phần tử đầu là bài chính), thời lượng
+  chia theo 65/35 hoặc 60/30/10, tổng bằng `minutesPerSession`.
+  Goal ảnh hưởng thứ tự ưu tiên: `BuildMuscle` ưu tiên strength; `LoseWeight` ưu tiên cardio;
+  `Longevity` ưu tiên vận động nhẹ. Response echo lại input đã dùng để FE hiển thị khi mở lại.
 - `GET /api/progress/workout-plans/{weekStartDate}` — đọc kế hoạch tập đã lưu.
 - `GET /api/progress/longevity-habits?days=7` — điểm thói quen trường thọ.
 - `DELETE /api/progress/metrics/{id}` — xoá bản ghi chỉ số của owner.

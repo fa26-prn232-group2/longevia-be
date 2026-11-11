@@ -1,4 +1,4 @@
-﻿# Mô hình dữ liệu — `recommendation_db` (schema `kb`)
+# Mô hình dữ liệu — `recommendation_db` (schema `kb`)
 
 **Feature**: `duck/001/recommendation-rag` | **Date**: 2026-10-22 | **Plan**: [plan.md](./plan.md)
 

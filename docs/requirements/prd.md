@@ -1,4 +1,4 @@
-﻿# Product Requirement Document (PRD) — Longevia Backend
+# Product Requirement Document (PRD) — Longevia Backend
 
 ---
 

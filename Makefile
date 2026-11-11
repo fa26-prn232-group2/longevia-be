@@ -1,4 +1,4 @@
-﻿# Longevia Backend - Make targets wrap the .NET CLI.
+# Longevia Backend - Make targets wrap the .NET CLI.
 # The gate ladder these targets form is the single source of truth in AGENTS.md §2.
 #
 #   make lint    fast gate   -> format-check + build (warnings as errors)

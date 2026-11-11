@@ -1,4 +1,4 @@
-﻿# Deferred — Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
+# Deferred — Recommendation Service với RAG tri thức sách "Chế độ ăn trường thọ"
 
 Công việc phát hiện trong lúc build `duck/001/recommendation-rag` nhưng **không thuộc
 phạm vi của feature này**. Không mục nào ở đây chặn việc đóng feature; không mục nào

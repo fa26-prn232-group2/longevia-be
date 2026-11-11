@@ -190,7 +190,7 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.Contains("http_server", await client.GetStringAsync("/metrics"));
         using var swagger = JsonDocument.Parse(await client.GetStringAsync("/swagger/v1/swagger.json"));
         var paths = swagger.RootElement.GetProperty("paths");
-        Assert.Equal(21, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
+        Assert.Equal(23, paths.EnumerateObject().Where(x => !x.Name.StartsWith("/health") &&
             !x.Name.StartsWith("/alive") && !x.Name.StartsWith("/metrics")).Sum(x => x.Value.EnumerateObject().Count()));
         var schemaNames = new[]
         {

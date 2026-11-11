@@ -36,7 +36,7 @@ public sealed class HeightGrpcTests(IdentityHeightFixture fixture)
         Assert.Equal(21.60m, secondBody.Bmi);
         await using var db = fixture.Db();
         Assert.False(db.Database.HasPendingModelChanges());
-        Assert.Equal(6, (await db.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(7, (await db.Database.GetAppliedMigrationsAsync()).Count());
         var logs = await db.BodyMetricLogs.Where(x => x.UserId == user).ToListAsync();
         Assert.Equal(2, logs.Count);
         Assert.Equal(175m, logs.Single(x => x.Id == firstBody.Id).HeightUsedCm);

@@ -23,5 +23,12 @@ public static class TargetEndpoints
             TypedResults.Ok(await useCases.UpdateAsync(request, ct)))
             .AddEndpointFilter<ValidationFilter<UpdateTargetRequest>>()
             .WithName("UpdateDietTarget").WithSummary("Lưu mục tiêu calo và macro nhập tay");
+
+        group.MapPost("/me/auto", async (AutoTargetRequest request, TargetUseCases useCases,
+            CancellationToken ct) =>
+            TypedResults.Ok(await useCases.AutoAsync(request, ct)))
+            .AddEndpointFilter<ValidationFilter<AutoTargetRequest>>()
+            .WithName("AutoDietTarget")
+            .WithSummary("Tính mục tiêu từ TDEE + mục tiêu sức khỏe và lưu");
     }
 }

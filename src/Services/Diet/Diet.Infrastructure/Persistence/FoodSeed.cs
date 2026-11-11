@@ -31,11 +31,11 @@ internal static class FoodSeed
 
         // Original demo items (ids are stable; allergens declared so they can be recommended).
         Seed(model, "11111111-1111-4111-8111-111111111111",
-            "Ức gà (demo)", "Meat", 100, "g", 165, 31, 0, 3.6m, 0, None);
+            "Ức gà", "Meat", 100, "g", 165, 31, 0, 3.6m, 0, None);
         Seed(model, "22222222-2222-4222-8222-222222222222",
-            "Cơm trắng (demo)", "Grains", 100, "g", 130, 2.7m, 28, 0.3m, 0.4m, None);
+            "Cơm trắng", "Grains", 100, "g", 130, 2.7m, 28, 0.3m, 0.4m, None);
         Seed(model, "33333333-3333-4333-8333-333333333333",
-            "Nước lọc (demo)", "Beverage", 100, "ml", 0, 0, 0, 0, 0, None);
+            "Nước lọc", "Beverage", 100, "ml", 0, 0, 0, 0, 0, None);
 
         // Grains & starches
         Seed(model, "d1e70000-0000-4000-8000-000000000001",

@@ -42,7 +42,7 @@ public sealed class UpdateProfileUseCase(
                 request.DietaryPreference,
                 request.Allergies,
                 request.HealthLimitations,
-                now);
+                now, request.Goal);
 
             user.SetProfile(newProfile);
             userRepository.AddProfile(newProfile);
@@ -57,7 +57,7 @@ public sealed class UpdateProfileUseCase(
                 request.DietaryPreference,
                 request.Allergies,
                 request.HealthLimitations,
-                now);
+                now, request.Goal);
         }
 
         await eventPublisher.PublishAsync(new UserProfileUpdatedEvent(user.Id, now), ct);

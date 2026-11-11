@@ -11,6 +11,7 @@ public static class DietMessagingExtensions
 {
     public const string Exchange = "longevia.events";
     public const string RoutingKey = "diet.meal.logged";
+    public const string RemovalRoutingKey = "diet.meal.removed";
 
     public static IServiceCollection AddDietMessaging(this IServiceCollection services, IConfiguration config)
     {
@@ -46,6 +47,10 @@ public static class DietMessagingExtensions
                 transport.Message<MealLoggedEvent>(message => message.SetEntityName(Exchange));
                 transport.Publish<MealLoggedEvent>(publish => publish.ExchangeType = "topic");
                 transport.Send<MealLoggedEvent>(send => send.UseRoutingKeyFormatter(_ => RoutingKey));
+                transport.Message<MealLogRemovedEvent>(message => message.SetEntityName(Exchange));
+                transport.Publish<MealLogRemovedEvent>(publish => publish.ExchangeType = "topic");
+                transport.Send<MealLogRemovedEvent>(send =>
+                    send.UseRoutingKeyFormatter(_ => RemovalRoutingKey));
                 transport.ConfigureEndpoints(context);
             });
         });

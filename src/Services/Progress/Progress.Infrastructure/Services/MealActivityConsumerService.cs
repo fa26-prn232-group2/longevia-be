@@ -38,6 +38,71 @@ public sealed class MealActivityConsumerService(
         }
     }
 
+    public async Task<MealProcessingResult> ProcessMealRemovedAsync(MealLogRemovedEvent message,
+        CancellationToken ct)
+    {
+        if (message.EventId == Guid.Empty || message.UserId == Guid.Empty
+            || message.MealLogId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Canonical Diet v1 removal requires nonempty event, user and meal ids.");
+        }
+
+        try
+        {
+            return await PersistRemovalAsync(message, ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "PK_processed_meal_removals"
+                or "IX_processed_meal_removals_MealLogId"
+        })
+        {
+            // Delivery song song: đọc lại dưới cùng advisory lock rồi so khớp metadata.
+            db.ChangeTracker.Clear();
+            return await PersistRemovalAsync(message, ct);
+        }
+    }
+
+    private async Task<MealProcessingResult> PersistRemovalAsync(MealLogRemovedEvent message,
+        CancellationToken ct)
+    {
+        var sourceId = message.MealLogId.ToString();
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(hashtext({0}))", [sourceId], ct);
+
+        var existing = await db.ProcessedMealRemovals.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.EventId == message.EventId || x.MealLogId == message.MealLogId,
+                ct);
+        if (existing is not null)
+        {
+            if (existing.EventId != message.EventId
+                || existing.MealLogId != message.MealLogId
+                || existing.UserId != message.UserId
+                || existing.BusinessDate != message.BusinessDate)
+            {
+                logger.LogWarning("Rejected conflicting meal-removal projection; no data changed.");
+                return MealProcessingResult.ConflictingDuplicate;
+            }
+
+            return MealProcessingResult.AlreadyProcessed;
+        }
+
+        var contribution = await db.ActivityContributions
+            .FirstOrDefaultAsync(x => x.Source == MealSource && x.SourceLogId == sourceId, ct);
+        if (contribution is not null)
+        {
+            db.ActivityContributions.Remove(contribution);
+        }
+
+        db.ProcessedMealRemovals.Add(ProcessedMealRemoval.Create(message.EventId, message.MealLogId,
+            message.UserId, message.BusinessDate, time.GetUtcNow()));
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return MealProcessingResult.Created;
+    }
+
     private async Task<MealProcessingResult> PersistAsync(MealLoggedEvent message, CancellationToken ct)
     {
         var sourceId = message.MealLogId.ToString();
@@ -47,6 +112,30 @@ public sealed class MealActivityConsumerService(
             .Where(x => x.EventId == message.EventId || x.MealLogId == message.MealLogId).ToListAsync(ct);
         var contribution = await db.ActivityContributions.AsNoTracking()
             .SingleOrDefaultAsync(x => x.Source == MealSource && x.SourceLogId == sourceId, ct);
+        var removed = await db.ProcessedMealRemovals.AsNoTracking()
+            .AnyAsync(x => x.MealLogId == message.MealLogId, ct);
+        if (removed)
+        {
+            // Sự kiện "logged" đến trễ sau khi bữa đã bị xoá: không được hồi sinh
+            // đóng góp hoạt động (streak). Vẫn ghi inbox để dedup.
+            if (contribution is not null)
+            {
+                db.ActivityContributions.Remove(contribution);
+            }
+
+            if (inbox.Count == 0)
+            {
+                db.ProcessedMealEvents.Add(ProcessedMealEvent.Create(message.EventId,
+                    message.MealLogId, message.UserId, message.BusinessDate, time.GetUtcNow()));
+            }
+
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            logger.LogInformation("Ignored late MealLoggedEvent for removed meal log {MealLogId}.",
+                message.MealLogId);
+            return MealProcessingResult.AlreadyProcessed;
+        }
+
         if (inbox.Count > 1 || inbox.Any(x => x.EventId != message.EventId || x.MealLogId != message.MealLogId
             || x.UserId != message.UserId || x.BusinessDate != message.BusinessDate)
             || (contribution is not null && (contribution.UserId != message.UserId

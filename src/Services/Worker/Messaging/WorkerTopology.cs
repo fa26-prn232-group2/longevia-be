@@ -30,6 +30,12 @@ public static class WorkerTopology
     /// <summary>Routing key for <c>UserVerifiedEvent</c>.</summary>
     public const string UserVerifiedRoutingKey = "identity.user.verified";
 
+    /// <summary>Routing key for <c>EmailChangeRequestedEvent</c>.</summary>
+    public const string EmailChangeRequestedRoutingKey = "identity.user.email-change-requested";
+
+    /// <summary>Routing key for <c>EmailChangedEvent</c>.</summary>
+    public const string EmailChangedRoutingKey = "identity.user.email-changed";
+
     /// <summary>Routing key for <c>WeeklyDigestReadyEvent</c>.</summary>
     public const string WeeklyDigestRoutingKey = "progress.weekly-digest.ready";
 

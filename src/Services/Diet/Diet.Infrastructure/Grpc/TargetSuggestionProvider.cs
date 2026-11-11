@@ -20,7 +20,8 @@ public sealed class TargetSuggestionProvider(RecommendationService.Recommendatio
             Profile = new UserProfile
             {
                 Age = input.Profile.AgeOn(DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)),
-                Sex = input.Profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
+                Sex = input.Profile.IsOther ? BiologicalSex.Other
+                    : input.Profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
                 HeightCm = (double)input.Profile.HeightCm,
                 WeightKg = (double)input.WeightKg,
                 ActivityLevel = input.Profile.ActivityLevel,

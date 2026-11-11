@@ -51,7 +51,8 @@ public sealed class LongevityUseCase(IFastingRepository fasting, ISleepRepositor
             Profile = new UserProfile
             {
                 Age = profile.Age,
-                Sex = profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
+                Sex = profile.IsOther ? BiologicalSex.Other
+                    : profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
                 HeightCm = (double)profile.HeightCm,
                 WeightKg = weight is null ? 0 : (double)weight.WeightKg,
                 ActivityLevel = profile.ActivityLevel,

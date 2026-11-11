@@ -78,6 +78,16 @@ public static class DependencyInjection
                     cfg.Send<UserProfileUpdatedEvent>(send =>
                         send.UseRoutingKeyFormatter(_ => IdentityEventTopology.UserProfileUpdatedRoutingKey));
 
+                    cfg.Message<EmailChangeRequestedEvent>(message => message.SetEntityName(IdentityEventTopology.EventsExchange));
+                    cfg.Publish<EmailChangeRequestedEvent>(publish => publish.ExchangeType = "topic");
+                    cfg.Send<EmailChangeRequestedEvent>(send =>
+                        send.UseRoutingKeyFormatter(_ => IdentityEventTopology.EmailChangeRequestedRoutingKey));
+
+                    cfg.Message<EmailChangedEvent>(message => message.SetEntityName(IdentityEventTopology.EventsExchange));
+                    cfg.Publish<EmailChangedEvent>(publish => publish.ExchangeType = "topic");
+                    cfg.Send<EmailChangedEvent>(send =>
+                        send.UseRoutingKeyFormatter(_ => IdentityEventTopology.EmailChangedRoutingKey));
+
                     cfg.ConfigureEndpoints(ctx);
                 });
             }

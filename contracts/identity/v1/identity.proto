@@ -48,6 +48,9 @@ message GetUserProfileResponse
   // Canonical limitations supported by Recommendation; empty means none declared.
   // Current canonical value: "joint_pain".
   repeated string health_limitations = 7;
+  // Mục tiêu sức khỏe dài hạn. Canonical: LoseWeight, Maintain, BuildMuscle, Longevity.
+  // Absent ở server cũ nghĩa là Maintain.
+  optional string goal = 8;
 }
 
 message GetUserContactRequest

@@ -229,4 +229,65 @@ public sealed class MealActivityConsumerTests(ProgressFixture fixture)
         var record = await db.ActivityContributions.FirstAsync(x => x.SourceLogId == mealId.ToString());
         Assert.Equal(backdatedDate, record.Date);
     }
+
+    [Fact]
+    public async Task MealRemoval_DeletesContribution_AndIsIdempotent()
+    {
+        var factory = fixture.Factory;
+        using var scope = factory.Services.CreateScope();
+        var consumerService = scope.ServiceProvider.GetRequiredService<IMealActivityConsumerService>();
+        var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
+
+        var userId = Guid.NewGuid();
+        var mealLogId = Guid.NewGuid();
+        var businessDate = new DateOnly(2026, 11, 11);
+        var logged = new MealLoggedEvent(mealLogId, userId, mealLogId, businessDate,
+            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow);
+
+        Assert.Equal(MealProcessingResult.Created,
+            await consumerService.ProcessMealLoggedAsync(logged, CancellationToken.None));
+        Assert.NotNull(await db.ActivityContributions
+            .FirstOrDefaultAsync(x => x.SourceLogId == mealLogId.ToString()));
+
+        var removed = new MealLogRemovedEvent(Guid.NewGuid(), userId, mealLogId, businessDate,
+            DateTimeOffset.UtcNow);
+        Assert.Equal(MealProcessingResult.Created,
+            await consumerService.ProcessMealRemovedAsync(removed, CancellationToken.None));
+
+        Assert.Null(await db.ActivityContributions
+            .FirstOrDefaultAsync(x => x.SourceLogId == mealLogId.ToString()));
+        var tombstone = await db.ProcessedMealRemovals
+            .FirstOrDefaultAsync(x => x.MealLogId == mealLogId);
+        Assert.NotNull(tombstone);
+
+        Assert.Equal(MealProcessingResult.AlreadyProcessed,
+            await consumerService.ProcessMealRemovedAsync(removed, CancellationToken.None));
+        Assert.Equal(1, await db.ProcessedMealRemovals.CountAsync(x => x.MealLogId == mealLogId));
+    }
+
+    [Fact]
+    public async Task LateMealLogged_AfterRemoval_DoesNotResurrectContribution()
+    {
+        var factory = fixture.Factory;
+        using var scope = factory.Services.CreateScope();
+        var consumerService = scope.ServiceProvider.GetRequiredService<IMealActivityConsumerService>();
+        var db = scope.ServiceProvider.GetRequiredService<ProgressDbContext>();
+
+        var userId = Guid.NewGuid();
+        var mealLogId = Guid.NewGuid();
+        var businessDate = new DateOnly(2026, 11, 11);
+        var logged = new MealLoggedEvent(mealLogId, userId, mealLogId, businessDate,
+            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow);
+
+        await consumerService.ProcessMealLoggedAsync(logged, CancellationToken.None);
+        await consumerService.ProcessMealRemovedAsync(
+            new MealLogRemovedEvent(Guid.NewGuid(), userId, mealLogId, businessDate,
+                DateTimeOffset.UtcNow), CancellationToken.None);
+
+        // Broker redelivers "logged" sau khi đã xoá: phải bỏ qua, không tạo lại contribution.
+        var replay = await consumerService.ProcessMealLoggedAsync(logged, CancellationToken.None);
+        Assert.Equal(MealProcessingResult.AlreadyProcessed, replay);
+        Assert.Null(await db.ActivityContributions
+            .FirstOrDefaultAsync(x => x.SourceLogId == mealLogId.ToString()));
+    }
 }

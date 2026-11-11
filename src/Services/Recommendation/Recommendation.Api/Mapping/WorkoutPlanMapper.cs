@@ -76,6 +76,7 @@ internal static class WorkoutPlanMapper
             {
                 Contracts.BiologicalSex.Male => "MALE",
                 Contracts.BiologicalSex.Female => "FEMALE",
+                Contracts.BiologicalSex.Other => "OTHER",
                 _ => string.Empty,
             },
             HeightCm = profile.HeightCm,

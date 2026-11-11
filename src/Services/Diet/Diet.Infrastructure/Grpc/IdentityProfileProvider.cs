@@ -32,14 +32,19 @@ public sealed class IdentityProfileProvider(IdentityService.IdentityServiceClien
             };
         }
         if (!DateOnly.TryParseExact(reply.BirthDate, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var birthDate) || reply.BiologicalSex is not ("Male" or "Female") ||
+                DateTimeStyles.None, out var birthDate) || reply.BiologicalSex is not ("Male" or "Female" or "Other") ||
             reply.HeightCmX100 is < 5000 or > 25000 ||
             reply.ActivityLevel is not ("Sedentary" or "LightlyActive" or "ModeratelyActive" or "VeryActive") ||
             (reply.HasDietaryPreference && reply.DietaryPreference is not ("None" or "Keto" or "Vegan" or "Mediterranean" or "LowCarb")) ||
+            (reply.HasGoal && reply.Goal is not ("LoseWeight" or "Maintain" or "BuildMuscle" or "Longevity")) ||
             reply.Allergies.Any(string.IsNullOrWhiteSpace)) throw InvalidResponse();
         var profile = new UserProfileSnapshot(birthDate, reply.BiologicalSex == "Male", reply.HeightCmX100 / 100m,
             reply.ActivityLevel, reply.HasDietaryPreference ? reply.DietaryPreference : null,
-            reply.HasDietaryPreference ? reply.Allergies.ToArray() : null);
+            reply.HasDietaryPreference ? reply.Allergies.ToArray() : null,
+            reply.HasGoal ? reply.Goal : null)
+        {
+            IsOther = reply.BiologicalSex == "Other",
+        };
         if (profile.AgeOn(DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)) is < 1 or > 120)
             throw AppException.Unprocessable("Hồ sơ chưa phù hợp để tính nhu cầu năng lượng.", "diet.profile_not_supported");
         return profile;

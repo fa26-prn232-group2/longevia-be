@@ -37,4 +37,29 @@ public sealed class TargetSnapshotTests(DietApiFactory factory) : IClassFixture<
         Assert.Equal(originalId, manual.Id);
         Assert.Null(manual.Calculation);
     }
+
+    [Fact]
+    public async Task PersistsOtherSexFlag_WithNeutralBmr()
+    {
+        _ = factory.CreateClient();
+        var id = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var energy = new EnergyCalculation(70m, now.AddDays(-1), Guid.NewGuid(), now, 175m, 30,
+            false, 1.55m, now, IsOther: true);
+        var values = new NutritionValues(2000m, 150m, 200m, 66.667m, 0m);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var repository = new TargetRepository(scope.ServiceProvider.GetRequiredService<DietDbContext>());
+            await repository.UpsertAsync(DailyDietTarget.CreateCalculated(id, values, energy), default);
+        }
+
+        await using var read = factory.Services.CreateAsyncScope();
+        var repo = new TargetRepository(read.ServiceProvider.GetRequiredService<DietDbContext>());
+        var loaded = await repo.GetAsync(id, default);
+
+        Assert.NotNull(loaded?.Calculation);
+        Assert.True(loaded.Calculation.IsOther);
+        // BMR = 10*70 + 6.25*175 - 5*30 - 78 = 1565,75.
+        Assert.Equal(1565.75m, loaded.Calculation.Bmr);
+    }
 }

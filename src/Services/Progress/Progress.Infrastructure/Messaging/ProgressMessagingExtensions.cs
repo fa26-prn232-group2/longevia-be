@@ -16,6 +16,7 @@ public static class ProgressMessagingExtensions
         services.AddMassTransit(bus =>
         {
             bus.AddConsumer<MealLoggedConsumer>();
+            bus.AddConsumer<MealLogRemovedConsumer>();
 
             if (config.GetValue<bool>("Messaging:UseInMemory"))
             {
@@ -54,6 +55,8 @@ public static class ProgressMessagingExtensions
 
                 cfg.Message<MealLoggedEvent>(m => m.SetEntityName(ProgressMessagingTopology.EventsExchange));
                 cfg.Publish<MealLoggedEvent>(p => p.ExchangeType = "topic");
+                cfg.Message<MealLogRemovedEvent>(m => m.SetEntityName(ProgressMessagingTopology.EventsExchange));
+                cfg.Publish<MealLogRemovedEvent>(p => p.ExchangeType = "topic");
 
                 cfg.ReceiveEndpoint(ProgressMessagingTopology.MealActivityQueue, endpoint =>
                 {
@@ -66,12 +69,19 @@ public static class ProgressMessagingExtensions
                         b.RoutingKey = ProgressMessagingTopology.MealActivityRoutingKey;
                     });
 
+                    endpoint.Bind<MealLogRemovedEvent>(b =>
+                    {
+                        b.ExchangeType = "topic";
+                        b.RoutingKey = ProgressMessagingTopology.MealRemovalRoutingKey;
+                    });
+
                     endpoint.UseMessageRetry(r => r.Intervals(ProgressMessagingTopology.RetryIntervals));
                     endpoint.BindDeadLetterQueue(
                         ProgressMessagingTopology.DeadLetterQueue,
                         ProgressMessagingTopology.DeadLetterExchange);
 
                     endpoint.ConfigureConsumer<MealLoggedConsumer>(context);
+                    endpoint.ConfigureConsumer<MealLogRemovedConsumer>(context);
                 });
             });
         });

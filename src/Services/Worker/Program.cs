@@ -54,6 +54,8 @@ builder.Services.AddMassTransit(bus =>
     bus.AddConsumer<PasswordResetRequestedConsumer>();
     bus.AddConsumer<UserVerifiedConsumer>();
     bus.AddConsumer<WeeklyDigestConsumer>();
+    bus.AddConsumer<EmailChangeRequestedConsumer>();
+    bus.AddConsumer<EmailChangedConsumer>();
 
     bus.UsingRabbitMq((context, cfg) =>
     {
@@ -75,16 +77,22 @@ builder.Services.AddMassTransit(bus =>
         cfg.Message<PasswordResetRequestedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
         cfg.Message<UserVerifiedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
         cfg.Message<WeeklyDigestReadyEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
+        cfg.Message<EmailChangeRequestedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
+        cfg.Message<EmailChangedEvent>(m => m.SetEntityName(WorkerTopology.EventsExchange));
 
         cfg.Publish<UserRegisteredEvent>(p => p.ExchangeType = "topic");
         cfg.Publish<PasswordResetRequestedEvent>(p => p.ExchangeType = "topic");
         cfg.Publish<UserVerifiedEvent>(p => p.ExchangeType = "topic");
         cfg.Publish<WeeklyDigestReadyEvent>(p => p.ExchangeType = "topic");
+        cfg.Publish<EmailChangeRequestedEvent>(p => p.ExchangeType = "topic");
+        cfg.Publish<EmailChangedEvent>(p => p.ExchangeType = "topic");
 
         cfg.Send<UserRegisteredEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.UserRegisteredRoutingKey));
         cfg.Send<PasswordResetRequestedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.PasswordResetRoutingKey));
         cfg.Send<UserVerifiedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.UserVerifiedRoutingKey));
         cfg.Send<WeeklyDigestReadyEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.WeeklyDigestRoutingKey));
+        cfg.Send<EmailChangeRequestedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.EmailChangeRequestedRoutingKey));
+        cfg.Send<EmailChangedEvent>(s => s.UseRoutingKeyFormatter(_ => WorkerTopology.EmailChangedRoutingKey));
 
         cfg.ReceiveEndpoint(WorkerTopology.EmailQueue, endpoint =>
         {
@@ -96,6 +104,8 @@ builder.Services.AddMassTransit(bus =>
             endpoint.Bind<PasswordResetRequestedEvent>(b => b.RoutingKey = WorkerTopology.PasswordResetRoutingKey);
             endpoint.Bind<UserVerifiedEvent>(b => b.RoutingKey = WorkerTopology.UserVerifiedRoutingKey);
             endpoint.Bind<WeeklyDigestReadyEvent>(b => b.RoutingKey = WorkerTopology.WeeklyDigestRoutingKey);
+            endpoint.Bind<EmailChangeRequestedEvent>(b => b.RoutingKey = WorkerTopology.EmailChangeRequestedRoutingKey);
+            endpoint.Bind<EmailChangedEvent>(b => b.RoutingKey = WorkerTopology.EmailChangedRoutingKey);
 
             // Retry 3x (2s, 5s, 10s per spec Q3); then to worker.email.dlx/.dlq.
             endpoint.UseMessageRetry(r => r.Intervals(WorkerTopology.RetryIntervals));
@@ -105,6 +115,8 @@ builder.Services.AddMassTransit(bus =>
             endpoint.ConfigureConsumer<PasswordResetRequestedConsumer>(context);
             endpoint.ConfigureConsumer<UserVerifiedConsumer>(context);
             endpoint.ConfigureConsumer<WeeklyDigestConsumer>(context);
+            endpoint.ConfigureConsumer<EmailChangeRequestedConsumer>(context);
+            endpoint.ConfigureConsumer<EmailChangedConsumer>(context);
         });
     });
 });

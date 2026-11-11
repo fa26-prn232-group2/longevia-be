@@ -1159,3 +1159,64 @@ Warning nằm trong `warnings[]` (`PlanWarning.code` + `message` tiếng Việt 
 - gRPC nội bộ dùng metadata `x-service-token` (`SERVICE__TOKEN`).
 - Nginx rate limit: 30 r/s chung, 5 r/s cho `/api/identity/auth/`; vượt ngưỡng trả 429 ProblemDetails.
 - Digest chỉ gửi cho user đã bật `receiveWeeklyDigest`; mặc định thứ Hai 00:00 UTC.
+
+## 8. UX report fixes (2026-11-11)
+
+Các bổ sung dưới đây đều additive, không phá client cũ.
+
+### 8.1 Diet
+
+- DELETE /api/diet/meals?date=YYYY-MM-DD&mealType=Breakfast|Lunch|Dinner|Snack: xoá toàn bộ bữa cùng loại trong ngày; idempotent (204); mealType sai trả 400 diet.invalid_meal_type. Mỗi bữa bị xoá phát MealLogRemovedEvent (diet.meal.removed) để Progress rút lại đóng góp hoạt động/streak.
+- GET /api/diet/foods?search= dùng PostgreSQL unaccent, tìm được không dấu (ca chua khop Ca chua).
+- POST /api/diet/targets/me/suggest: nếu request không gửi goal, dùng goal trong hồ sơ Identity (mặc định Maintain).
+
+### 8.2 Progress
+
+- GET /api/progress/water/today và /water/log trả thêm latestLogId (Guid?).
+- DELETE /api/progress/water/{id} hoàn tác lần ghi của owner, trả summary mới; 404 progress.water_log_not_found.
+- targetMl tính theo cân nặng gần nhất: 35 ml/kg, làm tròn 50 ml, kẹp 1.500-4.000 ml; chưa có cân nặng dùng 2.500 ml. Áp dụng cho today/log/history.
+
+### 8.3 Identity
+
+- ProfileResponse.goal (LoseWeight/Maintain/BuildMuscle/Longevity, mặc định Maintain); PUT /api/identity/users/me/profile nhận goal không bắt buộc. gRPC GetUserProfile trả optional string goal = 8.
+- POST /api/identity/auth/resend-verification body { email }; luôn 202 (không tiết lộ email tồn tại); chỉ gửi khi tài khoản còn PendingVerification.
+- Đăng nhập khi mật khẩu đúng nhưng chưa xác minh trả 403 identity.email_not_verified (không dùng 401 để tránh refresh-token loop).
+- Giữ 409 identity.email_taken khi đăng ký trùng email (đánh đổi UX/bảo mật có chủ đích); Forgot Password vẫn luôn 202.
+
+### 8.3b P5 — sửa giấc ngủ, đổi tên, thay thế bữa ăn, tính mục tiêu, đổi email
+
+- `PUT /api/progress/sleep/{id}` body `{ sleptAt, wokeAt, sleepQuality }`: sửa bản ghi của
+  owner, kiểm tra overlap loại trừ chính nó; 404 `progress.sleep_not_found`,
+  409 `progress.sleep_overlap`.
+- `PATCH /api/identity/users/me` body `{ fullName }` (1–100 ký tự): đổi tên hiển thị,
+  trả `UserResponse`.
+- `PUT /api/diet/meals?date=YYYY-MM-DD&mealType=...` body `{ items: [...] }`: thay thế bữa
+  trong một transaction (advisory lock theo user/ngày/loại), phát removal cho log cũ và
+  logged cho log mới.
+- `POST /api/diet/targets/me/auto` body `{ goal? }`: tính mục tiêu từ TDEE × hệ số goal
+  (LoseWeight 0.85, Maintain/Longevity 1.0, BuildMuscle 1.10), protein 1.8 g/kg (giảm
+  cân/tăng cơ) hoặc 1.4 g/kg, fat 25% calo, calo làm tròn 10 và clamp 1.200–4.000; lưu
+  target kèm snapshot BMR/TDEE. Thiếu cân nặng → 422 `diet.weight_not_found`; `goal`
+  không hợp lệ → 400.
+- `POST /api/identity/users/me/email-change` body `{ newEmail, currentPassword }` (auth):
+  xác minh mật khẩu hiện tại, lưu `PendingEmail` + token hash 24 giờ, cooldown 5 phút,
+  trả `202`. Sai mật khẩu → 400 `identity.invalid_current_password`; trùng email hiện tại
+  → 400 `identity.email_unchanged`; email đã có người dùng → 409 `identity.email_taken`;
+  gửi lại quá sớm → 429 `identity.email_change_too_frequent`.
+- `POST /api/identity/auth/confirm-email-change` body `{ token }` (anon, token dùng một
+  lần): kiểm tra lại email chưa bị chiếm, đổi email, thu hồi toàn bộ refresh token và
+  phát `EmailChangedEvent`; trả `204`, token sai/hết hạn/đã dùng → 400
+  `identity.invalid_email_change_token`.
+- Giới tính sinh học nhận thêm `Other` (Identity, gRPC, proto Recommendation `OTHER = 3`).
+  BMR/TDEE dùng hệ số trung tính `-78` (giữa nam `+5` và nữ `-161`); UI ghi rõ đây là ước lượng.
+
+### 8.4 Email (Worker)
+
+- PasswordResetRequestedEvent thêm FullName (optional, additive v1).
+- Email đặt lại mật khẩu có link /reset-password?token=..., vẫn kèm mã dự phòng; hạn 15 phút hiển thị theo giờ Việt Nam.
+- `EmailChangeRequestedEvent` (routing key `identity.user.email-change-requested`): Worker
+  gửi email xác nhận tới địa chỉ mới (link `/confirm-email-change?token=...`, hạn 24 giờ)
+  và email cảnh báo tới địa chỉ cũ.
+- `EmailChangedEvent` (routing key `identity.user.email-changed`): Worker gửi thông báo
+  hoàn tất tới địa chỉ cũ sau khi đổi email thành công.
+

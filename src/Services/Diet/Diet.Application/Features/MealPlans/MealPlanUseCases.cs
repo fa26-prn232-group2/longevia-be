@@ -54,7 +54,7 @@ public sealed class MealPlanUseCases(IMealPlanRepository plans, IMealPlanProvide
 
         var input = new MealPlanInput(userId,
             new MealProfile(profile.AgeOn(today), profile.IsMale, profile.HeightCm, weight.WeightKg,
-                profile.ActivityLevel, profile.DietaryPreference, profile.Allergies),
+                profile.ActivityLevel, profile.DietaryPreference, profile.Allergies, profile.IsOther),
             checked((int)decimal.Round(target.TargetCalories, 0, MidpointRounding.AwayFromZero)),
             (double)target.TargetProteinGrams, (double)target.TargetCarbsGrams, (double)target.TargetFatGrams,
             Math.Round((double)target.TargetCalories * 14d / 1000d, 1),

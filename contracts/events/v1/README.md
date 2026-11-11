@@ -10,7 +10,10 @@ C# records in `src/Shared/Events/` (each carries `SchemaVersion = 1`).
 | `UserRegisteredEvent` | `identity.user.registered` | `src/Shared/Events/UserRegisteredEvent.cs` | Identity (via transactional outbox — obligation recorded in `specs/mavil-001-infra-observability/data-model.md` §1.1, implementation owned by Identity feature) | Worker `worker.email` queue → verification email |
 | `PasswordResetRequestedEvent` | `identity.user.password-reset-requested` | `src/Shared/Events/PasswordResetRequestedEvent.cs` | Identity (via transactional outbox) | Worker `worker.email` queue → reset email |
 | `UserProfileUpdatedEvent` | `identity.user.profile-updated` | `src/Shared/Events/UserProfileUpdatedEvent.cs` | Identity (via transactional outbox) | No current consumer; signals a profile change without health profile data |
+| `EmailChangeRequestedEvent` | `identity.user.email-change-requested` | `src/Shared/Events/EmailChangeRequestedEvent.cs` | Identity (same save as the pending-email update) | Worker `worker.email` queue → confirmation link tới email mới + cảnh báo tới email cũ |
+| `EmailChangedEvent` | `identity.user.email-changed` | `src/Shared/Events/EmailChangedEvent.cs` | Identity (after confirming the change) | Worker `worker.email` queue → thông báo hoàn tất tới email cũ |
 | `MealLoggedEvent` | `diet.meal.logged` | `src/Shared/Events/MealLoggedEvent.cs` | Diet (via transactional outbox) | Progress meal activity (`progress.meal-activity`; production replay/reconciliation acceptance remains external) |
+| `MealLogRemovedEvent` | `diet.meal.removed` | `src/Shared/Events/MealLogRemovedEvent.cs` | Diet (via transactional outbox, khi người dùng xoá bữa) | Progress meal activity (`progress.meal-activity`) → rút lại đóng góp hoạt động/streak |
 
 ## Meal activity (Diet → Progress)
 
@@ -25,7 +28,15 @@ time). SchemaVersion = 1 is the shared contract constant, not a seventh JSON fie
 Create-only: multiple meals on a date contribute one active day. Replay keeps
 EventId/MealLogId/BusinessDate/CreatedAt, refreshes OccurredOn; never order meal
 activity by replay time. Inbox dedup EventId + unique MealLogId must be durable.
-No edit/delete semantics exist in v1. Bind a durable consumer queue before replay.
+
+> **2026-11-11 — xoá bữa ăn.** `DELETE /meals?date&mealType` xoá các `MealLog` cùng loại
+> trong ngày và phát `MealLogRemovedEvent` (`diet.meal.removed`) trong cùng transaction.
+> Progress xoá `ActivityContribution` tương ứng và ghi tombstone trong
+> `processed_meal_removals`; một `MealLoggedEvent` đến trễ cho cùng `MealLogId` bị bỏ qua
+> để không hồi sinh streak. Event có 5 field: EventId (Guid riêng), UserId, MealLogId,
+> BusinessDate, OccurredOn. Hiện chưa có sửa bữa (PUT) — dùng xoá rồi ghi lại.
+
+Bind a durable consumer queue before replay.
 Diet supports explicit startup replay of all existing logs via
 `Diet__ReplayMealActivitiesOnStart=true`; queued count is not delivery/completeness.
 Progress must drain/reconcile before claiming complete history.

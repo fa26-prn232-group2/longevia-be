@@ -125,7 +125,8 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
 
         // 3. A newly registered account cannot log in before email verification.
         var pendingLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
-        Assert.Equal(HttpStatusCode.Unauthorized, pendingLogin.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, pendingLogin.StatusCode);
+        Assert.Contains("identity.email_not_verified", await pendingLogin.Content.ReadAsStringAsync());
 
         var verificationToken = Assert.Single(factory.RegisteredEvents, registeredEvent => registeredEvent.Email == email).VerificationToken;
         var invalidVerify = await _client.GetAsync("/auth/verify?token=" + Uri.EscapeDataString(new string('0', 64)));

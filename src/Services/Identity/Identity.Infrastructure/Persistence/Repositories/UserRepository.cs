@@ -56,6 +56,9 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
     public async Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
         await dbContext.Users.FirstOrDefaultAsync(u => u.PasswordResetTokenHash == tokenHash, ct);
 
+    public async Task<User?> GetByEmailChangeTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        await dbContext.Users.FirstOrDefaultAsync(u => u.EmailChangeTokenHash == tokenHash, ct);
+
     public async Task AddAsync(User user, CancellationToken ct = default) =>
         await dbContext.Users.AddAsync(user, ct);
 

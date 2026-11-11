@@ -16,6 +16,7 @@ public static class DependencyInjection
 
         services.AddScoped<RegisterUserUseCase>();
         services.AddScoped<VerifyUserUseCase>();
+        services.AddScoped<ResendVerificationUseCase>();
         services.AddScoped<ChangePasswordUseCase>();
         services.AddScoped<ForgotPasswordUseCase>();
         services.AddScoped<ResetPasswordUseCase>();
@@ -24,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<LogoutUseCase>();
         services.AddScoped<GetCurrentUserUseCase>();
         services.AddScoped<UpdateProfileUseCase>();
+        services.AddScoped<ChangeFullNameUseCase>();
+        services.AddScoped<RequestEmailChangeUseCase>();
+        services.AddScoped<ConfirmEmailChangeUseCase>();
         services.AddScoped<PreferenceUseCases>();
 
         return services;

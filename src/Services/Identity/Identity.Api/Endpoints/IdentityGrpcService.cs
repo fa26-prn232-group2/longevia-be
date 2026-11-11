@@ -32,7 +32,8 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
             || decimal.Round(profile.HeightCm, 2) != profile.HeightCm
             || !BiologicalSex.All.Contains(profile.BiologicalSex)
             || !ActivityLevel.All.Contains(profile.ActivityLevel)
-            || !DietaryPreference.All.Contains(profile.DietaryPreference))
+            || !DietaryPreference.All.Contains(profile.DietaryPreference)
+            || !Goal.All.Contains(profile.Goal))
         {
             throw new RpcException(new Status(StatusCode.Internal, "Stored profile data is invalid."));
         }
@@ -46,6 +47,7 @@ public sealed class IdentityGrpcService(IUserRepository userRepository)
             HeightCmX100 = decimal.ToInt32(profile.HeightCm * 100m),
             ActivityLevel = profile.ActivityLevel,
             DietaryPreference = profile.DietaryPreference,
+            Goal = profile.Goal,
         };
         response.Allergies.AddRange(profile.Allergies);
         response.HealthLimitations.AddRange(profile.HealthLimitations);

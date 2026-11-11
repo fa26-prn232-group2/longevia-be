@@ -6,7 +6,8 @@ public sealed record WaterSummaryResponse(
     DateOnly Date,
     int ConsumedMl,
     int TargetMl,
-    double PercentComplete);
+    double PercentComplete,
+    Guid? LatestLogId);
 
 public sealed record WaterHistoryItemResponse(
     DateOnly Date,

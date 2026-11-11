@@ -11,6 +11,7 @@ public sealed class UserProfile
     public decimal HeightCm { get; private set; }
     public string ActivityLevel { get; private set; } = Constants.ActivityLevel.Sedentary;
     public string DietaryPreference { get; private set; } = Constants.DietaryPreference.None;
+    public string Goal { get; private set; } = Constants.Goal.Maintain;
     public List<string> Allergies { get; private set; } = [];
     public List<string> HealthLimitations { get; private set; } = [];
     public bool ReceiveWeeklyDigest { get; private set; }
@@ -30,7 +31,8 @@ public sealed class UserProfile
         string dietaryPreference,
         IEnumerable<string>? allergies,
         IEnumerable<string>? healthLimitations,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        string? goal = null)
     {
         Validate(heightCm, biologicalSex, activityLevel, dietaryPreference);
 
@@ -43,6 +45,7 @@ public sealed class UserProfile
             HeightCm = heightCm,
             ActivityLevel = activityLevel,
             DietaryPreference = dietaryPreference,
+            Goal = NormalizeGoal(goal),
             Allergies = allergies?.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).Distinct().ToList() ?? [],
             HealthLimitations = NormalizeLimitations(healthLimitations),
             UpdatedAt = now,
@@ -63,7 +66,8 @@ public sealed class UserProfile
         string dietaryPreference,
         IEnumerable<string>? allergies,
         IEnumerable<string>? healthLimitations,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        string? goal = null)
     {
         Validate(heightCm, biologicalSex, activityLevel, dietaryPreference);
 
@@ -72,9 +76,29 @@ public sealed class UserProfile
         HeightCm = heightCm;
         ActivityLevel = activityLevel;
         DietaryPreference = dietaryPreference;
+        Goal = NormalizeGoal(goal);
         Allergies = allergies?.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).Distinct().ToList() ?? [];
         HealthLimitations = NormalizeLimitations(healthLimitations);
         UpdatedAt = now;
+    }
+
+    /// <summary>Chuẩn hoá goal: rỗng/null dùng Maintain, còn lại phải thuộc allowlist.</summary>
+    private static string NormalizeGoal(string? goal)
+    {
+        if (string.IsNullOrWhiteSpace(goal))
+        {
+            return Constants.Goal.Maintain;
+        }
+
+        var normalized = goal.Trim();
+        var canonical = Constants.Goal.All.FirstOrDefault(value =>
+            value.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+        if (canonical is null)
+        {
+            throw new ArgumentException($"Mục tiêu không hợp lệ: {goal}.", nameof(goal));
+        }
+
+        return canonical;
     }
 
     /// <summary>Chuẩn hoá danh sách giới hạn sức khỏe theo allowlist canonical.</summary>

@@ -34,6 +34,12 @@ public sealed class LoginUseCase(
             throw UserErrors.Suspended();
         }
 
+        if (user.Status == UserStatus.PendingVerification)
+        {
+            // Chỉ lộ trạng thái sau khi mật khẩu đã đúng nên không tạo lỗ hổng dò email.
+            throw AuthErrors.EmailNotVerified();
+        }
+
         if (user.Status != UserStatus.Active)
         {
             throw AuthErrors.InvalidCredentials();

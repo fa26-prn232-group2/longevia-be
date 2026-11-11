@@ -48,6 +48,8 @@ enum BiologicalSex {
   SEX_UNSPECIFIED = 0;
   MALE = 1;
   FEMALE = 2;
+  // Người dùng không muốn tiết lộ giới tính; công thức dùng hệ số trung tính.
+  OTHER = 3;
 }
 
 enum UserGoal {

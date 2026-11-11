@@ -7,4 +7,6 @@ internal static class IdentityEventTopology
     public const string UserRegisteredRoutingKey = "identity.user.registered";
     public const string PasswordResetRoutingKey = "identity.user.password-reset-requested";
     public const string UserProfileUpdatedRoutingKey = "identity.user.profile-updated";
+    public const string EmailChangeRequestedRoutingKey = "identity.user.email-change-requested";
+    public const string EmailChangedRoutingKey = "identity.user.email-changed";
 }

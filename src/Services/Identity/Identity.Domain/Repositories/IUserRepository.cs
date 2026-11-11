@@ -11,6 +11,7 @@ public interface IUserRepository
     Task<bool> TryVerifyTokenAsync(string tokenHash, DateTimeOffset verifiedAt, CancellationToken ct = default);
     Task<User?> GetByVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default);
     Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default);
+    Task<User?> GetByEmailChangeTokenHashAsync(string tokenHash, CancellationToken ct = default);
     Task<bool> TryResetPasswordAsync(string tokenHash, string passwordHash, DateTimeOffset resetAt, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);
     void Update(User user);

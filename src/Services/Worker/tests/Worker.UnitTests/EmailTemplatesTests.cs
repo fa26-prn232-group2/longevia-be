@@ -38,15 +38,32 @@ public sealed class EmailTemplatesTests
     }
 
     [Fact]
-    public void PasswordReset_ContainsOtpCodeAndFifteenMinuteWordingWithoutApiLink()
+    public void PasswordReset_ContainsLinkCodeNameAndLocalExpiry()
     {
         var expiresAt = new DateTimeOffset(2026, 10, 22, 12, 0, 0, TimeSpan.Zero);
-        var email = EmailTemplates.PasswordReset("user@example.com", "reset-token-xyz", expiresAt);
+        var email = EmailTemplates.PasswordReset("user@example.com", "Minh Tam",
+            "reset-token-xyz", expiresAt, "https://app.longevia.vn");
 
         Assert.Equal("Đặt lại mật khẩu Longevia", email.Subject);
+        Assert.Contains("Minh Tam", email.HtmlBody);
         Assert.Contains("reset-token-xyz", email.HtmlBody);
-        Assert.DoesNotContain("/auth/reset-password?token=", email.HtmlBody);
+        Assert.Contains(
+            "https://app.longevia.vn/reset-password?token=reset-token-xyz",
+            email.HtmlBody);
         Assert.Contains("15 phút", email.HtmlBody);
+        // 12:00 UTC = 19:00 giờ Việt Nam
+        Assert.Contains("19:00", email.HtmlBody);
+        Assert.DoesNotContain(" UTC", email.HtmlBody);
+    }
+
+    [Fact]
+    public void PasswordReset_WithoutNameKeepsNeutralGreeting()
+    {
+        var expiresAt = new DateTimeOffset(2026, 10, 22, 12, 0, 0, TimeSpan.Zero);
+        var email = EmailTemplates.PasswordReset("user@example.com", null, "reset-token-xyz",
+            expiresAt, "http://localhost:3000");
+
+        Assert.Contains("Chào bạn,", email.HtmlBody);
     }
 
     [Fact]

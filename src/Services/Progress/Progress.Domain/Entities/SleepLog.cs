@@ -51,4 +51,30 @@ public sealed class SleepLog
             Date = date
         };
     }
+
+    /// <summary>Sửa giờ ngủ/thức và chất lượng; ngày nghiệp vụ tính lại theo giờ thức dậy.</summary>
+    public void Update(DateTimeOffset sleptAt, DateTimeOffset wokeAt, string quality)
+    {
+        if (wokeAt <= sleptAt)
+        {
+            throw new ArgumentException("Thời điểm thức dậy phải sau thời điểm đi ngủ.", nameof(wokeAt));
+        }
+
+        var duration = (wokeAt - sleptAt).TotalHours;
+        if (duration > 24)
+        {
+            throw new ArgumentOutOfRangeException(nameof(wokeAt), "Thời gian ngủ không được vượt quá 24 giờ.");
+        }
+
+        if (!Constants.SleepQuality.All.Contains(quality))
+        {
+            throw new ArgumentException($"Chất lượng giấc ngủ '{quality}' không hợp lệ.", nameof(quality));
+        }
+
+        SleptAt = sleptAt;
+        WokeAt = wokeAt;
+        SleepQuality = quality;
+        DurationHours = Math.Round(duration, 2);
+        Date = UtcCalendar.Day(wokeAt);
+    }
 }

@@ -36,6 +36,32 @@ public sealed class SleepUseCases(
             log.Date);
     }
 
+    /// <summary>Sửa một bản ghi giấc ngủ của chính người dùng; 404 nếu không sở hữu.</summary>
+    public async Task<SleepResponse> UpdateAsync(Guid id, LogSleepRequest request, CancellationToken ct)
+    {
+        var userId = currentUser.RequiredId();
+
+        if (request.WokeAt <= request.SleptAt)
+        {
+            throw ProgressErrors.SleepWakeBeforeSleep();
+        }
+
+        if ((request.WokeAt - request.SleptAt).TotalHours > 24)
+        {
+            throw ProgressErrors.SleepDurationExceeded();
+        }
+
+        var log = await sleepRepo.UpdateWithConcurrencyCheckAsync(userId, id, request.SleptAt,
+            request.WokeAt, request.SleepQuality, ct);
+        if (log is null)
+        {
+            throw ProgressErrors.SleepLogNotFound();
+        }
+
+        return new SleepResponse(log.Id, log.SleptAt, log.WokeAt, log.SleepQuality,
+            log.DurationHours, log.Date);
+    }
+
     /// <summary>Giấc ngủ đêm qua (ngày thức dậy = hôm nay), mới nhất; null nếu chưa ghi.</summary>
     public async Task<SleepResponse?> GetTodayAsync(CancellationToken ct)
     {

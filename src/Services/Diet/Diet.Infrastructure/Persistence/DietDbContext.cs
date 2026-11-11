@@ -23,4 +23,19 @@ public sealed class DietDbContext(DbContextOptions<DietDbContext> options) : DbC
         modelBuilder.AddOutboxMessageEntity();
         modelBuilder.AddOutboxStateEntity();
     }
+
+    public async Task ExecuteInTransactionAsync(string lockKey,
+        Func<CancellationToken, Task> action, CancellationToken ct)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.ReadCommitted, ct);
+            await Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(hashtext({0}))",
+                [lockKey], ct);
+            await action(ct);
+            await tx.CommitAsync(ct);
+        });
+    }
 }

@@ -21,6 +21,7 @@ internal static class NutritionTargetMapper
                 {
                     Contracts.BiologicalSex.Male => "MALE",
                     Contracts.BiologicalSex.Female => "FEMALE",
+                    Contracts.BiologicalSex.Other => "OTHER",
                     _ => string.Empty,
                 },
                 HeightCm = profile?.HeightCm ?? 0,

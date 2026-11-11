@@ -21,6 +21,11 @@ public sealed class User
     public string? PasswordResetTokenHash { get; private set; }
     public DateTimeOffset? PasswordResetTokenExpiresAt { get; private set; }
     public DateTimeOffset? PasswordResetTokenConsumedAt { get; private set; }
+    public string? PendingEmail { get; private set; }
+    public string? EmailChangeTokenHash { get; private set; }
+    public DateTimeOffset? EmailChangeTokenExpiresAt { get; private set; }
+    public DateTimeOffset? EmailChangeTokenConsumedAt { get; private set; }
+    public DateTimeOffset? EmailChangeRequestedAt { get; private set; }
 
     public UserProfile? Profile { get; private set; }
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
@@ -84,6 +89,20 @@ public sealed class User
         UpdatedAt = updatedAt;
     }
 
+    /// <summary>Đổi tên hiển thị; tên được trim và giới hạn 1–100 ký tự.</summary>
+    public void ChangeFullName(string fullName, DateTimeOffset updatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        var trimmed = fullName.Trim();
+        if (trimmed.Length is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fullName), "Họ tên phải từ 1 đến 100 ký tự.");
+        }
+
+        FullName = trimmed;
+        UpdatedAt = updatedAt;
+    }
+
     public void IssuePasswordResetToken(string tokenHash, DateTimeOffset issuedAt, DateTimeOffset expiresAt)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
@@ -106,6 +125,77 @@ public sealed class User
 
         ChangePassword(passwordHash, resetAt);
         PasswordResetTokenConsumedAt = resetAt;
+        return true;
+    }
+
+    /// <summary>
+    /// Cấp lại token xác minh cho tài khoản còn chờ kích hoạt (dùng cho "Gửi lại email").
+    /// Tài khoản đã kích hoạt hoặc bị khóa trả về false để không gửi email vô nghĩa.
+    /// </summary>
+    public bool TryReissueVerificationToken(string verificationTokenHash,
+        DateTimeOffset issuedAt, DateTimeOffset expiresAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(verificationTokenHash);
+
+        if (Status != UserStatus.PendingVerification)
+        {
+            return false;
+        }
+
+        VerificationTokenHash = verificationTokenHash;
+        VerificationTokenExpiresAt = expiresAt;
+        VerificationTokenConsumedAt = null;
+        UpdatedAt = issuedAt;
+        return true;
+    }
+
+    /// <summary>
+    /// Ghi nhận yêu cầu đổi email: lưu email mới chờ xác nhận + token. Chỉ tài khoản
+    /// đang Active mới được đổi; email mới chưa được áp dụng cho tới khi xác nhận.
+    /// </summary>
+    public void RequestEmailChange(string newEmail, string tokenHash, DateTimeOffset requestedAt,
+        DateTimeOffset expiresAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newEmail);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
+        if (Status != UserStatus.Active)
+        {
+            throw new InvalidOperationException("Tài khoản chưa kích hoạt không thể đổi email.");
+        }
+
+        var normalized = newEmail.Trim().ToLowerInvariant();
+        if (normalized.Length > 320 || !normalized.Contains('@', StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Email mới không hợp lệ.", nameof(newEmail));
+        }
+
+        PendingEmail = normalized;
+        EmailChangeTokenHash = tokenHash;
+        EmailChangeTokenExpiresAt = expiresAt;
+        EmailChangeTokenConsumedAt = null;
+        EmailChangeRequestedAt = requestedAt;
+        UpdatedAt = requestedAt;
+    }
+
+    /// <summary>Xác nhận đổi email bằng token; token dùng một lần và có hạn.</summary>
+    public bool TryConsumeEmailChange(string tokenHash, DateTimeOffset confirmedAt)
+    {
+        if (Status != UserStatus.Active
+            || PendingEmail is null
+            || EmailChangeTokenConsumedAt is not null
+            || EmailChangeTokenExpiresAt is null
+            || EmailChangeTokenExpiresAt <= confirmedAt
+            || !string.Equals(EmailChangeTokenHash, tokenHash, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        Email = PendingEmail;
+        PendingEmail = null;
+        EmailChangeTokenHash = null;
+        EmailChangeTokenExpiresAt = null;
+        EmailChangeTokenConsumedAt = confirmedAt;
+        UpdatedAt = confirmedAt;
         return true;
     }
 

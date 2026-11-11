@@ -34,7 +34,8 @@ public sealed class MealRecommendationProvider(RecommendationService.Recommendat
             Profile = new UserProfile
             {
                 Age = input.Profile.Age,
-                Sex = input.Profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
+                Sex = input.Profile.IsOther ? BiologicalSex.Other
+                    : input.Profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
                 HeightCm = (double)input.Profile.HeightCm,
                 WeightKg = (double)input.Profile.WeightKg,
                 ActivityLevel = input.Profile.ActivityLevel,

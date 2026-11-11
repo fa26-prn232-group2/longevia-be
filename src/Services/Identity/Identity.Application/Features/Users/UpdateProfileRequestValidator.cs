@@ -14,7 +14,7 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
         RuleFor(x => x.BiologicalSex)
             .NotEmpty().WithMessage("Giới tính không được để trống.")
             .Must(sex => BiologicalSex.All.Contains(sex))
-            .WithMessage("Giới tính phải là 'Male' hoặc 'Female'.");
+            .WithMessage("Giới tính phải là 'Male', 'Female' hoặc 'Other'.");
 
         RuleFor(x => x.HeightCm)
             .InclusiveBetween(50m, 250m)
@@ -31,6 +31,10 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
             .NotEmpty().WithMessage("Chế độ ăn uống không được để trống.")
             .Must(pref => DietaryPreference.All.Contains(pref))
             .WithMessage("Chế độ ăn uống không hợp lệ.");
+
+        RuleFor(x => x.Goal)
+            .Must(goal => string.IsNullOrWhiteSpace(goal) || Goal.All.Contains(goal.Trim()))
+            .WithMessage("Mục tiêu sức khỏe không hợp lệ.");
 
         RuleFor(x => x.HealthLimitations)
             .Must(items => items is null || items.Count <= HealthLimitation.MaxItems)

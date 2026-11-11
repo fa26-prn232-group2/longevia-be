@@ -139,6 +139,6 @@ public sealed class ConsumerTests
         FakeEmailSender sender, CaptureLoggerProvider logs)
     {
         using var factory = LoggerFactory.Create(builder => builder.AddProvider(logs));
-        return new PasswordResetRequestedConsumer(sender, new InMemoryIdempotencyStore(), factory.CreateLogger<PasswordResetRequestedConsumer>());
+        return new PasswordResetRequestedConsumer(sender, new InMemoryIdempotencyStore(), factory.CreateLogger<PasswordResetRequestedConsumer>(), Options.Create(new FrontendOptions()));
     }
 }

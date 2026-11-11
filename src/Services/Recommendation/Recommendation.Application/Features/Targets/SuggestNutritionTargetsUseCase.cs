@@ -86,7 +86,7 @@ public sealed class SuggestNutritionTargetsUseCase(PromptBuilder promptBuilder, 
         if (profile.Age is < 14 or > 100
             || profile.HeightCm is < 120 or > 230
             || profile.WeightKg is < 30 or > 300
-            || profile.Sex is not ("MALE" or "FEMALE"))
+            || profile.Sex is not ("MALE" or "FEMALE" or "OTHER"))
         {
             throw RecommendationErrors.InvalidProfile();
         }
@@ -94,9 +94,14 @@ public sealed class SuggestNutritionTargetsUseCase(PromptBuilder promptBuilder, 
 
     private static Formula ComputeFormula(UserProfile profile, string goal)
     {
-        var bmr = profile.Sex == "MALE"
-            ? (10 * profile.WeightKg) + (6.25 * profile.HeightCm) - (5 * profile.Age) + 5
-            : (10 * profile.WeightKg) + (6.25 * profile.HeightCm) - (5 * profile.Age) - 161;
+        var sexAdjustment = profile.Sex switch
+        {
+            "MALE" => 5,
+            "FEMALE" => -161,
+            _ => -78, // OTHER/không tiết lộ: trung tính giữa nam và nữ.
+        };
+        var bmr = (10 * profile.WeightKg) + (6.25 * profile.HeightCm) - (5 * profile.Age)
+            + sexAdjustment;
 
         var factor = profile.ActivityLevel switch
         {

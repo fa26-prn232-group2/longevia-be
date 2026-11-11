@@ -84,6 +84,62 @@ public sealed class WaterTests(ProgressFixture fixture)
         Assert.Equal(800, summaryB.ConsumedMl);
     }
 
+    [Fact]
+    public async Task Water_Undo_RemovesLatestLogAndRecalculatesTotal()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var first = await client.PostAsJsonAsync("/water/log", new LogWaterRequest(350));
+        var firstSummary = await first.Content.ReadFromJsonAsync<WaterSummaryResponse>(JsonOpts);
+        Assert.NotNull(firstSummary);
+        Assert.NotNull(firstSummary.LatestLogId);
+
+        var second = await client.PostAsJsonAsync("/water/log", new LogWaterRequest(650));
+        var secondSummary = await second.Content.ReadFromJsonAsync<WaterSummaryResponse>(JsonOpts);
+        Assert.NotNull(secondSummary);
+        Assert.NotNull(secondSummary.LatestLogId);
+        Assert.Equal(1000, secondSummary.ConsumedMl);
+
+        var undo = await client.DeleteAsync($"/water/{secondSummary.LatestLogId}");
+        Assert.Equal(HttpStatusCode.OK, undo.StatusCode);
+        var afterUndo = await undo.Content.ReadFromJsonAsync<WaterSummaryResponse>(JsonOpts);
+        Assert.NotNull(afterUndo);
+        Assert.Equal(350, afterUndo.ConsumedMl);
+        Assert.Equal(firstSummary.LatestLogId, afterUndo.LatestLogId);
+
+        var today = await client.GetFromJsonAsync<WaterSummaryResponse>("/water/today", JsonOpts);
+        Assert.NotNull(today);
+        Assert.Equal(350, today.ConsumedMl);
+    }
+
+    [Fact]
+    public async Task Water_Undo_OtherUsersLog_Returns404()
+    {
+        var ownerId = Guid.NewGuid();
+        var attackerId = Guid.NewGuid();
+        using var owner = CreateClient(ownerId);
+        using var attacker = CreateClient(attackerId);
+
+        var log = await owner.PostAsJsonAsync("/water/log", new LogWaterRequest(250));
+        var summary = await log.Content.ReadFromJsonAsync<WaterSummaryResponse>(JsonOpts);
+        Assert.NotNull(summary?.LatestLogId);
+
+        var response = await attacker.DeleteAsync($"/water/{summary.LatestLogId}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var ownerToday = await owner.GetFromJsonAsync<WaterSummaryResponse>("/water/today", JsonOpts);
+        Assert.Equal(250, ownerToday!.ConsumedMl);
+    }
+
+    [Fact]
+    public async Task Water_Undo_UnknownId_Returns404()
+    {
+        using var client = CreateClient(Guid.NewGuid());
+        var response = await client.DeleteAsync($"/water/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private HttpClient CreateClient(Guid userId)
     {
         var client = fixture.Factory.CreateClient();

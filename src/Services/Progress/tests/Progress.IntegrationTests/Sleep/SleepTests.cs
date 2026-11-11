@@ -156,4 +156,99 @@ public sealed class SleepTests(ProgressFixture fixture)
         Assert.NotNull(empty);
         Assert.Empty(empty.Items);
     }
+
+    [Fact]
+    public async Task Sleep_Update_ChangesTimesAndQuality()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+
+        var now = new FoundationTimeProvider().GetUtcNow();
+        var logged = await client.PostAsJsonAsync("/sleep/log",
+            new LogSleepRequest(now.AddHours(-10), now.AddHours(-2), "Fair"));
+        var created = await logged.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+        Assert.NotNull(created);
+
+        var sleptAt = now.AddHours(-9);
+        var wokeAt = now.AddHours(-1);
+        var update = await client.PutAsJsonAsync($"/sleep/{created.Id}",
+            new LogSleepRequest(sleptAt, wokeAt, "Excellent"));
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = await update.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+        Assert.NotNull(updated);
+        Assert.Equal(created.Id, updated.Id);
+        Assert.Equal(8.0, updated.DurationHours);
+        Assert.Equal("Excellent", updated.SleepQuality);
+        Assert.Equal(Progress.Domain.UtcCalendar.Day(wokeAt), updated.Date);
+
+        var history = await client.GetFromJsonAsync<SleepHistoryPageResponse>(
+            "/sleep/history?page=1&pageSize=10", JsonOpts);
+        Assert.NotNull(history);
+        Assert.Contains(history.Items, item => item.Id == created.Id && item.SleepQuality == "Excellent");
+    }
+
+    [Fact]
+    public async Task Sleep_Update_OverlappingAnotherLog_Returns409()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+        var now = new FoundationTimeProvider().GetUtcNow();
+
+        var first = await client.PostAsJsonAsync("/sleep/log",
+            new LogSleepRequest(now.AddHours(-20), now.AddHours(-12), "Good"));
+        var firstLog = await first.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+        var second = await client.PostAsJsonAsync("/sleep/log",
+            new LogSleepRequest(now.AddHours(-10), now.AddHours(-2), "Good"));
+        var secondLog = await second.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+
+        // Kéo bản ghi thứ hai chồng lên bản ghi thứ nhất.
+        var update = await client.PutAsJsonAsync($"/sleep/{secondLog!.Id}",
+            new LogSleepRequest(now.AddHours(-16), now.AddHours(-8), "Fair"));
+
+        Assert.Equal(HttpStatusCode.Conflict, update.StatusCode);
+        Assert.Contains("progress.sleep_overlap", await update.Content.ReadAsStringAsync());
+
+        var history = await client.GetFromJsonAsync<SleepHistoryPageResponse>(
+            "/sleep/history?page=1&pageSize=10", JsonOpts);
+        Assert.Contains(history!.Items, item => item.Id == secondLog.Id && item.SleepQuality == "Good");
+        Assert.Contains(history.Items, item => item.Id == firstLog!.Id);
+    }
+
+    [Fact]
+    public async Task Sleep_Update_OtherUsersLog_Returns404()
+    {
+        var ownerId = Guid.NewGuid();
+        var attackerId = Guid.NewGuid();
+        using var owner = CreateClient(ownerId);
+        using var attacker = CreateClient(attackerId);
+        var now = new FoundationTimeProvider().GetUtcNow();
+
+        var logged = await owner.PostAsJsonAsync("/sleep/log",
+            new LogSleepRequest(now.AddHours(-9), now.AddHours(-1), "Good"));
+        var created = await logged.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+
+        var update = await attacker.PutAsJsonAsync($"/sleep/{created!.Id}",
+            new LogSleepRequest(now.AddHours(-9), now.AddHours(-1), "Poor"));
+
+        Assert.Equal(HttpStatusCode.NotFound, update.StatusCode);
+        Assert.Contains("progress.sleep_not_found", await update.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Sleep_Update_WokeBeforeSlept_Returns400()
+    {
+        var userId = Guid.NewGuid();
+        using var client = CreateClient(userId);
+        var now = new FoundationTimeProvider().GetUtcNow();
+
+        var logged = await client.PostAsJsonAsync("/sleep/log",
+            new LogSleepRequest(now.AddHours(-9), now.AddHours(-1), "Good"));
+        var created = await logged.Content.ReadFromJsonAsync<SleepResponse>(JsonOpts);
+
+        var update = await client.PutAsJsonAsync($"/sleep/{created!.Id}",
+            new LogSleepRequest(now.AddHours(-1), now.AddHours(-9), "Good"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
+    }
 }

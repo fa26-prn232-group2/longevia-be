@@ -107,6 +107,9 @@ public sealed class KnowledgeConversationUseCasesTests
     private sealed class FakeUnitOfWork : IUnitOfWork
     {
         public Task<int> SaveChangesAsync(CancellationToken ct) => Task.FromResult(1);
+
+        public async Task ExecuteInTransactionAsync(string lockKey,
+            Func<CancellationToken, Task> action, CancellationToken ct) => await action(ct);
     }
 
     private sealed class FakeCurrentUser : ICurrentUser

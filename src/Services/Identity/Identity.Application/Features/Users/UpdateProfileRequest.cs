@@ -7,4 +7,5 @@ public sealed record UpdateProfileRequest(
     string ActivityLevel,
     string DietaryPreference,
     List<string>? Allergies,
-    List<string>? HealthLimitations = null);
+    List<string>? HealthLimitations = null,
+    string? Goal = null);

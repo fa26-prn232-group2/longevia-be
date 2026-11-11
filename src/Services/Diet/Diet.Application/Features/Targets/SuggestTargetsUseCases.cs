@@ -29,10 +29,11 @@ public sealed class SuggestTargetsUseCases(
             throw AppException.BadRequest("description tối đa 500 ký tự.", "diet.invalid_description");
         }
 
-        var goal = NormalizeGoal(request.Goal);
         var userId = user.RequiredId();
         var now = time.GetUtcNow();
         var profile = await profiles.GetAsync(userId, ct);
+        // Goal của hồ sơ là mặc định; request được phép override cho từng lần gợi ý.
+        var goal = NormalizeGoal(string.IsNullOrWhiteSpace(request.Goal) ? profile.Goal : request.Goal);
         var weight = await weights.GetLatestAsync(userId, now, ct)
             ?? throw AppException.Unprocessable("Bạn chưa ghi nhận cân nặng.",
                 "diet.weight_not_found");

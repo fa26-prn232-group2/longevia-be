@@ -20,9 +20,10 @@ public sealed class UserProfileProvider(IdentityService.IdentityServiceClient cl
             var today = Progress.Domain.UtcCalendar.Day(DateTimeOffset.UtcNow);
             var age = today.Year - birthDate.Year - (today < birthDate.AddYears(today.Year - birthDate.Year) ? 1 : 0);
             var male = string.Equals(reply.BiologicalSex, "Male", StringComparison.OrdinalIgnoreCase);
+            var other = string.Equals(reply.BiologicalSex, "Other", StringComparison.OrdinalIgnoreCase);
             return new(age, male, Math.Round(reply.HeightCmX100 / 100m, 2), reply.ActivityLevel,
                 reply.DietaryPreference ?? "None", reply.Allergies.ToArray(),
-                reply.HealthLimitations.ToArray());
+                reply.HealthLimitations.ToArray(), other);
         }
         catch (RpcException ex)
         {

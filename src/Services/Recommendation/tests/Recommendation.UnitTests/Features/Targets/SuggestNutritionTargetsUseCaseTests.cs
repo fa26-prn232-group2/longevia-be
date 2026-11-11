@@ -58,6 +58,20 @@ public sealed class SuggestNutritionTargetsUseCaseTests
     }
 
     [Fact]
+    public async Task Formula_ForOtherSex_UsesNeutralAdjustment()
+    {
+        var useCase = Create(new ChatCompletion { Abstained = true, AbstainReason = "provider_timeout" });
+        var request = Request() with { Profile = Profile with { Sex = "OTHER" } };
+
+        var result = await useCase.ExecuteAsync(request, CancellationToken.None);
+
+        Assert.Equal("formula", result.Source);
+        // BMR = 10*80 + 6.25*180 - 5*30 - 78 = 1697; TDEE = 1697*1.55 = 2630.35 -> 2630 kcal.
+        Assert.Equal(2630, result.Calories);
+        Assert.Equal(112, result.ProteinGrams);
+    }
+
+    [Fact]
     public async Task RejectsUnsupportedProfile()
     {
         var useCase = Create(Tip(150, 70, "ok"));

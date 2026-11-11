@@ -20,6 +20,8 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
     public ConcurrentQueue<UserRegisteredEvent> RegisteredEvents { get; } = new();
     public ConcurrentQueue<PasswordResetRequestedEvent> PasswordResetEvents { get; } = new();
     public ConcurrentQueue<UserProfileUpdatedEvent> ProfileUpdatedEvents { get; } = new();
+    public ConcurrentQueue<EmailChangeRequestedEvent> EmailChangeRequestedEvents { get; } = new();
+    public ConcurrentQueue<EmailChangedEvent> EmailChangedEvents { get; } = new();
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("identity_db_test")
         .WithUsername("test_user")
@@ -78,7 +80,9 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
                 provider.GetRequiredService<IPublishEndpoint>(),
                 RegisteredEvents,
                 PasswordResetEvents,
-                ProfileUpdatedEvents));
+                ProfileUpdatedEvents,
+                EmailChangeRequestedEvents,
+                EmailChangedEvents));
 
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));
             if (descriptor is not null)
@@ -97,7 +101,9 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
         IPublishEndpoint publishEndpoint,
         ConcurrentQueue<UserRegisteredEvent> registeredEvents,
         ConcurrentQueue<PasswordResetRequestedEvent> passwordResetEvents,
-        ConcurrentQueue<UserProfileUpdatedEvent> profileUpdatedEvents) : IEventPublisher
+        ConcurrentQueue<UserProfileUpdatedEvent> profileUpdatedEvents,
+        ConcurrentQueue<EmailChangeRequestedEvent> emailChangeRequestedEvents,
+        ConcurrentQueue<EmailChangedEvent> emailChangedEvents) : IEventPublisher
     {
         public Task PublishAsync<T>(T @event, CancellationToken ct = default) where T : class
         {
@@ -112,6 +118,14 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
             else if (@event is UserProfileUpdatedEvent profileUpdatedEvent)
             {
                 profileUpdatedEvents.Enqueue(profileUpdatedEvent);
+            }
+            else if (@event is EmailChangeRequestedEvent emailChangeRequested)
+            {
+                emailChangeRequestedEvents.Enqueue(emailChangeRequested);
+            }
+            else if (@event is EmailChangedEvent emailChanged)
+            {
+                emailChangedEvents.Enqueue(emailChanged);
             }
 
             return publishEndpoint.Publish(@event, ct);

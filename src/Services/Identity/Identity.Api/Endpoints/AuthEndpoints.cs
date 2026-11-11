@@ -2,6 +2,7 @@ using Identity.Api.Extensions;
 using Identity.Application.Features.Auth;
 using Identity.Application.Features.Password;
 using Identity.Application.Features.Registration;
+using Identity.Application.Features.Users;
 using Identity.Application.Features.Verification;
 
 namespace Identity.Api.Endpoints;
@@ -36,6 +37,20 @@ public static class AuthEndpoints
         .AddIdentityValidation<VerifyUserRequest>()
         .WithName("VerifyUser")
         .WithSummary("Xác minh địa chỉ email và kích hoạt tài khoản")
+        .AllowAnonymous();
+
+        group.MapPost("/resend-verification", async (
+            ResendVerificationRequest request,
+            ResendVerificationUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            // Luôn 202: không tiết lộ email có tồn tại hay không.
+            return TypedResults.Accepted((string?)null);
+        })
+        .AddIdentityValidation<ResendVerificationRequest>()
+        .WithName("ResendVerification")
+        .WithSummary("Gửi lại email xác minh (202, không tiết lộ email tồn tại)")
         .AllowAnonymous();
 
         group.MapPost("/login", async (
@@ -113,6 +128,19 @@ public static class AuthEndpoints
         .AddIdentityValidation<ResetPasswordRequest>()
         .WithName("ResetPassword")
         .WithSummary("Đặt lại mật khẩu bằng token email")
+        .AllowAnonymous();
+
+        group.MapPost("/confirm-email-change", async (
+            ConfirmEmailChangeRequest request,
+            ConfirmEmailChangeUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.NoContent();
+        })
+        .AddIdentityValidation<ConfirmEmailChangeRequest>()
+        .WithName("ConfirmEmailChange")
+        .WithSummary("Xác nhận đổi email bằng token gửi tới địa chỉ mới")
         .AllowAnonymous();
 
         return app;

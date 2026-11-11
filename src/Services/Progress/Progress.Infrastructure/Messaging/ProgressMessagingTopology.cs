@@ -4,6 +4,7 @@ public static class ProgressMessagingTopology
 {
     public const string EventsExchange = "longevia.events";
     public const string MealActivityRoutingKey = "diet.meal.logged";
+    public const string MealRemovalRoutingKey = "diet.meal.removed";
     public const string MealActivityQueue = "progress.meal-activity";
     public const string DeadLetterExchange = "progress.meal-activity.dlx";
     public const string DeadLetterQueue = "progress.meal-activity.dlq";

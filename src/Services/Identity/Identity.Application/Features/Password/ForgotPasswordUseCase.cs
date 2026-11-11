@@ -29,7 +29,7 @@ public sealed class ForgotPasswordUseCase(
         userRepository.Update(user);
 
         await eventPublisher.PublishAsync(
-            new PasswordResetRequestedEvent(user.Email, token, expiresAt, now),
+            new PasswordResetRequestedEvent(user.Email, token, expiresAt, now, user.FullName),
             ct);
         await unitOfWork.SaveChangesAsync(ct);
     }

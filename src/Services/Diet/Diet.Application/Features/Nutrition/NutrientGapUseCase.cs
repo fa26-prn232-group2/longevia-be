@@ -86,7 +86,8 @@ public sealed class NutrientGapUseCase(IMealRepository meals, IFoodRepository fo
             Profile = new UserProfile
             {
                 Age = profile.AgeOn(today),
-                Sex = profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
+                Sex = profile.IsOther ? BiologicalSex.Other
+                    : profile.IsMale ? BiologicalSex.Male : BiologicalSex.Female,
                 HeightCm = (double)profile.HeightCm,
                 WeightKg = (double)weight.WeightKg,
                 ActivityLevel = profile.ActivityLevel,

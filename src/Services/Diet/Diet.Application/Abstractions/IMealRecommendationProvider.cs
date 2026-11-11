@@ -3,7 +3,8 @@ using Diet.Domain.Entities;
 namespace Diet.Application.Abstractions;
 
 public sealed record MealProfile(int Age, bool IsMale, decimal HeightCm, decimal WeightKg,
-    string ActivityLevel, string DietaryPreference, IReadOnlyList<string> Allergies);
+    string ActivityLevel, string DietaryPreference, IReadOnlyList<string> Allergies,
+    bool IsOther = false);
 public sealed record MealRecommendationInput(Guid UserId, int MealType, int Goal, MealProfile Profile,
     int ConsumedCalories, int TargetCalories, decimal ProteinRemaining, decimal CarbsRemaining,
     decimal FatRemaining, IReadOnlyList<FoodItem> Foods);

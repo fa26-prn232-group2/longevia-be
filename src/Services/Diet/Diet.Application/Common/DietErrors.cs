@@ -8,4 +8,6 @@ public static class DietErrors
         AppException.NotFound("Bạn chưa thiết lập mục tiêu dinh dưỡng.", "diet.target_not_found");
     public static AppException MissingFood() =>
         AppException.NotFound("Có thực phẩm không tồn tại hoặc không được phép sử dụng.", "diet.food_not_found");
+    public static AppException InvalidMealType() =>
+        AppException.BadRequest("Loại bữa ăn không hợp lệ.", "diet.invalid_meal_type");
 }

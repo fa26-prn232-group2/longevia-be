@@ -22,6 +22,7 @@ public sealed class PlanRequestValidator
     {
         "MALE",
         "FEMALE",
+        "OTHER",
     };
 
     private static readonly HashSet<string> ActivityLevels = new(StringComparer.Ordinal)

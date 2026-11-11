@@ -45,7 +45,8 @@ public sealed class MealRecommendationsUseCase(IProfileProvider profiles, IWeigh
             throw AppException.Unprocessable("Chưa có món đủ thông tin dị ứng để gợi ý.", "diet.no_safe_candidate");
         var result = await recommendations.GetAsync(new(userId, meal, goal,
             new(profile.AgeOn(Longevia.Shared.Time.BusinessTime.ToDate(now)), profile.IsMale, profile.HeightCm,
-                weight.WeightKg, profile.ActivityLevel, profile.DietaryPreference, profile.Allergies),
+                weight.WeightKg, profile.ActivityLevel, profile.DietaryPreference, profile.Allergies,
+                profile.IsOther),
             checked((int)decimal.Round(summary.ConsumedCalories, 0, MidpointRounding.AwayFromZero)),
             checked((int)decimal.Round(summary.TargetCalories, 0, MidpointRounding.AwayFromZero)),
             summary.Macros.Protein.Remaining, summary.Macros.Carbs.Remaining, summary.Macros.Fat.Remaining, candidates), deadline, ct);

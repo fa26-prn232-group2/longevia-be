@@ -37,6 +37,9 @@ public static class ProgressErrors
     public static AppException WaterAmountInvalid() =>
         AppException.BadRequest("Lượng nước phải từ 1 đến 5000 ml.", "progress.water_amount_invalid");
 
+    public static AppException WaterLogNotFound() =>
+        AppException.NotFound("Không tìm thấy lần ghi nước này.", "progress.water_log_not_found");
+
     public static AppException SleepWakeBeforeSleep() =>
         AppException.BadRequest("Thời điểm thức dậy phải sau thời điểm đi ngủ.", "progress.sleep_invalid_time");
 
@@ -45,6 +48,9 @@ public static class ProgressErrors
 
     public static AppException SleepOverlap() =>
         AppException.Conflict("Thời gian ngủ bị trùng lặp với bản ghi khác.", "progress.sleep_overlap");
+
+    public static AppException SleepLogNotFound() =>
+        AppException.NotFound("Không tìm thấy bản ghi giấc ngủ này.", "progress.sleep_not_found");
 
     public static AppException SleepQualityInvalid() =>
         AppException.BadRequest("Chất lượng giấc ngủ không hợp lệ.", "progress.sleep_quality_invalid");

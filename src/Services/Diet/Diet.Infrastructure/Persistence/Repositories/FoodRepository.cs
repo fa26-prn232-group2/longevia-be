@@ -1,4 +1,5 @@
 using Diet.Application.Abstractions;
+using Diet.Domain;
 using Diet.Domain.Entities;
 using Longevia.Shared.Pagination;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +15,13 @@ public sealed class FoodRepository(DietDbContext db) : IFoodRepository
         var query = db.FoodItems.AsNoTracking().Where(x => x.UserId == null || x.UserId == userId);
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var keyword = search.Trim().ToLower();
-            query = query.Where(x => x.Name.ToLower().Contains(keyword));
+            // PostgreSQL unaccent bỏ dấu tên món; keyword cũng được chuẩn hoá tương ứng
+            // để "ca chua" khớp "Cà chua".
+            var keyword = TextNormalizer.Normalize(search);
+            if (keyword.Length > 0)
+            {
+                query = query.Where(x => EF.Functions.Unaccent(x.Name).ToLower().Contains(keyword));
+            }
         }
         if (!string.IsNullOrWhiteSpace(category))
         {

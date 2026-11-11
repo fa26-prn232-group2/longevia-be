@@ -113,7 +113,7 @@ namespace Diet.Infrastructure.Persistence.Migrations
                             Id = new Guid("11111111-1111-4111-8111-111111111111"),
                             Allergens = new string[0],
                             Category = "Meat",
-                            Name = "Ức gà (demo)",
+                            Name = "Ức gà",
                             ServingSize = 100m,
                             ServingUnit = "g"
                         },
@@ -122,7 +122,7 @@ namespace Diet.Infrastructure.Persistence.Migrations
                             Id = new Guid("22222222-2222-4222-8222-222222222222"),
                             Allergens = new string[0],
                             Category = "Grains",
-                            Name = "Cơm trắng (demo)",
+                            Name = "Cơm trắng",
                             ServingSize = 100m,
                             ServingUnit = "g"
                         },
@@ -131,7 +131,7 @@ namespace Diet.Infrastructure.Persistence.Migrations
                             Id = new Guid("33333333-3333-4333-8333-333333333333"),
                             Allergens = new string[0],
                             Category = "Beverage",
-                            Name = "Nước lọc (demo)",
+                            Name = "Nước lọc",
                             ServingSize = 100m,
                             ServingUnit = "ml"
                         },
@@ -853,6 +853,9 @@ namespace Diet.Infrastructure.Persistence.Migrations
                                 .HasColumnType("numeric(5,2)");
 
                             b1.Property<bool>("IsMale")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("IsOther")
                                 .HasColumnType("boolean");
 
                             b1.Property<Guid>("SourceMetricId")

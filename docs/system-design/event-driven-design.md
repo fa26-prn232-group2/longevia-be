@@ -59,3 +59,22 @@ thời điểm tạo/đăng ký bản ghi. Timestamp "tạo lúc đăng ký" lu�
 
 - [microservices/02-grpc-and-events.md](microservices/02-grpc-and-events.md)
 - [contract-purity-pattern.md](contract-purity-pattern.md)
+
+## Cập nhật 2026-11-11 - MealLogRemovedEvent
+
+- Diet phát `MealLogRemovedEvent` (routing key `diet.meal.removed`) khi người dùng xoá bữa; publish trong cùng transaction qua EF outbox.
+- Progress dùng chung queue `progress.meal-activity`, thêm consumer xoá `ActivityContribution` và tombstone `processed_meal_removals`.
+- Một `MealLoggedEvent` đến trễ cho cùng `MealLogId` bị bỏ qua để không hồi sinh streak (out-of-order safe).
+- Đã có sửa bữa: `PUT /diet/meals` thay thế trong một transaction, phát removal cho log cũ và logged cho log mới.
+
+## Cập nhật 2026-11-11 - Đổi email
+
+- Identity phát `EmailChangeRequestedEvent` (routing key `identity.user.email-change-requested`)
+  khi lưu `PendingEmail`; Worker queue `worker.email` gửi link xác nhận tới địa chỉ mới và
+  email cảnh báo tới địa chỉ cũ.
+- Sau khi xác nhận, Identity đổi email, thu hồi toàn bộ refresh token và phát
+  `EmailChangedEvent` (routing key `identity.user.email-changed`); Worker gửi thông báo
+  hoàn tất tới địa chỉ cũ.
+- Idempotency: consumer email-change dedup theo hash token (7 ngày) hoặc `UserId + OccurredOn`;
+  claim được giải phóng nếu gửi email lỗi để broker retry.
+

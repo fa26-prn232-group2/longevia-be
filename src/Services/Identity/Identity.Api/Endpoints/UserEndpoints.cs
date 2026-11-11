@@ -33,6 +33,30 @@ public static class UserEndpoints
         .WithName("UpdateProfile")
         .WithSummary("Cập nhật hồ sơ thể chất cơ bản & dị ứng");
 
+        group.MapPatch("/me", async (
+            ChangeFullNameRequest request,
+            ChangeFullNameUseCase useCase,
+            CancellationToken ct) =>
+        {
+            var result = await useCase.ExecuteAsync(request, ct);
+            return TypedResults.Ok(result);
+        })
+        .AddIdentityValidation<ChangeFullNameRequest>()
+        .WithName("ChangeFullName")
+        .WithSummary("Đổi họ tên hiển thị của tài khoản hiện tại");
+
+        group.MapPost("/me/email-change", async (
+            RequestEmailChangeRequest request,
+            RequestEmailChangeUseCase useCase,
+            CancellationToken ct) =>
+        {
+            await useCase.ExecuteAsync(request, ct);
+            return TypedResults.Accepted((string?)null);
+        })
+        .AddIdentityValidation<RequestEmailChangeRequest>()
+        .WithName("RequestEmailChange")
+        .WithSummary("Gửi link xác nhận đổi email tới địa chỉ mới");
+
         group.MapGet("/me/preferences", async (PreferenceUseCases useCases, CancellationToken ct) =>
             TypedResults.Ok(await useCases.GetAsync(ct)))
             .WithName("GetPreferences").WithSummary("Lấy tùy chọn nhận báo cáo tuần");

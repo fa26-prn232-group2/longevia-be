@@ -81,7 +81,7 @@ public sealed class LoginUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldThrowUnauthorized_WhenUserIsPendingVerification()
+    public async Task ExecuteAsync_ShouldReturnEmailNotVerified_WhenPasswordIsCorrectButUserIsPending()
     {
         var password = "ValidPassword123!";
         var user = User.Create(
@@ -97,8 +97,9 @@ public sealed class LoginUseCaseTests
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             _sut.ExecuteAsync(new LoginRequest(user.Email, password)));
 
-        Assert.Equal(401, ex.Status);
-        Assert.Equal("identity.invalid_credentials", ex.Code);
+        // 403 để client không kích hoạt refresh token; chỉ lộ trạng thái sau khi mật khẩu đúng.
+        Assert.Equal(403, ex.Status);
+        Assert.Equal("identity.email_not_verified", ex.Code);
         Assert.Equal(0, _unitOfWork.SaveChangesCalls);
     }
 }

@@ -9,4 +9,5 @@ public sealed record ProfileResponse(
     string DietaryPreference,
     IReadOnlyList<string> Allergies,
     IReadOnlyList<string> HealthLimitations,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string Goal = "Maintain");

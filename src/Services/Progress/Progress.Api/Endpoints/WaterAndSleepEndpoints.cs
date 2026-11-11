@@ -34,6 +34,11 @@ public static class WaterEndpoints
             TypedResults.Ok(await useCases.GetHistoryAsync(days ?? 30, ct)))
             .WithName("GetWaterHistory")
             .WithSummary("Lịch sử uống nước theo ngày (1..90 ngày, cũ → mới)");
+
+        group.MapDelete("/{id:guid}", async (Guid id, WaterUseCases useCases, CancellationToken ct) =>
+            TypedResults.Ok(await useCases.UndoAsync(id, ct)))
+            .WithName("UndoWaterLog")
+            .WithSummary("Hoàn tác một lần ghi nước của chính người dùng");
     }
 }
 
@@ -61,6 +66,13 @@ public static class SleepEndpoints
         .Produces(StatusCodes.Status204NoContent)
         .WithName("GetTodaySleep")
         .WithSummary("Lấy giấc ngủ đêm qua (ngày thức dậy hôm nay; 204 nếu chưa có)");
+
+        group.MapPut("/{id:guid}", async (Guid id, LogSleepRequest request, SleepUseCases useCases,
+            CancellationToken ct) =>
+            TypedResults.Ok(await useCases.UpdateAsync(id, request, ct)))
+        .AddEndpointFilter<ValidationFilter<LogSleepRequest>>()
+        .WithName("UpdateSleepLog")
+        .WithSummary("Sửa bản ghi giấc ngủ của bạn (404 nếu không sở hữu)");
 
         group.MapDelete("/{id:guid}", async (Guid id, SleepUseCases useCases, CancellationToken ct) =>
         {

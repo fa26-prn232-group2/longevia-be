@@ -18,14 +18,16 @@ public sealed class TargetRepository(DietDbContext db) : ITargetRepository
                 ("Id", "UserId", "TargetCalories", "TargetProteinGrams", "TargetCarbsGrams", "TargetFatGrams", "UpdatedAt",
                  "Calculation_WeightKg", "Calculation_WeightMeasuredAt", "Calculation_SourceMetricId",
                  "Calculation_WeightRequestedAsOf", "Calculation_HeightCm", "Calculation_AgeYears",
-                 "Calculation_IsMale", "Calculation_ActivityFactor", "Calculation_CalculatedAt", "Calculation_Bmr", "Calculation_Tdee")
+                 "Calculation_IsMale", "Calculation_ActivityFactor", "Calculation_CalculatedAt", "Calculation_Bmr", "Calculation_Tdee",
+                 "Calculation_IsOther")
             VALUES ({target.Id}, {target.UserId}, {target.TargetCalories}, {target.TargetProteinGrams},
                 {target.TargetCarbsGrams}, {target.TargetFatGrams}, {target.UpdatedAt},
                 {calculation?.WeightKg}, {calculation?.WeightMeasuredAt},
                 {calculation?.SourceMetricId}, {calculation?.WeightRequestedAsOf},
                 {calculation?.HeightCm}, {calculation?.AgeYears},
                 {calculation?.IsMale}, {calculation?.ActivityFactor},
-                {calculation?.CalculatedAt}, {calculation?.Bmr}, {calculation?.Tdee})
+                {calculation?.CalculatedAt}, {calculation?.Bmr}, {calculation?.Tdee},
+                {calculation?.IsOther})
             ON CONFLICT ("UserId") DO UPDATE SET
                 "TargetCalories" = EXCLUDED."TargetCalories",
                 "TargetProteinGrams" = EXCLUDED."TargetProteinGrams",
@@ -42,7 +44,8 @@ public sealed class TargetRepository(DietDbContext db) : ITargetRepository
                 "Calculation_ActivityFactor" = EXCLUDED."Calculation_ActivityFactor",
                 "Calculation_CalculatedAt" = EXCLUDED."Calculation_CalculatedAt",
                 "Calculation_Bmr" = EXCLUDED."Calculation_Bmr",
-                "Calculation_Tdee" = EXCLUDED."Calculation_Tdee"
+                "Calculation_Tdee" = EXCLUDED."Calculation_Tdee",
+                "Calculation_IsOther" = EXCLUDED."Calculation_IsOther"
             """, ct);
         return await GetAsync(target.UserId, ct)
             ?? throw new InvalidOperationException("Không đọc lại được mục tiêu vừa lưu.");

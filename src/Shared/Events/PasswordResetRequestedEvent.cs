@@ -11,7 +11,8 @@ public sealed record PasswordResetRequestedEvent(
     string Email,
     string ResetToken,
     DateTimeOffset ExpiresAt,
-    DateTimeOffset OccurredOn)
+    DateTimeOffset OccurredOn,
+    string? FullName = null)
 {
     /// <summary>
     /// Contract schema version. Additive optional fields stay on version 1;

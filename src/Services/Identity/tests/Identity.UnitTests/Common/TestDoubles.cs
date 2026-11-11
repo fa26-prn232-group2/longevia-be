@@ -31,6 +31,9 @@ internal sealed class InMemoryUserRepository : IUserRepository
     public Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
         Task.FromResult(_users.FirstOrDefault(u => u.PasswordResetTokenHash == tokenHash));
 
+    public Task<User?> GetByEmailChangeTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        Task.FromResult(_users.FirstOrDefault(u => u.EmailChangeTokenHash == tokenHash));
+
     public Task<User?> GetByVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
         Task.FromResult(_users.FirstOrDefault(u => u.VerificationTokenHash == tokenHash));
 

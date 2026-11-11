@@ -6,6 +6,7 @@ using Longevia.Worker.Idempotency;
 using Longevia.Worker.Templates;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Longevia.Worker.Consumers;
 
@@ -20,7 +21,8 @@ namespace Longevia.Worker.Consumers;
 public sealed class PasswordResetRequestedConsumer(
     IEmailSender emailSender,
     IIdempotencyStore idempotency,
-    ILogger<PasswordResetRequestedConsumer> logger) : IConsumer<PasswordResetRequestedEvent>
+    ILogger<PasswordResetRequestedConsumer> logger,
+    IOptions<FrontendOptions> frontendOptions) : IConsumer<PasswordResetRequestedEvent>
 {
     private static readonly TimeSpan DedupTtl = TimeSpan.FromDays(7);
 
@@ -42,7 +44,8 @@ public sealed class PasswordResetRequestedConsumer(
             return;
         }
 
-        var email = EmailTemplates.PasswordReset(message.Email, message.ResetToken, message.ExpiresAt);
+        var email = EmailTemplates.PasswordReset(message.Email, message.FullName, message.ResetToken,
+            message.ExpiresAt, frontendOptions.Value.BaseUrl);
         try
         {
             await emailSender.SendAsync(email, cancellationToken);

@@ -1,58 +1,54 @@
 using System.Security.Cryptography;
 using Identity.Application.Abstractions;
-using Identity.Application.Common.Dtos;
 using Identity.Application.Common.Errors;
-using Identity.Application.Common.Mappers;
 using Identity.Application.Features.Verification;
-using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
 using Longevia.Shared.Events;
 
 namespace Identity.Application.Features.Registration;
 
+/// <summary>
+/// Đăng ký tài khoản mới. Chưa ghi PostgreSQL: pending registration nằm trong
+/// Redis với TTL 1 giờ và có thể bị ghi đè khi user đăng ký lại cùng email.
+/// User DB chỉ được tạo ở bước verify email.
+/// </summary>
 public sealed class RegisterUserUseCase(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
     IEventPublisher eventPublisher,
-    IUnitOfWork unitOfWork)
+    IPendingRegistrationStore pendingStore)
 {
-    public async Task<UserResponse> ExecuteAsync(RegisterUserRequest request, CancellationToken ct = default)
+    public async Task<PendingRegistration> ExecuteAsync(RegisterUserRequest request, CancellationToken ct = default)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
-        var exists = await userRepository.ExistsByEmailAsync(normalizedEmail, ct);
-        if (exists)
+        if (await userRepository.ExistsByEmailAsync(normalizedEmail, ct))
         {
             throw UserErrors.EmailTaken(request.Email);
         }
 
-        var passwordHash = passwordHasher.Hash(request.Password);
-        var verificationToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var now = DateTimeOffset.UtcNow;
-        var verificationTokenHash = VerificationTokenHasher.Hash(verificationToken);
-
-        var user = User.Create(
+        var verificationToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var pending = new PendingRegistration(
             Guid.NewGuid(),
             normalizedEmail,
-            passwordHash,
-            request.FullName,
+            passwordHasher.Hash(request.Password),
+            request.FullName.Trim(),
+            VerificationTokenHasher.Hash(verificationToken),
             now,
-            verificationTokenHash,
-            now.AddHours(24));
+            now.Add(PendingRegistration.Lifetime));
 
-        await userRepository.AddAsync(user, ct);
+        await pendingStore.SaveAsync(pending, ct);
 
         await eventPublisher.PublishAsync(
             new UserRegisteredEvent(
-                user.Id,
-                user.Email,
-                user.FullName,
+                pending.Id,
+                pending.Email,
+                pending.FullName,
                 verificationToken,
                 now),
             ct);
 
-        await unitOfWork.SaveChangesAsync(ct);
-
-        return user.ToResponse();
+        return pending;
     }
 }

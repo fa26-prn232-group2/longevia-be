@@ -11,6 +11,7 @@ public sealed class LoginUseCase(
     IRefreshTokenRepository refreshTokenRepository,
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
+    IPendingRegistrationStore pendingStore,
     IUnitOfWork unitOfWork)
 {
     public async Task<AuthTokenResponse> ExecuteAsync(LoginRequest request, CancellationToken ct = default)
@@ -20,6 +21,7 @@ public sealed class LoginUseCase(
         var user = await userRepository.GetByEmailAsync(normalizedEmail, ct);
         if (user is null)
         {
+            await ThrowIfPendingRegistrationMatchesAsync(normalizedEmail, request.Password, ct);
             throw AuthErrors.InvalidCredentials();
         }
 
@@ -56,5 +58,18 @@ public sealed class LoginUseCase(
             refreshToken.Token,
             "Bearer",
             900);
+    }
+
+    private async Task ThrowIfPendingRegistrationMatchesAsync(
+        string email,
+        string password,
+        CancellationToken ct)
+    {
+        var pending = await pendingStore.GetByEmailAsync(email, ct);
+        if (pending is not null && passwordHasher.Verify(password, pending.PasswordHash))
+        {
+            // Chỉ lộ trạng thái sau khi mật khẩu đúng, giữ UX cũ và không tạo lỗ hổng dò email.
+            throw AuthErrors.EmailNotVerified();
+        }
     }
 }

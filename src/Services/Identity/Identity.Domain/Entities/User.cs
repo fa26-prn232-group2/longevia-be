@@ -70,6 +70,35 @@ public sealed class User
         return user;
     }
 
+    /// <summary>
+    /// Tạo user đã xác thực từ pending registration (Redis). Không phát lại
+    /// <see cref="UserRegisteredDomainEvent"/> vì email xác thực đã được gửi ở bước đăng ký.
+    /// </summary>
+    public static User CreateActive(
+        Guid id,
+        string email,
+        string passwordHash,
+        string fullName,
+        DateTimeOffset createdAt,
+        DateTimeOffset activatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+
+        return new User
+        {
+            Id = id,
+            Email = email.Trim().ToLowerInvariant(),
+            PasswordHash = passwordHash,
+            FullName = fullName.Trim(),
+            Status = UserStatus.Active,
+            CreatedAt = createdAt,
+            UpdatedAt = activatedAt,
+            VerificationTokenConsumedAt = activatedAt,
+        };
+    }
+
     public void SetProfile(UserProfile profile)
     {
         Profile = profile;

@@ -18,8 +18,9 @@ public static class AuthEndpoints
             RegisterUserUseCase useCase,
             CancellationToken ct) =>
         {
-            var result = await useCase.ExecuteAsync(request, ct);
-            return TypedResults.Created($"/users/{result.Id}", result);
+            await useCase.ExecuteAsync(request, ct);
+            // Pending registration nằm trong Redis; DB user chỉ được tạo khi verify email.
+            return TypedResults.StatusCode(StatusCodes.Status202Accepted);
         })
         .AddIdentityValidation<RegisterUserRequest>()
         .WithName("RegisterUser")

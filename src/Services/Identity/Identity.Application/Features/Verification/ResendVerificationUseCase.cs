@@ -1,36 +1,60 @@
 using System.Security.Cryptography;
 using Identity.Application.Abstractions;
+using Identity.Application.Features.Registration;
+using Identity.Domain.Constants;
 using Identity.Domain.Repositories;
 using Longevia.Shared.Events;
 
 namespace Identity.Application.Features.Verification;
 
 /// <summary>
-/// Gửi lại email xác minh cho tài khoản còn chờ kích hoạt.
-///
-/// Luôn im lặng với email không tồn tại / đã kích hoạt / bị khóa: endpoint trả 202
-/// như nhau để không biến chức năng này thành công cụ dò email tồn tại.
+/// Gửi lại email xác thực. Pending registration trong Redis bị ghi đè token mới;
+/// fallback PostgreSQL cho user pending cũ trong giai đoạn chuyển đổi.
+/// Endpoint luôn 202 để không tiết lộ email có tồn tại hay không.
 /// </summary>
 public sealed class ResendVerificationUseCase(
     IUserRepository userRepository,
+    IPendingRegistrationStore pendingStore,
     IEventPublisher eventPublisher,
     IUnitOfWork unitOfWork)
 {
-    private static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(24);
-
     public async Task ExecuteAsync(ResendVerificationRequest request, CancellationToken ct = default)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-        var user = await userRepository.GetByEmailAsync(normalizedEmail, ct);
-        if (user is null)
-        {
-            return;
-        }
-
         var now = DateTimeOffset.UtcNow;
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var tokenHash = VerificationTokenHasher.Hash(token);
-        if (!user.TryReissueVerificationToken(tokenHash, now, now.Add(TokenLifetime)))
+
+        var pending = await pendingStore.GetByEmailAsync(normalizedEmail, ct);
+        if (pending is not null)
+        {
+            var refreshed = pending with
+            {
+                VerificationTokenHash = tokenHash,
+                ExpiresAt = now.Add(PendingRegistration.Lifetime),
+            };
+
+            await pendingStore.SaveAsync(refreshed, ct);
+            await eventPublisher.PublishAsync(
+                new UserRegisteredEvent(refreshed.Id, refreshed.Email, refreshed.FullName, token, now),
+                ct);
+            return;
+        }
+
+        await ResendForLegacyDatabaseUserAsync(normalizedEmail, token, tokenHash, now, ct);
+    }
+
+    private async Task ResendForLegacyDatabaseUserAsync(
+        string normalizedEmail,
+        string token,
+        string tokenHash,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var user = await userRepository.GetByEmailAsync(normalizedEmail, ct);
+        if (user is null
+            || user.Status != UserStatus.PendingVerification
+            || !user.TryReissueVerificationToken(tokenHash, now, now.Add(PendingRegistration.Lifetime)))
         {
             return;
         }

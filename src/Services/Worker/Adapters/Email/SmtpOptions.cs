@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Configuration;
 
 namespace Longevia.Worker.Adapters.Email;
 
@@ -27,6 +28,7 @@ public sealed class SmtpOptions
     /// false = plain connection (Mailpit); true = explicit TLS upgrade
     /// (StartTLS, Brevo relay on 587).
     /// </summary>
+    [ConfigurationKeyName("USE_SSL")]
     public bool UseSsl { get; set; }
 
     /// <summary>Empty for Mailpit (no auth); Brevo login key in production.</summary>
@@ -36,6 +38,7 @@ public sealed class SmtpOptions
     public string Password { get; set; } = string.Empty;
 
     /// <summary>Visible sender address.</summary>
+    [ConfigurationKeyName("SENDER_EMAIL")]
     [Required]
     [EmailAddress]
     public string SenderEmail { get; set; } = "no-reply@longevia.local";

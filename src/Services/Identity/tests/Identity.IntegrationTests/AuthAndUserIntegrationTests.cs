@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Identity.Application.Abstractions;
 using Identity.Application.Common.Dtos;
 using Identity.Application.Features.Auth;
 using Identity.Application.Features.Registration;
@@ -109,21 +110,13 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         var password = "SecurePassword123!";
         var fullName = "Nguyen Van A";
 
-        // 1. Register
+        // 1. Register → pending only in Redis, 202 without body
         var registerRequest = new RegisterUserRequest(email, password, fullName);
         var registerResponse = await _client.PostAsJsonAsync("/auth/register", registerRequest);
 
-        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
-        var createdUser = await registerResponse.Content.ReadFromJsonAsync<UserResponse>();
-        Assert.NotNull(createdUser);
-        Assert.Equal(email, createdUser.Email);
-        Assert.Equal(fullName, createdUser.FullName);
+        Assert.Equal(HttpStatusCode.Accepted, registerResponse.StatusCode);
 
-        // 2. Duplicate Register (Conflict)
-        var duplicateResponse = await _client.PostAsJsonAsync("/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.Conflict, duplicateResponse.StatusCode);
-
-        // 3. A newly registered account cannot log in before email verification.
+        // 2. A newly registered account cannot log in before email verification.
         var pendingLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, password));
         Assert.Equal(HttpStatusCode.Forbidden, pendingLogin.StatusCode);
         Assert.Contains("identity.email_not_verified", await pendingLogin.Content.ReadAsStringAsync());
@@ -147,6 +140,10 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.False(string.IsNullOrWhiteSpace(tokenResult.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(tokenResult.RefreshToken));
 
+        // Registering the same, already verified email is still a conflict.
+        var duplicateResponse = await _client.PostAsJsonAsync("/auth/register", registerRequest);
+        Assert.Equal(HttpStatusCode.Conflict, duplicateResponse.StatusCode);
+
         // 5. Invalid Password Login
         var badLogin = await _client.PostAsJsonAsync("/auth/login", new LoginRequest(email, "WrongPassword123!"));
         Assert.Equal(HttpStatusCode.Unauthorized, badLogin.StatusCode);
@@ -158,7 +155,9 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
         var meUser = await meResponse.Content.ReadFromJsonAsync<UserResponse>();
         Assert.NotNull(meUser);
-        Assert.Equal(createdUser.Id, meUser.Id);
+        Assert.Equal(email, meUser.Email);
+        Assert.Equal(fullName, meUser.FullName);
+        var verifiedUserId = meUser.Id;
 
         // 7. Update Profile (/users/me/profile)
         var updateProfileRequest = new UpdateProfileRequest(
@@ -190,7 +189,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         Assert.Equal(178.25m, updatedProfile.HeightCm);
         Assert.Equal(BiologicalSex.Male, updatedProfile.BiologicalSex);
         Assert.Contains("Seafood", updatedProfile.Allergies);
-        var profileEvent = Assert.Single(factory.ProfileUpdatedEvents, message => message.UserId == createdUser.Id);
+        var profileEvent = Assert.Single(factory.ProfileUpdatedEvents, message => message.UserId == verifiedUserId);
         Assert.Equal(1, UserProfileUpdatedEvent.SchemaVersion);
         Assert.NotEqual(default, profileEvent.OccurredOn);
 
@@ -198,7 +197,7 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
         {
             var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
             var profileHeight = await db.UserProfiles
-                .Where(profile => profile.UserId == createdUser.Id)
+                .Where(profile => profile.UserId == verifiedUserId)
                 .Select(profile => profile.HeightCm)
                 .SingleAsync();
             Assert.Equal(178.25m, profileHeight);
@@ -336,29 +335,22 @@ public sealed class AuthAndUserIntegrationTests(IdentityApiFactory factory) : IC
     }
 
     [Fact]
-    public async Task Registration_ShouldPersistUserAndOutboxMessageInSameTransaction()
+    public async Task Registration_ShouldOnlyCreatePendingRecordBeforeVerification()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        var email = $"rollback_{Guid.NewGuid():N}@example.com";
+        var pendingStore = scope.ServiceProvider.GetRequiredService<IPendingRegistrationStore>();
+        var email = $"pending_{Guid.NewGuid():N}@example.com";
 
-        await using (var transaction = await db.Database.BeginTransactionAsync())
-        {
-            var useCase = scope.ServiceProvider.GetRequiredService<Identity.Application.Features.Registration.RegisterUserUseCase>();
-            await useCase.ExecuteAsync(new RegisterUserRequest(email, "SecurePassword123!", "Rollback User"));
+        var useCase = scope.ServiceProvider
+            .GetRequiredService<Identity.Application.Features.Registration.RegisterUserUseCase>();
+        await useCase.ExecuteAsync(new RegisterUserRequest(email, "SecurePassword123!", "Pending User"));
 
-            Assert.True(await db.Users.AnyAsync(user => user.Email == email));
-            var outboxBodies = await db.Database.SqlQueryRaw<string>("SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"").ToListAsync();
-            Assert.Contains(outboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
-
-            await transaction.RollbackAsync();
-        }
-
-        using var verificationScope = factory.Services.CreateScope();
-        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        Assert.False(await verificationDb.Users.AnyAsync(user => user.Email == email));
-        var remainingOutboxBodies = await verificationDb.Database.SqlQueryRaw<string>("SELECT \"Body\"::text AS \"Value\" FROM \"OutboxMessage\"").ToListAsync();
-        Assert.DoesNotContain(remainingOutboxBodies, body => body.Contains(email, StringComparison.OrdinalIgnoreCase));
+        Assert.False(await db.Users.AnyAsync(user => user.Email == email));
+        var pending = await pendingStore.GetByEmailAsync(email);
+        Assert.NotNull(pending);
+        Assert.Equal("Pending User", pending.FullName);
+        Assert.True(pending.ExpiresAt > DateTimeOffset.UtcNow);
     }
 
     [Fact]

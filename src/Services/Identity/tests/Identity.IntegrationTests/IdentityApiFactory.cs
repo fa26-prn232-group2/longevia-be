@@ -22,6 +22,7 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
     public ConcurrentQueue<UserProfileUpdatedEvent> ProfileUpdatedEvents { get; } = new();
     public ConcurrentQueue<EmailChangeRequestedEvent> EmailChangeRequestedEvents { get; } = new();
     public ConcurrentQueue<EmailChangedEvent> EmailChangedEvents { get; } = new();
+    public InMemoryPendingRegistrationStore PendingRegistrations { get; } = new();
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("identity_db_test")
         .WithUsername("test_user")
@@ -75,6 +76,9 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncL
         }
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IPendingRegistrationStore>();
+            services.AddSingleton<IPendingRegistrationStore>(PendingRegistrations);
+
             services.RemoveAll<IEventPublisher>();
             services.AddScoped<IEventPublisher>(provider => new CapturingEventPublisher(
                 provider.GetRequiredService<IPublishEndpoint>(),

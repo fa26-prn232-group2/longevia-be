@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using Identity.Application.Features.Registration;
 using Identity.Domain.Constants;
 using Identity.Infrastructure.Persistence;
@@ -21,7 +23,7 @@ public sealed class ResendVerificationIntegrationTests(IdentityApiFactory factor
         var password = "SecurePassword123!";
         var register = await _client.PostAsJsonAsync("/auth/register",
             new RegisterUserRequest(email, password, "Resend User"));
-        Assert.Equal(HttpStatusCode.Created, register.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, register.StatusCode);
 
         var first = factory.RegisteredEvents.Last(e => e.Email == email);
 
@@ -30,12 +32,12 @@ public sealed class ResendVerificationIntegrationTests(IdentityApiFactory factor
 
         var second = factory.RegisteredEvents.Last(e => e.Email == email);
         Assert.NotEqual(first.VerificationToken, second.VerificationToken);
+        Assert.NotNull(await factory.PendingRegistrations.GetByTokenHashAsync(
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(second.VerificationToken)))));
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        var user = await db.Users.SingleAsync(x => x.Email == email);
-        Assert.Equal(UserStatus.PendingVerification, user.Status);
-        Assert.NotNull(user.VerificationTokenHash);
+        Assert.False(await db.Users.AnyAsync(x => x.Email == email));
     }
 
     [Fact]

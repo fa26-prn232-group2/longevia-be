@@ -105,7 +105,7 @@ public sealed class RegistrationEmailE2ETests : IAsyncLifetime
             "/auth/register",
             new RegisterUserRequest(email, password, "Identity E2E"));
 
-        Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(System.Net.HttpStatusCode.Accepted, response.StatusCode);
 
         var message = await WaitForEmailAsync(email);
         Assert.Contains(email, message.GetProperty("To").ToString(), StringComparison.OrdinalIgnoreCase);

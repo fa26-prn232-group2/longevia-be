@@ -61,3 +61,15 @@ Ghi bằng chứng sau mỗi phase/deploy. Không ghi secret.
   - Flake MassTransit shutdown trong `Progress.IntegrationTests` → re-run CI pass.
 - GHCR package hiện vẫn **private** (anonymous manifest trả 401); deploy dùng token tạm, không lưu trên VPS. Để đúng phương án A, đổi 5 package sang Public trong GitHub Packages.
 
+## Deploy v0.1.3 — GHCR read PAT
+
+- Commit/tag: `7af1c43` / `v0.1.3`
+- GHCR pull dùng PAT riêng:
+  - Environment secret `GHCR_READ_TOKEN` (classic, `read:packages`)
+  - Environment variable `GHCR_USERNAME`
+- Workflow login tạm trên VPS bằng `DOCKER_CONFIG=/tmp/longevia-docker`; cleanup `if: always()`.
+- Kết quả: gate + 5 image + deploy **success**; 5 app container healthy; `/health` 200; CORS 204.
+- `.env.production` vẫn 53 key, **0 key GHCR**; `/tmp/longevia-docker` không còn sau deploy.
+- Rollback: `.env.production.deploy.prev` giữ digest của `v0.1.2`.
+
+

@@ -2,9 +2,11 @@
 
 Các bước còn lại chỉ dev làm được (quyền hệ thống, DNS, GitHub, firewall).
 
-**Trạng thái 2026-11-13:** production đã deploy tag `v0.1.2`; HTTPS health và
-3 readiness endpoint trả 200. Cert đến 2027-02-11. Còn lại: đổi 5 package GHCR
-sang Public, cài cron backup/renew, lưu `.env.production` vào password manager.
+**Trạng thái 2026-11-13:** production đã deploy tag `v0.1.3`; HTTPS health và
+3 readiness endpoint trả 200. Cert đến 2027-02-11. GHCR private pull dùng PAT
+trong Environment `production` (không lưu VPS). Còn lại: cài cron backup/renew,
+lưu `.env.production` vào password manager; tùy chọn đổi 5 package GHCR sang
+Public.
 
 `.env.production` đã có trên VPS; DNS trỏ
 `api.longevia.hycat.online → 160.22.107.140`.
@@ -46,16 +48,17 @@ Mở TCP `8084` và `8446` trên panel provider. Không mở `5432`, `5672`,
 
 ## 4. GHCR package visibility
 
-Hiện 5 package vẫn **private** (kiểm tra anonymous manifest trả 401). Deploy vẫn
-chạy được vì `release.yml` đăng nhập GHCR bằng `GITHUB_TOKEN` tạm thời rồi xoá
-`/tmp/longevia-docker`; VPS không lưu token.
+Hiện 5 package vẫn **private** (anonymous manifest trả 401). Deploy dùng PAT
+riêng trong GitHub Environment `production`:
 
-Để đúng phương án A, vào GitHub → Packages → từng package
-`longevia-identity`, `longevia-diet`, `longevia-progress`,
-`longevia-recommendation`, `longevia-worker` → Package settings → Change
-visibility → Public.
+- Secret `GHCR_READ_TOKEN` — PAT classic, chỉ scope `read:packages`
+- Variable `GHCR_USERNAME` — account sở hữu PAT
 
-Sau khi public, có thể bỏ bước login tạm trong `release.yml` (không bắt buộc).
+Workflow login tạm trên VPS bằng `DOCKER_CONFIG=/tmp/longevia-docker`; token
+không lưu trên VPS, cleanup sau deploy. Đổi PAT: chỉ cập nhật secret, không cần
+SSH VPS.
+
+Nếu muốn bỏ PAT, đổi 5 package sang Public trong GitHub Packages.
 
 ## 5. Cấp cert lần đầu
 

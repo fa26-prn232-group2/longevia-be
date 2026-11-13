@@ -167,3 +167,5 @@ chứng deploy.
 | 2026-11-13 | Build cache dùng `type=gha` thay registry cache GHCR | tránh `permission_denied: write_package` | dev |
 | 2026-11-13 | Nginx trả `/healthz` 200 trên HTTP nội bộ trước redirect | healthcheck container không bị 301 sang port 8446 | dev |
 | 2026-11-13 | Deploy production thành công tag `v0.1.2` | health/readiness/CORS đều đạt | dev |
+| 2026-11-13 | GHCR private pull dùng PAT `read:packages` trong Environment `production` | token riêng, rotate độc lập, không lưu VPS | dev |
+| 2026-11-13 | Deploy lại thành công tag `v0.1.3` với PAT GHCR | xác nhận pull private package qua token tạm | dev |

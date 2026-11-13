@@ -38,6 +38,13 @@ if [ ! -f "$TLS_DIR_VALUE/$DOMAIN_VALUE/fullchain.pem" ] || [ ! -f "$TLS_DIR_VAL
     exit 1
 fi
 
+# Optional: log in to GHCR when the packages are still private.
+GHCR_USERNAME_VALUE="$(get_env GHCR_USERNAME)"
+GHCR_READ_TOKEN_VALUE="$(get_env GHCR_READ_TOKEN)"
+if [ -n "$GHCR_USERNAME_VALUE" ] && [ -n "$GHCR_READ_TOKEN_VALUE" ]; then
+    echo "$GHCR_READ_TOKEN_VALUE" | docker login ghcr.io -u "$GHCR_USERNAME_VALUE" --password-stdin >/dev/null
+fi
+
 # Resolve immutable digests for this release and pin them in the deploy file.
 tmp_deploy="${DEPLOY_FILE}.new"
 : > "$tmp_deploy"

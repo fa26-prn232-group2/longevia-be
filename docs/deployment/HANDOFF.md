@@ -44,8 +44,16 @@ Mở TCP `8084` và `8446` trên panel provider. Không mở `5432`, `5672`,
 Sau lần push image đầu tiên, vào GitHub → Packages → từng package
 `longevia-identity`, `longevia-diet`, `longevia-progress`,
 `longevia-recommendation`, `longevia-worker` → Package settings → Change
-visibility → Public. Nếu để private, VPS phải `docker login ghcr.io` bằng PAT
-`read:packages` trước khi deploy.
+visibility → Public.
+
+Nếu chưa kịp đổi public, thêm 2 dòng vào `.env.production` trên VPS (mode 600):
+
+```dotenv
+GHCR_USERNAME=<github-account-so-huu-PAT>
+GHCR_READ_TOKEN=<PAT-classic-read:packages>
+```
+
+`deploy-release.sh` tự `docker login ghcr.io` khi thấy 2 biến này.
 
 ## 5. Cấp cert lần đầu
 

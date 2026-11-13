@@ -42,12 +42,12 @@ run_lego() {
     docker run --rm \
         --user "$(id -u):$(id -g)" \
         -e HOME=/tmp \
-        -v "$TLS_DIR:/lego" \
+        -v "$TLS_DIR:/data" \
         -v "$SECRET_DIR:/secrets:ro" \
         -e VERCEL_API_TOKEN_FILE=/secrets/dns.token \
         $TEAM_ARGS \
-        "$LEGO_IMAGE" \
-        --path /lego \
+        "$LEGO_IMAGE" run \
+        --path /data \
         --accept-tos \
         --email "$ACME_EMAIL" \
         --dns "$DNS_PROVIDER" \
@@ -55,10 +55,11 @@ run_lego() {
 }
 
 if [ "$ACTION" = "renew" ]; then
-    run_lego --domains "$DOMAIN" renew --days 30
+    echo "Renewing certificate for $DOMAIN (lego run renews when due)."
 else
-    run_lego --domains "$DOMAIN" run
+    echo "Issuing certificate for $DOMAIN."
 fi
+run_lego --domains "$DOMAIN"
 
 mkdir -p "$TLS_DIR/$DOMAIN"
 cp "$TLS_DIR/certificates/$DOMAIN.crt" "$TLS_DIR/$DOMAIN/fullchain.pem"

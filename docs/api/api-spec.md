@@ -48,7 +48,7 @@
 
 ### 2.1 `POST /api/identity/auth/register` — Đăng ký tài khoản
 - **Xác thực**: Public
-- **Mô tả**: Tạo tài khoản người dùng mới và lưu outbox event để gửi email kích hoạt.
+- **Mô tả**: Ghi đăng ký chưa xác thực vào Redis (TTL 1 giờ) và gửi email kích hoạt; **chưa tạo user trong PostgreSQL**. Đăng ký lại cùng email khi còn pending sẽ ghi đè bản cũ và vô hiệu hoá link cũ. User DB chỉ được tạo khi verify email thành công.
 - **Request Body**:
   ```json
   {
@@ -61,26 +61,17 @@
   - `email`: Bắt buộc, đúng định dạng RFC 5322, tối đa 255 ký tự.
   - `password`: Tối thiểu 8 ký tự, có ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số, 1 ký tự đặc biệt.
   - `fullName`: Bắt buộc, độ dài 2–100 ký tự.
-- **Response `201 Created`**:
-  ```json
-  {
-    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "email": "alex.minh@example.com",
-    "fullName": "Alex Minh",
-    "status": "PendingVerification",
-    "createdAt": "2026-10-21T14:30:00Z"
-  }
-  ```
+- **Response `202 Accepted`**: Không body. Pending registration đã được ghi vào Redis và email xác thực đã được publish.
 - **Lỗi thường gặp**:
-  - `409 Conflict`: `code = "identity.email_taken"` (Email đã được đăng ký).
+  - `409 Conflict`: `code = "identity.email_taken"` — chỉ khi email đã có user **đã xác thực** trong DB.
   - `422 Unprocessable Entity`: Vi phạm ràng buộc mật khẩu hoặc email.
 
 ---
 
 ### 2.2 `GET /api/identity/auth/verify?token={token}` — Xác minh email
 - **Xác thực**: Public; token là bí mật dùng một lần.
-- **Mô tả**: Kích hoạt tài khoản `PendingVerification` nếu token khớp và chưa hết hạn. Link email hiện tại mở endpoint này bằng GET.
-- **Thời hạn**: 24 giờ từ lúc đăng ký. Token đã dùng, sai hoặc hết hạn đều không kích hoạt tài khoản.
+- **Mô tả**: Kích hoạt tài khoản từ pending registration trong Redis (hoặc user pending cũ trong PostgreSQL) nếu token khớp và chưa hết hạn. Link email hiện tại mở endpoint này bằng GET.
+- **Thời hạn**: 1 giờ từ lúc đăng ký/gửi lại. Token đã dùng, sai hoặc hết hạn đều không kích hoạt tài khoản.
 - **Response `204 No Content`**: Xác minh thành công.
 - **Lỗi `400 Bad Request`**: `code = "identity.invalid_verification_token"` khi token sai, hết hạn hoặc đã dùng.
 - **Lưu ý**: GET xác minh trực tiếp theo quyết định sản phẩm; trình quét link trong email có thể tự mở link và kích hoạt tài khoản.

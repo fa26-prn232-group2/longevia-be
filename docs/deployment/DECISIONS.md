@@ -171,3 +171,6 @@ chứng deploy.
 | 2026-11-13 | Deploy lại thành công tag `v0.1.3` với PAT GHCR | xác nhận pull private package qua token tạm | dev |
 | 2026-11-13 | Fix bind `SMTP__SENDER_EMAIL`/`SMTP__USE_SSL` bằng `ConfigurationKeyName` | Brevo từ chối sender default `no-reply@longevia.local` | dev |
 | 2026-11-13 | Deploy thành công tag `v0.1.4` | xác nhận email dùng sender production | dev |
+| 2026-11-13 | Đăng ký mới chỉ ghi Redis pending (TTL 1h), trả 202; DB user tạo khi verify | tránh email chưa xác thực bị chiếm trong DB | dev |
+| 2026-11-13 | Đăng ký lại cùng email pending ghi đè pending cũ | cho phép thử lại khi mất email | dev |
+| 2026-11-13 | Today page gate theo target + onboarding auto-target khi có cân nặng | tránh 404 target làm trang Today báo lỗi | dev |

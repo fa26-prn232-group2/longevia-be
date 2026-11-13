@@ -87,7 +87,19 @@ Chạy thử từng script bằng tay một lần trước khi tin cron.
 
 Lưu bản đã điền vào password manager/team vault. Không commit, không gửi chat.
 
-## 8. Kích hoạt deploy
+## 8. Rollback
+
+Nếu release mới lỗi, quay lại digest trước:
+
+```bash
+ssh vps-hycat
+cd /opt/longevia-production
+sh deployments/scripts/rollback.sh production
+```
+
+Script dùng `.env.production.deploy.prev`, giữ bản lỗi ở `.env.production.deploy.failed`.
+
+## 9. Kích hoạt deploy
 
 ```bash
 git tag -a v0.1.0 -m "Release v0.1.0"

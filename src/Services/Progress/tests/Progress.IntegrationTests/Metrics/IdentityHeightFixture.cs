@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Progress.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -106,12 +107,25 @@ public sealed class IdentityHeightFixture : IAsyncLifetime
 
     public async Task<Guid> SeedAsync(decimal? height = null)
     {
-        using var response = await IdentityHttp.PostAsJsonAsync("/auth/register", new
-        { email = $"height-{Guid.NewGuid():N}@example.test", password = "HeightTest!825", fullName = "Height Integration" });
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var id = body.RootElement.GetProperty("id").GetGuid();
-        if (height.HasValue) await UpdateAsync(id, height.Value);
+        var id = Guid.NewGuid();
+        await using var connection = new NpgsqlConnection(_identity.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = """
+                INSERT INTO users ("Id", "Email", "PasswordHash", "FullName", "Status", "CreatedAt", "UpdatedAt")
+                VALUES (@id, @email, 'seeded-password-hash', 'Height Integration', 'Active', now(), now())
+                """;
+            command.Parameters.AddWithValue("id", id);
+            command.Parameters.AddWithValue("email", $"height-{id:N}@example.test");
+            await command.ExecuteNonQueryAsync();
+        }
+
+        if (height.HasValue)
+        {
+            await UpdateAsync(id, height.Value);
+        }
+
         return id;
     }
 

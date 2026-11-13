@@ -20,22 +20,44 @@ Ghi bằng chứng sau mỗi phase/deploy. Không ghi secret.
 
 ## Phase 2 — CI/CD
 
-- Trạng thái: hoàn thành workflow; chờ push để CI xác nhận.
+- Trạng thái: hoàn thành.
 - Bằng chứng:
   - `ci.yml`: matrix build 5 image.
   - `release.yml`: tag `v*` → gate `make check` → build/push GHCR → SSH deploy → smoke công khai.
   - YAML parse bằng `js-yaml` — pass.
+  - Cache build dùng `type=gha` (tránh lỗi GHCR `write_package` khi export registry cache).
+  - Deploy job tự `docker login ghcr.io` bằng `GITHUB_TOKEN` tạm thời qua SSH; xoá `DOCKER_CONFIG=/tmp/longevia-docker` sau deploy.
 
 ## Phase 3 — VPS bootstrap
 
-- Trạng thái: chờ handoff (Vercel token, firewall, cert).
-- Bằng chứng: _(điền sau khi chạy)_
+- Trạng thái: hoàn thành.
+- Bằng chứng:
+  - DNS A `api.longevia.hycat.online → 160.22.107.140`.
+  - `deployments/` + `resources/knowledge/che-do-an-truong-tho` pre-seed tại `/opt/longevia-production`.
+  - Cert Let's Encrypt DNS-01 (Vercel), hạn `2027-02-11`, `privkey` mode 600.
+  - Port `8084`/`8446` reachable từ ngoài; ufw/nftables inactive.
+  - `.env.production` 53 key, mode `600 deploy:deploy`; không còn key GHCR.
 
 ## Phase 4 — First deploy
 
-- Trạng thái: chưa chạy.
-- Commit/tag:
-- Image digests:
+- Trạng thái: thành công với tag `v0.1.2`.
+- Commit/tag: `ac712b7` / `v0.1.2`
+- Image digests (`.env.production.deploy`):
+  - identity `sha256:cdb8f39c87d116708d7433ea2f27a7ca4c298b2acf886ee5f6bd9da387184184`
+  - diet `sha256:af315d8b73ea97c3398da6b65e955740f3e833622374cc7ac5cd925a89d6893f`
+  - progress `sha256:124b9e7aedbc51ceb3fd0c5db9010b5737130419403f9c546cdae87b172272ef`
+  - recommendation `sha256:43346dd24742d3e115923f13fa2f8cd5dae1f41b1492755546b4b27472fad8a4`
+  - worker `sha256:eb2e13bab438f219f25c03006dbe602f91a67ae09107c35ae0dd4d355ba75566`
 - Smoke:
-- Rollback digest:
-- Ghi chú:
+  - `https://api.longevia.hycat.online:8446/health` → 200 `ok`
+  - `/api/identity/ready`, `/api/diet/ready`, `/api/progress/ready` → 200
+  - CORS preflight → 204 + `Access-Control-Allow-Origin: https://longevia.hycat.online`
+  - 5 app container + nginx + postgres/rabbitmq/redis đều healthy
+  - `kb-bootstrap`: 13 chapters, 188 chunks, 67 page flags
+- Rollback: `.env.production.deploy.prev` giữ digest của lần deploy `v0.1.1`.
+- Ghi chú lỗi đã xử lý:
+  - `v0.1.0`: GHCR cache export `permission_denied: write_package` → đổi sang `type=gha`.
+  - `v0.1.1`: nginx healthcheck `301` sang port 8446 → thêm `location /healthz` trả 200 trên HTTP nội bộ.
+  - Flake MassTransit shutdown trong `Progress.IntegrationTests` → re-run CI pass.
+- GHCR package hiện vẫn **private** (anonymous manifest trả 401); deploy dùng token tạm, không lưu trên VPS. Để đúng phương án A, đổi 5 package sang Public trong GitHub Packages.
+

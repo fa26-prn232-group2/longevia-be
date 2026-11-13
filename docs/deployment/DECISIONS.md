@@ -163,3 +163,7 @@ chứng deploy.
 | 2026-11-13 | Health chuẩn hoá: `/health` liveness, `/ready` kiểm tra DB; Worker có `/health` | Docker healthcheck không phụ thuộc DB, smoke kiểm tra readiness | dev |
 | 2026-11-13 | Migration chạy one-shot `--migrate-only`; app production đặt `Database__AutoMigrate=false` | đúng thứ tự deploy, tránh crash-loop khi DB chậm | dev |
 | 2026-11-13 | Nginx production terminate TLS tại `:8446`, CORS allowlist `https://longevia.hycat.online` | frontend gọi thẳng API | dev |
+| 2026-11-13 | GHCR package vẫn private; CD login tạm bằng `GITHUB_TOKEN` rồi xoá `DOCKER_CONFIG` | không lưu token dài hạn trên VPS | dev |
+| 2026-11-13 | Build cache dùng `type=gha` thay registry cache GHCR | tránh `permission_denied: write_package` | dev |
+| 2026-11-13 | Nginx trả `/healthz` 200 trên HTTP nội bộ trước redirect | healthcheck container không bị 301 sang port 8446 | dev |
+| 2026-11-13 | Deploy production thành công tag `v0.1.2` | health/readiness/CORS đều đạt | dev |

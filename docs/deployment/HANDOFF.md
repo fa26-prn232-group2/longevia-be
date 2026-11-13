@@ -1,7 +1,12 @@
 # HANDOFF — Longevia production
 
 Các bước còn lại chỉ dev làm được (quyền hệ thống, DNS, GitHub, firewall).
-Trạng thái hiện tại: `.env.production` đã có trên VPS, DNS đã trỏ
+
+**Trạng thái 2026-11-13:** production đã deploy tag `v0.1.2`; HTTPS health và
+3 readiness endpoint trả 200. Cert đến 2027-02-11. Còn lại: đổi 5 package GHCR
+sang Public, cài cron backup/renew, lưu `.env.production` vào password manager.
+
+`.env.production` đã có trên VPS; DNS trỏ
 `api.longevia.hycat.online → 160.22.107.140`.
 
 ## 1. Vercel DNS token (DNS-01)
@@ -41,19 +46,16 @@ Mở TCP `8084` và `8446` trên panel provider. Không mở `5432`, `5672`,
 
 ## 4. GHCR package visibility
 
-Sau lần push image đầu tiên, vào GitHub → Packages → từng package
+Hiện 5 package vẫn **private** (kiểm tra anonymous manifest trả 401). Deploy vẫn
+chạy được vì `release.yml` đăng nhập GHCR bằng `GITHUB_TOKEN` tạm thời rồi xoá
+`/tmp/longevia-docker`; VPS không lưu token.
+
+Để đúng phương án A, vào GitHub → Packages → từng package
 `longevia-identity`, `longevia-diet`, `longevia-progress`,
 `longevia-recommendation`, `longevia-worker` → Package settings → Change
 visibility → Public.
 
-Nếu chưa kịp đổi public, thêm 2 dòng vào `.env.production` trên VPS (mode 600):
-
-```dotenv
-GHCR_USERNAME=<github-account-so-huu-PAT>
-GHCR_READ_TOKEN=<PAT-classic-read:packages>
-```
-
-`deploy-release.sh` tự `docker login ghcr.io` khi thấy 2 biến này.
+Sau khi public, có thể bỏ bước login tạm trong `release.yml` (không bắt buộc).
 
 ## 5. Cấp cert lần đầu
 

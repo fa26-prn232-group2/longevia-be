@@ -2,11 +2,11 @@
 
 Các bước còn lại chỉ dev làm được (quyền hệ thống, DNS, GitHub, firewall).
 
-**Trạng thái 2026-11-13:** production đã deploy tag `v0.1.3`; HTTPS health và
+**Trạng thái 2026-11-13:** production đã deploy tag `v0.1.4`; HTTPS health và
 3 readiness endpoint trả 200. Cert đến 2027-02-11. GHCR private pull dùng PAT
-trong Environment `production` (không lưu VPS). Còn lại: cài cron backup/renew,
-lưu `.env.production` vào password manager; tùy chọn đổi 5 package GHCR sang
-Public.
+trong Environment `production` (không lưu VPS). Còn lại: xác nhận email xác thực
+trên Brevo/Gmail, hoàn tất SPF+DKIM cho `mail.hycat.online`, cài cron backup,
+lưu `.env.production` vào password manager.
 
 `.env.production` đã có trên VPS; DNS trỏ
 `api.longevia.hycat.online → 160.22.107.140`.

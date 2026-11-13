@@ -169,3 +169,5 @@ chứng deploy.
 | 2026-11-13 | Deploy production thành công tag `v0.1.2` | health/readiness/CORS đều đạt | dev |
 | 2026-11-13 | GHCR private pull dùng PAT `read:packages` trong Environment `production` | token riêng, rotate độc lập, không lưu VPS | dev |
 | 2026-11-13 | Deploy lại thành công tag `v0.1.3` với PAT GHCR | xác nhận pull private package qua token tạm | dev |
+| 2026-11-13 | Fix bind `SMTP__SENDER_EMAIL`/`SMTP__USE_SSL` bằng `ConfigurationKeyName` | Brevo từ chối sender default `no-reply@longevia.local` | dev |
+| 2026-11-13 | Deploy thành công tag `v0.1.4` | xác nhận email dùng sender production | dev |

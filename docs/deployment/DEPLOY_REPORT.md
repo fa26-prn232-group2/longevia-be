@@ -72,4 +72,19 @@ Ghi bằng chứng sau mỗi phase/deploy. Không ghi secret.
 - `.env.production` vẫn 53 key, **0 key GHCR**; `/tmp/longevia-docker` không còn sau deploy.
 - Rollback: `.env.production.deploy.prev` giữ digest của `v0.1.2`.
 
+## Deploy v0.1.4 — SMTP binding fix
+
+- Commit/tag: `ad69e8c` / `v0.1.4`
+- Nguyên nhân Brevo từ chối: `SMTP__SENDER_EMAIL`/`SMTP__USE_SSL` không bind vào
+  `SenderEmail`/`UseSsl` vì binder chuẩn không bỏ dấu `_`; Worker dùng default
+  `no-reply@longevia.local`.
+- Fix: thêm `[ConfigurationKeyName("SENDER_EMAIL")]` và
+  `[ConfigurationKeyName("USE_SSL")]` trong `SmtpOptions`; thêm unit test bind.
+- Kết quả release: gate + 5 image + deploy **success**; Worker healthy.
+- Resend verification: `POST /api/identity/auth/resend-verification` → 202;
+  Worker log `Verification email dispatched`.
+- Cần xác nhận trên Brevo log sender là `no-reply@mail.hycat.online` và Gmail
+  nhận được (kiểm tra cả Spam).
+
+
 

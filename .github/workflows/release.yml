@@ -75,8 +75,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:production-${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:production-latest
-          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build

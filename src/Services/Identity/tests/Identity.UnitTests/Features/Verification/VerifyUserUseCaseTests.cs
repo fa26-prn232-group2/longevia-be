@@ -18,7 +18,7 @@ public sealed class VerifyUserUseCaseTests
         var user = User.Create(Guid.NewGuid(), "verify@example.com", "password-hash", "Verify User", DateTimeOffset.UtcNow, tokenHash, DateTimeOffset.UtcNow.AddHours(24));
         await repository.AddAsync(user);
         var unitOfWork = new FakeUnitOfWork();
-        var useCase = new VerifyUserUseCase(repository, unitOfWork, new FakeEventPublisher());
+        var useCase = new VerifyUserUseCase(repository, new InMemoryPendingRegistrationStore(), unitOfWork, new FakeEventPublisher());
 
         await useCase.ExecuteAsync(new VerifyUserRequest(rawToken));
 
@@ -31,7 +31,7 @@ public sealed class VerifyUserUseCaseTests
     public async Task ExecuteAsync_ShouldRejectInvalidTokenWithoutSaving()
     {
         var unitOfWork = new FakeUnitOfWork();
-        var useCase = new VerifyUserUseCase(new InMemoryUserRepository(), unitOfWork,
+        var useCase = new VerifyUserUseCase(new InMemoryUserRepository(), new InMemoryPendingRegistrationStore(), unitOfWork,
             new FakeEventPublisher());
 
         var exception = await Assert.ThrowsAsync<AppException>(() =>

@@ -12,6 +12,7 @@ public sealed class LoginUseCaseTests
     private readonly FakePasswordHasher _passwordHasher = new();
     private readonly FakeJwtTokenGenerator _jwtTokenGenerator = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly InMemoryPendingRegistrationStore _pendingStore = new();
     private readonly LoginUseCase _sut;
 
     public LoginUseCaseTests()
@@ -21,6 +22,7 @@ public sealed class LoginUseCaseTests
             _refreshTokenRepository,
             _passwordHasher,
             _jwtTokenGenerator,
+            _pendingStore,
             _unitOfWork);
     }
 

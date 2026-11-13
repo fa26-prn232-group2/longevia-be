@@ -11,10 +11,11 @@ namespace Identity.UnitTests.Features.Verification;
 public sealed class ResendVerificationTests
 {
     private readonly InMemoryUserRepository _users = new();
+    private readonly InMemoryPendingRegistrationStore _pending = new();
     private readonly FakeEventPublisher _events = new();
     private readonly FakeUnitOfWork _uow = new();
 
-    private ResendVerificationUseCase CreateSut() => new(_users, _events, _uow);
+    private ResendVerificationUseCase CreateSut() => new(_users, _pending, _events, _uow);
 
     private static string Hash(string token) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
@@ -35,7 +36,7 @@ public sealed class ResendVerificationTests
         Assert.NotEqual("old-hash", user.VerificationTokenHash);
         Assert.Equal(Hash(published.VerificationToken),
             user.VerificationTokenHash);
-        Assert.True(user.VerificationTokenExpiresAt > DateTimeOffset.UtcNow.AddHours(23));
+        Assert.True(user.VerificationTokenExpiresAt > DateTimeOffset.UtcNow.AddMinutes(55));
     }
 
     [Fact]

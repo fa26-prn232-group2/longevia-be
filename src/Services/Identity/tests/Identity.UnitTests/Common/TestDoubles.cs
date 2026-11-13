@@ -1,9 +1,47 @@
 using Identity.Application.Abstractions;
+using Identity.Application.Features.Registration;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
 using Longevia.Shared.Auth;
 
 namespace Identity.UnitTests.Common;
+
+internal sealed class InMemoryPendingRegistrationStore : IPendingRegistrationStore
+{
+    private readonly Dictionary<Guid, PendingRegistration> _records = [];
+
+    public IReadOnlyCollection<PendingRegistration> Records => _records.Values;
+
+    public Task SaveAsync(PendingRegistration registration, CancellationToken ct = default)
+    {
+        foreach (var existing in _records.Values
+                     .Where(record => record.Email == registration.Email && record.Id != registration.Id)
+                     .ToList())
+        {
+            _records.Remove(existing.Id);
+        }
+
+        _records[registration.Id] = registration;
+        return Task.CompletedTask;
+    }
+
+    public Task<PendingRegistration?> GetByEmailAsync(string email, CancellationToken ct = default) =>
+        Task.FromResult(_records.Values.FirstOrDefault(record =>
+            record.Email.Equals(email, StringComparison.OrdinalIgnoreCase)
+            && record.ExpiresAt > DateTimeOffset.UtcNow));
+
+    public Task<PendingRegistration?> GetByTokenHashAsync(string tokenHash, CancellationToken ct = default) =>
+        Task.FromResult(_records.Values.FirstOrDefault(record =>
+            record.VerificationTokenHash == tokenHash
+            && record.ExpiresAt > DateTimeOffset.UtcNow));
+
+    public Task DeleteAsync(PendingRegistration registration, CancellationToken ct = default)
+    {
+        _records.Remove(registration.Id);
+        return Task.CompletedTask;
+    }
+}
+
 
 internal sealed class InMemoryUserRepository : IUserRepository
 {

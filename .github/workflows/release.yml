@@ -98,6 +98,17 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Log in to GHCR on VPS (temporary)
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "mkdir -p /tmp/longevia-docker && chmod 700 /tmp/longevia-docker && DOCKER_CONFIG=/tmp/longevia-docker docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
       - name: Upload deploy files
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -119,7 +130,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd /opt/longevia-production && TAG=production-${GITHUB_SHA} sh deployments/scripts/deploy-release.sh production"
+            "cd /opt/longevia-production && DOCKER_CONFIG=/tmp/longevia-docker TAG=production-${GITHUB_SHA} sh deployments/scripts/deploy-release.sh production"
 
       - name: Public smoke
         run: |
@@ -128,3 +139,13 @@ jobs:
             -H "Origin: https://longevia.hycat.online" \
             -H "Access-Control-Request-Method: GET" \
             | grep -qi '^access-control-allow-origin: https://longevia.hycat.online'
+
+      - name: Remove temporary GHCR credentials
+        if: always()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "rm -rf /tmp/longevia-docker" || true

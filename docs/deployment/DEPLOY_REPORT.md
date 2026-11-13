@@ -10,13 +10,21 @@ Ghi bằng chứng sau mỗi phase/deploy. Không ghi secret.
 
 ## Phase 1 — Local baseline
 
-- Trạng thái: đang thực hiện (compose production, nginx TLS, health/ready, migrate-only).
-- Bằng chứng: `dotnet build -c Release` pass; unit tests pass; `docker compose config` production pass.
+- Trạng thái: hoàn thành phần code/compose; chờ CI chạy integration tests.
+- Bằng chứng:
+  - `dotnet build longevia-be.slnx -c Release` — 0 warning, 0 error.
+  - Unit tests: Identity 80, Diet 36, Progress 120, Recommendation 384, Worker 17 — pass.
+  - `docker compose --env-file .env.production --env-file <test> -f deployments/docker-compose.production.yml config --quiet` — pass.
+  - `sh -n` toàn bộ script deploy/cert/backup — pass.
+  - Docker daemon local không chạy nên integration tests (Testcontainers) để CI chạy.
 
 ## Phase 2 — CI/CD
 
-- Trạng thái: đang thực hiện (`ci.yml` build matrix, `release.yml` tag deploy).
-- Bằng chứng: YAML parse OK; chờ CI xanh trên PR.
+- Trạng thái: hoàn thành workflow; chờ push để CI xác nhận.
+- Bằng chứng:
+  - `ci.yml`: matrix build 5 image.
+  - `release.yml`: tag `v*` → gate `make check` → build/push GHCR → SSH deploy → smoke công khai.
+  - YAML parse bằng `js-yaml` — pass.
 
 ## Phase 3 — VPS bootstrap
 

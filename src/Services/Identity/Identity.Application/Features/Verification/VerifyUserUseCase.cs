@@ -64,6 +64,7 @@ public sealed class VerifyUserUseCase(
         await eventPublisher.PublishAsync(
             new UserVerifiedEvent(user.Id, user.Email, user.FullName, verifiedAt),
             ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         try
         {

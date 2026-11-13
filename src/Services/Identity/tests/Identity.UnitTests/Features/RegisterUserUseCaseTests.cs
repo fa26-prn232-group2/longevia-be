@@ -15,6 +15,7 @@ public sealed class RegisterUserUseCaseTests
     private readonly FakePasswordHasher _passwordHasher = new();
     private readonly FakeEventPublisher _eventPublisher = new();
     private readonly InMemoryPendingRegistrationStore _pendingStore = new();
+    private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly RegisterUserUseCase _sut;
 
     public RegisterUserUseCaseTests()
@@ -23,7 +24,8 @@ public sealed class RegisterUserUseCaseTests
             _userRepository,
             _passwordHasher,
             _eventPublisher,
-            _pendingStore);
+            _pendingStore,
+            _unitOfWork);
     }
 
     [Fact]
@@ -45,6 +47,7 @@ public sealed class RegisterUserUseCaseTests
             pending.VerificationTokenHash);
         Assert.InRange(pending.ExpiresAt - pending.CreatedAt,
             PendingRegistration.Lifetime, PendingRegistration.Lifetime);
+        Assert.Equal(1, _unitOfWork.SaveChangesCalls);
     }
 
     [Fact]

@@ -38,6 +38,7 @@ public sealed class ResendVerificationUseCase(
             await eventPublisher.PublishAsync(
                 new UserRegisteredEvent(refreshed.Id, refreshed.Email, refreshed.FullName, token, now),
                 ct);
+            await unitOfWork.SaveChangesAsync(ct);
             return;
         }
 

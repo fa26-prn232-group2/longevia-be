@@ -16,7 +16,8 @@ public sealed class RegisterUserUseCase(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
     IEventPublisher eventPublisher,
-    IPendingRegistrationStore pendingStore)
+    IPendingRegistrationStore pendingStore,
+    IUnitOfWork unitOfWork)
 {
     public async Task<PendingRegistration> ExecuteAsync(RegisterUserRequest request, CancellationToken ct = default)
     {
@@ -48,6 +49,10 @@ public sealed class RegisterUserUseCase(
                 verificationToken,
                 now),
             ct);
+
+        // Identity dùng MassTransit EF bus-outbox: cần SaveChanges để flush message
+        // dù registration không ghi user vào PostgreSQL.
+        await unitOfWork.SaveChangesAsync(ct);
 
         return pending;
     }

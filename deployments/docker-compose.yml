@@ -230,6 +230,8 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      REDIS__HOST: redis
+      REDIS__PORT: ${REDIS_PORT:-6379}
       Jwt__Issuer: ${JWT__ISSUER:-longevia}
       Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
       Jwt__KeyId: ${JWT__KEY_ID:-longevia-dev-01}
@@ -239,6 +241,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - edge

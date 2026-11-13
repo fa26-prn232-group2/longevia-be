@@ -86,6 +86,14 @@ compose --profile bootstrap run --rm kb-bootstrap
 compose up -d --wait --no-deps identity diet progress recommendation worker
 compose up -d --wait --no-deps nginx
 
+# Monitoring is opt-in through the `monitoring` profile, so a plain deploy leaves
+# Prometheus and Grafana stopped. Start (or keep) them on every release, but never
+# gate the release on them: neither service has a healthcheck and their images are
+# not digest-pinned in .env.production.deploy.
+if [ "${MONITORING_ENABLED:-true}" = "true" ]; then
+    compose --profile monitoring up -d prometheus grafana
+fi
+
 for path in /health /api/identity/ready /api/diet/ready /api/progress/ready; do
     curl -fsS --resolve "$DOMAIN_VALUE:$HTTPS_PORT_VALUE:127.0.0.1" \
         "https://$DOMAIN_VALUE:$HTTPS_PORT_VALUE$path" >/dev/null

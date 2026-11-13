@@ -3,12 +3,14 @@ using Identity.Domain.Repositories;
 using Identity.Infrastructure.Messaging;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Persistence.Repositories;
+using Identity.Infrastructure.Registration;
 using Identity.Infrastructure.Security;
 using Longevia.Shared.Events;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace Identity.Infrastructure;
 
@@ -32,6 +34,16 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, Es256JwtTokenGenerator>();
         services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
+
+        var redisHost = configuration["REDIS:HOST"]
+            ?? configuration["REDIS_HOST"]
+            ?? "localhost";
+        var redisPortRaw = configuration["REDIS:PORT"] ?? configuration["REDIS_PORT"];
+        var redisPort = int.TryParse(redisPortRaw, out var port) ? port : 6379;
+        var redisOptions = ConfigurationOptions.Parse($"{redisHost}:{redisPort}");
+        redisOptions.AbortOnConnectFail = false;
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
+        services.AddSingleton<IPendingRegistrationStore, RedisPendingRegistrationStore>();
 
         services.AddMassTransit(busConfig =>
         {

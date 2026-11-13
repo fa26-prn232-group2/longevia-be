@@ -1,0 +1,130 @@
+name: Release production
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: longevia-production
+  cancel-in-progress: false
+
+env:
+  IMAGE_PREFIX: ghcr.io/fa26-prn232-group2/longevia
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Feature registry check
+        run: make team-check
+
+      - name: Gate (format-check + build Release + test + vulnerability scan)
+        run: make check
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: identity
+            dockerfile: src/Services/Identity/Dockerfile
+          - service: diet
+            dockerfile: src/Services/Diet/Dockerfile
+          - service: progress
+            dockerfile: src/Services/Progress/Dockerfile
+          - service: recommendation
+            dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+          - service: worker
+            dockerfile: src/Services/Worker/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:production-${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:production-latest
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload deploy files
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p /opt/longevia-production"
+          tar -czf - deployments resources/knowledge/che-do-an-truong-tho .env.production.example \
+            | ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
+                "$DEPLOY_USER@$DEPLOY_HOST" "tar -xzf - -C /opt/longevia-production"
+
+      - name: Deploy release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd /opt/longevia-production && TAG=production-${GITHUB_SHA} sh deployments/scripts/deploy-release.sh production"
+
+      - name: Public smoke
+        run: |
+          curl -fsS https://api.longevia.hycat.online:8446/health
+          curl -isS -X OPTIONS https://api.longevia.hycat.online:8446/health \
+            -H "Origin: https://longevia.hycat.online" \
+            -H "Access-Control-Request-Method: GET" \
+            | grep -qi '^access-control-allow-origin: https://longevia.hycat.online'

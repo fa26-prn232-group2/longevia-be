@@ -32,5 +32,33 @@ jobs:
       - name: Gate (format-check + build Release + test + vulnerability scan)
         run: make check
 
-      - name: Build Progress image with canonical Identity proto
-        run: docker build -f src/Services/Progress/Dockerfile -t longevia-progress:ci .
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: identity
+            dockerfile: src/Services/Identity/Dockerfile
+          - service: diet
+            dockerfile: src/Services/Diet/Dockerfile
+          - service: progress
+            dockerfile: src/Services/Progress/Dockerfile
+          - service: recommendation
+            dockerfile: src/Services/Recommendation/Recommendation.Api/Dockerfile
+          - service: worker
+            dockerfile: src/Services/Worker/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: longevia-${{ matrix.service }}:ci

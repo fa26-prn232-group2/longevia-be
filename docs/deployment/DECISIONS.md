@@ -73,7 +73,7 @@ trước khi verify public. Cert cấp bằng DNS-01 nên không cần port 80/4
 | Engine / version | PostgreSQL 17 + pgvector (`pgvector/pgvector:pg17`) | Confirmed |
 | Mỗi service một DB | `identity_db`, `diet_db`, `progress_db`, `recommendation_db` | Confirmed |
 | Mapping `<SERVICE>_DB_NAME` | theo `.env.example` hiện tại | Confirmed |
-| Migration tool | EF Core Code First (bundle/one-shot khi deploy) | Confirmed |
+| Migration tool | EF Core Code First, one-shot `--migrate-only` trước rollout (`Database__AutoMigrate=false`) | Confirmed |
 | Seed data | corpus tri thức `resources/knowledge/che-do-an-truong-tho` qua `kb-bootstrap` | Confirmed |
 | Backup: nơi lưu | `/opt/longevia-backups/production` + bản ngoài VPS (chưa chọn nơi) | Proposed |
 | Backup: tần suất / retention | 02:00 hằng ngày, giữ 7 bản | Proposed |
@@ -121,7 +121,7 @@ chứng deploy.
 | Email local | Mailpit, không auth; **không** deploy ở production | Confirmed |
 | Sender email | `no-reply@mail.hycat.online` — phải verify sender/domain trong Brevo trước khi smoke | Confirmed |
 | Brevo API keys | `BREVO__API_KEY`/`BREVO__SENDER_EMAIL` không được code dùng; production đi qua SMTP relay | Confirmed |
-| Log retention | Docker `json-file`, `max-size=10m`, `max-file=3` | Proposed |
+| Log retention | Docker `json-file`, `max-size=10m`, `max-file=3` | Confirmed |
 | Monitoring / alert | Prometheus + Grafana đã có trong `deployments/`; production chạy profile `monitoring`, Grafana bind `127.0.0.1` | Confirmed |
 | Kênh cảnh báo | chưa trả lời | Undecided |
 | Cert renewal | cron hằng ngày, đề xuất 03:00, qua `lego` DNS-01 | Proposed |
@@ -160,3 +160,6 @@ chứng deploy.
 | 2026-11-13 | `.env.production` backup trong password manager/team vault | không commit secret vào repo public | dev |
 | 2026-11-13 | Không reviewer, không cửa sổ release | dự án học tập, không có user thật | dev |
 | 2026-11-13 | Sender email production `no-reply@mail.hycat.online` | dev cập nhật trong `.env.production` | dev |
+| 2026-11-13 | Health chuẩn hoá: `/health` liveness, `/ready` kiểm tra DB; Worker có `/health` | Docker healthcheck không phụ thuộc DB, smoke kiểm tra readiness | dev |
+| 2026-11-13 | Migration chạy one-shot `--migrate-only`; app production đặt `Database__AutoMigrate=false` | đúng thứ tự deploy, tránh crash-loop khi DB chậm | dev |
+| 2026-11-13 | Nginx production terminate TLS tại `:8446`, CORS allowlist `https://longevia.hycat.online` | frontend gọi thẳng API | dev |

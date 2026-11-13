@@ -4,6 +4,7 @@
 // Prometheus scraping (Phase 6). Kestrel ports come from compose/Dockerfile
 // (ASPNETCORE_HTTP_PORTS), never from code.
 using Longevia.Shared.Events;
+using Longevia.Shared.Health;
 using Longevia.Shared.Observability;
 using Longevia.Worker.Adapters.Email;
 using Longevia.Worker.Consumers;
@@ -12,6 +13,12 @@ using Longevia.Worker.Messaging;
 using Longevia.Worker.Templates;
 using MassTransit;
 using StackExchange.Redis;
+
+if (args is ["--health-check", var address])
+{
+    Environment.ExitCode = await HealthProbe.RunAsync(address);
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -125,6 +132,7 @@ builder.Services.AddMassTransit(bus =>
 builder.Services.AddObservability("Worker");
 
 var app = builder.Build();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapPrometheusScrapingEndpoint();
 app.Run();
 

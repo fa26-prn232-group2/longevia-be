@@ -84,10 +84,12 @@ public sealed class HostTests(ProgressFixture fixture)
         using var client = factory.CreateClient();
         using var healthy = await client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, healthy.StatusCode);
+        using var readyBefore = await client.GetAsync("/ready");
+        Assert.Equal(HttpStatusCode.OK, readyBefore.StatusCode);
         await database.StopAsync();
-        using var readiness = await client.GetAsync("/health");
+        using var readiness = await client.GetAsync("/ready");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, readiness.StatusCode);
-        using var alive = await client.GetAsync("/alive");
+        using var alive = await client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, alive.StatusCode);
     }
 

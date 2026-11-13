@@ -144,12 +144,17 @@ public static class RecommendationStartup
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+        if (app.Configuration.GetValue("Database:AutoMigrate", true))
+        {
+            await app.Services.MigrateKnowledgeStoreAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         await LogKnowledgeCorpusStateAsync(app, cancellationToken).ConfigureAwait(false);
 
         app.MapGrpcService<RecommendationGrpcService>();
         app.MapGrpcHealthChecksService();
-        app.MapHealthChecks("/health");
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+        app.MapHealthChecks("/ready");
         app.MapPrometheusScrapingEndpoint();
     }
 

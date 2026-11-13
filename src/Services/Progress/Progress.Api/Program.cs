@@ -1,10 +1,16 @@
+using Longevia.Shared.Health;
 using Longevia.Shared.Observability;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Progress.Api;
 using Progress.Api.Extensions;
 using Progress.Application;
 using Progress.Infrastructure;
 using Progress.Infrastructure.Reconciliation;
+
+if (args is ["--health-check", var address])
+{
+    Environment.ExitCode = await HealthProbe.RunAsync(address);
+    return;
+}
 
 if (args is ["--reconcile-meal-snapshot", var snapshot])
 {
@@ -13,11 +19,7 @@ if (args is ["--reconcile-meal-snapshot", var snapshot])
     return;
 }
 
-if (args is ["--health-check", var address])
-{
-    Environment.ExitCode = await HealthProbe.RunAsync(address);
-    return;
-}
+var migrateOnly = args.Contains("--migrate-only", StringComparer.Ordinal);
 
 var builder = WebApplication.CreateBuilder(args);
 Longevia.Shared.Time.BusinessTime.Configure(builder.Configuration["APP_TIMEZONE"]);
@@ -46,7 +48,18 @@ builder.Services.AddObservability("ProgressService");
 var app = builder.Build();
 app.UseProgressHost();
 app.MapPrometheusScrapingEndpoint();
-await app.InitializeProgressDatabaseAsync(app.Lifetime.ApplicationStopping);
+
+if (migrateOnly)
+{
+    await app.InitializeProgressDatabaseAsync(CancellationToken.None);
+    return;
+}
+
+if (app.Configuration.GetValue("Database:AutoMigrate", true))
+{
+    await app.InitializeProgressDatabaseAsync(app.Lifetime.ApplicationStopping);
+}
+
 app.Run();
 
 public partial class Program;

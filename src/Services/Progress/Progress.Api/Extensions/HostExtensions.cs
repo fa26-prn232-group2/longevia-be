@@ -61,10 +61,11 @@ public static class HostExtensions
         }
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapGet("/alive", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymous();
-        app.MapGet("/health", async (ProgressDbContext db, CancellationToken ct) =>
+        app.MapGet("/health", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymous();
+        app.MapGet("/ready", async (ProgressDbContext db, CancellationToken ct) =>
             await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503))
             .AllowAnonymous();
+        app.MapGet("/alive", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymous();
         app.MapFastingEndpoints();
         app.MapWaterEndpoints();
         app.MapSleepEndpoints();

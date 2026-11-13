@@ -1,5 +1,10 @@
-namespace Progress.Api;
+namespace Longevia.Shared.Health;
 
+/// <summary>
+/// Minimal liveness probe used by container health checks. The runtime images are
+/// chiseled (no shell, curl or wget), so every service exposes
+/// <c>--health-check &lt;url&gt;</c> and this helper performs the HTTP request.
+/// </summary>
 public static class HealthProbe
 {
     public static async Task<int> RunAsync(string address)

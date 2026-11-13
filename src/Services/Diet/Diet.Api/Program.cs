@@ -7,12 +7,20 @@ using Diet.Infrastructure;
 using Diet.Infrastructure.Messaging;
 using Diet.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
+using Longevia.Shared.Health;
 using Longevia.Shared.Observability;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
+if (args is ["--health-check", var address])
+{
+    Environment.ExitCode = await HealthProbe.RunAsync(address);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
+var migrateOnly = args.Contains("--migrate-only", StringComparer.Ordinal);
 Longevia.Shared.Time.BusinessTime.Configure(builder.Configuration["APP_TIMEZONE"]);
 
 var httpPort = ResolvePort(builder.Configuration["DIET:HTTP_PORT"], 8080);
@@ -91,21 +99,30 @@ app.MapMealPlanEndpoints();
 app.MapNutritionEndpoints();
 app.MapKnowledgeEndpoints();
 app.MapGrpcService<DietGrpcService>();
-app.MapGet("/health", async (DietDbContext db, CancellationToken ct) =>
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/ready", async (DietDbContext db, CancellationToken ct) =>
     await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503));
 app.MapGet("/alive", () => TypedResults.Ok(new { status = "ok" }));
 app.MapPrometheusScrapingEndpoint();
 
-await using (var scope = app.Services.CreateAsyncScope())
+if (migrateOnly || app.Configuration.GetValue("Database:AutoMigrate", true))
 {
+    await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<DietDbContext>();
     await db.Database.MigrateAsync();
-    if (app.Configuration["export-meal-activities"] is { Length: > 0 } snapshotPath)
-    {
-        var count = await scope.ServiceProvider.GetRequiredService<MealActivitySnapshotExporter>().ExportAsync(snapshotPath);
-        app.Logger.LogInformation("Meal activity snapshot exported: {Count} records. HTTP and bus were not started.", count);
-        return;
-    }
+}
+
+if (migrateOnly)
+{
+    return;
+}
+
+if (app.Configuration["export-meal-activities"] is { Length: > 0 } snapshotPath)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var count = await scope.ServiceProvider.GetRequiredService<MealActivitySnapshotExporter>().ExportAsync(snapshotPath);
+    app.Logger.LogInformation("Meal activity snapshot exported: {Count} records. HTTP and bus were not started.", count);
+    return;
 }
 
 app.Run();

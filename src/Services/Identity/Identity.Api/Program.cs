@@ -4,12 +4,20 @@ using Identity.Application;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Longevia.Shared.Auth;
+using Longevia.Shared.Health;
 using Longevia.Shared.Observability;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
+if (args is ["--health-check", var address])
+{
+    Environment.ExitCode = await HealthProbe.RunAsync(address);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
+var migrateOnly = args.Contains("--migrate-only", StringComparer.Ordinal);
 var httpPort = builder.Configuration.GetValue("IDENTITY:HTTP_PORT", 8080);
 var grpcPort = builder.Configuration.GetValue("IDENTITY:GRPC_PORT", 50051);
 builder.WebHost.ConfigureKestrel(options =>
@@ -80,19 +88,24 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/ready", async (IdentityDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ok" }) : Results.StatusCode(503));
 
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapGrpcService<IdentityGrpcService>();
 app.MapPrometheusScrapingEndpoint();
 
-if (app.Configuration.GetValue("Database:AutoMigrate", true))
+if (migrateOnly || app.Configuration.GetValue("Database:AutoMigrate", true))
 {
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     await db.Database.MigrateAsync();
 }
 
-app.Run();
+if (!migrateOnly)
+{
+    app.Run();
+}
 
 public partial class Program;

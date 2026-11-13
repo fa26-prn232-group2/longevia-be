@@ -1,0 +1,452 @@
+name: longevia-production
+
+# Production stack for the shared VPS. Images are built by CI and pinned by
+# digest in .env.production.deploy; this file never builds on the server.
+# Run from /opt/longevia-production:
+#   docker compose --env-file .env.production --env-file .env.production.deploy \
+#     -f deployments/docker-compose.production.yml up -d
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-identity-env: &identity-env
+  ASPNETCORE_ENVIRONMENT: Production
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+  IDENTITY__HTTP_PORT: "8080"
+  IDENTITY__GRPC_PORT: "50051"
+  SERVICE__TOKEN: ${SERVICE__TOKEN:?SERVICE__TOKEN is required}
+  ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${IDENTITY_DB:-identity_db};Username=identity_user;Password=${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  Jwt__Issuer: ${JWT__ISSUER:-longevia}
+  Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+  Jwt__KeyId: ${JWT__KEY_ID:?JWT__KEY_ID is required}
+  Jwt__SigningPrivateKey: ${JWT__SIGNING_PRIVATE_KEY:?JWT__SIGNING_PRIVATE_KEY is required}
+  Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:?JWT__SIGNING_PUBLIC_KEY is required}
+  Jwt__PreviousKeyId: ${JWT__PREVIOUS_KEY_ID:-}
+  Jwt__PreviousPublicKey: ${JWT__PREVIOUS_PUBLIC_KEY:-}
+  Database__AutoMigrate: "false"
+
+x-diet-env: &diet-env
+  ASPNETCORE_ENVIRONMENT: Production
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+  DIET__HTTP_PORT: "8080"
+  DIET__GRPC_PORT: "50051"
+  SERVICE__TOKEN: ${SERVICE__TOKEN:?SERVICE__TOKEN is required}
+  ConnectionStrings__Diet: Host=postgres;Port=5432;Database=${DIET_DB:-diet_db};Username=diet_user;Password=${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  RabbitMQ__Host: rabbitmq
+  RabbitMQ__Port: "5672"
+  RabbitMQ__User: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RabbitMQ__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  Recommendation__DeadlineMilliseconds: ${DIET_RECOMMENDATION_DEADLINE_MS:-20000}
+  Recommendation__MealPlanDeadlineMilliseconds: ${DIET_MEAL_PLAN_DEADLINE_MS:-90000}
+  Diet__ReplayMealActivitiesOnStart: "false"
+  Jwt__Issuer: ${JWT__ISSUER:-longevia}
+  Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+  Jwt__KeyId: ${JWT__KEY_ID:?JWT__KEY_ID is required}
+  Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:?JWT__SIGNING_PUBLIC_KEY is required}
+  Database__AutoMigrate: "false"
+
+x-progress-env: &progress-env
+  ASPNETCORE_ENVIRONMENT: Production
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+  PROGRESS__HTTP_PORT: "8080"
+  PROGRESS__GRPC_PORT: "50051"
+  SERVICE__TOKEN: ${SERVICE__TOKEN:?SERVICE__TOKEN is required}
+  ConnectionStrings__Progress: Host=postgres;Port=5432;Database=${PROGRESS_DB:-progress_db};Username=progress_user;Password=${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+  IdentityGrpc__Address: http://identity:50051
+  IdentityGrpc__DeadlineMilliseconds: "2000"
+  RecommendationGrpc__Address: http://recommendation:50051
+  DietGrpc__Address: http://diet:50051
+  DIGEST__ENABLED: ${DIGEST_ENABLED:-true}
+  DIGEST__RUN_ON_START: ${DIGEST_RUN_ON_START:-false}
+  RabbitMQ__Host: rabbitmq
+  RabbitMQ__Port: "5672"
+  RabbitMQ__User: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RabbitMQ__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  Jwt__Issuer: ${JWT__ISSUER:-longevia}
+  Jwt__Audience: ${JWT__AUDIENCE:-longevia-clients}
+  Jwt__KeyId: ${JWT__KEY_ID:?JWT__KEY_ID is required}
+  Jwt__SigningPublicKey: ${JWT__SIGNING_PUBLIC_KEY:?JWT__SIGNING_PUBLIC_KEY is required}
+  Database__AutoMigrate: "false"
+
+x-recommendation-env: &recommendation-env
+  ASPNETCORE_ENVIRONMENT: Production
+  SERVICE__TOKEN: ${SERVICE__TOKEN:?SERVICE__TOKEN is required}
+  ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+  GOOGLE_AI__API_KEY: ${GOOGLE_AI__API_KEY:?GOOGLE_AI__API_KEY is required}
+  GOOGLE_AI__CHAT_MODEL: ${GOOGLE_AI__CHAT_MODEL:-gemini-3.5-flash-lite}
+  RECOMMENDATION__GRPC_PORT: "50051"
+  RECOMMENDATION__HTTP_PORT: "8080"
+  RECOMMENDATION__DEADLINE_SECONDS: ${RECOMMENDATION__DEADLINE_SECONDS:-30}
+  RECOMMENDATION__PLAN_DEADLINE_SECONDS: ${RECOMMENDATION__PLAN_DEADLINE_SECONDS:-90}
+  RAG__TOP_K: ${RAG__TOP_K:-8}
+  RAG__MAX_CANDIDATES: ${RAG__MAX_CANDIDATES:-50}
+  RAG__EMBEDDING_MODEL: ${RAG__EMBEDDING_MODEL:-gemini-embedding-001}
+  RAG__EMBEDDING_DIM: ${RAG__EMBEDDING_DIM:-768}
+  RAG__REQUIRE_VERIFIED: ${RAG__REQUIRE_VERIFIED:-false}
+  RAG__MIN_CITATION_SIMILARITY: ${RAG__MIN_CITATION_SIMILARITY:-0.75}
+  RAG__CHUNK_TOKENS: ${RAG__CHUNK_TOKENS:-1000}
+  RAG__CHUNK_OVERLAP: ${RAG__CHUNK_OVERLAP:-150}
+  Database__AutoMigrate: "false"
+
+x-worker-env: &worker-env
+  ASPNETCORE_ENVIRONMENT: Production
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  SMTP__HOST: ${SMTP__HOST:?SMTP__HOST is required}
+  SMTP__PORT: ${SMTP__PORT:-587}
+  SMTP__USE_SSL: ${SMTP__USE_SSL:-true}
+  SMTP__USER: ${SMTP__USER:?SMTP__USER is required}
+  SMTP__PASSWORD: ${SMTP__PASSWORD:?SMTP__PASSWORD is required}
+  SMTP__SENDER_EMAIL: ${SMTP__SENDER_EMAIL:?SMTP__SENDER_EMAIL is required}
+  Frontend__BaseUrl: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}
+  REDIS__HOST: redis
+  REDIS__PORT: "6379"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+      IDENTITY_DB: ${IDENTITY_DB:-identity_db}
+      DIET_DB: ${DIET_DB:-diet_db}
+      PROGRESS_DB: ${PROGRESS_DB:-progress_db}
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 512m
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 256m
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 64m
+
+  db-init:
+    profiles: ["init"]
+    image: pgvector/pgvector:pg17
+    restart: "no"
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "/bootstrap/db-init.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+      IDENTITY_DB: ${IDENTITY_DB:-identity_db}
+      DIET_DB: ${DIET_DB:-diet_db}
+      PROGRESS_DB: ${PROGRESS_DB:-progress_db}
+      KNOWLEDGE_DB: ${KNOWLEDGE_DB:-recommendation_db}
+    volumes:
+      - ./postgres/db-init.sh:/bootstrap/db-init.sh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  identity:
+    image: ${IDENTITY_IMAGE:?IDENTITY_IMAGE is required}
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment: *identity-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+    healthcheck:
+      test: ["CMD", "./Identity.Api", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 384m
+
+  diet:
+    image: ${DIET_IMAGE:?DIET_IMAGE is required}
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment: *diet-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - edge
+      - internal_net
+      - data_net
+    healthcheck:
+      test: ["CMD", "./Diet.Api", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 512m
+
+  progress:
+    image: ${PROGRESS_IMAGE:?PROGRESS_IMAGE is required}
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment: *progress-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - edge
+      - internal_net
+      - data_net
+    healthcheck:
+      test: ["CMD", "./Progress.Api", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 512m
+
+  recommendation:
+    image: ${RECOMMENDATION_IMAGE:?RECOMMENDATION_IMAGE is required}
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment: *recommendation-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal_net
+      - data_net
+    healthcheck:
+      test: ["CMD", "dotnet", "Recommendation.Api.dll", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    mem_limit: 640m
+
+  worker:
+    image: ${WORKER_IMAGE:?WORKER_IMAGE is required}
+    restart: unless-stopped
+    logging: *default-logging
+    stop_grace_period: 30s
+    environment: *worker-env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - edge
+      - data_net
+    healthcheck:
+      test: ["CMD", "./Worker", "--health-check", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 256m
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${GATEWAY_HTTP_PORT:-8084}:80"
+      - "${GATEWAY_HTTPS_PORT:-8446}:443"
+    volumes:
+      - ./nginx/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ${TLS_DIR:-/opt/longevia-tls}:/etc/nginx/tls:ro
+    depends_on:
+      identity:
+        condition: service_healthy
+      diet:
+        condition: service_healthy
+      progress:
+        condition: service_healthy
+    networks:
+      - edge
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+    mem_limit: 64m
+
+  migrate-identity:
+    profiles: ["migrate"]
+    image: ${IDENTITY_IMAGE:?IDENTITY_IMAGE is required}
+    restart: "no"
+    logging: *default-logging
+    command: ["--migrate-only"]
+    environment: *identity-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  migrate-diet:
+    profiles: ["migrate"]
+    image: ${DIET_IMAGE:?DIET_IMAGE is required}
+    restart: "no"
+    logging: *default-logging
+    command: ["--migrate-only"]
+    environment: *diet-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  migrate-progress:
+    profiles: ["migrate"]
+    image: ${PROGRESS_IMAGE:?PROGRESS_IMAGE is required}
+    restart: "no"
+    logging: *default-logging
+    command: ["--migrate-only"]
+    environment: *progress-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  migrate-recommendation:
+    profiles: ["migrate"]
+    image: ${RECOMMENDATION_IMAGE:?RECOMMENDATION_IMAGE is required}
+    restart: "no"
+    logging: *default-logging
+    command: ["--migrate-only"]
+    environment: *recommendation-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  kb-bootstrap:
+    profiles: ["bootstrap"]
+    image: ${RECOMMENDATION_IMAGE:?RECOMMENDATION_IMAGE is required}
+    restart: "no"
+    logging: *default-logging
+    command: ["--bootstrap", "--seed", "/seed", "--skip-if-loaded", "--verify"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Recommendation: Host=postgres;Port=5432;Database=${KNOWLEDGE_DB:-recommendation_db};Username=recommendation_user;Password=${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+      KNOWLEDGE_DB__CORPUS_KEY: ${KNOWLEDGE_DB__CORPUS_KEY:-che-do-an-truong-tho}
+      KNOWLEDGE_DB__SCHEMA: ${KNOWLEDGE_DB__SCHEMA:-kb}
+    volumes:
+      - ../resources/knowledge/che-do-an-truong-tho:/seed:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - edge
+      - internal_net
+    mem_limit: 256m
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:?GF_SECURITY_ADMIN_USER is required}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD is required}
+    ports:
+      - "127.0.0.1:3002:3000"
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - edge
+    mem_limit: 256m
+
+networks:
+  edge:
+  internal_net:
+  data_net:
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  prometheus-data:

@@ -1,5 +1,11 @@
+using Longevia.Shared.Health;
 using Recommendation.Api;
 using Recommendation.Application.Abstractions;
+
+if (args is ["--health-check", var address])
+{
+    return await HealthProbe.RunAsync(address);
+}
 
 // `--bootstrap [--seed /seed] [--skip-if-loaded] [--verify]` dùng cho bước deploy
 // `kb-bootstrap`: chạy EF migration rồi nạp seed đã xuất, không mở Kestrel/gRPC và

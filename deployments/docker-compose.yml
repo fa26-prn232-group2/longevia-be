@@ -219,6 +219,9 @@ services:
       context: ..
       dockerfile: src/Services/Identity/Dockerfile
     environment:
+      # Swagger is gated on IsDevelopment() in Program.cs; without this the
+      # container runs as Production and /swagger/v1/swagger.json returns 404.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       IDENTITY__HTTP_PORT: ${IDENTITY__HTTP_PORT:-8080}
       IDENTITY__GRPC_PORT: ${IDENTITY__GRPC_PORT:-50051}
       SERVICE__TOKEN: ${SERVICE__TOKEN:-longevia-local-service-token}
@@ -393,10 +396,14 @@ services:
     profiles: ["monitoring"]
     image: grafana/grafana:13.2.4
     environment:
+      # Anonymous access stays ON so a dashboard link works without logging in.
+      # Grafana 13 dropped every role except Viewer for anonymous users.
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      # The login form MUST stay enabled: with it disabled /login renders an
+      # empty page and the admin account can never be used to edit dashboards.
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
     ports:

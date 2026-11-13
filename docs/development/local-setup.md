@@ -108,7 +108,7 @@ make check                      # close-out gate
 | RabbitMQ UI | http://localhost:15672 |
 | PostgreSQL | localhost:5432 (host port theo `POSTGRES_PORT`) |
 | Prometheus | http://localhost:9090 (target `recommendation` scrape `recommendation:8080/metrics`) |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3001 — dashboard `ASP.NET Core - Overview`; đăng nhập `admin` / `admin` (lần đầu Grafana hỏi đổi mật khẩu, bấm **Skip**) |
 | Mailpit | http://localhost:8025 |
 
 ## Xử lý sự cố

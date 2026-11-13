@@ -4,7 +4,7 @@
   "tags": ["aspnetcore", "observability"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 3,
   "refresh": "10s",
   "time": { "from": "now-1h", "to": "now" },
   "templating": {
@@ -26,7 +26,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
       "targets": [
-        { "refId": "A", "expr": "avg(process_cpu_utilization) by (job)" }
+        {
+          "refId": "A",
+          "expr": "sum(rate(dotnet_process_cpu_time_seconds_total[$__rate_interval])) by (job)",
+          "legendFormat": "{{job}}"
+        }
       ]
     },
     {
@@ -37,7 +41,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
       "targets": [
-        { "refId": "A", "expr": "process_memory_working_set_bytes" }
+        {
+          "refId": "A",
+          "expr": "dotnet_process_memory_working_set_bytes",
+          "legendFormat": "{{job}}"
+        }
       ]
     },
     {
@@ -70,7 +78,10 @@
       "gridPos": { "h": 7, "w": 12, "x": 0, "y": 16 },
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
       "targets": [
-        { "refId": "A", "expr": "sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_request_duration_seconds_count[$__rate_interval]))" }
+        {
+          "refId": "A",
+          "expr": "(sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_request_duration_seconds_count[$__rate_interval]))"
+        }
       ]
     },
     {

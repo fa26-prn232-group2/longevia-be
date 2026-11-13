@@ -119,7 +119,7 @@ chứng deploy.
 |---|---|---|
 | Email production | Brevo SMTP Relay `smtp-relay.brevo.com:587`, StartTLS (`SMTP__USE_SSL=true`), auth bằng `SMTP__USER`/`SMTP__PASSWORD` | Confirmed |
 | Email local | Mailpit, không auth; **không** deploy ở production | Confirmed |
-| Sender email | `no-reply@hycat.online` — phải verify sender/domain trong Brevo trước khi smoke | Proposed |
+| Sender email | `no-reply@mail.hycat.online` — phải verify sender/domain trong Brevo trước khi smoke | Confirmed |
 | Brevo API keys | `BREVO__API_KEY`/`BREVO__SENDER_EMAIL` không được code dùng; production đi qua SMTP relay | Confirmed |
 | Log retention | Docker `json-file`, `max-size=10m`, `max-file=3` | Proposed |
 | Monitoring / alert | Prometheus + Grafana đã có trong `deployments/`; production chạy profile `monitoring`, Grafana bind `127.0.0.1` | Confirmed |
@@ -159,3 +159,4 @@ chứng deploy.
 | 2026-11-13 | Email production dùng Brevo SMTP Relay 587/StartTLS; Mailpit chỉ local | đúng dịch vụ email của dự án | dev |
 | 2026-11-13 | `.env.production` backup trong password manager/team vault | không commit secret vào repo public | dev |
 | 2026-11-13 | Không reviewer, không cửa sổ release | dự án học tập, không có user thật | dev |
+| 2026-11-13 | Sender email production `no-reply@mail.hycat.online` | dev cập nhật trong `.env.production` | dev |

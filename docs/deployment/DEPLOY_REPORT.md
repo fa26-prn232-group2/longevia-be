@@ -86,5 +86,19 @@ Ghi bằng chứng sau mỗi phase/deploy. Không ghi secret.
 - Cần xác nhận trên Brevo log sender là `no-reply@mail.hycat.online` và Gmail
   nhận được (kiểm tra cả Spam).
 
+## Deploy v0.1.6 — Redis pending registration + Today fix
+
+- Commit/tag: `6281218` / `v0.1.6`
+- Identity: đăng ký chỉ ghi Redis pending (TTL 1 giờ), trả `202`; DB user chỉ tạo khi verify; đăng ký lại cùng email ghi đè pending.
+- Redis store dùng key `identity:pending:*`; Identity container có `REDIS__HOST=redis`.
+- Frontend: xử lý 202, Today gate theo target + CTA, onboarding auto-target khi có cân nặng, cache clear khi login, `/today` vào middleware.
+- Smoke production:
+  - `POST /auth/register` → 202
+  - `POST /auth/login` trước verify → 403 `email_not_verified`
+  - DB không có user cho email test
+  - Redis có pending, TTL ~3585s
+- Release workflow: gate + 5 image + deploy **success**.
+- Ghi chú: v0.1.5 gate fail do test cũ còn kỳ vọng register 201/UserResponse và Progress fixture tự seed qua register; đã sửa ở v0.1.6.
+
 
 

@@ -48,6 +48,24 @@ public sealed class DietApiTests(DietApiFactory factory) : IClassFixture<DietApi
         Assert.NotEqual(first.Items[0].Id, second.Items[0].Id);
     }
 
+    [Theory]
+    [InlineData("Chuối", "Chuối")]
+    [InlineData("chuối", "Chuối")]
+    [InlineData("chuoi", "Chuối")]
+    [InlineData("CHUOI", "Chuối")]
+    [InlineData("Đậu", "Đậu phộng rang")]
+    [InlineData("đậu phộng", "Đậu phộng rang")]
+    [InlineData("dau phong", "Đậu phộng rang")]
+    [InlineData("yen mach", "Yến mạch cán")]
+    [InlineData("Yến mạch", "Yến mạch cán")]
+    public async Task Catalog_Search_IgnoresCaseAndVietnameseDiacritics(string search, string expectedName)
+    {
+        using var client = factory.UserClient(Guid.NewGuid());
+        var page = await client.GetFromJsonAsync<FoodPageResponse>(
+            $"/foods?search={Uri.EscapeDataString(search)}&pageSize=50");
+        Assert.Contains(page!.Items, x => x.Name == expectedName);
+    }
+
     [Fact]
     public async Task Targets_RepeatedAndConcurrentPut_KeepOneStableIdAndPrivateOwner()
     {
